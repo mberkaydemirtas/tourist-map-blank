@@ -4,26 +4,47 @@
     "slug": "tourist-map-blank",
     "version": "1.0.0",
     "orientation": "portrait",
+    "plugins": [
+      "expo-dev-client"
+    ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#ffffff",
+      "jsengine": "jsc"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "jsEngine": "jsc",
+      "config": {
+        "googleMapsApiKey": "AIzaSyBP0UQMQsLeyJNQLfGrmEEWkoB8QhWY4V8"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "jsEngine": "jsc",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBP0UQMQsLeyJNQLfGrmEEWkoB8QhWY4V8"
+        }
+      },
+      "package": "com.anonymous.touristmapblank"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6b96753e-5285-4b94-ba26-49ad12aa8a2e"
+      }
+    },
+    "owner": "mehmetberkay"
   }
 }
