@@ -1,19 +1,22 @@
-// MapScreen.js
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
-  StyleSheet,
   View,
-  TextInput,
-  FlatList,
-  TouchableOpacity,
-  Text,
-  Image,
+  StyleSheet,
   Linking,
   Platform,
+  Text,
+  TouchableOpacity
 } from 'react-native';
-import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
-import { useLocation } from './useLocation';
-import { GOOGLE_MAPS_API_KEY } from '@env';
+import MapView, {
+  Marker,
+  Callout,
+  Polyline,
+  PROVIDER_GOOGLE,
+} from 'react-native-maps';
+import SearchBar from './components/SearchBar/SearchBar';
+import { useLocation } from './src/hooks/useLocation';
+import { getPlaceDetails, getDirections } from './services/maps';
+import polyline from './utils/polyline';
 
 export default function MapScreen() {
   const mapRef = useRef(null);
@@ -25,177 +28,115 @@ export default function MapScreen() {
     longitudeDelta: 0.01,
   });
   const [marker, setMarker] = useState(null);
-  const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
+  const [routeCoords, setRouteCoords] = useState(null);
 
-  // 1️⃣ Watch user location
-  useLocation(coords => {
-    const updatedRegion = {
-      latitude: coords.latitude,
-      longitude: coords.longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
+  const { coords, available } = useLocation(
+    (newCoords) => {
+      // Sadece GPS kullanılabiliyorsa auto-center
+      const r = {
+        latitude: newCoords.latitude,
+        longitude: newCoords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      };
+      setRegion(r);
+      mapRef.current?.animateToRegion(r, 500);
+    },
+    () => {
+      /* konum sağlanamadığında sessizce devam et */
+    },
+    () => {
+      /* kalıcı izin reddinde sessiz devam */
+    }
+  );
+
+  // Eğer location available değilse, region'i değiştirmiyoruz
+  useEffect(() => {
+    if (available && coords) {
+      setRegion({
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+    }
+  }, [available, coords]);
+
+  const handleSelectPlace = async (placeId, description) => {
+    const details = await getPlaceDetails(placeId);
+    if (!details) return;
+    const { coord, name, address, website } = details;
+    setMarker({ coordinate: coord, name, address, website });
+
+    const destRegion = {
+      latitude: coord.latitude,
+      longitude: coord.longitude,
+      latitudeDelta: region.latitudeDelta,
+      longitudeDelta: region.longitudeDelta,
     };
+    setRegion(destRegion);
+    mapRef.current?.animateToRegion(destRegion, 500);
 
-    setRegion(updatedRegion);
-    mapRef.current?.animateToRegion(updatedRegion, 500); // <- this line is critical
-  });
+    // Rota çizimi GPS olmasa da seçime dayalı çalışır
+    const origin = available && coords
+      ? { latitude: coords.latitude, longitude: coords.longitude }
+      : { latitude: region.latitude, longitude: region.longitude };
 
-
-  // 2️⃣ Autocomplete dropdown
-  const fetchSuggestions = async input => {
-    if (input.length < 2) return;
-    try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-          input
-        )}&key=${GOOGLE_MAPS_API_KEY}&language=tr`
-      );
-      const json = await res.json();
-      setSuggestions(json.status === 'OK' ? json.predictions : []);
-    } catch (err) {
-      console.error('Autocomplete fetch error:', err);
+    const route = await getDirections(origin, coord);
+    if (route?.overview_polyline) {
+      const points = polyline.decode(route.overview_polyline.points);
+      setRouteCoords(points.map(([lat, lng]) => ({ latitude: lat, longitude: lng })));
     }
-  };
-
-  // 3️⃣ Place details for search selection
-  const getPlaceDetails = async placeId => {
-    try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,geometry,photos,website&key=${GOOGLE_MAPS_API_KEY}`
-      );
-      const json = await res.json();
-      if (json.status !== 'OK') return null;
-      const loc = json.result.geometry.location;
-      return {
-        name: json.result.name,
-        address: json.result.formatted_address,
-        website: json.result.website || null,
-        image: json.result.photos?.[0]
-          ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${
-              json.result.photos[0].photo_reference
-            }&key=${GOOGLE_MAPS_API_KEY}`
-          : null,
-        coordinate: { latitude: loc.lat, longitude: loc.lng },
-      };
-    } catch (err) {
-      console.error('Place details error:', err);
-      return null;
-    }
-  };
-
-  // 4️⃣ Reverse geocode on map press
-  const getAddress = async (lat, lng) => {
-    try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
-      );
-      const json = await res.json();
-      if (json.status !== 'OK' || !json.results.length) return null;
-      const best = json.results[0];
-      return {
-        name: best.formatted_address,
-        address: best.formatted_address,
-        website: null,
-        image: null,
-        coordinate: { latitude: lat, longitude: lng },
-      };
-    } catch (err) {
-      console.error('Geocode error:', err);
-      return null;
-    }
-  };
-
-  // 5️⃣ When user selects from dropdown
-  const selectPlace = async (placeId, description) => {
-    setQuery(description);
-    setSuggestions([]);
-    const info = await getPlaceDetails(placeId);
-    if (!info) return;
-    setMarker(info);
-    setRegion({
-      ...info.coordinate,
-      latitudeDelta: region.latitudeDelta,
-      longitudeDelta: region.longitudeDelta,
-    });
-    mapRef.current?.animateToRegion(
-      { ...info.coordinate, latitudeDelta: region.latitudeDelta, longitudeDelta: region.longitudeDelta },
-      500
-    );
-  };
-
-  // 6️⃣ When user taps on the map
-  const onMapPress = async e => {
-    const { latitude, longitude } = e.nativeEvent.coordinate;
-    const info = await getAddress(latitude, longitude);
-    if (!info) return;
-    setQuery(info.name);
-    setSuggestions([]);
-    setMarker(info);
-    setRegion({
-      latitude,
-      longitude,
-      latitudeDelta: region.latitudeDelta,
-      longitudeDelta: region.longitudeDelta,
-    });
-    mapRef.current?.animateToRegion(
-      { latitude, longitude, latitudeDelta: region.latitudeDelta, longitudeDelta: region.longitudeDelta },
-      500
-    );
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.autocompleteContainer}>
-        <TextInput
-          placeholder="Bir yer ara"
-          value={query}
-          onChangeText={text => {
-            setQuery(text);
-            fetchSuggestions(text);
-          }}
-          style={styles.input}
-        />
-        <FlatList
-          data={suggestions}
-          keyExtractor={item => item.place_id}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => selectPlace(item.place_id, item.description)}
-              style={styles.suggestionItem}
-            >
-              <Text>{item.description}</Text>
-            </TouchableOpacity>
-          )}
-        />
-      </View>
+      {/* GPS veya izin yoksa bilgi banner'ı */}
+      {!available && (
+        <View style={styles.banner}>
+          <Text style={styles.bannerText}>
+            Konum kapalı—haritayı arama ile kullanabilirsiniz.
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              /* İstersen konum ayarlarını açma yönlendirmesi koyabilirsin */
+            }}
+          >
+            <Text style={styles.bannerLink}>Ayarları Aç</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <SearchBar onSelect={handleSelectPlace} />
 
       <MapView
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         region={region}
-        showsUserLocation
-        onPress={onMapPress}
-        onPoiClick={({ nativeEvent }) =>
-          selectPlace(nativeEvent.placeId, nativeEvent.name)
-        }
+        showsUserLocation={available}
+        onPress={() => setMarker(null)}
       >
         {marker && (
           <Marker coordinate={marker.coordinate}>
             <Callout>
               <View style={styles.callout}>
-                {marker.name && <Text style={styles.title}>{marker.name}</Text>}
+                <Text style={styles.title}>{marker.name}</Text>
                 {marker.address && <Text>{marker.address}</Text>}
                 {marker.website && (
-                  <Text style={styles.link} onPress={() => Linking.openURL(marker.website)}>
+                  <Text
+                    style={styles.link}
+                    onPress={() => Linking.openURL(marker.website)}
+                  >
                     Web Sitesini Aç
                   </Text>
                 )}
-                {marker.image && <Image source={{ uri: marker.image }} style={styles.image} />}
               </View>
             </Callout>
           </Marker>
+        )}
+        {routeCoords && (
+          <Polyline coordinates={routeCoords} strokeWidth={4} lineJoin="round" />
         )}
       </MapView>
     </View>
@@ -204,32 +145,22 @@ export default function MapScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  map: { flex: 1 },
-  autocompleteContainer: {
+  banner: {
     position: 'absolute',
     top: Platform.OS === 'android' ? 20 : 40,
     left: 0,
     right: 0,
+    backgroundColor: '#333',
+    padding: 8,
     zIndex: 999,
-    backgroundColor: '#fff',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderColor: '#ccc',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  input: {
-    height: 50,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    fontSize: 16,
-  },
-  suggestionItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-  },
-  callout: { width: 200 },
+  bannerText: { color: '#fff', flex: 1 },
+  bannerLink: { color: '#4da6ff', marginLeft: 12, fontWeight: 'bold' },
+  map: { flex: 1 },
+  callout: { width: 200, padding: 5 },
   title: { fontWeight: 'bold', marginBottom: 5 },
-  link: { color: 'blue', textDecorationLine: 'underline', marginVertical: 5 },
-  image: { width: 180, height: 90, marginTop: 5, borderRadius: 5 },
+  link: { color: 'blue', textDecorationLine: 'underline', marginTop: 5 },
 });
