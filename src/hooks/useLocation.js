@@ -1,4 +1,3 @@
-// src/hooks/useLocation.js
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as Location from 'expo-location';
 import { AppState } from 'react-native';
@@ -12,121 +11,150 @@ export function useLocation(
   const [coords, setCoords] = useState(null);
   const [available, setAvailable] = useState(false);
 
-  // Başlatma flag’i
-  const initializing = useRef(false);
-  // GPS popup’u bir kez iptal edildiyse bir daha sorma
+  const permissionAsked = useRef(false);
   const gpsPromptDeclined = useRef(false);
+  const lastServicesOn = useRef(null);
+  const gpsCheckInterval = useRef(null);
 
-  // GPS servislerinin açılmasını sağlayan dialog, iptal edilirse false döner
+  // GPS açma dialog ve kontrol (tek sefer)
   const ensureServicesEnabled = async () => {
     if (await Location.hasServicesEnabledAsync()) return true;
-
     try {
       await Location.enableNetworkProviderAsync();
     } catch {
-      // Kullanıcı “Hayır” dedi
       gpsPromptDeclined.current = true;
       return false;
     }
-
-    // Kullanıcı “Aç” dediyse, 5 saniye içinde gerçek durumu kontrol et
     const start = Date.now();
     while (Date.now() - start < 5000) {
-      // 1 saniye bekle
       // eslint-disable-next-line no-await-in-loop
       await new Promise(r => setTimeout(r, 1000));
-      if (await Location.hasServicesEnabledAsync()) {
-        return true;
-      }
+      // eslint-disable-next-line no-await-in-loop
+      if (await Location.hasServicesEnabledAsync()) return true;
     }
     return false;
   };
 
+  const stopWatching = () => {
+    subscription.current?.remove();
+    subscription.current = null;
+  };
+
   const startWatching = useCallback(async () => {
-    if (initializing.current) return;
-    initializing.current = true;
-
-    // 1️⃣ İzin iste
-    const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      if (!canAskAgain && onPermissionPermanentlyDenied) {
-        onPermissionPermanentlyDenied();
-      }
-      setAvailable(false);
-      onLocationUnavailable?.();
-      return;
-    }
-
-    // 2️⃣ GPS kontrolü: eğer daha önce popup iptal edildiyse doğrudan konumsuz moda geç
-    if (!await Location.hasServicesEnabledAsync()) {
-      if (!gpsPromptDeclined.current) {
-        // Popup göster ve sonucu bekle
-        const enabled = await ensureServicesEnabled();
-        if (!enabled) {
-          // Kullanıcı iptal etti, konumsuz moda devam
-          setAvailable(false);
-          onLocationUnavailable?.();
-          return;
+    // 1️⃣ İzin (tek sefer)
+    if (!permissionAsked.current) {
+      permissionAsked.current = true;
+      const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        if (!canAskAgain && onPermissionPermanentlyDenied) {
+          onPermissionPermanentlyDenied();
         }
-      } else {
-        // Daha önce iptal etti → doğrudan konumsuz moda devam
+        setCoords(null);
         setAvailable(false);
         onLocationUnavailable?.();
         return;
       }
     }
 
-    // 3️⃣ GPS açık → konum al ve takibe geç
+    // 2️⃣ GPS servisi kontrolü (tek seferlik prompt)
+    let servicesOn = await Location.hasServicesEnabledAsync();
+    lastServicesOn.current = servicesOn;
+
+    if (!servicesOn) {
+      if (!gpsPromptDeclined.current) {
+        servicesOn = await ensureServicesEnabled();
+        lastServicesOn.current = servicesOn;
+      }
+      if (!servicesOn) {
+        stopWatching();
+        setCoords(null);
+        setAvailable(false);
+        onLocationUnavailable?.();
+        return;
+      }
+    }
+
+    // 3️⃣ İlk konum
     try {
       const loc = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       });
-      const position = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-      setCoords(position);
+      const p = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+      setCoords(p);
       setAvailable(true);
-      onLocationUpdate?.(position);
+      onLocationUpdate?.(p);
     } catch {
+      setCoords(null);
       setAvailable(false);
       onLocationUnavailable?.();
-      return;
     }
 
-    subscription.current = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.High,
-        timeInterval: 2000,
-        distanceInterval: 2,
-      },
-      loc => {
-        const position = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-        setCoords(position);
-        setAvailable(true);
-        onLocationUpdate?.(position);
-      },
-      () => {
-        setAvailable(false);
-        onLocationUnavailable?.();
-      }
-    );
-  }, []);
+    // 4️⃣ Hareket takibi
+    if (!subscription.current) {
+      subscription.current = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 2000,
+          distanceInterval: 2,
+        },
+        loc => {
+          const p = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+          setCoords(p);
+          setAvailable(true);
+          onLocationUpdate?.(p);
+        },
+        () => {
+          // watchPositionAsync hata callback
+          stopWatching();
+          setCoords(null);
+          setAvailable(false);
+          onLocationUnavailable?.();
+        }
+      );
+    }
+  }, [
+    onLocationUpdate,
+    onLocationUnavailable,
+    onPermissionPermanentlyDenied,
+  ]);
 
   useEffect(() => {
+    // Başlangıçta ve AppState active olduğunda başlat
     startWatching();
-
-    const sub = AppState.addEventListener('change', state => {
+    const subAppState = AppState.addEventListener('change', state => {
       if (state === 'active') {
-        // Uygulama geri aktif olduğunda yeniden dene
-        initializing.current = false;
         startWatching();
       }
     });
 
+// GPS durumunu her 3 saniyede bir kontrol et
+gpsCheckInterval.current = setInterval(async () => {
+  const servicesOn = await Location.hasServicesEnabledAsync();
+
+  if (lastServicesOn.current !== servicesOn) {
+    console.log(`[GPS STATUS CHANGE] ${lastServicesOn.current ? 'ON → OFF' : 'OFF → ON'}`);
+
+    lastServicesOn.current = servicesOn;
+
+    if (!servicesOn) {
+      // GPS kapandı
+      stopWatching();
+      setCoords(null);
+      setAvailable(false);
+      onLocationUnavailable?.();
+    } else {
+      // GPS açıldı
+      await startWatching();
+    }
+  }
+}, 3000);
+
     return () => {
-      sub.remove();
-      subscription.current?.remove();
-      subscription.current = null;
+      subAppState.remove();
+      stopWatching();
+      clearInterval(gpsCheckInterval.current);
     };
-  }, [startWatching]);
+  }, [startWatching, onLocationUnavailable]);
 
   return { coords, available, refreshLocation: startWatching };
 }

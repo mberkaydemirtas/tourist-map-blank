@@ -5,7 +5,7 @@ import {
   Linking,
   Platform,
   Text,
-  TouchableOpacity
+  TouchableOpacity,
 } from 'react-native';
 import MapView, {
   Marker,
@@ -29,10 +29,10 @@ export default function MapScreen() {
   });
   const [marker, setMarker] = useState(null);
   const [routeCoords, setRouteCoords] = useState(null);
+  const [mapKey, setMapKey] = useState(0); // 🔁 Force re-render MapView
 
   const { coords, available } = useLocation(
     (newCoords) => {
-      // Sadece GPS kullanılabiliyorsa auto-center
       const r = {
         latitude: newCoords.latitude,
         longitude: newCoords.longitude,
@@ -43,14 +43,14 @@ export default function MapScreen() {
       mapRef.current?.animateToRegion(r, 500);
     },
     () => {
-      /* konum sağlanamadığında sessizce devam et */
+      // Konum alınamıyorsa sessizce devam
     },
     () => {
-      /* kalıcı izin reddinde sessiz devam */
+      // Kalıcı izin reddi
     }
   );
 
-  // Eğer location available değilse, region'i değiştirmiyoruz
+  // Konum değiştikçe sadece ilk sefer ekranı merkeze getir
   useEffect(() => {
     if (available && coords) {
       setRegion({
@@ -61,6 +61,11 @@ export default function MapScreen() {
       });
     }
   }, [available, coords]);
+
+  // available değiştiğinde MapView yeniden render edilsin
+  useEffect(() => {
+    setMapKey((prev) => prev + 1);
+  }, [available]);
 
   const handleSelectPlace = async (placeId, description) => {
     const details = await getPlaceDetails(placeId);
@@ -77,7 +82,6 @@ export default function MapScreen() {
     setRegion(destRegion);
     mapRef.current?.animateToRegion(destRegion, 500);
 
-    // Rota çizimi GPS olmasa da seçime dayalı çalışır
     const origin = available && coords
       ? { latitude: coords.latitude, longitude: coords.longitude }
       : { latitude: region.latitude, longitude: region.longitude };
@@ -91,17 +95,12 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      {/* GPS veya izin yoksa bilgi banner'ı */}
       {!available && (
         <View style={styles.banner}>
           <Text style={styles.bannerText}>
-            Konum kapalı—haritayı arama ile kullanabilirsiniz.
+            Konum kapalı — haritayı arama ile kullanabilirsiniz.
           </Text>
-          <TouchableOpacity
-            onPress={() => {
-              /* İstersen konum ayarlarını açma yönlendirmesi koyabilirsin */
-            }}
-          >
+          <TouchableOpacity>
             <Text style={styles.bannerLink}>Ayarları Aç</Text>
           </TouchableOpacity>
         </View>
@@ -110,6 +109,7 @@ export default function MapScreen() {
       <SearchBar onSelect={handleSelectPlace} />
 
       <MapView
+        key={mapKey} // 🔁 Re-render trigger
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
