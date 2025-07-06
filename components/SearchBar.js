@@ -1,5 +1,5 @@
-// ✅ Modern UX/UI'li SearchBar.js
-import React, { useEffect, useState } from 'react';
+// ✅ SearchBar.js — Geçmiş aramalar (history) entegre edildi 
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   TextInput,
@@ -9,21 +9,53 @@ import {
   StyleSheet,
   ActivityIndicator,
   Platform,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { autocomplete } from '../services/maps';
+import { Ionicons } from '@expo/vector-icons';
+
+const HISTORY_KEY = 'search_history';
+const MAX_HISTORY = 5;
 
 export default function SearchBar({ value, onChange, onSelect }) {
   const [suggestions, setSuggestions] = useState([]);
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const inputRef = useRef();
+
+  useEffect(() => {
+    loadHistory();
+  }, []);
+
+  const loadHistory = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(HISTORY_KEY);
+      if (stored) {
+        setHistory(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.warn('Geçmiş yüklenemedi');
+    }
+  };
+
+  const saveToHistory = async (description) => {
+    try {
+      const newHistory = [description, ...history.filter(item => item !== description)].slice(0, MAX_HISTORY);
+      setHistory(newHistory);
+      await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
+    } catch (e) {
+      console.warn('Geçmişe kaydedilemedi');
+    }
+  };
 
   useEffect(() => {
     const handler = setTimeout(() => {
       if (value.length < 2) {
         setSuggestions([]);
-        setLoading(false);
-        setError(null);
         return;
       }
 
@@ -47,13 +79,41 @@ export default function SearchBar({ value, onChange, onSelect }) {
     return () => clearTimeout(handler);
   }, [value]);
 
+  const handleSelect = async (place_id, description) => {
+    if (place_id === description) {
+      try {
+        const matches = await autocomplete(description);
+        const found = matches.find((x) => x.description === description);
+        if (found) {
+          saveToHistory(found.description);
+          onSelect(found.place_id, found.description);
+        } else {
+          Alert.alert('Hata', 'Geçmiş konumu yeniden bulamadık.');
+        }
+      } catch (e) {
+        Alert.alert('Hata', 'Google sunucusuna ulaşılamadı.');
+      }
+    } else {
+      saveToHistory(description);
+      onSelect(place_id, description);
+    }
+  };
+
+  const mergedSuggestions = value.length < 2
+    ? history.map(item => ({ place_id: item, description: item }))
+    : suggestions;
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.searchContainer}
     >
       <View style={styles.searchBox}>
+        <TouchableOpacity onPress={() => inputRef.current?.focus()}>
+          <Ionicons name="search" size={20} color="#888" style={styles.searchIcon} />
+        </TouchableOpacity>
         <TextInput
+          ref={inputRef}
           style={styles.input}
           placeholder="Bir yer ara"
           value={value}
@@ -69,16 +129,16 @@ export default function SearchBar({ value, onChange, onSelect }) {
       {loading && <ActivityIndicator style={styles.loader} />}
       {error && <Text style={styles.error}>{error}</Text>}
 
-      {suggestions.length > 0 && (
+      {mergedSuggestions.length > 0 && (
         <View style={styles.suggestionBox}>
           <FlatList
             keyboardShouldPersistTaps="handled"
-            data={suggestions}
-            keyExtractor={item => item.place_id}
+            data={mergedSuggestions}
+            keyExtractor={(item) => item.place_id}
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.suggestionItem}
-                onPress={() => onSelect(item.place_id, item.description)}
+                onPress={() => handleSelect(item.place_id, item.description)}
               >
                 <Text>{item.description}</Text>
               </TouchableOpacity>
@@ -110,6 +170,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 5,
+  },
+  searchIcon: {
+    marginRight: 8,
   },
   input: {
     flex: 1,
