@@ -1,21 +1,12 @@
-// MapScreen.js
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import {
-  View,
-  StyleSheet,
-  Linking,
-  Platform,
-  Text,
-  TouchableOpacity,
-} from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Platform, Linking, Alert } from 'react-native';
 import MapView, { Marker, Callout, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { GOOGLE_MAPS_API_KEY } from '@env';
 import SearchBar from './components/SearchBar';
 import { useLocation } from './src/hooks/useLocation';
-import { getPlaceDetails, getDirections } from './services/maps';
-import polyline from './utils/polyline';
+import { getDirections } from './services/maps';
+import polyline from '@mapbox/polyline';
 
-// Reverse-geocode helper
 async function getAddressFromCoords(lat, lng) {
   const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`;
   const res = await fetch(url);
@@ -31,50 +22,117 @@ async function getAddressFromCoords(lat, lng) {
   };
 }
 
+// ✅ Güvenli getPlaceDetails
+async function getPlaceDetails(placeId) {
+  try {
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,geometry,website,photos&key=${GOOGLE_MAPS_API_KEY}`
+    );
+    const json = await res.json();
+
+    if (json.status !== 'OK') {
+      console.warn('Google API error:', json.status, json.error_message);
+      return null;
+    }
+
+    const result = json.result;
+    if (
+      !result.geometry ||
+      !result.geometry.location ||
+      result.geometry.location.lat == null ||
+      result.geometry.location.lng == null
+    ) {
+      console.warn('Eksik konum bilgisi:', result);
+      return null;
+    }
+
+    const lat = result.geometry.location.lat;
+    const lng = result.geometry.location.lng;
+
+    return {
+      name: result.name,
+      address: result.formatted_address,
+      website: result.website ?? null,
+      image: result.photos?.length
+        ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${result.photos[0].photo_reference}&key=${GOOGLE_MAPS_API_KEY}`
+        : null,
+      coordinate: { latitude: lat, longitude: lng },
+    };
+  } catch (e) {
+    console.error('getPlaceDetails error:', e);
+    return null;
+  }
+}
+
 export default function MapScreen() {
   const mapRef = useRef(null);
+  const initialMoved = useRef(false);
+  const lastAvailable = useRef(false);
 
   const [region, setRegion] = useState({
-    latitude: 37.7749,
-    longitude: -122.4194,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
+    latitude: 39.925533,
+    longitude: 32.866287,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
   });
   const [marker, setMarker] = useState(null);
   const [routeCoords, setRouteCoords] = useState(null);
-  const [mapKey, setMapKey] = useState(0);
   const [query, setQuery] = useState('');
 
-  const { coords, available } = useLocation(
-    useCallback((newCoords) => {
-      mapRef.current?.animateToRegion({
-        latitude: newCoords.latitude,
-        longitude: newCoords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      }, 500);
-    }, []),
-    () => { setMarker(null); },
-    () => {}
+  const onFirstCoords = useCallback(p => {
+    if (!initialMoved.current) {
+      const r = { ...p, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+      setRegion(r);
+      mapRef.current?.animateToRegion(r, 500);
+      initialMoved.current = true;
+    }
+  }, []);
+
+  const onFirstUnavailable = useCallback(() => {
+    if (!initialMoved.current) {
+      const r = { latitude: 39.925533, longitude: 32.866287, latitudeDelta: 0.05, longitudeDelta: 0.05 };
+      setRegion(r);
+      mapRef.current?.animateToRegion(r, 500);
+      initialMoved.current = true;
+    }
+  }, []);
+
+  const onGpsOn = useCallback(p => {
+    const r = { ...p, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+    setRegion(r);
+    mapRef.current?.animateToRegion(r, 500);
+  }, []);
+
+  const { coords, available, refreshLocation } = useLocation(
+    onFirstCoords,
+    onFirstUnavailable,
+    () => {},
+    onGpsOn
   );
 
-  useEffect(() => { setMapKey(k => k + 1); }, [available]);
+  useEffect(() => {
+    if (!lastAvailable.current && available) {
+      setRegion(prev => ({ ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 }));
+      mapRef.current?.animateToRegion({ ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 }, 500);
+    }
+    lastAvailable.current = available;
+  }, [available]);
 
   const handleSelectPlace = async (placeId, description) => {
     setQuery(description);
     const info = await getPlaceDetails(placeId);
-    if (!info) return;
+    if (!info || !info.coordinate || info.coordinate.latitude == null || info.coordinate.longitude == null) {
+      Alert.alert('Hata', 'Seçilen yerin konumu alınamadı. Lütfen başka bir yer deneyin.');
+      return;
+    }
+
     const coord = info.coordinate;
     setMarker(info);
-    mapRef.current?.animateToRegion({
-      latitude: coord.latitude,
-      longitude: coord.longitude,
-      latitudeDelta: region.latitudeDelta,
-      longitudeDelta: region.longitudeDelta,
-    }, 500);
-    setRegion(prev => ({ ...prev, latitude: coord.latitude, longitude: coord.longitude }));
+    const r = { ...coord, latitudeDelta: region.latitudeDelta, longitudeDelta: region.longitudeDelta };
+    setRegion(r);
+    mapRef.current?.animateToRegion(r, 500);
 
-    const origin = available && coords ? coords : coord;
+    const origin = available && coords ? coords : { latitude: 39.925533, longitude: 32.866287 };
     const route = await getDirections(origin, coord);
     if (route?.overview_polyline) {
       const pts = polyline.decode(route.overview_polyline.points);
@@ -85,18 +143,18 @@ export default function MapScreen() {
   const handleMapPress = async e => {
     const { latitude, longitude } = e.nativeEvent.coordinate;
     const info = await getAddressFromCoords(latitude, longitude);
-    if (!info) return;
+    if (!info || !info.coordinate) {
+      Alert.alert('Hata', 'Konum alınamadı.');
+      return;
+    }
+
     setQuery(info.name);
     setMarker(info);
-    mapRef.current?.animateToRegion({
-      latitude,
-      longitude,
-      latitudeDelta: region.latitudeDelta,
-      longitudeDelta: region.longitudeDelta,
-    }, 500);
-    setRegion(prev => ({ ...prev, latitude, longitude }));
+    const r = { latitude, longitude, latitudeDelta: region.latitudeDelta, longitudeDelta: region.longitudeDelta };
+    setRegion(r);
+    mapRef.current?.animateToRegion(r, 500);
 
-    const origin = available && coords ? coords : { latitude, longitude };
+    const origin = available && coords ? coords : { latitude: 39.925533, longitude: 32.866287 };
     const route = await getDirections(origin, info.coordinate);
     if (route?.overview_polyline) {
       const pts = polyline.decode(route.overview_polyline.points);
@@ -108,23 +166,17 @@ export default function MapScreen() {
     <View style={styles.container}>
       {!available && (
         <View style={styles.banner}>
-          <Text style={styles.bannerText}>
-            Konum kapalı — arama ile kullanabilirsiniz.
-          </Text>
-          <TouchableOpacity>
+          <Text style={styles.bannerText}>Konum kapalı — arama ile kullanabilirsiniz.</Text>
+          <TouchableOpacity onPress={refreshLocation}>
+            <Text style={styles.bannerLink}>Tekrar Dene</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => Linking.openSettings()}>
             <Text style={styles.bannerLink}>Ayarları Aç</Text>
           </TouchableOpacity>
         </View>
       )}
-
-      <SearchBar
-        value={query}
-        onChange={setQuery}
-        onSelect={handleSelectPlace}
-      />
-
+      <SearchBar value={query} onChange={setQuery} onSelect={handleSelectPlace} />
       <MapView
-        key={mapKey}
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
@@ -133,16 +185,14 @@ export default function MapScreen() {
         onPress={handleMapPress}
         onPoiClick={handleMapPress}
       >
-        {marker && (
+        {marker?.coordinate && (
           <Marker coordinate={marker.coordinate}>
             <Callout>
               <View style={styles.callout}>
                 <Text style={styles.title}>{marker.name}</Text>
                 <Text>{marker.address}</Text>
                 {marker.website && (
-                  <Text style={styles.link} onPress={() => Linking.openURL(marker.website)}>
-                    Web'de Aç
-                  </Text>
+                  <Text style={styles.link} onPress={() => Linking.openURL(marker.website)}>Web'de Aç</Text>
                 )}
               </View>
             </Callout>
@@ -165,12 +215,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
     padding: 8,
     zIndex: 999,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center'
   },
   bannerText: { color: '#fff', flex: 1 },
-  bannerLink: { color: '#4da6ff', fontWeight: 'bold' },
+  bannerLink: { color: '#4da6ff', fontWeight: 'bold', marginLeft: 10 },
   map: { flex: 1 },
   callout: { width: 200, padding: 5 },
   title: { fontWeight: 'bold', marginBottom: 5 },
