@@ -22,7 +22,6 @@ async function getAddressFromCoords(lat, lng) {
   };
 }
 
-// ✅ Güvenli getPlaceDetails
 async function getPlaceDetails(placeId) {
   try {
     const res = await fetch(
@@ -77,6 +76,7 @@ export default function MapScreen() {
   });
   const [marker, setMarker] = useState(null);
   const [routeCoords, setRouteCoords] = useState(null);
+  const [routeInfo, setRouteInfo] = useState(null);
   const [query, setQuery] = useState('');
 
   const onFirstCoords = useCallback(p => {
@@ -137,6 +137,11 @@ export default function MapScreen() {
     if (route?.overview_polyline) {
       const pts = polyline.decode(route.overview_polyline.points);
       setRouteCoords(pts.map(([lat, lng]) => ({ latitude: lat, longitude: lng })));
+      setRouteInfo({
+        distance: route.legs?.[0]?.distance?.text,
+        duration: route.legs?.[0]?.duration?.text,
+        destination: coord
+      });
     }
   };
 
@@ -159,7 +164,22 @@ export default function MapScreen() {
     if (route?.overview_polyline) {
       const pts = polyline.decode(route.overview_polyline.points);
       setRouteCoords(pts.map(([lat, lng]) => ({ latitude: lat, longitude: lng })));
+      setRouteInfo({
+        distance: route.legs?.[0]?.distance?.text,
+        duration: route.legs?.[0]?.duration?.text,
+        destination: info.coordinate
+      });
     }
+  };
+
+  const openInMaps = () => {
+    if (!routeInfo?.destination) return;
+    const { latitude, longitude } = routeInfo.destination;
+    const url = Platform.select({
+      ios: `http://maps.apple.com/?daddr=${latitude},${longitude}`,
+      android: `http://maps.google.com/maps?daddr=${latitude},${longitude}`,
+    });
+    Linking.openURL(url);
   };
 
   return (
@@ -175,7 +195,9 @@ export default function MapScreen() {
           </TouchableOpacity>
         </View>
       )}
+
       <SearchBar value={query} onChange={setQuery} onSelect={handleSelectPlace} />
+
       <MapView
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
@@ -186,7 +208,7 @@ export default function MapScreen() {
         onPoiClick={handleMapPress}
       >
         {marker?.coordinate && (
-          <Marker coordinate={marker.coordinate}>
+          <Marker coordinate={marker.coordinate} pinColor="red">
             <Callout>
               <View style={styles.callout}>
                 <Text style={styles.title}>{marker.name}</Text>
@@ -199,9 +221,18 @@ export default function MapScreen() {
           </Marker>
         )}
         {routeCoords && (
-          <Polyline coordinates={routeCoords} strokeWidth={4} lineJoin="round" />
+          <Polyline coordinates={routeCoords} strokeWidth={4} strokeColor="#4285F4" lineJoin="round" />
         )}
       </MapView>
+
+      {routeInfo && (
+        <View style={styles.routeBox}>
+          <Text style={styles.routeText}>🕒 {routeInfo.duration}   📏 {routeInfo.distance}</Text>
+          <TouchableOpacity onPress={openInMaps} style={styles.routeButton}>
+            <Text style={styles.routeButtonText}>Yönlendirmeyi Başlat</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -223,4 +254,32 @@ const styles = StyleSheet.create({
   callout: { width: 200, padding: 5 },
   title: { fontWeight: 'bold', marginBottom: 5 },
   link: { color: 'blue', textDecorationLine: 'underline', marginTop: 5 },
+  routeBox: {
+    position: 'absolute',
+    bottom: 20,
+    left: 10,
+    right: 10,
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    zIndex: 998,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  routeText: { fontSize: 16, fontWeight: '500', marginBottom: 8 },
+  routeButton: {
+    backgroundColor: '#4285F4',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  routeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
