@@ -1,4 +1,5 @@
-// ✅ CategoryBar.js — Horizontal category selector
+// src/components/CategoryBar.js
+
 import React from 'react';
 import { View, ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
 

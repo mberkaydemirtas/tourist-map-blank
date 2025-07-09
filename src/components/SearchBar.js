@@ -1,4 +1,5 @@
-// ✅ SearchBar.js — History seçim için handleSelect geliştirildi ve dış tıklama/geri basma kontrolü eklendi
+// src/components/SearchBar.js
+
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
@@ -16,7 +17,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { autocomplete } from '../services/maps';
+import { autocomplete } from '../../services/maps';
 import { Ionicons } from '@expo/vector-icons';
 
 const HISTORY_KEY = 'search_history';
@@ -31,19 +32,19 @@ export default function SearchBar({ value, onChange, onSelect }) {
 
   const inputRef = useRef();
 
-  // Geçmişi yükle
+  // Load history
   useEffect(() => {
     (async () => {
       try {
         const stored = await AsyncStorage.getItem(HISTORY_KEY);
         if (stored) setHistory(JSON.parse(stored));
       } catch {
-        console.warn('Geçmiş yüklenemedi');
+        console.warn('Failed to load history');
       }
     })();
   }, []);
 
-  // Autocomplete çağrısı
+  // Autocomplete
   useEffect(() => {
     if (value.length < 2) {
       setSuggestions([]);
@@ -57,7 +58,7 @@ export default function SearchBar({ value, onChange, onSelect }) {
         setSuggestions(preds);
       } catch {
         setSuggestions([]);
-        setError('Arama başarısız oldu.');
+        setError('Search failed.');
       } finally {
         setLoading(false);
       }
@@ -65,21 +66,21 @@ export default function SearchBar({ value, onChange, onSelect }) {
     return () => clearTimeout(handler);
   }, [value]);
 
-  // History kaydet
-  const saveToHistory = async (description) => {
+  // Save to history
+  const saveToHistory = async (desc) => {
     try {
       const newHistory = [
-        description,
-        ...history.filter(item => item !== description),
+        desc,
+        ...history.filter(item => item !== desc),
       ].slice(0, MAX_HISTORY);
       setHistory(newHistory);
       await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
     } catch {
-      console.warn('Geçmişe kaydedilemedi');
+      console.warn('Failed to save history');
     }
   };
 
-  // Seçim işlemi
+  // Handle selection
   const handleSelect = async (place_id, description) => {
     try {
       if (place_id === description) {
@@ -93,48 +94,51 @@ export default function SearchBar({ value, onChange, onSelect }) {
         onSelect(place_id, description);
       }
     } catch {
-      Alert.alert('Hata', place_id === description ? 'Geçmiş konumu yeniden bulamadık.' : 'Google sunucusuna ulaşılamadı.');
+      Alert.alert(
+        'Error',
+        place_id === description
+          ? 'Could not re-find that history location.'
+          : 'Cannot reach Google servers.'
+      );
     } finally {
       inputRef.current?.blur();
     }
   };
 
-  // Focus durumuna göre history veya suggestions
-  const mergedSuggestions = focused
+  // Merged suggestions or history
+  const merged = focused
     ? (value.length < 2
         ? history.map(item => ({ place_id: item, description: item }))
         : suggestions)
     : [];
 
-  // Hardware back tuşunu yakala
+  // Back button to blur
   useEffect(() => {
-    const onBackPress = () => {
+    const onBack = () => {
       if (focused) {
         inputRef.current?.blur();
         return true;
       }
       return false;
     };
-    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-    return () => subscription.remove();
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+    return () => sub.remove();
   }, [focused]);
 
   return (
     <>
-      {/* Dış tıklama yakalama katmanı */}
       {focused && (
         <TouchableWithoutFeedback onPress={() => inputRef.current?.blur()}>
           <View style={styles.overlay} />
         </TouchableWithoutFeedback>
       )}
-
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.searchContainer}
+        style={styles.container}
       >
         <View style={styles.searchBox}>
           <TouchableOpacity onPress={() => inputRef.current?.focus()}>
-            <Ionicons name="search" size={20} color="#888" style={styles.searchIcon} />
+            <Ionicons name="search" size={20} color="#888" style={styles.icon} />
           </TouchableOpacity>
           <TextInput
             ref={inputRef}
@@ -147,23 +151,21 @@ export default function SearchBar({ value, onChange, onSelect }) {
           />
           {value.length > 0 && (
             <TouchableOpacity onPress={() => onChange('')}>
-              <Text style={styles.clearText}>✕</Text>
+              <Text style={styles.clear}>✕</Text>
             </TouchableOpacity>
           )}
         </View>
-
         {loading && <ActivityIndicator style={styles.loader} />}
         {error && <Text style={styles.error}>{error}</Text>}
-
-        {mergedSuggestions.length > 0 && (
+        {merged.length > 0 && (
           <View style={styles.suggestionBox}>
             <FlatList
               keyboardShouldPersistTaps="handled"
-              data={mergedSuggestions}
+              data={merged}
               keyExtractor={item => item.place_id}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={styles.suggestionItem}
+                  style={styles.item}
                   onPress={() => handleSelect(item.place_id, item.description)}
                 >
                   <Text>{item.description}</Text>
@@ -178,22 +180,32 @@ export default function SearchBar({ value, onChange, onSelect }) {
 }
 
 const styles = StyleSheet.create({
-  searchContainer: {
-    position: 'absolute', top: Platform.OS === 'android' ? 20 : 40, left: 10, right: 10, zIndex: 1000,
+  container: {
+    position: 'absolute',
+    top: Platform.OS === 'android' ? 20 : 40,
+    left: 10, right: 10, zIndex: 1000,
   },
   overlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'transparent', zIndex: 500,
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'transparent', zIndex: 500,
   },
   searchBox: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8,
-    paddingHorizontal: 10, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#fff', borderRadius: 8,
+    paddingHorizontal: 10, paddingVertical: 8,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2, shadowRadius: 5, elevation: 5,
   },
-  searchIcon: { marginRight: 8 },
+  icon: { marginRight: 8 },
   input: { flex: 1, fontSize: 16 },
-  clearText: { fontSize: 18, paddingLeft: 10, color: '#888' },
+  clear: { fontSize: 18, paddingLeft: 10, color: '#888' },
   loader: { marginTop: 5 },
   error: { color: 'red', marginTop: 5, fontSize: 12 },
-  suggestionBox: { marginTop: 5, backgroundColor: '#fff', borderRadius: 8, maxHeight: 200, overflow: 'hidden', elevation: 4 },
-  suggestionItem: { padding: 12, borderBottomColor: '#eee', borderBottomWidth: 1 },
+  suggestionBox: {
+    marginTop: 5, backgroundColor: '#fff',
+    borderRadius: 8, maxHeight: 200, overflow: 'hidden', elevation: 4,
+  },
+  item: {
+    padding: 12, borderBottomColor: '#eee', borderBottomWidth: 1,
+  },
 });

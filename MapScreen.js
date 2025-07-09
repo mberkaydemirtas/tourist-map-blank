@@ -1,273 +1,123 @@
-// MapScreen.js — Proje kökünde, flicker önleme ve marker yeniden çizimini engelleme
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Platform, Linking, Alert } from 'react-native';
-import MapView, { Marker, Callout, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import { GOOGLE_MAPS_API_KEY as KEY } from '@env';
-import SearchBar from './components/SearchBar';
-import CategoryBar from './components/CategoryBar';
-import { useLocation } from './src/hooks/useLocation';
+// ✅ MapScreen.js — Yeni Yapıda, Eski Fonksiyonlarla Tam Uyumlu
+import React, { useRef, useEffect } from 'react';
 import {
-  getAddressFromCoords,
-  getNearbyPlaces,
-  getPlaceDetails,
-  getRoute,
-  decodePolyline,
-} from './services/maps';
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Platform,
+  Linking,
+  Alert,
+} from 'react-native';
+import MapView, { Marker, Callout, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import { useLocation } from './hooks/useLocation';
+import { useMapLogic } from './hooks/useMapLogic';
+
+import Banner from './src/components/Banner';
+import SearchBar from './src/components/SearchBar';
+import CategoryBar from './src/components/CategoryBar';
+import ScanButton from './src/components/ScanButton';
+import MarkerCallout from './src/components/MarkerCallout';
+import RouteInfo from './src/components/RouteInfo';
+import LocationButton from './src/components/LocationButton';
 
 export default function MapScreen() {
   const mapRef = useRef(null);
   const initialMoved = useRef(false);
   const lastAvailable = useRef(false);
 
-  // Temel state'ler
-  const [region, setRegion] = useState({
-    latitude: 39.925533,
-    longitude: 32.866287,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
-  });
-  const [marker, setMarker] = useState(null);
-  const [categoryMarkers, setCategoryMarkers] = useState([]);
-  const [loadingCategory, setLoadingCategory] = useState(false);
-  const [routeInfo, setRouteInfo] = useState(null);
-  const [routeCoords, setRouteCoords] = useState(null);
-  const [routeDrawn, setRouteDrawn] = useState(false);
-  const [query, setQuery] = useState('');
-  const [mapMoved, setMapMoved] = useState(false);
-  const [activeCategory, setActiveCategory] = useState(null);
-
-  // Konum callback'leri
-  const onFirstCoords = useCallback(p => {
-    if (!initialMoved.current) {
-      const r = { ...p, latitudeDelta: 0.01, longitudeDelta: 0.01 };
-      setRegion(r);
-      mapRef.current?.animateToRegion(r, 500);
-      initialMoved.current = true;
-    }
-  }, []);
-
-  const onFirstUnavailable = useCallback(() => {
-    if (!initialMoved.current) {
-      const r = {
-        latitude: 39.925533,
-        longitude: 32.866287,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
-      };
-      setRegion(r);
-      mapRef.current?.animateToRegion(r, 500);
-      initialMoved.current = true;
-    }
-  }, []);
-
-  const onGpsOn = useCallback(p => {
-    const r = { ...p, latitudeDelta: 0.01, longitudeDelta: 0.01 };
-    setRegion(r);
-    mapRef.current?.animateToRegion(r, 500);
-  }, []);
-
+  const map = useMapLogic();
   const { coords, available, refreshLocation } = useLocation(
-    onFirstCoords,
-    onFirstUnavailable,
-    () => {},
-    onGpsOn
+    (p) => {
+      if (!initialMoved.current) {
+        const region = { ...p, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+        map.setRegion(region);
+        mapRef.current?.animateToRegion(region, 500);
+        initialMoved.current = true;
+      }
+    },
+    () => {
+      if (!initialMoved.current) {
+        const region = {
+          latitude: 39.925533,
+          longitude: 32.866287,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        };
+        map.setRegion(region);
+        mapRef.current?.animateToRegion(region, 500);
+        initialMoved.current = true;
+      }
+    },
+    null,
+    (p) => {
+      const region = { ...p, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+      map.setRegion(region);
+      mapRef.current?.animateToRegion(region, 500);
+    }
   );
 
   useEffect(() => {
-    if (!lastAvailable.current && available) {
-      const r = { ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 };
-      setRegion(r);
-      mapRef.current?.animateToRegion(r, 500);
+    if (!lastAvailable.current && available && coords) {
+      const region = { ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+      map.setRegion(region);
+      mapRef.current?.animateToRegion(region, 500);
     }
     lastAvailable.current = available;
   }, [available, coords]);
 
-  // Polyline decode ve çizme
-  const handleDrawRoute = () => {
-    if (!routeInfo?.polyline) return;
-    setRouteCoords(decodePolyline(routeInfo.polyline));
-    setRouteDrawn(true);
-  };
-
-  // SearchBar seçimi
-  const handleSelectPlace = async (placeId, description) => {
-    setActiveCategory(null);
-    setCategoryMarkers([]);
-    setMapMoved(false);
-    setRouteCoords(null);
-    setRouteInfo(null);
-    setRouteDrawn(false);
-    setQuery(description);
-
-    try {
-      const details = await getPlaceDetails(placeId);
-      if (!details) throw new Error();
-      const coord = details.coord;
-
-      setMarker({
-        name: details.name,
-        address: details.address,
-        website: details.website,
-        image: details.photos.length
-          ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${details.photos[0].photo_reference}&key=${KEY}`
-          : null,
-        coordinate: coord,
-      });
-
-      const newRegion = {
-        ...coord,
-        latitudeDelta: region.latitudeDelta,
-        longitudeDelta: region.longitudeDelta,
-      };
-      setRegion(newRegion);
-      mapRef.current?.animateToRegion(newRegion, 500);
-
-      const origin = { latitude: 39.925533, longitude: 32.866287 };
-      const route = await getRoute(origin, coord);
-      setRouteInfo(route);
-    } catch {
-      Alert.alert('Hata', 'Seçilen yerin detayları alınamadı.');
-    }
-  };
-
-  // Kategori seçimi — flicker önleme
-  const handleCategorySelect = async type => {
-    setActiveCategory(type);
-    setQuery('');
-    setMarker(null);
-    setRouteCoords(null);
-    setRouteInfo(null);
-    setRouteDrawn(false);
-    setMapMoved(false);
-    setLoadingCategory(true);
-
-    try {
-      const results = await getNearbyPlaces(region, type);
-      setCategoryMarkers(results);
-    } catch {
-      Alert.alert('Hata', 'Kategori araması başarısız oldu.');
-    } finally {
-      setLoadingCategory(false);
-    }
-  };
-
-  // Bu bölgeyi tara — flicker önleme
-  const handleSearchThisArea = async () => {
-    if (!activeCategory) return;
-    setLoadingCategory(true);
-    try {
-      const results = await getNearbyPlaces(region, activeCategory);
-      setCategoryMarkers(results);
-    } catch {
-      Alert.alert('Hata', 'Bölge araması başarısız oldu.');
-    } finally {
-      setLoadingCategory(false);
-      setMapMoved(false);
-    }
-  };
-
-  // Harita veya POI tıklama
-  const handleMapPress = async e => {
-    const { latitude, longitude } = e.nativeEvent.coordinate;
-    const info = await getAddressFromCoords(latitude, longitude);
-    if (!info) return Alert.alert('Hata', 'Konum alınamadı.');
-
-    setActiveCategory(null);
-    setCategoryMarkers([]);
-    setRouteCoords(null);
-    setRouteInfo(null);
-    setRouteDrawn(false);
-    setMapMoved(false);
-
-    setMarker(info);
-    setQuery(info.name);
-
-    const newRegion = {
-      latitude,
-      longitude,
-      latitudeDelta: region.latitudeDelta,
-      longitudeDelta: region.longitudeDelta,
-    };
-    setRegion(newRegion);
-    mapRef.current?.animateToRegion(newRegion, 500);
-
-    const origin = { latitude: 39.925533, longitude: 32.866287 };
-    const route = await getRoute(origin, info.coordinate);
-    setRouteInfo(route);
-  };
-
   return (
     <View style={styles.container}>
-      {!available && (
-        <View style={styles.banner}>
-          <Text style={styles.bannerText}>
-            Konum kapalı — arama ile kullanabilirsiniz.
-          </Text>
-          <TouchableOpacity onPress={refreshLocation}>
-            <Text style={styles.bannerLink}>Tekrar Dene</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => Linking.openSettings()}>
-            <Text style={styles.bannerLink}>Ayarları Aç</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      {!available && <Banner available={available} onRetry={refreshLocation} />}
 
-      <SearchBar value={query} onChange={setQuery} onSelect={handleSelectPlace} />
-      <CategoryBar onSelect={handleCategorySelect} />
+      <SearchBar value={map.query} onChange={map.setQuery} onSelect={map.handleSelectPlace} />
+      <CategoryBar onSelect={map.handleCategorySelect} />
 
-      {mapMoved && !loadingCategory && (
-        <TouchableOpacity
-          style={styles.scanButton}
-          onPress={handleSearchThisArea}
-        >
-          <Text style={styles.scanText}>Bu bölgeyi tara</Text>
-        </TouchableOpacity>
-      )}
+      {map.mapMoved && !map.loadingCategory && <ScanButton onPress={map.handleSearchThisArea} />}
 
       <MapView
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
-        initialRegion={region}
+        region={map.region}
         showsUserLocation={available}
-        onPress={handleMapPress}
-        onPoiClick={handleMapPress}
-        onPanDrag={() => activeCategory && setMapMoved(true)}
-        onRegionChangeComplete={reg => setRegion(reg)}
+        onPress={map.handleMapPress}
+        onPoiClick={map.handleMapPress}
+        onPanDrag={() => map.setMapMoved(true)}
+        onRegionChangeComplete={map.setRegion}
       >
-        {categoryMarkers.map(item => (
+        {/* Kategori Markerları */}
+        {map.categoryMarkers.map((item) => (
           <Marker
             key={item.id}
             coordinate={item.coordinate}
             title={item.name}
             tracksViewChanges={false}
           >
-            <Text style={{ fontSize: 24 }}>  
-              {activeCategory === 'cafe'
+            <Text style={{ fontSize: 24 }}>
+              {map.activeCategory === 'cafe'
                 ? '☕'
-                : activeCategory === 'restaurant'
+                : map.activeCategory === 'restaurant'
                 ? '🍽️'
-                : activeCategory === 'hotel'
+                : map.activeCategory === 'hotel'
                 ? '🏨'
                 : '📍'}
             </Text>
+            <MarkerCallout marker={item} isCategory />
           </Marker>
         ))}
 
-        {marker?.coordinate && (
-          <Marker
-            coordinate={marker.coordinate}
-            pinColor="red"
-            tracksViewChanges={false}
-          >
+        {/* Seçili marker */}
+        {map.marker?.coordinate && (
+          <Marker coordinate={map.marker.coordinate} pinColor="red" tracksViewChanges={false}>
             <Callout>
               <View style={styles.callout}>
-                <Text style={styles.title}>{marker.name}</Text>
-                <Text>{marker.address}</Text>
-                {marker.website && (
+                <Text style={styles.title}>{map.marker.name}</Text>
+                <Text>{map.marker.address}</Text>
+                {map.marker.website && (
                   <Text
                     style={styles.link}
-                    onPress={() => Linking.openURL(marker.website)}
+                    onPress={() => Linking.openURL(map.marker.website)}
                   >
                     Web'de Aç
                   </Text>
@@ -277,9 +127,10 @@ export default function MapScreen() {
           </Marker>
         )}
 
-        {routeCoords && (
+        {/* Rota çizgisi */}
+        {map.routeCoords && (
           <Polyline
-            coordinates={routeCoords}
+            coordinates={map.routeCoords}
             strokeWidth={4}
             strokeColor="#4285F4"
             lineJoin="round"
@@ -287,18 +138,24 @@ export default function MapScreen() {
         )}
       </MapView>
 
-      {routeInfo && !routeDrawn && (
-        <View style={styles.routeBox}>
-          <Text style={styles.routeText}>
-            🕒 {routeInfo.duration}   📏 {routeInfo.distance}
-          </Text>
-          <TouchableOpacity
-            onPress={handleDrawRoute}
-            style={styles.routeButton}
-          >
-            <Text style={styles.routeButtonText}>Rota Çiz</Text>
-          </TouchableOpacity>
-        </View>
+      {/* Rota kutusu */}
+      {map.routeInfo && !map.routeDrawn && (
+        <RouteInfo info={map.routeInfo} onDraw={map.handleDrawRoute} />
+      )}
+
+      {/* Konum Butonu */}
+      {available && coords && (
+        <LocationButton
+          onPress={() => {
+            const region = {
+              ...coords,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            };
+            map.setRegion(region);
+            mapRef.current?.animateToRegion(region, 500);
+          }}
+        />
       )}
     </View>
   );
@@ -306,57 +163,8 @@ export default function MapScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  banner: {
-    position: 'absolute',
-    top: Platform.OS === 'android' ? 20 : 40,
-    left: 0,
-    right: 0,
-    backgroundColor: '#333',
-    padding: 8,
-    zIndex: 999,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  bannerText: { color: '#fff', flex: 1 },
-  bannerLink: { color: '#4da6ff', fontWeight: 'bold', marginLeft: 10 },
   map: { flex: 1 },
   callout: { width: 200, padding: 5 },
   title: { fontWeight: 'bold', marginBottom: 5 },
   link: { color: 'blue', textDecorationLine: 'underline', marginTop: 5 },
-  routeBox: {
-    position: 'absolute',
-    bottom: 20,
-    left: 10,
-    right: 10,
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-  routeText: { fontSize: 16, fontWeight: '500', marginBottom: 8 },
-  routeButton: {
-    backgroundColor: '#4285F4',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  routeButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  scanButton: {
-    position: 'absolute',
-    top: 150,
-    alignSelf: 'center',
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 20,
-    elevation: 4,
-    zIndex: 999,
-  },
-  scanText: { fontWeight: 'bold', color: '#4285F4' },
-})
-
+});
