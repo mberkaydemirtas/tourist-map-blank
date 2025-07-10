@@ -1,4 +1,4 @@
-// src/components/SearchBar.js
+// components/SearchBar.js
 
 import React, { useEffect, useState, useRef } from 'react';
 import {
@@ -17,7 +17,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { autocomplete } from '../../services/maps';
+import { autocomplete } from '../services/maps';
 import { Ionicons } from '@expo/vector-icons';
 
 const HISTORY_KEY = 'search_history';

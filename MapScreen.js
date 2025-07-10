@@ -13,13 +13,13 @@ import MapView, { Marker, Callout, Polyline, PROVIDER_GOOGLE } from 'react-nativ
 import { useLocation } from './hooks/useLocation';
 import { useMapLogic } from './hooks/useMapLogic';
 
-import Banner from './src/components/Banner';
-import SearchBar from './src/components/SearchBar';
-import CategoryBar from './src/components/CategoryBar';
-import ScanButton from './src/components/ScanButton';
-import MarkerCallout from './src/components/MarkerCallout';
-import RouteInfo from './src/components/RouteInfo';
-import LocationButton from './src/components/LocationButton';
+import Banner from './components/Banner';
+import SearchBar from './components/SearchBar';
+import CategoryBar from './components/CategoryBar';
+import ScanButton from './components/ScanButton';
+import MarkerCallout from './components/MarkerCallout';
+import RouteInfo from './components/RouteInfo';
+import LocationButton from './components/LocationButton';
 
 export default function MapScreen() {
   const mapRef = useRef(null);
