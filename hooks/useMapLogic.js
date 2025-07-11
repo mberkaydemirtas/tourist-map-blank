@@ -1,5 +1,3 @@
-// src/hooks/useMapLogic.js
-
 import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 import {
@@ -36,7 +34,10 @@ export function useMapLogic() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [mapMoved, setMapMoved] = useState(false);
 
-  // 1) Rota çizme
+  // --- Loading Place Details ---
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
+  // 1) Draw route polyline
   const handleDrawRoute = useCallback(() => {
     if (!routeInfo?.polyline) return;
     const coords = decodePolyline(routeInfo.polyline);
@@ -44,9 +45,10 @@ export function useMapLogic() {
     setRouteDrawn(true);
   }, [routeInfo]);
 
-  // 2) SearchBar seçimi
+  // 2) SearchBar selection → full details + route
   const handleSelectPlace = useCallback(
     async (placeId, description) => {
+      // reset
       setActiveCategory(null);
       setCategoryMarkers([]);
       setMapMoved(false);
@@ -55,40 +57,59 @@ export function useMapLogic() {
       setRouteDrawn(false);
       setQuery(description);
 
+      setIsLoadingDetails(true);
       try {
         const details = await getPlaceDetails(placeId);
         if (!details) throw new Error();
-        const coord = details.coord;
 
-        setMarker({
+        const photos = details.photos?.map(
+          p => `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${p.photo_reference}&key=${KEY}`
+        );
+        const reviews = details.reviews?.map(r => ({
+          authorName: r.author_name,
+          text: r.text,
+        }));
+
+        const full = {
           name: details.name,
-          address: details.address,
+          address: details.formatted_address,
           website: details.website,
-          image: details.photos?.length
-            ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${details.photos[0].photo_reference}&key=${KEY}`
-            : null,
-          coordinate: coord,
-        });
-
-        const newRegion = {
-          ...coord,
-          latitudeDelta: region.latitudeDelta,
-          longitudeDelta: region.longitudeDelta,
+          phone: details.formatted_phone_number,
+          rating: details.rating,
+          priceLevel: details.price_level,
+          openNow: details.opening_hours?.open_now,
+          photos,
+          reviews,
+          coordinate: {
+            latitude: details.geometry.location.lat,
+            longitude: details.geometry.location.lng,
+          },
         };
-        setRegion(newRegion);
+        setMarker(full);
 
-        const route = await getRoute(ANKARA_CENTER, coord);
+        // zoom
+        setRegion(r => ({
+          latitude: full.coordinate.latitude,
+          longitude: full.coordinate.longitude,
+          latitudeDelta: r.latitudeDelta,
+          longitudeDelta: r.longitudeDelta,
+        }));
+
+        // route back to Ankara
+        const route = await getRoute(ANKARA_CENTER, full.coordinate);
         setRouteInfo(route);
       } catch {
         Alert.alert('Hata', 'Seçilen yerin detayları alınamadı.');
+      } finally {
+        setIsLoadingDetails(false);
       }
     },
-    [region]
+    []
   );
 
-  // 3) Kategori seçimi
+  // 3) Category tap
   const handleCategorySelect = useCallback(
-    async (type) => {
+    async type => {
       setActiveCategory(type);
       setQuery('');
       setMarker(null);
@@ -110,7 +131,7 @@ export function useMapLogic() {
     [region]
   );
 
-  // 4) “Bu bölgeyi tara”
+  // 4) “Search This Area”
   const handleSearchThisArea = useCallback(async () => {
     if (!activeCategory) return;
     setLoadingCategory(true);
@@ -125,9 +146,9 @@ export function useMapLogic() {
     }
   }, [region, activeCategory]);
 
-  // 5) Harita tıklama veya POI seçimi
+  // 5) Click on map / POI (basic reverse geocode)
   const handleMapPress = useCallback(
-    async (e) => {
+    async e => {
       const { latitude, longitude } = e.nativeEvent.coordinate;
       const info = await getAddressFromCoords(latitude, longitude);
       if (!info) return Alert.alert('Hata', 'Konum alınamadı.');
@@ -139,21 +160,82 @@ export function useMapLogic() {
       setRouteDrawn(false);
       setMapMoved(false);
 
-      setMarker(info);
+      setMarker({
+        name: info.name,
+        address: info.address,
+        coordinate: info.coordinate,
+      });
       setQuery(info.name);
 
-      const newRegion = {
+      setRegion(r => ({
         latitude,
         longitude,
-        latitudeDelta: region.latitudeDelta,
-        longitudeDelta: region.longitudeDelta,
-      };
-      setRegion(newRegion);
+        latitudeDelta: r.latitudeDelta,
+        longitudeDelta: r.longitudeDelta,
+      }));
 
       const route = await getRoute(ANKARA_CENTER, info.coordinate);
       setRouteInfo(route);
     },
-    [region]
+    []
+  );
+
+  // 6) Category Marker tap → full details + route
+  const handleMarkerSelect = useCallback(
+    async markerItem => {
+      setIsLoadingDetails(true);
+      try {
+        const placeId = markerItem.place_id || markerItem.id;
+        const details = await getPlaceDetails(placeId);
+        if (!details) throw new Error();
+
+        const photos = details.photos?.map(
+          p => `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${p.photo_reference}&key=${KEY}`
+        );
+        const reviews = details.reviews?.map(r => ({
+          authorName: r.author_name,
+          text: r.text,
+        }));
+
+        const full = {
+          name: details.name,
+          address: details.formatted_address,
+          website: details.website,
+          phone: details.formatted_phone_number,
+          rating: details.rating,
+          priceLevel: details.price_level,
+          openNow: details.opening_hours?.open_now,
+          photos,
+          reviews,
+          coordinate: markerItem.coordinate,
+        };
+        setMarker(full);
+        setQuery(full.name);
+
+        // zoom
+        setRegion(r => ({
+          latitude: full.coordinate.latitude,
+          longitude: full.coordinate.longitude,
+          latitudeDelta: r.latitudeDelta,
+          longitudeDelta: r.longitudeDelta,
+        }));
+
+        // route back
+        try {
+          const route = await getRoute(ANKARA_CENTER, full.coordinate);
+          setRouteInfo(route);
+        } catch {
+          setRouteInfo(null);
+        }
+      } catch {
+        // fallback to basic marker
+        setMarker(markerItem);
+        setQuery(markerItem.name);
+      } finally {
+        setIsLoadingDetails(false);
+      }
+    },
+    []
   );
 
   return {
@@ -171,6 +253,7 @@ export function useMapLogic() {
     activeCategory,
     mapMoved,
     setMapMoved,
+    isLoadingDetails,
 
     // Handlers
     handleSelectPlace,
@@ -178,5 +261,6 @@ export function useMapLogic() {
     handleSearchThisArea,
     handleMapPress,
     handleDrawRoute,
+    handleMarkerSelect,
   };
 }
