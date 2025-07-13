@@ -1,17 +1,29 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, {
+  createRef,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from 'react';
 import {
   View,
   StyleSheet,
   Text,
   Linking,
   Dimensions,
-  Modal,
   TouchableOpacity,
-  ScrollView,
   Image,
-  ActivityIndicator,
 } from 'react-native';
-import MapView, { Marker, Callout, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, {
+  Marker,
+  Callout,
+  Polyline,
+  PROVIDER_GOOGLE,
+} from 'react-native-maps';
+import BottomSheet, {
+  BottomSheetScrollView,
+} from '@gorhom/bottom-sheet';
+import { ScrollView } from 'react-native';
 import { useLocation } from './hooks/useLocation';
 import { useMapLogic } from './hooks/useMapLogic';
 
@@ -20,69 +32,25 @@ import SearchBar from './components/SearchBar';
 import CategoryBar from './components/CategoryBar';
 import ScanButton from './components/ScanButton';
 import MarkerCallout from './components/MarkerCallout';
-import RouteInfo from './components/RouteInfo';
 import LocationButton from './components/LocationButton';
 
 const { height: windowHeight } = Dimensions.get('window');
-const SNAP_POINTS_PX = [windowHeight * 0.3, windowHeight * 0.6, windowHeight * 0.9];
 
 export default function MapScreen() {
   const mapRef = useRef(null);
-  const initialMoved = useRef(false);
   const lastAvailable = useRef(false);
 
+  const sheetRef = createRef();
+  const snapPoints = useMemo(() => ['30%', '60%', '75%', '90%'], []);
+
   const map = useMapLogic();
-  const { coords, available, refreshLocation } = useLocation(
-    // onSuccess
-    (p) => {
-      if (!initialMoved.current) {
-        const region = { ...p, latitudeDelta: 0.01, longitudeDelta: 0.01 };
-        map.setRegion(region);
-        mapRef.current?.animateToRegion(region, 500);
-        initialMoved.current = true;
-      }
-    },
-    // onError: fallback to Ankara
-    () => {
-      if (!initialMoved.current) {
-        const region = {
-          latitude: 39.925533,
-          longitude: 32.866287,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        };
-        map.setRegion(region);
-        mapRef.current?.animateToRegion(region, 500);
-        initialMoved.current = true;
-      }
-    },
-    null,
-    // onWatch
-    (p) => {
-      const region = { ...p, latitudeDelta: 0.01, longitudeDelta: 0.01 };
-      map.setRegion(region);
-      mapRef.current?.animateToRegion(region, 500);
-    }
-  );
+  const { coords, available, refreshLocation } = useLocation();
 
-  // Modal visibility state
-  const [showModal, setShowModal] = useState(false);
-
-  // When marker changes, open modal
   useEffect(() => {
-    if (map.marker && !map.isLoadingDetails) {
-      setShowModal(true);
-    }
-  }, [map.marker, map.isLoadingDetails]);
+    if (map.marker) sheetRef.current?.snapToIndex(0);
+    else sheetRef.current?.close();
+  }, [map.marker]);
 
-  const closeModal = () => setShowModal(false);
-  const openWebsite = () => {
-    if (map.marker?.website) {
-      Linking.openURL(map.marker.website);
-    }
-  };
-
-  // Zoom when GPS becomes available
   useEffect(() => {
     if (!lastAvailable.current && available && coords) {
       const region = { ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 };
@@ -92,17 +60,59 @@ export default function MapScreen() {
     lastAvailable.current = available;
   }, [available, coords]);
 
+  const openWebsite = () => {
+    if (map.marker?.website) Linking.openURL(map.marker.website);
+  };
+  const handleDirections = () => {
+    map.handleDrawRoute();
+    sheetRef.current?.close();
+  };
+
+  const Handle = useCallback(() => (
+    <View style={styles.handleContainer}>
+      <View style={styles.dragHandle} />
+      <View style={styles.handleContent}>
+        <Text style={styles.name}>{map.marker?.name}</Text>
+        <View style={styles.subHeaderRow}>
+          {map.marker?.rating != null && map.marker?.googleSearchUrl && (
+            <TouchableOpacity onPress={() => Linking.openURL(map.marker.googleSearchUrl)}>
+              <Text style={styles.rating}>
+                {'⭐'.repeat(Math.round(map.marker.rating))} {map.marker.rating.toFixed(1)}
+              </Text>
+            </TouchableOpacity>
+          )}
+          {map.marker?.types?.length > 0 && (
+            <Text style={styles.type}>{map.marker.types[0].replace(/_/g, ' ')}</Text>
+          )}
+
+        </View>
+          <View style={styles.directionsInfoWrapper}>
+            <TouchableOpacity
+              style={styles.directionsButton}
+              onPress={handleDirections}
+            >
+              <Text style={styles.directionsText}>Get Directions</Text>
+            </TouchableOpacity>
+
+            {map.routeInfo && (
+              <Text style={styles.routeInfoText}>
+                {map.routeInfo.duration} · {map.routeInfo.distance}
+              </Text>
+            )}
+          </View>
+      </View>
+    </View>
+  ), [map.marker, map.routeInfo]);
+
   return (
     <View style={styles.container}>
       {!available && <Banner available={available} onRetry={refreshLocation} />}
-
       <SearchBar
         value={map.query}
         onChange={map.setQuery}
         onSelect={map.handleSelectPlace}
       />
       <CategoryBar onSelect={map.handleCategorySelect} />
-
       {map.mapMoved && !map.loadingCategory && (
         <ScanButton onPress={map.handleSearchThisArea} />
       )}
@@ -112,20 +122,25 @@ export default function MapScreen() {
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         region={map.region}
-        showsUserLocation={available}
         onPress={map.handleMapPress}
-        onPoiClick={map.handleMapPress}
+        onPoiClick={map.handlePoiClick}
+        showsUserLocation={available}
         onPanDrag={() => map.setMapMoved(true)}
         onRegionChangeComplete={map.setRegion}
+        mapPadding={{ top: 100, right: 40, bottom: 40, left: 40 }} // 👈 kenarlardan boşluk
       >
-        {map.categoryMarkers.map(item => (
-          <Marker
-            key={item.id}
-            coordinate={item.coordinate}
-            title={item.name}
-            tracksViewChanges={false}
-            onPress={() => map.handleMarkerSelect(item)}
-          >
+      {map.categoryMarkers.map(item => (
+        <Marker
+          key={item.place_id}
+          coordinate={item.coordinate}
+          anchor={{ x: 0.5, y: 1 }} // 👈 Alt ortadan sabitle
+          tracksViewChanges={false}
+          onPress={() => map.handleMarkerSelect(item.place_id, item.coordinate)}
+        >
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ fontSize: 10, color: 'black', backgroundColor: 'white', paddingHorizontal: 4, borderRadius: 4 }}>
+              {item.name.length > 20 ? item.name.slice(0, 20) + '…' : item.name}
+            </Text>
             <Text style={{ fontSize: 24 }}>
               {map.activeCategory === 'cafe'
                 ? '☕'
@@ -135,9 +150,10 @@ export default function MapScreen() {
                 ? '🏨'
                 : '📍'}
             </Text>
-            <MarkerCallout marker={item} isCategory />
-          </Marker>
-        ))}
+          </View>
+        </Marker>
+      ))}
+
 
         {map.marker?.coordinate && (
           <Marker
@@ -150,9 +166,7 @@ export default function MapScreen() {
                 <Text style={styles.title}>{map.marker.name}</Text>
                 <Text>{map.marker.address}</Text>
                 {map.marker.website && (
-                  <Text style={styles.link} onPress={openWebsite}>
-                    Web’de Aç
-                  </Text>
+                  <Text style={styles.link} onPress={openWebsite}>Web’de Aç</Text>
                 )}
               </View>
             </Callout>
@@ -169,92 +183,85 @@ export default function MapScreen() {
         )}
       </MapView>
 
-      {map.routeInfo && !map.routeDrawn && (
-        <RouteInfo
-          info={map.routeInfo}
-          onDraw={map.handleDrawRoute}
-          style={[styles.routeInfo, { bottom: SNAP_POINTS_PX[1] + 16 }]}
-        />
-      )}
-      {available && coords && (
-        <LocationButton
-          onPress={() => {
-            const region = { ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 };
-            map.setRegion(region);
-            mapRef.current?.animateToRegion(region, 500);
-          }}
-          style={[styles.locationButton, { bottom: SNAP_POINTS_PX[1] + 16 }]}
-        />
-      )}
+        {available && coords && (
+          <LocationButton
+            onPress={() => {
+              const region = {
+                ...coords,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              };
+              map.setRegion(region);
+              mapRef.current?.animateToRegion(region, 500);
+            }}
+            style={{ position: 'absolute', top: 140, right: 20 }} // 👈 Aşağı alındı
+          />
+        )}
 
-      {/* Slide-up Modal */}
-      <Modal
-        visible={showModal}
-        transparent
-        animationType="slide"
-        onRequestClose={closeModal}
+
+      <BottomSheet
+        ref={sheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose
+        enableContentPanningGesture={false}
+        enableHandlePanningGesture={true}
+        handleComponent={Handle}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: windowHeight * 0.6 }]}>
-            <View style={styles.dragHandle} />
+        <BottomSheetScrollView
+          contentContainerStyle={styles.sheetScroll}
+          nestedScrollEnabled
+        >
+          {map.marker?.openNow != null && (
+            <Text
+              style={[styles.status, map.marker.openNow ? styles.open : styles.closed]}
+            >
+              {map.marker.openNow ? 'Open Now' : 'Closed'}
+            </Text>
+          )}
 
-            {map.isLoadingDetails ? (
-              <View style={styles.loaderContainer}>
-                <ActivityIndicator size="large" />
-              </View>
-            ) : (
-              <ScrollView contentContainerStyle={styles.sheetScroll}>
-                <Text style={styles.name}>{map.marker?.name}</Text>
-                <Text style={styles.address}>{map.marker?.address}</Text>
-                {map.marker?.rating != null && (
-                  <Text style={styles.rating}>⭐ {map.marker.rating}</Text>
-                )}
-                {map.marker?.priceLevel != null && (
-                  <Text style={styles.price}>{'$'.repeat(map.marker.priceLevel)}</Text>
-                )}
-                {map.marker?.openNow != null && (
-                  <Text style={styles.status}>
-                    {map.marker.openNow ? 'Open Now' : 'Closed'}
-                  </Text>
-                )}
-                {map.marker?.phone && (
-                  <TouchableOpacity onPress={() => Linking.openURL(`tel:${map.marker.phone}`)}>
-                    <Text style={styles.phone}>{map.marker.phone}</Text>
-                  </TouchableOpacity>
-                )}
-                {map.marker?.website && (
-                  <TouchableOpacity style={styles.button} onPress={openWebsite}>
-                    <Text style={styles.buttonText}>Visit Website</Text>
-                  </TouchableOpacity>
-                )}
+          {Array.isArray(map.marker?.hoursToday) && map.marker.hoursToday.length >= 1 && (
+            <Text style={styles.hours}>
+              {map.marker.hoursToday[(new Date().getDay() + 6) % 7]}
+            </Text>
+          )}
 
-                {/* Photo carousel */}
-                {map.marker?.photos?.length > 0 && (
-                  <ScrollView horizontal style={styles.photoCarousel} showsHorizontalScrollIndicator={false}>
-                    {map.marker.photos.map((uri, idx) => (
-                      <Image key={idx} source={{ uri }} style={styles.photo} />
-                    ))}
-                  </ScrollView>
-                )}
+          {Array.isArray(map.marker?.photos) && map.marker.photos.length > 0 && (
+            <ScrollView
+              horizontal
+              nestedScrollEnabled
+              showsHorizontalScrollIndicator={false}
+              style={styles.photoScroll}
+            >
+              {map.marker.photos.map((uri, idx) => (
+                <Image
+                  key={idx}
+                  source={{ uri }}
+                  style={styles.photo}
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
+          )}
 
-                {/* Review snippet */}
-                {map.marker?.reviews?.length > 0 && (
-                  <View style={styles.reviewSection}>
-                    <Text style={styles.reviewAuthor}>{map.marker.reviews[0].authorName}</Text>
-                    <Text style={styles.reviewText}>
-                      "{map.marker.reviews[0].text}"
-                    </Text>
-                  </View>
-                )}
-              </ScrollView>
+          <View style={styles.actionsRow}>
+            {map.marker?.phone && (
+              <TouchableOpacity
+                style={styles.callButton}
+                onPress={() => Linking.openURL(`tel:${map.marker.phone}`)}
+              >
+                <Text style={styles.callText}>Call</Text>
+              </TouchableOpacity>
             )}
 
-            <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-              <Text style={styles.closeText}>Kapat</Text>
-            </TouchableOpacity>
+            {map.marker?.website && (
+              <TouchableOpacity style={styles.websiteButton} onPress={openWebsite}>
+                <Text style={styles.websiteText}>Website</Text>
+              </TouchableOpacity>
+            )}
           </View>
-        </View>
-      </Modal>
+        </BottomSheetScrollView>
+      </BottomSheet>
     </View>
   );
 }
@@ -265,50 +272,89 @@ const styles = StyleSheet.create({
   callout: { width: 200, padding: 5 },
   title: { fontWeight: 'bold', marginBottom: 5 },
   link: { color: 'blue', textDecorationLine: 'underline', marginTop: 5 },
-  routeInfo: { position: 'absolute', left: 16, right: 16 },
-  locationButton: { position: 'absolute', right: 16 },
+
+  handleContainer: {
+    paddingTop: 8,
+    backgroundColor: '#fff',
+  },
+
+  directionsInfoWrapper: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginRight: 8,
+},
+
+routeInfoText: {
+  marginLeft: 8,
+  fontSize: 13,
+  color: '#333',
+  fontWeight: '500',
+},
+
   dragHandle: {
     width: 40,
     height: 5,
     borderRadius: 3,
     backgroundColor: '#ccc',
     alignSelf: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
-  sheetScroll: { paddingBottom: 20 },
-  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  price: { fontSize: 14, marginVertical: 4 },
-  phone: { fontSize: 14, color: '#0066cc', marginVertical: 4 },
-  photoCarousel: { marginVertical: 10 },
-  photo: { width: 120, height: 80, borderRadius: 8, marginRight: 8 },
-  reviewSection: { marginTop: 15 },
-  reviewAuthor: { fontWeight: 'bold' },
-  reviewText: { fontStyle: 'italic' },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-  name: { fontSize: 18, fontWeight: 'bold', marginBottom: 6 },
-  address: { fontSize: 14, color: '#555', marginBottom: 4 },
-  rating: { fontSize: 14, color: '#333', marginBottom: 4 },
-  status: { fontSize: 14, marginBottom: 10, color: '#006600' },
-  button: {
-    backgroundColor: '#4285F4',
-    paddingVertical: 10,
+  handleContent: {
     paddingHorizontal: 20,
-    borderRadius: 6,
-    marginBottom: 12,
-    alignSelf: 'flex-start',
   },
-  buttonText: { color: '#fff', fontWeight: 'bold' },
-  closeButton: { alignSelf: 'flex-end', marginTop: 8 },
-  closeText: { color: '#4285F4', fontSize: 16 },
+
+  sheetScroll: { padding: 20, paddingBottom: 40 },
+
+  name: { fontSize: 20, fontWeight: 'bold', marginBottom: 8 },
+  subHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  rating: { fontSize: 14, color: '#f1c40f', marginRight: 8 },
+  type: { fontSize: 14, color: '#555', marginRight: 8 },
+  driveTime: { fontSize: 14, color: '#555' },
+
+  status: { fontSize: 14, marginBottom: 12 },
+  open: { color: '#0a0' },
+  closed: { color: '#a00' },
+
+  hours: {
+    fontSize: 13,
+    color: '#555',
+    marginBottom: 8,
+    marginLeft: 2,
+  },
+
+  photoScroll: { marginBottom: 12 },
+  photo: {
+    width: 260,
+    height: 160,
+    borderRadius: 12,
+    marginRight: 10,
+  },
+
+  actionsRow: { flexDirection: 'row', marginTop: 8 },
+  directionsButton: {
+    backgroundColor: '#34A853',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  directionsText: { color: '#fff', fontWeight: 'bold' },
+  callButton: {
+    backgroundColor: '#4285F4',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  callText: { color: '#fff', fontWeight: 'bold' },
+  websiteButton: {
+    backgroundColor: '#777',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  websiteText: { color: '#fff', fontWeight: 'bold' },
 });

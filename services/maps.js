@@ -4,6 +4,13 @@ import polyline from '@mapbox/polyline';
 
 const BASE = 'https://maps.googleapis.com/maps/api';
 
+// 🔹 0) Tip öncelik sıralaması (görünüm için)
+function formatPlaceType(types = []) {
+  const PRIORITY = ['cafe', 'restaurant', 'bar', 'hotel', 'museum', 'library', 'bakery', 'pharmacy'];
+  const match = PRIORITY.find(type => types.includes(type));
+  return match || types[0] || 'place';
+}
+
 // 1) Autocomplete
 export async function autocomplete(input, { lat, lng } = {}) {
   const params = new URLSearchParams({
@@ -21,32 +28,78 @@ export async function autocomplete(input, { lat, lng } = {}) {
 export async function getPlaceDetails(placeId) {
   const params = new URLSearchParams({
     place_id: placeId,
-    fields: 'name,formatted_address,geometry,photos,website',
+    fields: [
+      'name',
+      'formatted_address',
+      'geometry',
+      'photos',
+      'website',
+      'formatted_phone_number',
+      'rating',
+      'price_level',
+      'opening_hours',
+      'reviews',
+      'types',
+      'url',
+    ].join(','),
     key: KEY,
+    language: 'tr',
   });
-  const res = await fetch(`${BASE}/place/details/json?${params}`);
-  const json = await res.json();
-  if (json.status !== 'OK') return null;
-  const r = json.result;
-  return {
-    name: r.name,
-    address: r.formatted_address,
-    website: r.website || null,
-    photos: r.photos || [],
-    coord: { latitude: r.geometry.location.lat, longitude: r.geometry.location.lng },
-  };
+
+  try {
+    const res = await fetch(`${BASE}/place/details/json?${params}`);
+    const json = await res.json();
+    if (json.status !== 'OK') {
+      console.error('🟥 getPlaceDetails hata:', json.status);
+      return null;
+    }
+
+    const r = json.result;
+
+    const photoUrls = (r.photos || []).map(p =>
+      `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${p.photo_reference}&key=${KEY}`
+    );
+
+    console.log('📸 Fotoğraf URLleri:', photoUrls);
+
+    return {
+      name: r.name,
+      address: r.formatted_address,
+      website: r.website || null,
+      phone: r.formatted_phone_number || null,
+      rating: r.rating || null,
+      priceLevel: r.price_level ?? null,
+      openNow: r.opening_hours?.open_now ?? null,
+      hoursToday: r.opening_hours?.weekday_text ?? [],
+      photos: photoUrls,
+      reviews: r.reviews || [],
+      types: r.types || [],
+      typeName: formatPlaceType(r.types), // ✅ başlık için eklendi
+      coord: {
+        latitude: r.geometry.location.lat,
+        longitude: r.geometry.location.lng,
+      },
+      url: r.url || null,
+    };
+  } catch (err) {
+    console.error('🟥 getPlaceDetails fetch hatası:', err);
+    return null;
+  }
 }
 
 // 3) Tersine geocoding
 export async function getAddressFromCoords(lat, lng) {
-  const url = `${BASE}/geocode/json?latlng=${lat},${lng}&key=${KEY}`;
+  const url = `${BASE}/geocode/json?latlng=${lat},${lng}&key=${KEY}&language=tr`;
   const res = await fetch(url);
   const json = await res.json();
+
   if (json.status !== 'OK' || !json.results.length) return null;
+
   const best = json.results[0];
+
   return {
-    name: best.formatted_address,
     address: best.formatted_address,
+    place_id: best.place_id,
     coordinate: { latitude: lat, longitude: lng },
   };
 }
@@ -58,7 +111,7 @@ export async function getNearbyPlaces(center, type) {
   const json = await res.json();
   if (json.status !== 'OK') return [];
   return json.results.map(p => ({
-    id: p.place_id,
+    place_id: p.place_id,
     name: p.name,
     coordinate: { latitude: p.geometry.location.lat, longitude: p.geometry.location.lng },
   }));

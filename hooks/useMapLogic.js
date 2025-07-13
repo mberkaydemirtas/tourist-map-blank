@@ -12,32 +12,80 @@ import { GOOGLE_MAPS_API_KEY as KEY } from '@env';
 const ANKARA_CENTER = { latitude: 39.925533, longitude: 32.866287 };
 
 export function useMapLogic() {
-  // --- Region & Marker State ---
   const [region, setRegion] = useState({
     ...ANKARA_CENTER,
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,
   });
   const [marker, setMarker] = useState(null);
-
-  // --- Category Search State ---
   const [categoryMarkers, setCategoryMarkers] = useState([]);
   const [loadingCategory, setLoadingCategory] = useState(false);
-
-  // --- Route State ---
   const [routeInfo, setRouteInfo] = useState(null);
   const [routeCoords, setRouteCoords] = useState(null);
   const [routeDrawn, setRouteDrawn] = useState(false);
-
-  // --- UI Control State ---
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
   const [mapMoved, setMapMoved] = useState(false);
-
-  // --- Loading Place Details ---
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
-  // 1) Draw route polyline
+  const fetchAndSetMarker = useCallback(
+    async (placeId, fallbackCoord, fallbackName = '') => {
+      setIsLoadingDetails(true);
+      try {
+        const details = await getPlaceDetails(placeId);
+        if (!details) {
+          console.warn('⚠️ Marker detayları boş geldi:', placeId);
+          return;
+        }
+
+        const photos = Array.isArray(details.photos) ? details.photos : [];
+        const reviews = details.reviews?.map(r => ({
+          authorName: r.author_name,
+          text: r.text,
+        }));
+        const types = details.types || [];
+
+        const coord = fallbackCoord || details.coord;
+
+        let resolvedName = details.name || fallbackName || '';
+        if (
+          resolvedName?.length <= 3 ||
+          resolvedName?.match(/^[A-Z][a-z]+ [A-Z][a-z]+$/) ||
+          resolvedName?.toLowerCase().includes('bakan') ||
+          resolvedName?.toLowerCase().includes('doç') ||
+          resolvedName?.toLowerCase().includes('dr') ||
+          resolvedName?.toLowerCase().includes('gökhan')
+        ) {
+          resolvedName = fallbackName || types[0]?.replace(/_/g, ' ') || 'Yer Bilgisi';
+        }
+
+        setMarker({
+          name: resolvedName,
+          address: details.address,
+          coordinate: coord,
+          rating: details.rating ?? null,
+          priceLevel: details.priceLevel ?? null,
+          googleSearchUrl: `https://www.google.com/search?q=${encodeURIComponent(resolvedName)}`,
+          openNow: details.openNow ?? null,
+          hoursToday: details.hoursToday,
+          phone: details.phone || null,
+          website: details.website || null,
+          photos,
+          reviews,
+          types,
+        });
+
+        setQuery(resolvedName || details.address);
+      } catch (e) {
+        Alert.alert('Hata', 'Yer detayları alınamadı.');
+        console.warn('🛑 Marker detayları alınırken hata:', e);
+      } finally {
+        setIsLoadingDetails(false);
+      }
+    },
+    []
+  );
+
   const handleDrawRoute = useCallback(() => {
     if (!routeInfo?.polyline) return;
     const coords = decodePolyline(routeInfo.polyline);
@@ -45,10 +93,8 @@ export function useMapLogic() {
     setRouteDrawn(true);
   }, [routeInfo]);
 
-  // 2) SearchBar selection → full details + route
   const handleSelectPlace = useCallback(
     async (placeId, description) => {
-      // reset
       setActiveCategory(null);
       setCategoryMarkers([]);
       setMapMoved(false);
@@ -57,57 +103,28 @@ export function useMapLogic() {
       setRouteDrawn(false);
       setQuery(description);
 
-      setIsLoadingDetails(true);
-      try {
-        const details = await getPlaceDetails(placeId);
-        if (!details) throw new Error();
+      await fetchAndSetMarker(placeId, null, description);
 
-        const photos = details.photos?.map(
-          p => `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${p.photo_reference}&key=${KEY}`
-        );
-        const reviews = details.reviews?.map(r => ({
-          authorName: r.author_name,
-          text: r.text,
-        }));
-
-        const full = {
-          name: details.name,
-          address: details.formatted_address,
-          website: details.website,
-          phone: details.formatted_phone_number,
-          rating: details.rating,
-          priceLevel: details.price_level,
-          openNow: details.opening_hours?.open_now,
-          photos,
-          reviews,
-          coordinate: {
-            latitude: details.geometry.location.lat,
-            longitude: details.geometry.location.lng,
-          },
-        };
-        setMarker(full);
-
-        // zoom
+      const newMarker = marker?.coordinate ? marker.coordinate : null;
+      if (newMarker) {
         setRegion(r => ({
-          latitude: full.coordinate.latitude,
-          longitude: full.coordinate.longitude,
+          latitude: newMarker.latitude,
+          longitude: newMarker.longitude,
           latitudeDelta: r.latitudeDelta,
           longitudeDelta: r.longitudeDelta,
         }));
 
-        // route back to Ankara
-        const route = await getRoute(ANKARA_CENTER, full.coordinate);
-        setRouteInfo(route);
-      } catch {
-        Alert.alert('Hata', 'Seçilen yerin detayları alınamadı.');
-      } finally {
-        setIsLoadingDetails(false);
+        try {
+          const route = await getRoute(ANKARA_CENTER, newMarker);
+          setRouteInfo(route);
+        } catch {
+          setRouteInfo(null);
+        }
       }
     },
-    []
+    [fetchAndSetMarker, marker]
   );
 
-  // 3) Category tap
   const handleCategorySelect = useCallback(
     async type => {
       setActiveCategory(type);
@@ -118,7 +135,6 @@ export function useMapLogic() {
       setRouteDrawn(false);
       setMapMoved(false);
       setLoadingCategory(true);
-
       try {
         const results = await getNearbyPlaces(region, type);
         setCategoryMarkers(results);
@@ -131,7 +147,6 @@ export function useMapLogic() {
     [region]
   );
 
-  // 4) “Search This Area”
   const handleSearchThisArea = useCallback(async () => {
     if (!activeCategory) return;
     setLoadingCategory(true);
@@ -146,12 +161,13 @@ export function useMapLogic() {
     }
   }, [region, activeCategory]);
 
-  // 5) Click on map / POI (basic reverse geocode)
-  const handleMapPress = useCallback(
+  const handlePoiClick = useCallback(
     async e => {
-      const { latitude, longitude } = e.nativeEvent.coordinate;
-      const info = await getAddressFromCoords(latitude, longitude);
-      if (!info) return Alert.alert('Hata', 'Konum alınamadı.');
+      const { placeId, name, coordinate } = e.nativeEvent;
+      if (!placeId || !coordinate) {
+        Alert.alert('Hata', 'Seçilen POI bilgisi alınamadı.');
+        return;
+      }
 
       setActiveCategory(null);
       setCategoryMarkers([]);
@@ -160,12 +176,44 @@ export function useMapLogic() {
       setRouteDrawn(false);
       setMapMoved(false);
 
-      setMarker({
-        name: info.name,
-        address: info.address,
-        coordinate: info.coordinate,
-      });
-      setQuery(info.name);
+      await fetchAndSetMarker(placeId, coordinate, name);
+      setQuery(name);
+
+      setRegion(r => ({
+        latitude: coordinate.latitude,
+        longitude: coordinate.longitude,
+        latitudeDelta: r.latitudeDelta,
+        longitudeDelta: r.longitudeDelta,
+      }));
+
+      try {
+        const route = await getRoute(ANKARA_CENTER, coordinate);
+        setRouteInfo(route);
+      } catch {
+        setRouteInfo(null);
+      }
+    },
+    [fetchAndSetMarker]
+  );
+
+  const handleMapPress = useCallback(
+    async e => {
+      const { latitude, longitude } = e.nativeEvent.coordinate;
+      const info = await getAddressFromCoords(latitude, longitude);
+      if (!info || !info.place_id) {
+        Alert.alert('Hata', 'Bu konum için detay alınamadı.');
+        return;
+      }
+
+      setActiveCategory(null);
+      setCategoryMarkers([]);
+      setRouteCoords(null);
+      setRouteInfo(null);
+      setRouteDrawn(false);
+      setMapMoved(false);
+      setQuery(info.address);
+
+      await fetchAndSetMarker(info.place_id, { latitude, longitude }, info.address);
 
       setRegion(r => ({
         latitude,
@@ -174,72 +222,45 @@ export function useMapLogic() {
         longitudeDelta: r.longitudeDelta,
       }));
 
-      const route = await getRoute(ANKARA_CENTER, info.coordinate);
-      setRouteInfo(route);
+      try {
+        const route = await getRoute(ANKARA_CENTER, { latitude, longitude });
+        setRouteInfo(route);
+      } catch {
+        setRouteInfo(null);
+      }
     },
-    []
+    [fetchAndSetMarker]
   );
 
-  // 6) Category Marker tap → full details + route
   const handleMarkerSelect = useCallback(
-    async markerItem => {
-      setIsLoadingDetails(true);
-      try {
-        const placeId = markerItem.place_id || markerItem.id;
-        const details = await getPlaceDetails(placeId);
-        if (!details) throw new Error();
+    async (placeId, coordinate) => {
+      setRouteCoords(null);
+      setRouteInfo(null);
+      setRouteDrawn(false);
+      setMapMoved(false);
 
-        const photos = details.photos?.map(
-          p => `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${p.photo_reference}&key=${KEY}`
-        );
-        const reviews = details.reviews?.map(r => ({
-          authorName: r.author_name,
-          text: r.text,
-        }));
+      await fetchAndSetMarker(placeId, coordinate);
 
-        const full = {
-          name: details.name,
-          address: details.formatted_address,
-          website: details.website,
-          phone: details.formatted_phone_number,
-          rating: details.rating,
-          priceLevel: details.price_level,
-          openNow: details.opening_hours?.open_now,
-          photos,
-          reviews,
-          coordinate: markerItem.coordinate,
-        };
-        setMarker(full);
-        setQuery(full.name);
-
-        // zoom
+      if (coordinate) {
         setRegion(r => ({
-          latitude: full.coordinate.latitude,
-          longitude: full.coordinate.longitude,
+          latitude: coordinate.latitude - 0.002,
+          longitude: coordinate.longitude,
           latitudeDelta: r.latitudeDelta,
           longitudeDelta: r.longitudeDelta,
         }));
 
-        // route back
         try {
-          const route = await getRoute(ANKARA_CENTER, full.coordinate);
+          const route = await getRoute(ANKARA_CENTER, coordinate);
           setRouteInfo(route);
         } catch {
           setRouteInfo(null);
         }
-      } catch {
-        // fallback to basic marker
-        setMarker(markerItem);
-        setQuery(markerItem.name);
-      } finally {
-        setIsLoadingDetails(false);
       }
     },
-    []
+    [fetchAndSetMarker]
   );
 
   return {
-    // State
     region,
     setRegion,
     marker,
@@ -255,12 +276,12 @@ export function useMapLogic() {
     setMapMoved,
     isLoadingDetails,
 
-    // Handlers
     handleSelectPlace,
     handleCategorySelect,
     handleSearchThisArea,
     handleMapPress,
-    handleDrawRoute,
     handleMarkerSelect,
+    handleDrawRoute,
+    handlePoiClick,
   };
 }

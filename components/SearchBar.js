@@ -1,5 +1,3 @@
-// components/SearchBar.js
-
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
@@ -23,7 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 const HISTORY_KEY = 'search_history';
 const MAX_HISTORY = 5;
 
-export default function SearchBar({ value, onChange, onSelect }) {
+export default function SearchBar({ value = '', onChange, onSelect }) {
   const [suggestions, setSuggestions] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -46,7 +44,7 @@ export default function SearchBar({ value, onChange, onSelect }) {
 
   // Autocomplete
   useEffect(() => {
-    if (value.length < 2) {
+    if (value?.length < 2) {
       setSuggestions([]);
       return;
     }
@@ -107,7 +105,7 @@ export default function SearchBar({ value, onChange, onSelect }) {
 
   // Merged suggestions or history
   const merged = focused
-    ? (value.length < 2
+    ? (value?.length < 2
         ? history.map(item => ({ place_id: item, description: item }))
         : suggestions)
     : [];
@@ -149,7 +147,7 @@ export default function SearchBar({ value, onChange, onSelect }) {
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
           />
-          {value.length > 0 && (
+          {value?.length > 0 && (
             <TouchableOpacity onPress={() => onChange('')}>
               <Text style={styles.clear}>✕</Text>
             </TouchableOpacity>
