@@ -105,17 +105,28 @@ export async function getAddressFromCoords(lat, lng) {
 }
 
 // 4) Yakındaki yerler (kategori)
-export async function getNearbyPlaces(center, type) {
-  const url = `${BASE}/place/nearbysearch/json?location=${center.latitude},${center.longitude}&radius=2000&type=${type}&key=${KEY}`;
+export async function getNearbyPlaces(center, keyword) {
+  const radius = 1500;
+  const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${center.latitude},${center.longitude}&radius=${radius}&keyword=${keyword}&key=${KEY}`;
+
   const res = await fetch(url);
   const json = await res.json();
-  if (json.status !== 'OK') return [];
-  return json.results.map(p => ({
-    place_id: p.place_id,
-    name: p.name,
-    coordinate: { latitude: p.geometry.location.lat, longitude: p.geometry.location.lng },
+
+  if (!json.results) return [];
+
+  return json.results.map(place => ({
+    place_id: place.place_id,
+    name: place.name,
+    address: place.vicinity,
+    rating: place.rating,
+    types: place.types,
+    coordinate: {
+      latitude: place.geometry.location.lat,
+      longitude: place.geometry.location.lng,
+    },
   }));
 }
+
 
 // 5) Raw Directions
 export async function getDirections(origin, destination, mode = 'driving') {

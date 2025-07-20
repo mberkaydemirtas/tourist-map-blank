@@ -13,61 +13,83 @@ export function useLocation(
   const [available, setAvailable] = useState(false);
 
   const permissionAsked = useRef(false);
-  const gpsPromptDeclined = useRef(false);
-  const initialFetched = useRef(false);
-  const lastServicesOn = useRef(null);
+  const gpsPromptShown = useRef(false);
   const gpsJustTurnedOn = useRef(false);
   const gpsCheckInterval = useRef(null);
-
-  const ensureServicesEnabled = async () => {
-    if (await Location.hasServicesEnabledAsync()) return true;
-    try {
-      await Location.enableNetworkProviderAsync();
-    } catch {
-      gpsPromptDeclined.current = true;
-      return false;
-    }
-    const start = Date.now();
-    while (Date.now() - start < 5000) {
-      await new Promise(r => setTimeout(r, 1000));
-      if (await Location.hasServicesEnabledAsync()) return true;
-    }
-    return false;
-  };
+  const lastServicesOn = useRef(null);
+  const initialFetched = useRef(false);
 
   const stopWatching = () => {
     subscription.current?.remove();
     subscription.current = null;
   };
 
+  const ensureServicesEnabled = async () => {
+    const status = await Location.hasServicesEnabledAsync();
+    if (status) {
+      gpsPromptShown.current = false;
+      return true;
+    }
+
+    if (!gpsPromptShown.current) {
+      gpsPromptShown.current = true;
+      try {
+        await Location.enableNetworkProviderAsync();
+      } catch {
+        return false;
+      }
+
+      const start = Date.now();
+      while (Date.now() - start < 5000) {
+        await new Promise(r => setTimeout(r, 1000));
+        if (await Location.hasServicesEnabledAsync()) {
+          gpsPromptShown.current = false;
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
   const startWatching = useCallback(async () => {
-    if (!permissionAsked.current) {
+    // Her seferde izin durumu kontrol edilmeli
+    const { status, canAskAgain } = await Location.getForegroundPermissionsAsync();
+
+    if (status !== 'granted') {
       permissionAsked.current = true;
-      const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        if (!canAskAgain && onPermissionPermanentlyDenied) {
+
+      const { status: newStatus, canAskAgain: newCanAskAgain } = await Location.requestForegroundPermissionsAsync();
+
+      if (newStatus !== 'granted') {
+        stopWatching();
+        setCoords(null);
+        setAvailable(false);
+
+        if (!newCanAskAgain && onPermissionPermanentlyDenied) {
           onPermissionPermanentlyDenied();
         }
+
+        onLocationUnavailable?.();
+        return; // ⛔️ İzin yoksa GPS açtırmaya çalışma
+      }
+    }
+
+    permissionAsked.current = true;
+
+    let servicesOn = await Location.hasServicesEnabledAsync();
+    lastServicesOn.current = servicesOn;
+
+    if (!servicesOn) {
+      const enabled = await ensureServicesEnabled();
+      if (!enabled) {
+        stopWatching();
         setCoords(null);
         setAvailable(false);
         onLocationUnavailable?.();
         return;
       }
-    }
-
-    let servicesOn = await Location.hasServicesEnabledAsync();
-    lastServicesOn.current = servicesOn;
-
-    if (!servicesOn && !gpsPromptDeclined.current) {
-      servicesOn = await ensureServicesEnabled();
-      lastServicesOn.current = servicesOn;
-    }
-    if (!servicesOn) {
-      stopWatching();
-      setCoords(null);
-      setAvailable(false);
-      onLocationUnavailable?.();
-      return;
+      servicesOn = true;
     }
 
     if (!initialFetched.current) {
@@ -120,13 +142,16 @@ export function useLocation(
 
     gpsCheckInterval.current = setInterval(async () => {
       const servicesOn = await Location.hasServicesEnabledAsync();
+
       if (lastServicesOn.current !== servicesOn) {
         lastServicesOn.current = servicesOn;
+
         if (!servicesOn) {
           stopWatching();
           setCoords(null);
           setAvailable(false);
           gpsJustTurnedOn.current = false;
+          gpsPromptShown.current = false;
           onLocationUnavailable?.();
         } else {
           if (!gpsJustTurnedOn.current) {
