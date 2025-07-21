@@ -86,15 +86,15 @@ export default function CategoryList({ data, activePlaceId, onSelect, userCoords
 
   const renderItem = ({ item }) => {
     const isActive = activePlaceId === item.place_id;
-    const latitude = item.coordinate?.latitude ?? item.geometry?.location?.lat;
-    const longitude = item.coordinate?.longitude ?? item.geometry?.location?.lng;
+    const latitude = item.coordinate.latitude;
+    const longitude = item.coordinate.longitude;
     const distanceText = userCoords
-      ? `${(getDistance(userCoords, { latitude, longitude }) * 111).toFixed(1)} km uzaklıkta`
+      ? `${(Math.hypot(userCoords.latitude - latitude, userCoords.longitude - longitude) * 111).toFixed(1)} km uzaklıkta`
       : null;
 
-    return (
+     return (
       <TouchableOpacity
-        onPress={() => handleSelect(item.place_id, { latitude, longitude }, item.name)}
+        onPress={() => onSelect(item.place_id, { latitude, longitude }, item.name)}
         style={[styles.card, isActive && styles.activeCard]}
       >
         <Text style={styles.title}>
@@ -102,14 +102,11 @@ export default function CategoryList({ data, activePlaceId, onSelect, userCoords
         </Text>
         {item.rating && (
           <Text style={styles.rating}>
-            {'⭐'.repeat(Math.round(item.rating))} {item.rating.toFixed(1)}{' '}
-            {item.user_ratings_total ? `(${item.user_ratings_total})` : ''}
+            {'⭐'.repeat(Math.round(item.rating))} {item.rating.toFixed(1)}
           </Text>
         )}
         {distanceText && <Text style={styles.distance}>{distanceText}</Text>}
-        <Text style={styles.address}>
-          {item.address || 'Adres bilgisi yok'}
-        </Text>
+        <Text style={styles.address}>{item.address || 'Adres bilgisi yok'}</Text>
       </TouchableOpacity>
     );
   };
@@ -227,118 +224,23 @@ export default function CategoryList({ data, activePlaceId, onSelect, userCoords
 }
 
 const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: 80,
-    left: 0,
-    right: 0,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-  },
-  controls: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  controlText: {
-    fontSize: 13,
-    color: '#444',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: '#eee',
-  },
-  controlActive: {
-    backgroundColor: '#4285F4',
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  resetButton: {
-    fontSize: 13,
-    color: 'white',
-    backgroundColor: '#d9534f',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    fontWeight: 'bold',
-  },
-  expandButton: {
-    fontSize: 13,
-    color: '#fff',
-    backgroundColor: '#5cb85c',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    fontWeight: 'bold',
-  },
-  listContent: {
-    paddingHorizontal: 5,
-  },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 10,
-    marginVertical: 6,
-    marginHorizontal: 6,
-    width: CARD_WIDTH,
-    elevation: 3,
-  },
-  activeCard: {
-    borderColor: '#007aff',
-    borderWidth: 2,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  rating: {
-    fontSize: 14,
-    color: '#f1c40f',
-    marginBottom: 4,
-  },
-  distance: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 4,
-  },
-  address: {
-    fontSize: 14,
-    color: '#444',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#fafafa',
-    paddingTop: 50,
-    paddingHorizontal: 16,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  modalClose: {
-    fontSize: 16,
-    color: '#d9534f',
-  },
-  modalList: {
-    paddingTop: 20,
-    paddingBottom: 100,
-  },
-  searchInput: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 14,
-    marginBottom: 8,
-    borderColor: '#ccc',
-    borderWidth: 1,
-  },
+  container: { position: 'absolute', bottom: 80, left: 0, right: 0, paddingVertical: 8, paddingHorizontal: 10, },
+  controls: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'space-between', marginBottom: 6 },
+  controlText: { fontSize: 13, color: '#444', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: '#eee' },
+  controlActive: { backgroundColor: '#4285F4', color: '#fff', fontWeight: 'bold' },
+  resetButton: { fontSize: 13, color: 'white', backgroundColor: '#d9534f', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, fontWeight: 'bold' },
+  expandButton: { fontSize: 13, color: '#fff', backgroundColor: '#5cb85c', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, fontWeight: 'bold' },
+  listContent: { paddingHorizontal: 5 },
+  card: { backgroundColor: 'white', borderRadius: 12, padding: 10, marginVertical: 6, marginHorizontal: 6, width: CARD_WIDTH, elevation: 3 },
+  activeCard: { borderColor: '#007aff', borderWidth: 2 },
+  title: { fontSize: 16, fontWeight: '600', marginBottom: 6, color: '#000' },
+  rating: { fontSize: 14, color: '#f1c40f', marginBottom: 4 },
+  distance: { fontSize: 13, color: '#666', marginBottom: 4 },
+  address: { fontSize: 14, color: '#444' },
+  modalContainer: { flex: 1, backgroundColor: '#fafafa', paddingTop: 50, paddingHorizontal: 16 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#000' },
+  modalClose: { fontSize: 16, color: '#d9534f' },
+  modalList: { paddingTop: 20, paddingBottom: 100 },
+  searchInput: { backgroundColor: 'white', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, marginBottom: 8, borderColor: '#ccc', borderWidth: 1 },
 });

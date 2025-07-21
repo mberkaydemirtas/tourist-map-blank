@@ -49,6 +49,7 @@ export async function getPlaceDetails(placeId) {
   try {
     const res = await fetch(`${BASE}/place/details/json?${params}`);
     const json = await res.json();
+
     if (json.status !== 'OK') {
       console.error('🟥 getPlaceDetails hata:', json.status);
       return null;
@@ -74,7 +75,7 @@ export async function getPlaceDetails(placeId) {
       photos: photoUrls,
       reviews: r.reviews || [],
       types: r.types || [],
-      typeName: formatPlaceType(r.types), // ✅ başlık için eklendi
+      typeName: formatPlaceType(r.types),
       coord: {
         latitude: r.geometry.location.lat,
         longitude: r.geometry.location.lng,
@@ -86,6 +87,7 @@ export async function getPlaceDetails(placeId) {
     return null;
   }
 }
+
 
 // 3) Tersine geocoding
 export async function getAddressFromCoords(lat, lng) {
@@ -106,7 +108,7 @@ export async function getAddressFromCoords(lat, lng) {
 
 // 4) Yakındaki yerler (kategori)
 export async function getNearbyPlaces(center, keyword) {
-  const radius = 1500;
+  const radius = 500;
   const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${center.latitude},${center.longitude}&radius=${radius}&keyword=${keyword}&key=${KEY}`;
 
   const res = await fetch(url);

@@ -15,8 +15,8 @@ const ANKARA_CENTER = { latitude: 39.925533, longitude: 32.866287 };
 export function useMapLogic(mapRef) {
   const [region, setRegion] = useState({
     ...ANKARA_CENTER,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
+    latitudeDelta: 0.03,
+    longitudeDelta: 0.03,
   });
   const [marker, setMarker] = useState(null);
   const [categoryMarkers, setCategoryMarkers] = useState([]);
@@ -45,39 +45,24 @@ export function useMapLogic(mapRef) {
           }
         }, []);
 
-  const fetchAndSetMarker = useCallback(
+    const fetchAndSetMarker = useCallback(
     async (placeId, fallbackCoord, fallbackName = '') => {
       setIsLoadingDetails(true);
       try {
         const details = await getPlaceDetails(placeId);
         if (!details) {
           console.warn('⚠️ Marker detayları boş geldi:', placeId);
-          return;
+          return null;
         }
-        
-        const photos = Array.isArray(details.photos) ? details.photos : [];
-        const reviews = details.reviews?.map(r => ({
-          authorName: r.author_name,
-          text: r.text,
-        }));
-        const types = details.types || [];
 
         const coord = fallbackCoord || details.coord;
+        const photos = details.photos || [];
+        const reviews = details.reviews || [];
+        const types = details.types || [];
 
         let resolvedName = details.name?.trim() && details.name.length > 3
           ? details.name
-          : fallbackName || types[0]?.replace(/_/g, ' ') || 'Yer Bilgisi';
-
-        if (
-          resolvedName?.length <= 3 ||
-          resolvedName?.match(/^[A-Z][a-z]+ [A-Z][a-z]+$/) ||
-          resolvedName?.toLowerCase().includes('bakan') ||
-          resolvedName?.toLowerCase().includes('doç') ||
-          resolvedName?.toLowerCase().includes('dr') ||
-          resolvedName?.toLowerCase().includes('gökhan')
-        ) {
-          resolvedName = fallbackName || types[0]?.replace(/_/g, ' ') || 'Yer Bilgisi';
-        }
+          : fallbackName || details.address || types[0]?.replace(/_/g, ' ') || 'Yer Bilgisi';
 
         setMarker({
           name: resolvedName,
@@ -85,20 +70,22 @@ export function useMapLogic(mapRef) {
           coordinate: coord,
           rating: details.rating ?? null,
           priceLevel: details.priceLevel ?? null,
-          googleSearchUrl: `https://www.google.com/search?q=${encodeURIComponent(resolvedName)}`,
-          openNow: details.openNow ?? null,
+          googleSearchUrl: details.googleSearchUrl,
+          openNow: details.openNow,
           hoursToday: details.hoursToday,
-          phone: details.phone || null,
-          website: details.website || null,
+          phone: details.phone,
+          website: details.website,
           photos,
           reviews,
           types,
         });
-
         setQuery(resolvedName || details.address);
+
+        return coord; // 🔑 kontrolu kolaylaştırmak için döndürüyoruz
       } catch (e) {
         Alert.alert('Hata', 'Yer detayları alınamadı.');
         console.warn('🛑 Marker detayları alınırken hata:', e);
+        return null;
       } finally {
         setIsLoadingDetails(false);
       }
@@ -113,122 +100,152 @@ export function useMapLogic(mapRef) {
     setRouteDrawn(true);
   }, [routeInfo]);
 
+    // ——— handleSelectPlace: her zaman zoom yapacak ———
   const handleSelectPlace = useCallback(
     async (placeId, description) => {
-      setActiveCategory(null);
-      setCategoryMarkers([]);
       setMapMoved(false);
       setRouteCoords(null);
       setRouteInfo(null);
       setRouteDrawn(false);
       setQuery(description);
 
-      await fetchAndSetMarker(placeId, null, description);
-
-      const newMarker = marker?.coordinate ? marker.coordinate : null;
-      if (newMarker) {
-        setRegion(r => ({
-          latitude: newMarker.latitude,
-          longitude: newMarker.longitude,
-          latitudeDelta: r.latitudeDelta,
-          longitudeDelta: r.longitudeDelta,
-        }));
-
-        try {
-          const route = await getRoute(ANKARA_CENTER, newMarker);
-          setRouteInfo(route);
-        } catch {
-          setRouteInfo(null);
-        }
+      const coord = await fetchAndSetMarker(placeId, null, description);
+      if (coord && mapRef?.current?.animateToRegion) {
+        const newRegion = {
+          latitude: coord.latitude,
+          longitude: coord.longitude,
+          latitudeDelta: 0.008,
+          longitudeDelta: 0.008,
+        };
+        setRegion(newRegion);
+        mapRef.current.animateToRegion(newRegion, 300);
       }
-    },
-    [fetchAndSetMarker, marker]
-  );
-
-  const handleCategorySelect = useCallback(
-    async (type) => {
-      if (type === activeCategory) return;
-
-      setActiveCategory(type);
-      setQuery('');
-      setMarker(null);
-      setRouteCoords(null);
-      setRouteInfo(null);
-      setRouteDrawn(false);
-      setMapMoved(false);
-      setLoadingCategory(true);
 
       try {
-        let center = region;
-
-        if (mapRef?.current?.getCamera) {
-          const camera = await mapRef.current.getCamera();
-          center = {
-            latitude: camera.center.latitude,
-            longitude: camera.center.longitude,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
-          };
-          setRegion(center);
-        }
-
-        const places = await getNearbyPlaces(center, type);
-        const key = JSON.stringify(places.map(p => p.place_id || p.id || p.name));
-
-        if (key !== lastPlacesKey.current) {
-          setCategoryMarkers(places);
-          lastPlacesKey.current = key;
-        }
-
-        console.log('📍 Kategoriye göre bulunan yerler:', places);
-      } catch (err) {
-        console.error('Kategori arama hatası:', err);
-      } finally {
-        setLoadingCategory(false);
+        const route = await getRoute(ANKARA_CENTER, coord);
+        setRouteInfo(route);
+      } catch {
+        setRouteInfo(null);
       }
     },
-    [activeCategory, mapRef, region]
+    [fetchAndSetMarker]
   );
 
-  const handleSearchThisArea = useCallback(async () => {
-    if (!activeCategory) return;
 
+  const handleCategorySelect = useCallback(
+  async (type) => {
+    if (type === activeCategory) return;
+
+    setActiveCategory(type);
+    setQuery('');
+    setMarker(null);
+    setRouteCoords(null);
+    setRouteInfo(null);
+    setRouteDrawn(false);
+    setMapMoved(false);
     setLoadingCategory(true);
+
     try {
-      // 1) Get the real map center from the native SDK
       let center = region;
+
       if (mapRef?.current?.getCamera) {
-        const cam = await mapRef.current.getCamera();
+        const camera = await mapRef.current.getCamera();
         center = {
-          latitude: cam.center.latitude,
-          longitude: cam.center.longitude,
-          latitudeDelta: region.latitudeDelta,     // you can keep your deltas
-          longitudeDelta: region.longitudeDelta,
+          latitude: camera.center.latitude,
+          longitude: camera.center.longitude,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
         };
-        // If you want to keep the hook’s region in sync for other logic:
         setRegion(center);
       }
 
-      // 2) Fetch places around that true center
-      const newMarkers = await getNearbyPlaces(center, activeCategory);
-      console.log('🔁 Bölge Tara Sonuçları:', newMarkers);
+      const places = await getNearbyPlaces(center, type);
+      const key = JSON.stringify(places.map(p => p.place_id || p.id || p.name));
 
-      // 3) Update markers if different
-      if (
-        categoryMarkers.length === newMarkers.length &&
-        categoryMarkers.every((m, i) => m.place_id === newMarkers[i].place_id)
-      ) {
-        console.log('[DEBUG] Skipping marker update — same data');
-      } else {
-        setCategoryMarkers(newMarkers);
+      if (key !== lastPlacesKey.current) {
+        setCategoryMarkers(places);
+        lastPlacesKey.current = key;
+
+        // 🔍 Tüm yeni marker’ları gösterecek şekilde uzaklaş
+        if (mapRef.current && places.length > 0) {
+          mapRef.current.fitToCoordinates(
+            places.map(p => p.coordinate),
+            {
+              edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+              animated: true,
+            }
+          );
+        }
       }
+
+      console.log('📍 Kategoriye göre bulunan yerler:', places);
     } catch (err) {
-      console.warn('🔴 Bölge tara hatası:', err);
+      console.error('Kategori arama hatası:', err);
     } finally {
-      setMapMoved(false);
       setLoadingCategory(false);
     }
-  }, [activeCategory, categoryMarkers, region, mapRef]);
+  },
+  [activeCategory, mapRef, region]
+);
+
+
+  const handleSearchThisArea = useCallback(async () => {
+  if (!activeCategory) return;
+
+  setLoadingCategory(true);
+  try {
+    // 1) True center’ı al
+    let center = region;
+    if (mapRef?.current?.getCamera) {
+      const cam = await mapRef.current.getCamera();
+      center = {
+        latitude: cam.center.latitude,
+        longitude: cam.center.longitude,
+        latitudeDelta: region.latitudeDelta,
+        longitudeDelta: region.longitudeDelta,
+      };
+      setRegion(center);
+    }
+
+    // 2) Yeni marker’ları çek
+    const newMarkers = await getNearbyPlaces(center, activeCategory);
+    console.log('🔁 Bölge Tara Sonuçları:', newMarkers);
+
+    // 3) State güncelle ve zoom-out
+    if (
+      categoryMarkers.length === newMarkers.length &&
+      categoryMarkers.every((m, i) => m.place_id === newMarkers[i].place_id)
+    ) {
+      console.log('[DEBUG] Skipping marker update — same data');
+    } else {
+      setCategoryMarkers(newMarkers);
+      if (mapRef.current && newMarkers.length > 0) {
+  mapRef.current.fitToCoordinates(
+    newMarkers.map(m => m.coordinate),
+    {
+      edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+      animated: true,
+    }
+  );
+}
+
+
+      // 📐 Tüm marker’ları kapsayacak şekilde uzaklaş
+      if (mapRef.current && newMarkers.length > 0) {
+        mapRef.current.fitToCoordinates(
+          newMarkers.map(m => m.coordinate),
+          { edgePadding: { top: 50, right: 50, bottom: 200, left: 50 }, animated: true }
+        );
+      }
+    }
+  } catch (err) {
+    console.warn('🔴 Bölge tara hatası:', err);
+  } finally {
+    setMapMoved(false);
+    setLoadingCategory(false);
+  }
+}, [activeCategory, categoryMarkers, region, mapRef]);
+
 
 
   const handleMapPress = useCallback(
@@ -274,6 +291,7 @@ export function useMapLogic(mapRef) {
       setRouteDrawn(false);
       setMapMoved(false);
 
+
       await fetchAndSetMarker(placeId, coordinate, fallbackName);
 
       if (coordinate && mapRef?.current?.getMapBoundaries) {
@@ -287,7 +305,6 @@ export function useMapLogic(mapRef) {
           longitude < bounds.northEast.longitude - padding &&
           longitude > bounds.southWest.longitude + padding;
 
-
         if (!isVisible) {
           const newRegion = {
             latitude,
@@ -298,18 +315,26 @@ export function useMapLogic(mapRef) {
           setRegion(newRegion);
           mapRef.current.animateToRegion(newRegion, 300);
         }
+      } else if (coordinate && mapRef?.current?.animateToRegion) {
+        // Harita sınırlarını alamıyorsak yine de zoom yap
+        const newRegion = {
+          latitude: coordinate.latitude,
+          longitude: coordinate.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        };
+        setRegion(newRegion);
+        mapRef.current.animateToRegion(newRegion, 300);
       }
-
-
-      try {
-        const route = await getRoute(ANKARA_CENTER, coordinate);
-        setRouteInfo(route);
-      } catch {
-        setRouteInfo(null);
-      }
-    },
-    [fetchAndSetMarker]
-  );
+        try {
+          const route = await getRoute(ANKARA_CENTER, coord);
+          setRouteInfo(route);
+        } catch {
+          setRouteInfo(null);
+        }
+      },
+      [fetchAndSetMarker]
+    );
 
   const handlePoiClick = useCallback(
     async e => {

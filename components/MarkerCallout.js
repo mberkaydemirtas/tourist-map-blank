@@ -1,5 +1,3 @@
-// src/components/MarkerCallout.js
-
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 
@@ -36,10 +34,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     marginBottom: 4,
+    color: '#000',       // Başlık metni için siyah renk
   },
   address: {
     fontSize: 14,
-    color: '#555',
+    color: '#000',       // Adres metni için siyah renk
     marginBottom: 6,
   },
   link: {

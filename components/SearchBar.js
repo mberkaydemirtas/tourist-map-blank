@@ -142,6 +142,7 @@ export default function SearchBar({ value = '', onChange, onSelect }) {
             ref={inputRef}
             style={styles.input}
             placeholder="Bir yer ara"
+            placeholderTextColor="#888"
             value={value}
             onChangeText={onChange}
             onFocus={() => setFocused(true)}
@@ -166,7 +167,7 @@ export default function SearchBar({ value = '', onChange, onSelect }) {
                   style={styles.item}
                   onPress={() => handleSelect(item.place_id, item.description)}
                 >
-                  <Text>{item.description}</Text>
+                  <Text style={styles.itemText}>{item.description}</Text>
                 </TouchableOpacity>
               )}
             />
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2, shadowRadius: 5, elevation: 5,
   },
   icon: { marginRight: 8 },
-  input: { flex: 1, fontSize: 16 },
+  input: { flex: 1, fontSize: 16, color: '#000' },
   clear: { fontSize: 18, paddingLeft: 10, color: '#888' },
   loader: { marginTop: 5 },
   error: { color: 'red', marginTop: 5, fontSize: 12 },
@@ -206,4 +207,5 @@ const styles = StyleSheet.create({
   item: {
     padding: 12, borderBottomColor: '#eee', borderBottomWidth: 1,
   },
+  itemText: { color: '#000' },
 });
