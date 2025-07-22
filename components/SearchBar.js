@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, forwardRef } from 'react';
 import {
   View,
   TextInput,
@@ -21,14 +21,14 @@ import { Ionicons } from '@expo/vector-icons';
 const HISTORY_KEY = 'search_history';
 const MAX_HISTORY = 5;
 
-export default function SearchBar({ value = '', onChange, onSelect }) {
+const SearchBar = forwardRef(({ value = '', onChange, onSelect }, ref) => {
   const [suggestions, setSuggestions] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [focused, setFocused] = useState(false);
 
-  const inputRef = useRef();
+  const inputRef = ref || useRef();
 
   // Load history
   useEffect(() => {
@@ -176,7 +176,9 @@ export default function SearchBar({ value = '', onChange, onSelect }) {
       </KeyboardAvoidingView>
     </>
   );
-}
+});
+
+export default SearchBar;
 
 const styles = StyleSheet.create({
   container: {

@@ -15,7 +15,7 @@ export default function MapOverlays({ available, coords, onRetry, onRecenter }) 
             const region = { ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 };
             onRecenter(region);
           }}
-          style={{ position: 'absolute', top: 100, right: 20, zIndex: 999 }}
+          style={{ position: 'absolute', top: 200, right: 20, zIndex: 999 }}
         />
       )}
     </>

@@ -17,6 +17,7 @@ export default function LocationButton({ onPress, style }) {
 
 const styles = StyleSheet.create({
   button: {
+    top: 200,
     backgroundColor: '#4285F4',
     padding: 12,
     borderRadius: 32,

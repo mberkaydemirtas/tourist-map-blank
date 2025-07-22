@@ -11,7 +11,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import MapScreen from './MapScreen';
-import GetDirectionsScreen from './screens/GetDirectionsScreen';
+import RouteScreen from './screens/RouteScreen';
 
 if (Platform.OS === 'android') {
   global.XMLHttpRequest = global.originalXMLHttpRequest ?? global.XMLHttpRequest;
@@ -35,11 +35,11 @@ export default function App() {
             >
               <Stack.Screen name="Map" component={MapScreen} />
               <Stack.Screen
-                name="GetDirections"
-                component={GetDirectionsScreen}
+                name="RouteScreen"
+                component={RouteScreen}
                 options={{
                   headerShown: true,
-                  title: 'Nereden?',
+                  title: 'Rota',
                 }}
               />
             </Stack.Navigator>

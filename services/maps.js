@@ -13,6 +13,7 @@ function formatPlaceType(types = []) {
 
 // 1) Autocomplete
 export async function autocomplete(input, { lat, lng } = {}) {
+  console.log('🌐 autocomplete çağrıldı:', input);
   const params = new URLSearchParams({
     input,
     key: KEY,
@@ -21,6 +22,7 @@ export async function autocomplete(input, { lat, lng } = {}) {
   });
   const res = await fetch(`${BASE}/place/autocomplete/json?${params}`);
   const json = await res.json();
+  console.log('🌐 autocomplete cevap:', json.status, json.predictions?.length);
   return json.status === 'OK' ? json.predictions : [];
 }
 

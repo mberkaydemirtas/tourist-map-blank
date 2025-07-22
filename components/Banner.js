@@ -10,24 +10,7 @@ export default function Banner({ available, onRetry, permissionDenied }) {
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>
-        {permissionDenied
-          ? 'Konum izni verilmedi. Devam etmek için izin vermeniz gerekiyor.'
-          : 'Konum servisi kapalı. Lütfen açmayı deneyin.'}
-      </Text>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={permissionDenied ? openAppSettings : onRetry}
-      >
-        <Text style={styles.buttonText}>
-          {permissionDenied ? 'İzinleri Ayarlarda Aç' : 'Konumu Aç'}
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
 }
 
 const styles = StyleSheet.create({
