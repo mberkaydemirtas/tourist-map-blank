@@ -190,62 +190,44 @@ export function useMapLogic(mapRef) {
 
 
   const handleSearchThisArea = useCallback(async () => {
-  if (!activeCategory) return;
+    if (!activeCategory) return;
 
-  setLoadingCategory(true);
-  try {
-    // 1) True center’ı al
-    let center = region;
-    if (mapRef?.current?.getCamera) {
-      const cam = await mapRef.current.getCamera();
-      center = {
-        latitude: cam.center.latitude,
-        longitude: cam.center.longitude,
-        latitudeDelta: region.latitudeDelta,
-        longitudeDelta: region.longitudeDelta,
-      };
-      setRegion(center);
-    }
-
-    // 2) Yeni marker’ları çek
-    const newMarkers = await getNearbyPlaces(center, activeCategory);
-    console.log('🔁 Bölge Tara Sonuçları:', newMarkers);
-
-    // 3) State güncelle ve zoom-out
-    if (
-      categoryMarkers.length === newMarkers.length &&
-      categoryMarkers.every((m, i) => m.place_id === newMarkers[i].place_id)
-    ) {
-      console.log('[DEBUG] Skipping marker update — same data');
-    } else {
-      setCategoryMarkers(newMarkers);
-      if (mapRef.current && newMarkers.length > 0) {
-  mapRef.current.fitToCoordinates(
-    newMarkers.map(m => m.coordinate),
-    {
-      edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
-      animated: true,
-    }
-  );
-}
-
-
-      // 📐 Tüm marker’ları kapsayacak şekilde uzaklaş
-      if (mapRef.current && newMarkers.length > 0) {
-        mapRef.current.fitToCoordinates(
-          newMarkers.map(m => m.coordinate),
-          { edgePadding: { top: 50, right: 50, bottom: 200, left: 50 }, animated: true }
-        );
+    setLoadingCategory(true);
+    try {
+      // 1) Get the real map center from the native SDK
+      let center = region;
+      if (mapRef?.current?.getCamera) {
+        const cam = await mapRef.current.getCamera();
+        center = {
+          latitude: cam.center.latitude,
+          longitude: cam.center.longitude,
+          latitudeDelta: region.latitudeDelta,     // you can keep your deltas
+          longitudeDelta: region.longitudeDelta,
+        };
+        // If you want to keep the hook’s region in sync for other logic:
+        setRegion(center);
       }
-    }
-  } catch (err) {
-    console.warn('🔴 Bölge tara hatası:', err);
-  } finally {
-    setMapMoved(false);
-    setLoadingCategory(false);
-  }
-}, [activeCategory, categoryMarkers, region, mapRef]);
 
+      // 2) Fetch places around that true center
+      const newMarkers = await getNearbyPlaces(center, activeCategory);
+      console.log('🔁 Bölge Tara Sonuçları:', newMarkers);
+
+      // 3) Update markers if different
+      if (
+        categoryMarkers.length === newMarkers.length &&
+        categoryMarkers.every((m, i) => m.place_id === newMarkers[i].place_id)
+      ) {
+        console.log('[DEBUG] Skipping marker update — same data');
+      } else {
+        setCategoryMarkers(newMarkers);
+      }
+    } catch (err) {
+      console.warn('🔴 Bölge tara hatası:', err);
+    } finally {
+      setMapMoved(false);
+      setLoadingCategory(false);
+    }
+  }, [activeCategory, categoryMarkers, region, mapRef]);
 
 
   const handleMapPress = useCallback(

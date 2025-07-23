@@ -58,12 +58,13 @@ export async function getPlaceDetails(placeId) {
     }
 
     const r = json.result;
-
     const photoUrls = (r.photos || []).map(p =>
       `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${p.photo_reference}&key=${KEY}`
     );
+    console.log('📸 Fotoğraf URLleri sayısı:', photoUrls.length);
 
-    console.log('📸 Fotoğraf URLleri:', photoUrls);
+    // Extract coordinates
+    const { lat, lng } = r.geometry.location;
 
     return {
       name: r.name,
@@ -78,10 +79,7 @@ export async function getPlaceDetails(placeId) {
       reviews: r.reviews || [],
       types: r.types || [],
       typeName: formatPlaceType(r.types),
-      coord: {
-        latitude: r.geometry.location.lat,
-        longitude: r.geometry.location.lng,
-      },
+      coords: { latitude: lat, longitude: lng },
       url: r.url || null,
     };
   } catch (err) {
@@ -90,7 +88,6 @@ export async function getPlaceDetails(placeId) {
   }
 }
 
-
 // 3) Tersine geocoding
 export async function getAddressFromCoords(lat, lng) {
   const url = `${BASE}/geocode/json?latlng=${lat},${lng}&key=${KEY}&language=tr`;
@@ -98,9 +95,7 @@ export async function getAddressFromCoords(lat, lng) {
   const json = await res.json();
 
   if (json.status !== 'OK' || !json.results.length) return null;
-
   const best = json.results[0];
-
   return {
     address: best.formatted_address,
     place_id: best.place_id,
@@ -112,25 +107,18 @@ export async function getAddressFromCoords(lat, lng) {
 export async function getNearbyPlaces(center, keyword) {
   const radius = 500;
   const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${center.latitude},${center.longitude}&radius=${radius}&keyword=${keyword}&key=${KEY}`;
-
   const res = await fetch(url);
   const json = await res.json();
-
   if (!json.results) return [];
-
   return json.results.map(place => ({
     place_id: place.place_id,
     name: place.name,
     address: place.vicinity,
     rating: place.rating,
     types: place.types,
-    coordinate: {
-      latitude: place.geometry.location.lat,
-      longitude: place.geometry.location.lng,
-    },
+    coords: { latitude: place.geometry.location.lat, longitude: place.geometry.location.lng },
   }));
 }
-
 
 // 5) Raw Directions
 export async function getDirections(origin, destination, mode = 'driving') {

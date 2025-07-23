@@ -11,7 +11,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import MapScreen from './MapScreen';
-import RouteScreen from './screens/RouteScreen';
+import PlaceSearchOverlay from './components/PlaceSearchOverlay';
 
 if (Platform.OS === 'android') {
   global.XMLHttpRequest = global.originalXMLHttpRequest ?? global.XMLHttpRequest;
@@ -25,22 +25,17 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    // pointerEvents="box-none" ekledik
+    <GestureHandlerRootView style={{ flex: 1 }} pointerEvents="box-none">
       <SafeAreaProvider>
         <BottomSheetModalProvider>
           <NavigationContainer>
-            <Stack.Navigator
-              initialRouteName="Map"
-              screenOptions={{ headerShown: false }}
-            >
+            <Stack.Navigator initialRouteName="Map" screenOptions={{ headerShown: false }}>
               <Stack.Screen name="Map" component={MapScreen} />
               <Stack.Screen
-                name="RouteScreen"
-                component={RouteScreen}
-                options={{
-                  headerShown: true,
-                  title: 'Rota',
-                }}
+                name="PlaceSearchOverlay"
+                component={PlaceSearchOverlay}
+                options={{ presentation: 'modal', headerShown: false }}
               />
             </Stack.Navigator>
           </NavigationContainer>
