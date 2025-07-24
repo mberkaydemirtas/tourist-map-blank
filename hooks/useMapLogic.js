@@ -29,6 +29,10 @@ export function useMapLogic(mapRef) {
   const [mapMoved, setMapMoved] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
+  const [phase, setPhase] = useState('from');          // 'from' | 'to' | 'ready'
+  const [fromLocation, setFromLocation] = useState(null);
+  const [toLocation, setToLocation] = useState(null);
+
   const lastPlacesKey = useRef(null);
           const getRouteBetween = useCallback(async (startCoord, destCoord) => {
           try {
@@ -44,6 +48,22 @@ export function useMapLogic(mapRef) {
             setRouteDrawn(false);
           }
         }, []);
+  const handleSelectFrom = useCallback(place => {
+    setFromLocation(place);
+    setPhase('to');
+  }, []);
+
+  const handleSelectTo = useCallback(
+    async place => {
+      setToLocation(place);
+      setPhase('ready');
+       // fetch & draw route
+      if (fromLocation?.coordinate) {
+        await getRouteBetween(fromLocation.coordinate, place.coordinate);
+      }
+    },
+    [fromLocation, getRouteBetween]
+  );
 
     const fetchAndSetMarker = useCallback(
     async (placeId, fallbackCoord, fallbackName = '') => {
@@ -55,7 +75,7 @@ export function useMapLogic(mapRef) {
           return null;
         }
 
-        const coord = fallbackCoord || details.coord;
+        const coord = fallbackCoord || details.coords;
         const photos = details.photos || [];
         const reviews = details.reviews || [];
         const types = details.types || [];
@@ -101,35 +121,24 @@ export function useMapLogic(mapRef) {
   }, [routeInfo]);
 
     // ——— handleSelectPlace: her zaman zoom yapacak ———
-  const handleSelectPlace = useCallback(
-    async (placeId, description) => {
-      setMapMoved(false);
-      setRouteCoords(null);
-      setRouteInfo(null);
-      setRouteDrawn(false);
-      setQuery(description);
-
-      const coord = await fetchAndSetMarker(placeId, null, description);
-      if (coord && mapRef?.current?.animateToRegion) {
-        const newRegion = {
-          latitude: coord.latitude,
-          longitude: coord.longitude,
-          latitudeDelta: 0.008,
-          longitudeDelta: 0.008,
-        };
-        setRegion(newRegion);
-        mapRef.current.animateToRegion(newRegion, 300);
-      }
-
-      try {
-        const route = await getRoute(ANKARA_CENTER, coord);
-        setRouteInfo(route);
-      } catch {
-        setRouteInfo(null);
-      }
-    },
-    [fetchAndSetMarker]
-  );
+  const handleSelectPlace = useCallback(async (placeId, description) => {
+    setMapMoved(false);
+    setRouteCoords(null);
+    setRouteInfo(null);
+    setRouteDrawn(false);
+    setQuery(description);
+    const coord = await fetchAndSetMarker(placeId, null, description);
+    if (coord && mapRef?.current?.animateToRegion) {
+      const newRegion = {
+        latitude: coord.latitude,
+        longitude: coord.longitude,
+        latitudeDelta: 0.008,
+        longitudeDelta: 0.008,
+      };
+      setRegion(newRegion);
+      mapRef.current.animateToRegion(newRegion, 300);
+    }
+  }, [fetchAndSetMarker, mapRef]);
 
 
   const handleCategorySelect = useCallback(
@@ -159,17 +168,21 @@ export function useMapLogic(mapRef) {
         setRegion(center);
       }
 
-      const places = await getNearbyPlaces(center, type);
-      const key = JSON.stringify(places.map(p => p.place_id || p.id || p.name));
+      const placesRaw = await getNearbyPlaces(center, type);
+      const formattedPlaces = placesRaw.map(p => ({
+        ...p,
+        coordinate: p.coords,        // ← Burada coords’u coordinate’a kopyaladık
+      }));
+      const key = JSON.stringify(formattedPlaces.map(p => p.place_id || p.id || p.name));
 
       if (key !== lastPlacesKey.current) {
-        setCategoryMarkers(places);
+        setCategoryMarkers(formattedPlaces);
         lastPlacesKey.current = key;
 
         // 🔍 Tüm yeni marker’ları gösterecek şekilde uzaklaş
-        if (mapRef.current && places.length > 0) {
+        if (mapRef.current && formattedPlaces.length > 0) {
           mapRef.current.fitToCoordinates(
-            places.map(p => p.coordinate),
+            formattedPlaces.map(p => p.coordinate),
             {
               edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
               animated: true,
@@ -178,7 +191,7 @@ export function useMapLogic(mapRef) {
         }
       }
 
-      console.log('📍 Kategoriye göre bulunan yerler:', places);
+      console.log('📍 Kategoriye göre bulunan yerler:', formattedPlaces);
     } catch (err) {
       console.error('Kategori arama hatası:', err);
     } finally {
@@ -190,44 +203,67 @@ export function useMapLogic(mapRef) {
 
 
   const handleSearchThisArea = useCallback(async () => {
-    if (!activeCategory) return;
+  if (!activeCategory) return;
 
-    setLoadingCategory(true);
-    try {
-      // 1) Get the real map center from the native SDK
-      let center = region;
-      if (mapRef?.current?.getCamera) {
-        const cam = await mapRef.current.getCamera();
-        center = {
-          latitude: cam.center.latitude,
-          longitude: cam.center.longitude,
-          latitudeDelta: region.latitudeDelta,     // you can keep your deltas
-          longitudeDelta: region.longitudeDelta,
-        };
-        // If you want to keep the hook’s region in sync for other logic:
-        setRegion(center);
-      }
-
-      // 2) Fetch places around that true center
-      const newMarkers = await getNearbyPlaces(center, activeCategory);
-      console.log('🔁 Bölge Tara Sonuçları:', newMarkers);
-
-      // 3) Update markers if different
-      if (
-        categoryMarkers.length === newMarkers.length &&
-        categoryMarkers.every((m, i) => m.place_id === newMarkers[i].place_id)
-      ) {
-        console.log('[DEBUG] Skipping marker update — same data');
-      } else {
-        setCategoryMarkers(newMarkers);
-      }
-    } catch (err) {
-      console.warn('🔴 Bölge tara hatası:', err);
-    } finally {
-      setMapMoved(false);
-      setLoadingCategory(false);
+  setLoadingCategory(true);
+  try {
+    // 1) True center’ı al
+    let center = region;
+    if (mapRef?.current?.getCamera) {
+      const cam = await mapRef.current.getCamera();
+      center = {
+        latitude: cam.center.latitude,
+        longitude: cam.center.longitude,
+        latitudeDelta: region.latitudeDelta,
+        longitudeDelta: region.longitudeDelta,
+      };
+      setRegion(center);
     }
-  }, [activeCategory, categoryMarkers, region, mapRef]);
+
+    // 2) Yeni marker’ları çek
+    const raw = await getNearbyPlaces(center, activeCategory);
+    // coords ⇒ coordinate dönüştürmesi
+    const newMarkers = raw.map(m => ({
+        ...m,
+        coordinate: m.coords,
+        }));
+    console.log('🔁 Bölge Tara Sonuçları:', newMarkers);
+
+    // 3) State güncelle ve zoom-out
+    if (
+      categoryMarkers.length === newMarkers.length &&
+      categoryMarkers.every((m, i) => m.place_id === newMarkers[i].place_id)
+    ) {
+      console.log('[DEBUG] Skipping marker update — same data');
+    } else {
+      setCategoryMarkers(newMarkers);
+      if (mapRef.current && newMarkers.length > 0) {
+  mapRef.current.fitToCoordinates(
+    newMarkers.map(m => m.coordinate),
+    {
+      edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+      animated: true,
+    }
+  );
+}
+
+
+      // 📐 Tüm marker’ları kapsayacak şekilde uzaklaş
+      if (mapRef.current && newMarkers.length > 0) {
+        mapRef.current.fitToCoordinates(
+          newMarkers.map(m => m.coordinate),
+          { edgePadding: { top: 50, right: 50, bottom: 200, left: 50 }, animated: true }
+        );
+      }
+    }
+  } catch (err) {
+    console.warn('🔴 Bölge tara hatası:', err);
+  } finally {
+    setMapMoved(false);
+    setLoadingCategory(false);
+  }
+}, [activeCategory, categoryMarkers, region, mapRef]);
+
 
 
   const handleMapPress = useCallback(
@@ -369,7 +405,11 @@ export function useMapLogic(mapRef) {
     setMapMoved,
     isLoadingDetails,
     getRouteBetween,
-
+    phase,
+    fromLocation,
+    toLocation,
+    handleSelectFrom,
+    handleSelectTo,
     handleSelectPlace,
     handleCategorySelect,
     handleSearchThisArea,

@@ -1,103 +1,72 @@
 // src/components/RouteInfoSheet.js
-import React, { useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { BottomSheetModal } from '@gorhom/bottom-sheet';
+import React, { useEffect } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 
-export default function RouteInfoSheet({ modalRef, distance, duration, onStart, onCancel }) {
-  const snapPoints = useMemo(() => ['30%', '50%', '70%'], []);
-
-  // Mount olduğunda otomatik aç
+export default function RouteInfoSheet({ sheetRef, distance, duration, onCancel, onStart }) {
   useEffect(() => {
-    if (modalRef.current) {
-      modalRef.current.present();
-    }
-  }, [modalRef]);
+    console.log('✅ RouteInfoSheet render edildi!');
+  }, []);
 
   return (
     <BottomSheetModal
-      ref={modalRef}
+      ref={sheetRef}
+      snapPoints={['25%', '40%']}
       index={0}
-      snapPoints={snapPoints}
-      enablePanDownToClose
+      onChange={(index) => console.log('🟣 BottomSheet index:', index)}
+      backgroundStyle={{ backgroundColor: 'white' }}
       handleIndicatorStyle={{ backgroundColor: '#ccc' }}
-      style={styles.sheet}
-      backgroundStyle={styles.background}
     >
-      <View style={styles.content}>
-        <Text style={styles.title}>Rota Bilgisi</Text>
-        <Text style={styles.info}>Mesafe: {distance}</Text>
-        <Text style={styles.info}>Süre: {duration}</Text>
+      <BottomSheetView style={styles.content}>
+        <Text style={styles.title}>Yol Bilgisi</Text>
+        <Text style={styles.info}>Mesafe: {distance || 'Bilinmiyor'}</Text>
+        <Text style={styles.info}>Süre: {duration || 'Bilinmiyor'}</Text>
 
-        <View style={styles.buttons}>
-          <TouchableOpacity style={styles.buttonStart} onPress={onStart}>
-            <Text style={styles.buttonText}>Navigasyonu Başlat</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.buttonCancel} onPress={onCancel}>
-            <Text style={styles.cancelText}>İptal</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        <TouchableOpacity style={styles.button} onPress={onStart}>
+          <Text style={styles.buttonText}>Başlat</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.cancel} onPress={onCancel}>
+          <Text style={styles.cancelText}>İptal</Text>
+        </TouchableOpacity>
+      </BottomSheetView>
     </BottomSheetModal>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: {
-    elevation: 20,
-    zIndex: 20,
-  },
-  background: {
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 19,
-    zIndex: 19,
-  },
   content: {
     flex: 1,
     padding: 16,
+    backgroundColor: 'white',
   },
   title: {
     fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 10,
-    color: '#333',
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
   info: {
     fontSize: 16,
-    marginBottom: 6,
-    color: '#555',
+    marginBottom: 4,
   },
-  buttons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  button: {
     marginTop: 16,
-  },
-  buttonStart: {
-    flex: 1,
     backgroundColor: '#1E88E5',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  buttonCancel: {
-    flex: 1,
-    backgroundColor: '#eee',
-    padding: 12,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 15,
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  cancel: {
+    marginTop: 12,
+    alignItems: 'center',
   },
   cancelText: {
-    color: '#444',
-    fontWeight: '500',
-    fontSize: 15,
+    color: '#888',
+    fontSize: 14,
   },
 });

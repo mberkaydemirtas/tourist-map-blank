@@ -14,63 +14,73 @@ import { autocomplete, getPlaceDetails } from '../services/maps';
 
 export default function RouteSearchBar({ placeholder, value = '', onPlaceSelect }) {
   console.log('🟢 RouteSearchBar RENDER EDİLDİ');
+  useEffect(() => {
+  console.log('🟣 [DEBUG] RouteSearchBar dışarıdan gelen value:', value);
+}, [value]);
 
-  const [input, setInput] = useState(value || '');
+  const [inputText, setInputText] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
+  
+
+  
 
   // dışardan gelen value değişince input güncellensin
   useEffect(() => {
-    console.log('🟡 value değişti:', value);
-    setInput(value || '');
-  }, [value]);
+  if (value && value !== inputText) {
+    setInputText(value);
+  }
+}, [value]);
+
 
   const handleChange = async (text) => {
-    console.log('🔤 Kullanıcı yazdı:', text);
-    setInput(text);
+  console.log('🔤 Kullanıcı yazdı:', text);
+  setInputText(text);
 
-    if (text.length < 2) {
-      console.log('🧹 Öneriler temizlendi');
-      setSuggestions([]);
-      return;
-    }
+  if (text.length < 2) {
+    console.log('🧹 Öneriler temizlendi');
+    setSuggestions([]);
+    return;
+  }
 
-    setLoading(true);
-    console.log('🌐 Autocomplete çağrılıyor:', text);
-    const results = await autocomplete(text);
-    console.log('🌐 Autocomplete sonuçları:', results);
-    setSuggestions(results || []);
-    setLoading(false);
-  };
+  setLoading(true);
+  console.log('🌐 Autocomplete çağrılıyor:', text);
+  const results = await autocomplete(text);
+  console.log('🌐 Autocomplete sonuçları:', results);
+  setSuggestions(results || []);
+  setLoading(false);
+};
 
   const handleSelect = async (item) => {
-    console.log('✅ Seçildi:', item.description);
-    Keyboard.dismiss();
-    setInput(item.description);
-    setSuggestions([]);
+  console.log('✅ Seçildi:', item.description);
+  Keyboard.dismiss();
+  setInputText(item.description);
+  setSuggestions([]);
 
-    const details = await getPlaceDetails(item.place_id);
-    console.log('📍 PlaceDetails:', details);
+  const details = await getPlaceDetails(item.place_id);
+  console.log('📍 PlaceDetails:', details);
 
-    if (details) {
-      onPlaceSelect({
-        description: item.description,
-        coords: details.coord,
-        place: details,
-        key: 'selected',
-      });
-    }
-  };
+  if (details) {
+    onPlaceSelect({
+      description: item.description,
+      coords: details.coord,
+      place: details,
+      key: 'selected',
+    });
+  }
+};
+
 
   return (
     <View style={styles.container}>
       <TextInput
-        placeholder={placeholder}
-        placeholderTextColor="#888"
-        value={input}
-        onChangeText={handleChange}
-        style={styles.input}
-      />
+  placeholder={placeholder}
+  placeholderTextColor="#888"
+  value={inputText}
+  onChangeText={handleChange}
+  style={styles.input}
+/>
+
       {loading && <ActivityIndicator size="small" color="#999" style={styles.loading} />}
       {suggestions.length > 0 && (
         <FlatList

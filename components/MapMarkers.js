@@ -1,53 +1,39 @@
 // components/MapMarkers.js
 import React from 'react';
-import { Image, Text, View, StyleSheet } from 'react-native';
 import { Marker, Callout } from 'react-native-maps';
-import MarkerCallout from './MarkerCallout';
+import { View, Text, StyleSheet, Linking } from 'react-native';
+import CategoryMarker from './categoryMarker';
 
-export default function MapMarkers({
-  categoryMarkers,
-  selectedMarker,
-  activeCategory,
-  onMarkerPress,
-}) {
-  const getIcon = () => {
-    switch (activeCategory) {
-      case 'cafe':
-        return require('../assets/icons/cafe.png');
-      case 'restaurant':
-        return require('../assets/icons/restaurant.png');
-      case 'hotel':
-        return require('../assets/icons/hotel.png');
-      default:
-        return null;
-    }
-  };
+export default function MapMarkers({ categoryMarkers, activeCategory, onMarkerPress, fromSource, selectedMarker }) {
+  // props destructure tamamlandı
 
-  const icon = getIcon();
+  // Güvenli liste: categoryMarkers array değilse boş dizi kullan
+  const markers = Array.isArray(categoryMarkers) ? categoryMarkers : [];
 
   return (
     <>
-      {categoryMarkers.map((item) => (
-        <Marker
-          key={item.place_id}
-          coordinate={item.coordinate}
-          tracksViewChanges={false}
-          onPress={() => onMarkerPress(item.place_id, item.coordinate)}
-          // Eğer ikon yoksa fallback pinColor kullan
-          {...(!icon && { pinColor: '#FF5A5F' })}
-        >
-          {icon && <Image source={icon} style={{ width: 30, height: 30 }} />}
-          <MarkerCallout marker={item} isCategory />
-        </Marker>
+      {/* Kategori marker'ları sadece ikon + tıklanabilirlik için */}
+      {markers.map(item => (
+        <CategoryMarker
+          key={item.place_id || item.id}
+          item={item}
+          activeCategory={activeCategory}
+          onSelect={onMarkerPress}
+          iconSize={24}
+        />
       ))}
 
+
+
+      {/* Seçilen marker için detay Callout */}
       {selectedMarker?.coordinate && (
         <Marker
+          key="selected"
           coordinate={selectedMarker.coordinate}
           pinColor="red"
           tracksViewChanges={false}
         >
-          <Callout>
+          <Callout tooltip>
             <View style={styles.callout}>
               <Text style={styles.title}>{selectedMarker.name}</Text>
               <Text style={styles.text}>{selectedMarker.address}</Text>
@@ -56,7 +42,7 @@ export default function MapMarkers({
                   style={[styles.text, styles.link]}
                   onPress={() => Linking.openURL(selectedMarker.website)}
                 >
-                  Web’de Aç
+                  Web'de Aç
                 </Text>
               )}
             </View>
@@ -70,19 +56,16 @@ export default function MapMarkers({
 const styles = StyleSheet.create({
   callout: {
     width: 200,
-    padding: 5,
+    padding: 8,
+    backgroundColor: '#fff',
+    borderRadius: 6,
   },
   title: {
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 4,
     color: '#000',
   },
   text: {
     color: '#000',
-  },
-  link: {
-    color: 'blue',
-    textDecorationLine: 'underline',
-    marginTop: 5,
   },
 });

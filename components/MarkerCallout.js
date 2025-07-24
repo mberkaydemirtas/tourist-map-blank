@@ -1,49 +1,75 @@
+// components/MapMarkers.js
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { Marker, Callout } from 'react-native-maps';
+import { View, Text, StyleSheet, Linking } from 'react-native';
+import CategoryMarker from './categoryMarker';
 
-export default function MarkerCallout({ marker, isCategory = false }) {
-  // marker: { name, address, website?, image?, coordinate }
+export default function MapMarkers(props) {
+  const { categoryMarkers, selectedMarker, activeCategory, onMarkerPress } = props;
+
+  // Güvenli liste: categoryMarkers array değilse boş dizi kullan
+  const markers = Array.isArray(categoryMarkers) ? categoryMarkers : [];
+  console.log('📌 Render edilecek kategori marker sayısı:', markers.length);
+
   return (
-    <View style={styles.container}>
-      {!isCategory && marker.image && (
-        <Image source={{ uri: marker.image }} style={styles.image} />
+    <>
+      {/* Kategori marker'ları */}
+      {markers.map(item => (
+        <CategoryMarker
+          key={item.place_id || item.id}
+          item={item}
+          activeCategory={activeCategory}
+          onSelect={onMarkerPress}
+          iconSize={24}
+        />
+      ))}
+
+      {/* Seçilen marker için detay Callout */}
+      {selectedMarker?.coordinate && (
+        <Marker
+          key="selected"
+          coordinate={selectedMarker.coordinate}
+          pinColor="red"
+          tracksViewChanges={false}
+        >
+          <Callout tooltip>
+            <View style={styles.callout}>
+              <Text style={styles.title}>{selectedMarker.name}</Text>
+              <Text style={styles.text}>{selectedMarker.address}</Text>
+              {selectedMarker.website && (
+                <Text
+                  style={[styles.text, styles.link]}
+                  onPress={() => Linking.openURL(selectedMarker.website)}
+                >
+                  Web'de Aç
+                </Text>
+              )}
+            </View>
+          </Callout>
+        </Marker>
       )}
-      <Text style={styles.title}>{marker.name}</Text>
-      {!isCategory && <Text style={styles.address}>{marker.address}</Text>}
-      {marker.website && (
-        <TouchableOpacity onPress={() => Linking.openURL(marker.website)}>
-          <Text style={styles.link}>Web'de Aç</Text>
-        </TouchableOpacity>
-      )}
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  callout: {
     width: 200,
     padding: 8,
-  },
-  image: {
-    width: '100%',
-    height: 100,
+    backgroundColor: '#fff',
     borderRadius: 6,
-    marginBottom: 6,
   },
   title: {
     fontWeight: 'bold',
-    fontSize: 16,
     marginBottom: 4,
-    color: '#000',       // Başlık metni için siyah renk
+    color: '#000',
   },
-  address: {
-    fontSize: 14,
-    color: '#000',       // Adres metni için siyah renk
-    marginBottom: 6,
+  text: {
+    color: '#000',
   },
   link: {
-    color: '#4285F4',
+    color: 'blue',
     textDecorationLine: 'underline',
-    fontSize: 14,
+    marginTop: 6,
   },
 });

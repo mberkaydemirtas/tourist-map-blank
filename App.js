@@ -25,18 +25,13 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    // pointerEvents="box-none" ekledik
-    <GestureHandlerRootView style={{ flex: 1 }} pointerEvents="box-none">
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <BottomSheetModalProvider>
           <NavigationContainer>
             <Stack.Navigator initialRouteName="Map" screenOptions={{ headerShown: false }}>
               <Stack.Screen name="Map" component={MapScreen} />
-              <Stack.Screen
-                name="PlaceSearchOverlay"
-                component={PlaceSearchOverlay}
-                options={{ presentation: 'modal', headerShown: false }}
-              />
+              <Stack.Screen name="PlaceSearchOverlay" component={PlaceSearchOverlay} />
             </Stack.Navigator>
           </NavigationContainer>
         </BottomSheetModalProvider>

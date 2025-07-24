@@ -4,14 +4,12 @@ import polyline from '@mapbox/polyline';
 
 const BASE = 'https://maps.googleapis.com/maps/api';
 
-// 🔹 0) Tip öncelik sıralaması (görünüm için)
 function formatPlaceType(types = []) {
   const PRIORITY = ['cafe', 'restaurant', 'bar', 'hotel', 'museum', 'library', 'bakery', 'pharmacy'];
   const match = PRIORITY.find(type => types.includes(type));
   return match || types[0] || 'place';
 }
 
-// 1) Autocomplete
 export async function autocomplete(input, { lat, lng } = {}) {
   console.log('🌐 autocomplete çağrıldı:', input);
   const params = new URLSearchParams({
@@ -26,7 +24,6 @@ export async function autocomplete(input, { lat, lng } = {}) {
   return json.status === 'OK' ? json.predictions : [];
 }
 
-// 2) Place Details
 export async function getPlaceDetails(placeId) {
   const params = new URLSearchParams({
     place_id: placeId,
@@ -63,7 +60,6 @@ export async function getPlaceDetails(placeId) {
     );
     console.log('📸 Fotoğraf URLleri sayısı:', photoUrls.length);
 
-    // Extract coordinates
     const { lat, lng } = r.geometry.location;
 
     return {
@@ -88,12 +84,10 @@ export async function getPlaceDetails(placeId) {
   }
 }
 
-// 3) Tersine geocoding
 export async function getAddressFromCoords(lat, lng) {
   const url = `${BASE}/geocode/json?latlng=${lat},${lng}&key=${KEY}&language=tr`;
   const res = await fetch(url);
   const json = await res.json();
-
   if (json.status !== 'OK' || !json.results.length) return null;
   const best = json.results[0];
   return {
@@ -103,7 +97,6 @@ export async function getAddressFromCoords(lat, lng) {
   };
 }
 
-// 4) Yakındaki yerler (kategori)
 export async function getNearbyPlaces(center, keyword) {
   const radius = 500;
   const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${center.latitude},${center.longitude}&radius=${radius}&keyword=${keyword}&key=${KEY}`;
@@ -120,7 +113,6 @@ export async function getNearbyPlaces(center, keyword) {
   }));
 }
 
-// 5) Raw Directions
 export async function getDirections(origin, destination, mode = 'driving') {
   const params = new URLSearchParams({
     origin: `${origin.latitude},${origin.longitude}`,
@@ -130,22 +122,33 @@ export async function getDirections(origin, destination, mode = 'driving') {
   });
   const res = await fetch(`${BASE}/directions/json?${params}`);
   const json = await res.json();
+  console.log('📨 Directions API yanıtı:', JSON.stringify(json, null, 2));
   return json.status === 'OK' ? json.routes[0] : null;
 }
 
-// 6) Rota bilgi
 export async function getRoute(origin, destination) {
   const raw = await getDirections(origin, destination);
-  if (!raw || !raw.legs?.length) return null;
+  console.log('📡 getRoute() gelen veri:', raw);
+
+  if (!raw || !raw.legs?.length) {
+    console.warn('⚠️ Geçersiz rota yanıtı:', raw);
+    return null;
+  }
+
   const leg = raw.legs[0];
   return {
-    distance: leg.distance.text,
-    duration: leg.duration.text,
-    polyline: raw.overview_polyline.points,
+    distance: leg.distance?.text || '',
+    duration: leg.duration?.text || '',
+    polyline: raw.overview_polyline?.points || '',
   };
 }
 
-// 7) Polyline decode helper
-export function decodePolyline(points) {
-  return polyline.decode(points).map(([lat, lng]) => ({ latitude: lat, longitude: lng }));
+export function decodePolyline(encoded) {
+  try {
+    const points = polyline.decode(encoded);
+    return points.map(([latitude, longitude]) => ({ latitude, longitude }));
+  } catch (e) {
+    console.warn('❌ decodePolyline failed:', e);
+    return [];
+  }
 }
