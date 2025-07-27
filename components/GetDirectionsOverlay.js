@@ -8,7 +8,6 @@ import {
   SectionList,
   StyleSheet,
   KeyboardAvoidingView,
-  onMapSelect,
   Platform,
   Keyboard,
 } from 'react-native';

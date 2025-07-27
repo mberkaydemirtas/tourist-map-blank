@@ -260,40 +260,54 @@ export function useMapLogic(mapRef) {
 
 
   const handleMapPress = useCallback(
-    async e => {
-      const { latitude, longitude } = e.nativeEvent.coordinate;
+  async e => {
+    const { latitude, longitude } = e.nativeEvent.coordinate;
+    console.log('📍 Harita tıklandı:', latitude, longitude);
+
+    try {
       const info = await getAddressFromCoords(latitude, longitude);
+      console.log('📬 getAddressFromCoords sonucu:', info);
+
       if (!info || !info.place_id) {
-        Alert.alert('Hata', 'Bu konum için detay alınamadı.');
+        Alert.alert('Hata', 'Bu konum için adres bilgisi alınamadı.');
         return;
       }
 
+      const tappedCoords = { latitude, longitude };
+      const fromPlace = {
+  coordinate: tappedCoords,
+  description: info.address,
+};
+
+
+      setFromLocation(fromPlace); // 🌟 EN KRİTİK ADIM
+      setQuery(info.address);
       setActiveCategory(null);
       setCategoryMarkers([]);
       setRouteCoords(null);
       setRouteInfo(null);
       setRouteDrawn(false);
       setMapMoved(false);
-      setQuery(info.address);
 
-      await fetchAndSetMarker(info.place_id, { latitude, longitude }, info.address);
-
-      setRegion(r => ({
+      await fetchAndSetMarker(info.place_id, tappedCoords, info.address);
+      setRegion(prev => ({
         latitude,
         longitude,
-        latitudeDelta: r.latitudeDelta,
-        longitudeDelta: r.longitudeDelta,
+        latitudeDelta: prev?.latitudeDelta ?? 0.01,
+        longitudeDelta: prev?.longitudeDelta ?? 0.01,
       }));
 
-      try {
-        const route = await getRoute(ANKARA_CENTER, { latitude, longitude });
-        setRouteInfo(route);
-      } catch {
-        setRouteInfo(null);
+      if (toLocation?.coords) {
+        await getRouteBetween(tappedCoords, toLocation.coords);
       }
-    },
-    [fetchAndSetMarker]
-  );
+    } catch (error) {
+      console.error('🔥 Hata (handleMapPress):', error);
+    }
+  },
+  [fetchAndSetMarker, toLocation, getRouteBetween]
+);
+
+
 
   const handleMarkerSelect = useCallback(
     async (placeId, coordinate, fallbackName = '') => {
@@ -389,6 +403,8 @@ useEffect(() => {
 }, [fromLocation, toLocation, getRouteBetween]);
 
   return {
+    fetchAndSetMarker,
+    setMarker, // ✅ bu satırı ekle
     routeCoords,
     region,
     setRegion,

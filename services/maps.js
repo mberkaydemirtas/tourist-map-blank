@@ -162,5 +162,11 @@ export function decodePolyline(encoded) {
     return [];
   }
 }
+export async function reverseGeocode({ latitude, longitude }) {
+  const url = `${BASE}/geocode/json?latlng=${latitude},${longitude}&key=${KEY}&language=tr`;
+  const res = await fetch(url);
+  const json = await res.json();
+  return json.results || [];
+}
 
 

@@ -15,73 +15,73 @@ import { autocomplete, getPlaceDetails } from '../services/maps';
 export default function RouteSearchBar({ placeholder, value = '', onPlaceSelect }) {
   console.log('🟢 RouteSearchBar RENDER EDİLDİ');
   useEffect(() => {
-  console.log('🟣 [DEBUG] RouteSearchBar dışarıdan gelen value:', value);
-}, [value]);
+    console.log('🟣 [DEBUG] RouteSearchBar dışarıdan gelen value:', value);
+  }, [value]);
 
-  const [inputText, setInputText] = useState(value || '');
+  const [inputText, setInputText] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
-  
 
-  
-
-  // dışardan gelen value değişince input güncellensin
+  // Gelen value her değiştiğinde inputText'e trim'lenmiş olarak yaz
   useEffect(() => {
-  if (value && value !== inputText) {
-    setInputText(value);
-  }
-}, [value]);
+    setInputText((value || '').trim());
+  }, [value]);
 
+  // inputText değişimlerini loglayalım
+  useEffect(() => {
+    console.log('🔁 inputText güncellendi:', inputText);
+  }, [inputText]);
 
   const handleChange = async (text) => {
-  console.log('🔤 Kullanıcı yazdı:', text);
-  setInputText(text);
+    console.log('🔤 Kullanıcı yazdı:', text);
+    setInputText(text);
 
-  if (text.length < 2) {
-    console.log('🧹 Öneriler temizlendi');
-    setSuggestions([]);
-    return;
-  }
+    if (text.length < 2) {
+      console.log('🧹 Öneriler temizlendi');
+      setSuggestions([]);
+      return;
+    }
 
-  setLoading(true);
-  console.log('🌐 Autocomplete çağrılıyor:', text);
-  const results = await autocomplete(text);
-  console.log('🌐 Autocomplete sonuçları:', results);
-  setSuggestions(results || []);
-  setLoading(false);
-};
+    setLoading(true);
+    console.log('🌐 Autocomplete çağrılıyor:', text);
+    const results = await autocomplete(text);
+    console.log('🌐 Autocomplete sonuçları:', results);
+    setSuggestions(results || []);
+    setLoading(false);
+  };
 
   const handleSelect = async (item) => {
-  console.log('✅ Seçildi:', item.description);
-  Keyboard.dismiss();
-  setInputText(item.description);
-  setSuggestions([]);
+    console.log('✅ Seçildi:', item.description);
+    Keyboard.dismiss();
+    const desc = (item.description || '').trim();
+    setInputText(desc);
+    setSuggestions([]);
 
-  const details = await getPlaceDetails(item.place_id);
-  console.log('📍 PlaceDetails:', details);
+    const details = await getPlaceDetails(item.place_id);
+    console.log('📍 PlaceDetails:', details);
 
-  if (details) {
-    onPlaceSelect({
-      description: item.description,
-      coords: details.coord,
-      place: details,
-      key: 'selected',
-    });
-  }
-};
-
+    if (details && typeof onPlaceSelect === 'function') {
+      onPlaceSelect({
+        description: desc,
+        coords: details.coord,
+        place: details,
+        key: 'selected',
+      });
+    }
+  };
 
   return (
     <View style={styles.container}>
       <TextInput
-  placeholder={placeholder}
-  placeholderTextColor="#888"
-  value={inputText}
-  onChangeText={handleChange}
-  style={styles.input}
-/>
+        placeholder={placeholder}
+        placeholderTextColor="#888"
+        value={inputText}
+        onChangeText={handleChange}
+        style={styles.input}
+      />
 
       {loading && <ActivityIndicator size="small" color="#999" style={styles.loading} />}
+
       {suggestions.length > 0 && (
         <FlatList
           data={suggestions}
@@ -110,12 +110,14 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   input: {
+    width: '100%',
     backgroundColor: '#fff',
     padding: 10,
     borderRadius: 6,
     borderColor: '#ccc',
     borderWidth: 1,
     fontSize: 15,
+    color: '#333',
   },
   loading: {
     position: 'absolute',

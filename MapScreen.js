@@ -28,6 +28,10 @@ import { getRoute, decodePolyline, reverseGeocode } from './services/maps';
 
 export default function MapScreen() {
   const navigation = useNavigation();
+  useEffect(() => {
+  console.log('📣 isSelectingFromOnMap değişti:', isSelectingFromOnMap);
+}, [isSelectingFromOnMap]);
+
   const route = useRoute();
   const mapRef = useRef(null);
   const sheetRef = useRef(null);
@@ -74,8 +78,7 @@ export default function MapScreen() {
 
   // --- ROUTE CALCULATION WHEN MODE==='route' ---
   useEffect(() => {
-  if (mode !== 'route') return;
-
+  if (mode !== 'route' || !fromSource?.coords) return; 
   const origin = fromSource.key === 'current' ? coords : fromSource.coords;
   if (!origin || !toLocation?.coords) return;
 
@@ -115,10 +118,11 @@ useEffect(() => {
 
   // --- AUTOMATICALLY OPEN ROUTE INFO SHEET ---
   useEffect(() => {
-    if (mode === 'route' && routeInfo && sheetRefRoute.current) {
-      sheetRefRoute.current.snapToIndex(0);
-    }
-  }, [mode, routeInfo]);
+  if (mode === 'route' && routeInfo && sheetRefRoute.current?.present) {
+    sheetRefRoute.current.present();
+  }
+}, [mode, routeInfo]);
+
 
   // “Get Directions” butonuna basıldığında ilk adım: overlay aç
   const onGetDirectionsPress = () => {
@@ -127,71 +131,164 @@ useEffect(() => {
   };
 
   // Overlay’den “Konumunuz” veya “Arama” geldiğinde:
-  const handleFromSelected = async (src) => {
-  setShowFromOverlay(false);
-  setFromSource(src);
-
-  // seçeneklere göre toLocation'ı ayarla
-  if (!toLocation && map.marker) {
-    setToLocation({ coords: map.marker.coordinate, description: map.marker.name });
+  // MapScreen.js içinden...
+const handleFromSelected = async (src) => {
+  // --------------------------------------------------------------------------------
+  // 1) Haritadan Seç tıklandıysa seçim modundan çık
+  // --------------------------------------------------------------------------------
+  if (src.key === 'map') {
+    setShowFromOverlay(false);
+    setIsSelectingFromOnMap(true);
+    // not: return yok, devam ediyoruz
+  } else {
+    // normal akıştaysa overlay’i kapat
+    setShowFromOverlay(false);
   }
 
+  // --------------------------------------------------------------------------------
+  // 2) description ve placeId belirle (reverse geocode’tan)
+  // --------------------------------------------------------------------------------
+  let address = src.description || 'Seçilen Konum';
+  let placeId = src.key === 'map' ? null : src.key; // eğer key arama sonucuysa key==placeId geliyor
+
+  if (src.key === 'map' && src.coords) {
+    try {
+      const geo = await reverseGeocode(src.coords);
+      if (geo && geo[0]) {
+        address = geo[0].formatted_address || address;
+        placeId = geo[0].place_id || null;
+      }
+    } catch (e) {
+      console.warn('📛 Reverse geocode alınamadı:', e);
+    }
+  }
+
+  // --------------------------------------------------------------------------------
+  // 3) fromSource ve mode='route' ayarlaması
+  // --------------------------------------------------------------------------------
+  setFromSource({ coords: src.coords, description: address, key: placeId || 'map' });
   setMode('route');
 
-  // marker detaylarını yükle ve zoom yap
-  const coord = src.coords;
-  await map.fetchAndSetMarker(null, coord, src.description);
-  mapRef.current?.animateToRegion({ ...coord, latitudeDelta:0.01, longitudeDelta:0.01 }, 500);
+  // --------------------------------------------------------------------------------
+  // 4) toLocation otomatik ataması (önceki marker’dan)
+  // --------------------------------------------------------------------------------
+  if (!toLocation && map.marker) {
+    setToLocation({
+      coords: map.marker.coordinate,
+      description: map.marker.name,
+    });
+  }
+
+  // --------------------------------------------------------------------------------
+  // 5) Marker oluştur ve haritayı kaynak koordinata zoom et
+  // --------------------------------------------------------------------------------
+  try {
+    if (placeId) {
+      await map.fetchAndSetMarker(placeId, src.coords, address);
+    } else {
+      // eğer placeId yoksa fallback olarak sadece setMarker
+      map.setMarker({
+        name: address,
+        address,
+        coordinate: src.coords,
+      });
+    }
+
+    mapRef.current?.animateToRegion(
+      { ...src.coords, latitudeDelta: 0.05, longitudeDelta: 0.05 },
+      500
+    );
+  } catch (e) {
+    console.warn('🟥 Marker oluşturulamadı:', e);
+  }
+};
+
+  // Overlay’den “Haritadan Seç”e basıldığında:
+  // Overlay’den “Haritadan Seç”e basıldığında:
+const handleMapSelect = () => {
+  setShowFromOverlay(false);
+  setMode('route');
+  setFromSource(null);
+  setIsSelectingFromOnMap(true); // BU SATIR VAZGEÇİLMEZ!
+  if (map.marker) {
+    setToLocation({
+      coords: map.marker.coordinate,
+      description: map.marker.name,
+    });
+  }
 };
 
 
 
-  // Overlay’den “Haritadan Seç”e basıldığında:
-  const handleMapSelect = () => {
-   setShowFromOverlay(false);
-   setIsSelectingFromOnMap(true);
-  };
+
 
   // Haritaya dokununca, gerçek origin seçim:
-    const handleSelectOriginOnMap = async (coordinate) => {
-   setIsSelectingFromOnMap(false);
-   try {
-     // 1) reverse geocode ile adres al
-     const geo = await reverseGeocode(coordinate);
-     const address = geo[0]?.formatted_address || 'Seçilen Konum';
-     // 2) handleFromSelected ile route-akışını başlat
-     handleFromSelected({
-       coords: coordinate,
-       description: address,
-       key: 'map'
-     });
-     // 3) overlay’ı kapatıp, otomatik olarak rota ekranı açılacak
-   } catch (err) {
-     console.warn('⚠️ Haritadan seçim hatası:', err);
-   }
- };
+  const handleSelectOriginOnMap = async (coordinate) => {
+  console.log('🎯 handleSelectOriginOnMap çalıştı, koordinat:', coordinate);
+
+  try {
+    const geo = await reverseGeocode(coordinate);
+    const address = geo[0]?.formatted_address || 'Seçilen Konum';
+    const placeId = geo[0]?.place_id;
+
+    const src = {
+      coords: coordinate,
+      description: address,
+      key: placeId || 'selected',
+    };
+
+    const destination = toLocation || (map.marker && {
+      coords: map.marker.coordinate,
+      description: map.marker.name,
+    });
+
+    if (!destination) {
+      console.warn('🚫 Hedef yok, rota çizilemez');
+      return;
+    }
+
+    // 🟢 Başlangıç ve varış set
+    setFromSource(src);
+    console.log('✅ fromSource set edildi:', src);
+    setToLocation(destination);
+    setMode('route');
+    setIsSelectingFromOnMap(false);
+
+    // 🟢 Marker’ı yerleştir
+    await map.fetchAndSetMarker(placeId, coordinate, address);
+
+    // 🟢 Rota çiz
+    const route = await getRoute(src.coords, destination.coords);
+    const decoded = decodePolyline(route.polyline);
+    setRouteCoords(decoded);
+    setRouteInfo({ distance: route.distance, duration: route.duration });
+
+    // 🟢 Kartı aç
+    sheetRefRoute.current?.present();
+
+  } catch (err) {
+    console.warn('❌ Haritadan seçim hatası:', err);
+  }
+};
+
+
+
 
 
   // MapView onPress’i: önce harita-seç moduna bak
-  const handleMapPress = (e) => {
-  console.log('🟡 handleMapPress tetiklendi!');
-  if (isSelectingFromOnMap) {
-  handleSelectOriginOnMap(e.nativeEvent.coordinate);
-  return; // Burada çık!
-  } else {
-    map.handleMapPress(e);
-    // 💡 Eğer route modundaysak ve fromSource zaten varsa, haritaya tıklanan yeri destination yap
-    if (mode === 'route' && fromSource) {
-      const coordinate = e.nativeEvent.coordinate;
-      reverseGeocode(coordinate).then(geo => {
-        const address = geo[0].formatted_address;
-        setToLocation({
-          coords: coordinate,
-          description: address,
-        });
-      });
-    }
+  // MapScreen.js içindeki handleMapPress fonksiyonu
+const handleMapPress = (e) => {
+  const { coordinate } = e.nativeEvent;
+
+  // Eğer rota modundaysak ve henüz "nereden" seçilmediyse,
+  // ilk tıklamayı origin seçimine yönlendir:
+  if (mode === 'route' && !fromSource) {
+    handleSelectOriginOnMap(coordinate);
+    return;
   }
+
+  // Aksi halde explore akışını sürdür:
+  map.handleMapPress(e);
 };
 
 
@@ -207,6 +304,7 @@ useEffect(() => {
 
 return (
   <View style={styles.container}>
+    {console.log('🧭 UI STATE', { mode, fromSource, toLocation })}
     {console.log('🔄 RENDER DURUMU:', {
       mode,
       hasFrom: Boolean(fromSource),
@@ -219,16 +317,22 @@ return (
       style={styles.map}
       initialRegion={map.region}
       onPress={handleMapPress}
+      onPanDrag={(e) => {
+        map.setMapMoved(true);
+        if (isSelectingFromOnMap) {
+          setIsSelectingFromOnMap(false);
+        }
+      }}
       scrollEnabled={!isSelectingFromOnMap}
       zoomEnabled={!isSelectingFromOnMap}
       rotateEnabled={!isSelectingFromOnMap}
       pitchEnabled={!isSelectingFromOnMap}
       onPoiClick={map.handlePoiClick}
-      pointerEvents="auto"
       showsUserLocation={available}
-      onPanDrag={() => map.setMapMoved(true)}
       onRegionChangeComplete={map.setRegion}
     >
+      {/* marker ve polyline'lar burada */}
+
       {/* EXPLORE CATEGORY & DETAIL MARKERS */}
       <MapMarkers
         categoryMarkers={map.categoryMarkers}
@@ -278,109 +382,128 @@ return (
       )}
     </MapView>
 
-    {/* --- HARİTA SEÇİM OVERLAY’İ (tek bir yerde) --- */}
+    {/* HARİTA SEÇİM PROMPT’U */}
     {isSelectingFromOnMap && (
       <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-        <MapSelectionOverlay onCancel={() => setIsSelectingFromOnMap(false)} />
+        <View style={styles.transparentOverlay} pointerEvents="none" />
+        <View style={styles.selectionPromptContainer} pointerEvents="none">
+          <Text style={styles.selectionPromptText}>
+            Haritaya dokunarak bir konum seçin
+          </Text>
+        </View>
       </View>
     )}
 
     <SafeAreaView pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-      {/* 1) EXPLORE MODE CONTROLS */}
-      {mode === 'explore' && !fromSource && (
+      {!isSelectingFromOnMap && (
         <>
-          <MapHeaderControls
-            query={map.query}
-            onQueryChange={map.setQuery}
-            onPlaceSelect={map.handleSelectPlace}
-            onCategorySelect={map.handleCategorySelect}
-            mapMoved={map.mapMoved}
-            loadingCategory={map.loadingCategory}
-            onSearchArea={map.handleSearchThisArea}
-          />
-          {map.activeCategory && map.categoryMarkers.length > 0 && (
-            <CategoryList
-              data={map.categoryMarkers}
-              activePlaceId={map.marker?.place_id}
-              onSelect={map.handleSelectPlace}
+          {/* 1) EXPLORE MODE CONTROLS */}
+          {mode === 'explore' && !fromSource && (
+            <>
+              <MapHeaderControls
+                query={map.query}
+                onQueryChange={map.setQuery}
+                onPlaceSelect={map.handleSelectPlace}
+                onCategorySelect={map.handleCategorySelect}
+                mapMoved={map.mapMoved}
+                loadingCategory={map.loadingCategory}
+                onSearchArea={map.handleSearchThisArea}
+              />
+              {map.activeCategory && map.categoryMarkers.length > 0 && (
+                <CategoryList
+                  data={map.categoryMarkers}
+                  activePlaceId={map.marker?.place_id}
+                  onSelect={map.handleSelectPlace}
+                  userCoords={coords}
+                />
+              )}
+              <PlaceDetailSheet
+                marker={map.marker}
+                routeInfo={map.routeInfo}
+                sheetRef={sheetRef}
+                snapPoints={snapPoints}
+                onGetDirections={onGetDirectionsPress}
+              />
+            </>
+          )}
+
+          {/* 2) GET DIRECTIONS OVERLAY */}
+          {showFromOverlay && (
+            <GetDirectionsOverlay
+              visible={showFromOverlay}
               userCoords={coords}
+              available={available}
+              refreshLocation={refreshLocation}
+              historyKey="search_history"
+              favoritesKey="favorite_places"
+              onCancel={() => setShowFromOverlay(false)}
+              onFromSelected={handleFromSelected}
+              onMapSelect={handleMapSelect}
             />
           )}
-          <PlaceDetailSheet
-            marker={map.marker}
-            routeInfo={map.routeInfo}
-            sheetRef={sheetRef}
-            snapPoints={snapPoints}
-            onGetDirections={onGetDirectionsPress}
+
+          {/* 3) ROUTE MODE CONTROLS */}
+          {mode === 'route' && (
+  <>
+      <View style={styles.routeControls}>
+    <Text style={styles.label}>Nereden</Text>
+    <TouchableOpacity
+      style={styles.inputButton}
+      onPress={() => setIsSelectingFromOnMap(true)}
+    >
+      <Text style={styles.inputText}>
+        <Text style={styles.inputText}>
+  {fromSource?.description || ''}
+</Text>
+
+      </Text>
+    </TouchableOpacity>
+
+      <View style={{ height: 10 }} />
+
+       <Text style={styles.label}>Nereye</Text>
+    <TouchableOpacity
+      style={styles.inputButton}
+      onPress={() =>
+        navigation.navigate('PlaceSearchOverlay', {
+          onPlaceSelected: (place) => setToLocation(place),
+        })
+      }
+    >
+        <Text style={styles.inputText}>
+        <Text style={styles.inputText}>
+  {toLocation?.description || ''}
+</Text>
+
+      </Text>
+    </TouchableOpacity>
+  </View>
+
+    <RouteInfoSheet
+      sheetRef={sheetRefRoute}
+      distance={routeInfo?.distance}
+      duration={routeInfo?.duration}
+      onCancel={handleCancelRoute}
+      onStart={() => console.log('Navigasyonu başlat')}
+    />
+  </>
+)}
+
+          {/* 4) GENERAL OVERLAYS (GPS, RECENTER) */}
+          <MapOverlays
+            available={available}
+            coords={coords}
+            onRetry={refreshLocation}
+            onRecenter={(region) => {
+              map.setRegion(region);
+              mapRef.current?.animateToRegion(region, 500);
+            }}
           />
         </>
       )}
-
-      {/* 2) GET DIRECTIONS OVERLAY */}
-      {showFromOverlay && (
-        <GetDirectionsOverlay
-          visible={showFromOverlay}
-          userCoords={coords}
-          available={available}
-          refreshLocation={refreshLocation}
-          historyKey="search_history"
-          favoritesKey="favorite_places"
-          onCancel={() => setShowFromOverlay(false)}
-          onFromSelected={handleFromSelected}
-          onMapSelect={handleMapSelect}
-        />
-      )}
-
-      {/* 3) ROUTE MODE CONTROLS */}
-      {mode === 'route' && fromSource && toLocation && (
-        <>
-          <View style={styles.routeControls}>
-            <Text style={styles.label}>Nereden</Text>
-            <RouteSearchBar
-              placeholder="Konum seçin"
-              value={fromSource?.description}
-            />
-
-            <View style={{ height: 10 }} />
-
-            <Text style={styles.label}>Nereye</Text>
-            <TouchableOpacity
-              style={styles.inputButton}
-              onPress={() =>
-                navigation.navigate('PlaceSearchOverlay', {
-                  onPlaceSelected: (place) => setToLocation(place),
-                })
-              }
-            >
-              <Text style={styles.inputText}>
-                {toLocation?.description}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <RouteInfoSheet
-            sheetRef={sheetRefRoute}
-            distance={routeInfo?.distance}
-            duration={routeInfo?.duration}
-            onCancel={handleCancelRoute}
-            onStart={() => console.log('Navigasyonu başlat')}
-          />
-        </>
-      )}
-
-      {/* 4) GENERAL OVERLAYS (GPS, RECENTER) */}
-      <MapOverlays
-        available={available}
-        coords={coords}
-        onRetry={refreshLocation}
-        onRecenter={(region) => {
-          map.setRegion(region)
-          mapRef.current?.animateToRegion(region, 500)
-        }}
-      />
     </SafeAreaView>
   </View>
-)
+);
 }
 
 const styles = StyleSheet.create({
@@ -408,4 +531,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   inputText: { fontSize: 16, color: '#333' },
+    transparentOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.2)', // yarı şeffaf karartma
+  },
+  selectionPromptContainer: {
+    position: 'absolute',
+    top: '40%', // ekranda ortaya yakın
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  selectionPromptText: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    padding: 12,
+    borderRadius: 8,
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+  },
 });
