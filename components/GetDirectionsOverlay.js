@@ -19,7 +19,7 @@ import { autocomplete, getPlaceDetails } from '../services/maps';
 const HISTORY_KEY = 'search_history';
 const MAX_HISTORY = 5;
 
-export default function GetDirectionsOverlay({ userCoords, available, refreshLocation, onCancel, onFromSelected }) {
+export default function GetDirectionsOverlay({ userCoords, available, refreshLocation, onCancel, onFromSelected, onMapSelect }) {
   const navigation = useNavigation();
   const inputRef = useRef(null);
   const [query, setQuery] = useState('');
@@ -54,9 +54,11 @@ export default function GetDirectionsOverlay({ userCoords, available, refreshLoc
 
     // 2) Eğer haritadan seç dediyse, sadece yönlendir
     if (item.key === 'map') {
-      onFromSelected({ key: 'map' });
-      return;
-    }
+      // Haritadan seçime geç
+       onCancel();        // overlay’i kapat
+       onMapSelect();     // MapScreen’de isSelectingFromOnMap = true yapacak callback
+       return;
+     }
 
     // 3) Öneri veya geçmişten seçim: coords yoksa detay al
     if (!selected.coords && selected.key !== 'current' && selected.key !== 'map') {
