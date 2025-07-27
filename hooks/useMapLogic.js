@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef,useEffect } from 'react';
 import { Alert } from 'react-native';
 import {
   getPlaceDetails,
@@ -9,6 +9,7 @@ import {
 } from '../services/maps';
 import { GOOGLE_MAPS_API_KEY as KEY } from '@env';
 import isEqual from 'lodash.isequal';
+
 
 const ANKARA_CENTER = { latitude: 39.925533, longitude: 32.866287 };
 
@@ -129,15 +130,16 @@ export function useMapLogic(mapRef) {
     setQuery(description);
     const coord = await fetchAndSetMarker(placeId, null, description);
     if (coord && mapRef?.current?.animateToRegion) {
-      const newRegion = {
-        latitude: coord.latitude,
-        longitude: coord.longitude,
-        latitudeDelta: 0.008,
-        longitudeDelta: 0.008,
-      };
-      setRegion(newRegion);
-      mapRef.current.animateToRegion(newRegion, 300);
-    }
+  const newRegion = {
+    latitude: coord.latitude,
+    longitude: coord.longitude,
+    latitudeDelta: 0.008,
+    longitudeDelta: 0.008,
+  };
+  setRegion(newRegion);
+  mapRef.current.animateToRegion(newRegion, 300);
+}
+
   }, [fetchAndSetMarker, mapRef]);
 
 
@@ -168,21 +170,17 @@ export function useMapLogic(mapRef) {
         setRegion(center);
       }
 
-      const placesRaw = await getNearbyPlaces(center, type);
-      const formattedPlaces = placesRaw.map(p => ({
-        ...p,
-        coordinate: p.coords,        // ← Burada coords’u coordinate’a kopyaladık
-      }));
-      const key = JSON.stringify(formattedPlaces.map(p => p.place_id || p.id || p.name));
+      const places = await getNearbyPlaces(center, type);
+      const key = JSON.stringify(places.map(p => p.place_id || p.id || p.name));
 
       if (key !== lastPlacesKey.current) {
-        setCategoryMarkers(formattedPlaces);
+        setCategoryMarkers(places);
         lastPlacesKey.current = key;
 
         // 🔍 Tüm yeni marker’ları gösterecek şekilde uzaklaş
-        if (mapRef.current && formattedPlaces.length > 0) {
+        if (mapRef.current && places.length > 0) {
           mapRef.current.fitToCoordinates(
-            formattedPlaces.map(p => p.coordinate),
+            places.map(p => p.coordinate),
             {
               edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
               animated: true,
@@ -191,7 +189,7 @@ export function useMapLogic(mapRef) {
         }
       }
 
-      console.log('📍 Kategoriye göre bulunan yerler:', formattedPlaces);
+      console.log('📍 Kategoriye göre bulunan yerler:', places);
     } catch (err) {
       console.error('Kategori arama hatası:', err);
     } finally {
@@ -221,12 +219,7 @@ export function useMapLogic(mapRef) {
     }
 
     // 2) Yeni marker’ları çek
-    const raw = await getNearbyPlaces(center, activeCategory);
-    // coords ⇒ coordinate dönüştürmesi
-    const newMarkers = raw.map(m => ({
-        ...m,
-        coordinate: m.coords,
-        }));
+    const newMarkers = await getNearbyPlaces(center, activeCategory);
     console.log('🔁 Bölge Tara Sonuçları:', newMarkers);
 
     // 3) State güncelle ve zoom-out
@@ -389,7 +382,14 @@ export function useMapLogic(mapRef) {
     [fetchAndSetMarker]
   );
 
+useEffect(() => {
+  if (fromLocation?.coordinate && toLocation?.coordinate) {
+    getRouteBetween(fromLocation.coordinate, toLocation.coordinate);
+  }
+}, [fromLocation, toLocation, getRouteBetween]);
+
   return {
+    routeCoords,
     region,
     setRegion,
     marker,

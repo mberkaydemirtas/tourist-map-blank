@@ -12,7 +12,7 @@ import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
 import MarkerCallout from './components/MarkerCallout';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import RouteSearchBar from './components/RouteSearch';
-
+import MapSelectionOverlay from './components/MapSelectionOverlay';
 import { useLocation } from './hooks/useLocation';
 import { useMapLogic } from './hooks/useMapLogic';
 
@@ -75,28 +75,25 @@ export default function MapScreen() {
   // --- ROUTE CALCULATION WHEN MODE==='route' ---
   useEffect(() => {
   if (mode !== 'route') return;
-  // origin: eğer “current” seçilmişse coords, değilse fromSource.coords
+
   const origin = fromSource.key === 'current' ? coords : fromSource.coords;
   if (!origin || !toLocation?.coords) return;
 
   (async () => {
     try {
-      // Directions API çağrısı
       const r = await getRoute(origin, toLocation.coords);
       console.log('▶️ raw route objesi:', r);
 
-      // overview_polyline’den gelen string’i decode edip diziye çevir
-      const polyStr = r.overview_polyline?.points;
-      const coordsArr = polyStr ? decodePolyline(polyStr) : [];
-      setRouteCoords(coordsArr);
+      const decoded = decodePolyline(r.polyline);
+      console.log('🟢 Decode edilen rota noktaları:', decoded.length);
+      setRouteCoords(decoded);
+      mapRef.current?.fitToCoordinates(decoded, {
+  edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+  animated: true,
+});
+      console.log('✅ Polyline state set edildi:', decoded.length);
 
-
-      // legs[0] altından mesafe / süre bilgisi al
-      const leg = r.legs?.[0];
-      const distText = leg?.distance?.text || '';
-      const durText = leg?.duration?.text || '';
-      setRouteInfo({ distance: distText, duration: durText });
-      console.log('▶️ routeInfo set:', { distText, durText });
+      setRouteInfo({ distance: r.distance, duration: r.duration });
     } catch (e) {
       console.warn('⚠️ Route parse hatası:', e);
       setRouteCoords([]);
@@ -105,6 +102,14 @@ export default function MapScreen() {
   })();
 }, [mode, fromSource, toLocation, coords]);
 
+useEffect(() => {
+  if (routeCoords.length > 0 && mapRef.current) {
+    mapRef.current.fitToCoordinates(routeCoords, {
+      edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+      animated: true,
+    });
+  }
+}, [routeCoords]);
 
 
 
@@ -153,47 +158,75 @@ export default function MapScreen() {
 
   // Overlay’den “Haritadan Seç”e basıldığında:
   const handleMapSelect = () => {
-    setShowFromOverlay(false);
-    setIsSelectingFromOnMap(true);
+   setShowFromOverlay(false);
+   setIsSelectingFromOnMap(true);
   };
 
   // Haritaya dokununca, gerçek origin seçim:
   const handleSelectOriginOnMap = async (coordinate) => {
-  console.log('▶️ 1. Map’e dokundun, seçim modu:', isSelectingFromOnMap, 'coord=', coordinate);
+  console.log('▶️ 1. Haritaya tıklandı. Koordinat:', coordinate);
   setIsSelectingFromOnMap(false);
 
-  const geo = await reverseGeocode(coordinate);
-  console.log('▶️ 2. reverseGeocode cevabı:', geo);
+  try {
+    const geo = await reverseGeocode(coordinate);
+    const address = geo[0]?.formatted_address || 'Seçilen Konum';
+    console.log('▶️ 2. reverseGeocode sonucu:', address);
 
-  const address = geo[0].formatted_address;
+    const newFrom = {
+      coords: coordinate,
+      description: address,
+      key: 'map',
+      place: { name: address },
+    };
 
-  console.log('▶️ 3. Adres çözüldü:', address);
+    setFromSource(newFrom);
+    setMode('route');
 
-  const src = {
-  coords: coordinate,
-  description: address,  // mutlaka burada description atıyoruz
-  key: 'map',
-  place: { name: address } // ekstra alan, ileride gerekebilir
-};
-console.log('🔵 [DEBUG] Oluşturulan src.description:', src.description);
-  handleFromSelected(src);
+    // Hedef daha önce seçilmiş olabilir:
+    if (!toLocation && map.marker?.coordinate) {
+      setToLocation({
+        coords: map.marker.coordinate,
+        description: map.marker.name,
+      });
+    }
 
-    // otomatik zoom
+    // Haritaya tıklanan noktayı marker olarak belirleyelim (gerekirse):
+    await map.fetchAndSetMarker(null, coordinate, address);
+
+    // Zoom:
     mapRef.current?.animateToRegion({
       ...coordinate,
       latitudeDelta: 0.01,
       longitudeDelta: 0.01,
     }, 500);
-  };
+  } catch (err) {
+    console.warn('⚠️ Haritadan seçim hatası:', err);
+  }
+};
+
 
   // MapView onPress’i: önce harita-seç moduna bak
   const handleMapPress = (e) => {
-    if (isSelectingFromOnMap) {
-      handleSelectOriginOnMap(e.nativeEvent.coordinate);
-    } else {
-      map.handleMapPress(e);
+  console.log('🟡 handleMapPress tetiklendi!');
+  if (isSelectingFromOnMap) {
+  handleSelectOriginOnMap(e.nativeEvent.coordinate);
+  return; // Burada çık!
+  } else {
+    map.handleMapPress(e);
+    // 💡 Eğer route modundaysak ve fromSource zaten varsa, haritaya tıklanan yeri destination yap
+    if (mode === 'route' && fromSource) {
+      const coordinate = e.nativeEvent.coordinate;
+      reverseGeocode(coordinate).then(geo => {
+        const address = geo[0].formatted_address;
+        setToLocation({
+          coords: coordinate,
+          description: address,
+        });
+      });
     }
-  };
+  }
+};
+
 
   // Route iptali
   const handleCancelRoute = () => {
@@ -219,7 +252,12 @@ console.log('🔵 [DEBUG] Oluşturulan src.description:', src.description);
         style={styles.map}
         initialRegion={map.region}
         onPress={handleMapPress}
+        scrollEnabled={!isSelectingFromOnMap}
+        zoomEnabled={!isSelectingFromOnMap}
+        rotateEnabled={!isSelectingFromOnMap}
+        pitchEnabled={!isSelectingFromOnMap}
         onPoiClick={map.handlePoiClick}
+        pointerEvents="auto"  // 🆕 Bu satırı ekle
         showsUserLocation={available}
         onPanDrag={() => map.setMapMoved(true)}
         onRegionChangeComplete={map.setRegion}
@@ -264,7 +302,6 @@ console.log('🔵 [DEBUG] Oluşturulan src.description:', src.description);
           />
         )}
 
-        {/* ROUTE POLYLINE */}
         {mode === 'route' && routeCoords.length > 0 && (
           <Polyline
             coordinates={routeCoords}
@@ -273,9 +310,15 @@ console.log('🔵 [DEBUG] Oluşturulan src.description:', src.description);
             lineJoin="round"
           />
         )}
+
+
       </MapView>
+      {isSelectingFromOnMap && (
+       <MapSelectionOverlay onCancel={() => setIsSelectingFromOnMap(false)} />
+     )}
 
       <SafeAreaView pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+
         {/* 1) EXPLORE MODE CONTROLS */}
         {mode === 'explore' && !fromSource && (
           <>
@@ -384,7 +427,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     elevation: 4,
-    zIndex: 10,
+    //zIndex: 10,
   },
   label: { fontSize: 14, fontWeight: '600', marginBottom: 4, color: '#333' },
   inputButton: {

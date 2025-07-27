@@ -1,3 +1,4 @@
+
 // App.js
 import React from 'react';
 import { Platform, LogBox } from 'react-native';
@@ -25,6 +26,7 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
+    // pointerEvents="box-none" ekledik
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <BottomSheetModalProvider>
@@ -35,7 +37,7 @@ export default function App() {
             </Stack.Navigator>
           </NavigationContainer>
         </BottomSheetModalProvider>
-      </SafeAreaProvider>
+       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

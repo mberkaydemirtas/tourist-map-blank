@@ -136,19 +136,31 @@ export async function getRoute(origin, destination) {
   }
 
   const leg = raw.legs[0];
+
+  const polylineStr = raw.overview_polyline?.points || '';
+  const decoded = decodePolyline(polylineStr);
+  console.log('🟢 Toplam çizilecek nokta:', decoded.length);
+
   return {
-    distance: leg.distance?.text || '',
-    duration: leg.duration?.text || '',
-    polyline: raw.overview_polyline?.points || '',
+    distance: leg?.distance?.text ?? '',
+    duration: leg?.duration?.text ?? '',
+    polyline: polylineStr,
+    decodedCoords: decoded, // 💡 ekstra log/test için ekleyebilirsin
   };
 }
 
+
 export function decodePolyline(encoded) {
   try {
+    console.log('🧪 Gelen polyline:', encoded);
     const points = polyline.decode(encoded);
-    return points.map(([latitude, longitude]) => ({ latitude, longitude }));
+    const result = points.map(([latitude, longitude]) => ({ latitude, longitude }));
+    console.log('🧪 Decode edilen nokta sayısı:', result.length);
+    return result;
   } catch (e) {
     console.warn('❌ decodePolyline failed:', e);
     return [];
   }
 }
+
+

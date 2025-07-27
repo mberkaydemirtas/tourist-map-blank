@@ -18,55 +18,35 @@ export default function RouteInfoSheet({ sheetRef, distance, duration, onCancel,
       handleIndicatorStyle={{ backgroundColor: '#ccc' }}
     >
       <BottomSheetView style={styles.content}>
-        <Text style={styles.title}>Yol Bilgisi</Text>
-        <Text style={styles.info}>Mesafe: {distance || 'Bilinmiyor'}</Text>
-        <Text style={styles.info}>Süre: {duration || 'Bilinmiyor'}</Text>
+  <Text style={styles.title}>Yol Bilgisi</Text>
+  <Text style={styles.info}>Mesafe: {distance}</Text>
+  <Text style={styles.info}>Süre: {duration}</Text>
 
-        <TouchableOpacity style={styles.button} onPress={onStart}>
-          <Text style={styles.buttonText}>Başlat</Text>
-        </TouchableOpacity>
+  <TouchableOpacity onPress={onStart} style={styles.button}>
+    <Text style={styles.buttonText}>Başlat</Text>
+  </TouchableOpacity>
 
-        <TouchableOpacity style={styles.cancel} onPress={onCancel}>
-          <Text style={styles.cancelText}>İptal</Text>
-        </TouchableOpacity>
-      </BottomSheetView>
+  <TouchableOpacity onPress={onCancel} style={styles.cancel}>
+    <Text style={styles.cancelText}>İptal</Text>
+  </TouchableOpacity>
+</BottomSheetView>
+
     </BottomSheetModal>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: 'white',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  info: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
+  content: { padding: 16 },
+  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
+  info: { fontSize: 16, marginBottom: 4 },
   button: {
-    marginTop: 16,
+    marginTop: 12,
+    padding: 12,
     backgroundColor: '#1E88E5',
-    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  cancel: {
-    marginTop: 12,
-    alignItems: 'center',
-  },
-  cancelText: {
-    color: '#888',
-    fontSize: 14,
-  },
+  buttonText: { color: 'white', fontWeight: '600' },
+  cancel: { marginTop: 10, alignItems: 'center' },
+  cancelText: { color: '#999' },
 });
