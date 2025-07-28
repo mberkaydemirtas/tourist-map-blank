@@ -39,6 +39,7 @@ export default function MapScreen() {
   const sheetRef = useRef(null);
   const sheetRefRoute = useRef(null);
   const lastAvailable = useRef(false);
+  
 
   const map = useMapLogic(mapRef);
   const { coords, available, refreshLocation } = useLocation();
@@ -119,12 +120,18 @@ useEffect(() => {
 
 
   // --- AUTOMATICALLY OPEN ROUTE INFO SHEET ---
-  useEffect(() => {
-  if (mode === 'route' && routeInfo) {
-    console.log('▶️ Açılıyor:', sheetRefRoute.current);
-    sheetRefRoute.current?.present();
+useEffect(() => {
+  console.log('🔄 UI Durum:', { mode, routeInfo, isSelectingFromOnMap });
+
+  if (mode === 'route' && routeInfo && sheetRefRoute.current?.present) {
+    console.log('▶️ Present çağırılıyor');
+    sheetRefRoute.current.present();
+  } else {
+    console.log('❌ Present çağrı şartları sağlanmadı');
   }
-}, [mode, routeInfo]);
+}, [mode, routeInfo, isSelectingFromOnMap]);
+
+
 
 
 
@@ -306,13 +313,23 @@ const handleMapPress = (e) => {
   const handleCancelRoute = () => {
   setMode('explore');
 
-  // ✅ Keep the last marker on map
+  // ✅ Marker'ı eski hedefe koy
   if (toLocation?.coords) {
     map.setMarker({
       coordinate: toLocation.coords,
       name: toLocation.description,
       address: toLocation.description,
     });
+
+    // ✅ HARİTAYI ORAYA HAREKET ETTİR ⬇️
+    mapRef.current?.animateToRegion(
+      {
+        ...toLocation.coords,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      },
+      500
+    );
   }
 
   setFromSource(null);
@@ -321,6 +338,7 @@ const handleMapPress = (e) => {
   setRouteInfo(null);
   sheetRefRoute.current?.dismiss();
 };
+
 
 
 return (
@@ -505,7 +523,6 @@ return (
     </SafeAreaView>
 
     {/* RouteInfoSheet PORTAL ile dışarıda gösteriliyor */}
-    <Portal>
       <RouteInfoSheet
         ref={sheetRefRoute}
         distance={routeInfo?.distance}
@@ -523,7 +540,6 @@ return (
           </TouchableOpacity>
         </View>
       </RouteInfoSheet>
-    </Portal>
   </View>
 );
 }
@@ -574,16 +590,21 @@ const styles = StyleSheet.create({
     color: '#333',
     textAlign: 'center',
   },
-  routeSheetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    padding: 8,
-  },
-  closeButton: {
-    padding: 4,
-  },
-  closeButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
+routeSheetHeader: {
+  flexDirection: 'row',
+  justifyContent: 'flex-end',
+  paddingHorizontal: 12,
+  paddingTop: 8,
+},
+
+closeButton: {
+  padding: 8,
+},
+
+closeButtonText: {
+  fontSize: 18,
+  fontWeight: 'bold',
+  color: '#666',
+},
+
 });

@@ -1,7 +1,7 @@
 // src/components/RouteInfoSheet.js
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
-import { View, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
-import { BottomSheetModal } from '@gorhom/bottom-sheet';
+import { View, Text, Button, StyleSheet } from 'react-native';
+import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 
 const RouteInfoSheet = forwardRef(({
   distance,
@@ -25,19 +25,21 @@ const RouteInfoSheet = forwardRef(({
       snapPoints={snapPoints}
       enablePanDownToClose={false}
       enableHandlePanningGesture={true}
-      backgroundStyle={styles.sheetBackground}          // BEYAZ ARKA PLAN
-      handleIndicatorStyle={styles.handleIndicator}     // GÖRSEL HANDLE
+      backgroundStyle={styles.sheetBackground}
+      handleIndicatorStyle={styles.handleIndicator}
       onDismiss={onCancel}
     >
-      {/* HEADER: dışarıdan gelen çarpı butonu */}
-      {children}
+      <BottomSheetView style={styles.container}>
+        {/* HEADER */}
+        {children}
 
-      {/* CONTENT: Mesafe, Süre, Başlat */}
-      <View style={styles.content}>
-        <Text style={styles.infoText}>Mesafe: {distance?.text || '–'}</Text>
-        <Text style={styles.infoText}>Süre: {duration?.text || '–'}</Text>
-        <Button title="Başlat" onPress={onStart} />
-      </View>
+        {/* CONTENT */}
+        <View style={styles.content}>
+          <Text style={styles.infoText}>Mesafe: {distance?.text || distance || '–'}</Text>
+          <Text style={styles.infoText}>Süre: {duration?.text || duration || '–'}</Text>
+          <Button title="Başlat" onPress={onStart} />
+        </View>
+      </BottomSheetView>
     </BottomSheetModal>
   );
 });
@@ -55,6 +57,9 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     alignSelf: 'center',
     marginVertical: 8,
+  },
+  container: {
+    flex: 1,
   },
   content: {
     paddingHorizontal: 16,
