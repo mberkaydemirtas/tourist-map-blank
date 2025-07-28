@@ -50,21 +50,30 @@ export function useMapLogic(mapRef) {
           }
         }, []);
   const handleSelectFrom = useCallback(place => {
-    setFromLocation(place);
-    setPhase('to');
-  }, []);
+  setFromLocation({
+    description: place.description,
+    coordinate: place.coords ?? place.coordinate, // ikisini de destekle
+    key: place.key || 'from',
+  });
+  setPhase('to');
+}, []);
 
-  const handleSelectTo = useCallback(
-    async place => {
-      setToLocation(place);
-      setPhase('ready');
-       // fetch & draw route
-      if (fromLocation?.coordinate) {
-        await getRouteBetween(fromLocation.coordinate, place.coordinate);
-      }
-    },
-    [fromLocation, getRouteBetween]
-  );
+
+  const handleSelectTo = useCallback(async place => {
+  const to = {
+    description: place.description,
+    coordinate: place.coords ?? place.coordinate,
+    key: place.key || 'to',
+  };
+
+  setToLocation(to);
+  setPhase('ready');
+
+  if (fromLocation?.coordinate) {
+    await getRouteBetween(fromLocation.coordinate, to.coordinate);
+  }
+}, [fromLocation, getRouteBetween]);
+
 
     const fetchAndSetMarker = useCallback(
     async (placeId, fallbackCoord, fallbackName = '') => {
@@ -260,54 +269,40 @@ export function useMapLogic(mapRef) {
 
 
   const handleMapPress = useCallback(
-  async e => {
-    const { latitude, longitude } = e.nativeEvent.coordinate;
-    console.log('📍 Harita tıklandı:', latitude, longitude);
-
-    try {
+    async e => {
+      const { latitude, longitude } = e.nativeEvent.coordinate;
       const info = await getAddressFromCoords(latitude, longitude);
-      console.log('📬 getAddressFromCoords sonucu:', info);
-
       if (!info || !info.place_id) {
-        Alert.alert('Hata', 'Bu konum için adres bilgisi alınamadı.');
+        Alert.alert('Hata', 'Bu konum için detay alınamadı.');
         return;
       }
 
-      const tappedCoords = { latitude, longitude };
-      const fromPlace = {
-  coordinate: tappedCoords,
-  description: info.address,
-};
-
-
-      setFromLocation(fromPlace); // 🌟 EN KRİTİK ADIM
-      setQuery(info.address);
       setActiveCategory(null);
       setCategoryMarkers([]);
       setRouteCoords(null);
       setRouteInfo(null);
       setRouteDrawn(false);
       setMapMoved(false);
+      setQuery(info.address);
 
-      await fetchAndSetMarker(info.place_id, tappedCoords, info.address);
-      setRegion(prev => ({
+      await fetchAndSetMarker(info.place_id, { latitude, longitude }, info.address);
+
+      setRegion(r => ({
         latitude,
         longitude,
-        latitudeDelta: prev?.latitudeDelta ?? 0.01,
-        longitudeDelta: prev?.longitudeDelta ?? 0.01,
+        latitudeDelta: r.latitudeDelta,
+        longitudeDelta: r.longitudeDelta,
       }));
 
-      if (toLocation?.coords) {
-        await getRouteBetween(tappedCoords, toLocation.coords);
+      try {
+        const route = await getRoute(ANKARA_CENTER, { latitude, longitude });
+        setRouteInfo(route);
+      } catch {
+        setRouteInfo(null);
       }
-    } catch (error) {
-      console.error('🔥 Hata (handleMapPress):', error);
-    }
-  },
-  [fetchAndSetMarker, toLocation, getRouteBetween]
-);
-
-
+    },
+    [fetchAndSetMarker]
+  );
 
   const handleMarkerSelect = useCallback(
     async (placeId, coordinate, fallbackName = '') => {

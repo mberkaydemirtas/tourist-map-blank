@@ -1,52 +1,67 @@
 // src/components/RouteInfoSheet.js
-import React, { useEffect } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+import { View, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
 
-export default function RouteInfoSheet({ sheetRef, distance, duration, onCancel, onStart }) {
-  useEffect(() => {
-    console.log('✅ RouteInfoSheet render edildi!');
-  }, []);
+const RouteInfoSheet = forwardRef(({
+  distance,
+  duration,
+  onCancel,
+  onStart,
+  snapPoints = ['50%'],   // TEST İÇİN %50 yaptık
+  children,
+}, ref) => {
+  const innerRef = useRef(null);
+
+  useImperativeHandle(ref, () => ({
+    present: () => innerRef.current?.present(),
+    dismiss: () => innerRef.current?.dismiss(),
+  }));
 
   return (
     <BottomSheetModal
-      ref={sheetRef}
-      snapPoints={['25%', '40%']}
+      ref={innerRef}
       index={0}
-      onChange={(index) => console.log('🟣 BottomSheet index:', index)}
-      backgroundStyle={{ backgroundColor: 'white' }}
-      handleIndicatorStyle={{ backgroundColor: '#ccc' }}
+      snapPoints={snapPoints}
+      enablePanDownToClose={false}
+      enableHandlePanningGesture={true}
+      backgroundStyle={styles.sheetBackground}          // BEYAZ ARKA PLAN
+      handleIndicatorStyle={styles.handleIndicator}     // GÖRSEL HANDLE
+      onDismiss={onCancel}
     >
-      <BottomSheetView style={styles.content}>
-  <Text style={styles.title}>Yol Bilgisi</Text>
-  <Text style={styles.info}>Mesafe: {distance}</Text>
-  <Text style={styles.info}>Süre: {duration}</Text>
+      {/* HEADER: dışarıdan gelen çarpı butonu */}
+      {children}
 
-  <TouchableOpacity onPress={onStart} style={styles.button}>
-    <Text style={styles.buttonText}>Başlat</Text>
-  </TouchableOpacity>
-
-  <TouchableOpacity onPress={onCancel} style={styles.cancel}>
-    <Text style={styles.cancelText}>İptal</Text>
-  </TouchableOpacity>
-</BottomSheetView>
-
+      {/* CONTENT: Mesafe, Süre, Başlat */}
+      <View style={styles.content}>
+        <Text style={styles.infoText}>Mesafe: {distance?.text || '–'}</Text>
+        <Text style={styles.infoText}>Süre: {duration?.text || '–'}</Text>
+        <Button title="Başlat" onPress={onStart} />
+      </View>
     </BottomSheetModal>
   );
-}
+});
+
+export default RouteInfoSheet;
 
 const styles = StyleSheet.create({
-  content: { padding: 16 },
-  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  info: { fontSize: 16, marginBottom: 4 },
-  button: {
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: '#1E88E5',
-    borderRadius: 8,
-    alignItems: 'center',
+  sheetBackground: {
+    backgroundColor: 'white',
   },
-  buttonText: { color: 'white', fontWeight: '600' },
-  cancel: { marginTop: 10, alignItems: 'center' },
-  cancelText: { color: '#999' },
+  handleIndicator: {
+    backgroundColor: '#CCC',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginVertical: 8,
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  infoText: {
+    fontSize: 16,
+    marginBottom: 8,
+  },
 });

@@ -6,6 +6,7 @@ import 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { PortalProvider } from '@gorhom/portal'; // ✅ doğru
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 import { NavigationContainer } from '@react-navigation/native';
@@ -26,9 +27,9 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    // pointerEvents="box-none" ekledik
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
+          <PortalProvider>
         <BottomSheetModalProvider>
           <NavigationContainer>
             <Stack.Navigator initialRouteName="Map" screenOptions={{ headerShown: false }}>
@@ -37,7 +38,8 @@ export default function App() {
             </Stack.Navigator>
           </NavigationContainer>
         </BottomSheetModalProvider>
-       </SafeAreaProvider>
+          </PortalProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

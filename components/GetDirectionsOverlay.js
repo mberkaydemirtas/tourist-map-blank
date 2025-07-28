@@ -15,6 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { autocomplete, getPlaceDetails } from '../services/maps';
 
+
 const HISTORY_KEY = 'search_history';
 const MAX_HISTORY = 5;
 
