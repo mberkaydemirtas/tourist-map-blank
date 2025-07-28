@@ -19,11 +19,12 @@ export function useMapLogic(mapRef) {
     latitudeDelta: 0.03,
     longitudeDelta: 0.03,
   });
+  const [routeCoords, setRouteCoords] = useState([]);
+
   const [marker, setMarker] = useState(null);
   const [categoryMarkers, setCategoryMarkers] = useState([]);
   const [loadingCategory, setLoadingCategory] = useState(false);
   const [routeInfo, setRouteInfo] = useState(null);
-  const [routeCoords, setRouteCoords] = useState(null);
   const [routeDrawn, setRouteDrawn] = useState(false);
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
@@ -403,11 +404,11 @@ useEffect(() => {
     routeCoords,
     region,
     setRegion,
+    setRouteCoords,
     marker,
     categoryMarkers,
     loadingCategory,
     routeInfo,
-    routeCoords,
     routeDrawn,
     query,
     setQuery,

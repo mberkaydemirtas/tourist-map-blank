@@ -40,13 +40,47 @@ export default function MapScreen() {
   const sheetRefRoute = useRef(null);
   const lastAvailable = useRef(false);
   
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [overlayContext, setOverlayContext] = useState(null); // 'from' | 'to'
+  const [showFromOverlay, setShowFromOverlay] = useState(false);
+
+  
 
   const map = useMapLogic(mapRef);
   const { coords, available, refreshLocation } = useLocation();
+  const handleReverseRoute = async () => {
+  if (!fromSource?.coords || !toLocation?.coords) return;
+
+  // 1. Yerleri değiştir
+  const newFrom = toLocation;
+  const newTo = fromSource;
+  setFromSource(newFrom);
+  setToLocation(newTo);
+
+  try {
+    // 2. Rota çiz
+    const r = await getRoute(newFrom.coords, newTo.coords);
+    const decoded = decodePolyline(r.overview_polyline?.points || r.polyline);
+    setRouteCoords(decoded);
+    setRouteInfo({ distance: r.distance, duration: r.duration });
+
+    // 3. Haritayı ortala
+    mapRef.current?.fitToCoordinates(decoded, {
+      edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+      animated: true,
+    });
+
+    // 4. Sheet'i yeniden göster
+    sheetRefRoute.current?.present();
+
+  } catch (e) {
+    console.warn('🚫 Reverse rota çizilemedi:', e);
+  }
+};
+
 
   // --- FLAGS FOR “GET DIRECTIONS” FLOW ---
   // Overlay’de “Konumunuz / Başka Yer / Haritadan Seç”
-  const [showFromOverlay, setShowFromOverlay] = useState(false);
   // Gerçekten haritaya dokunup origin seçeceğimiz an
   const [isSelectingFromOnMap, setIsSelectingFromOnMap] = useState(false);
 
@@ -58,14 +92,26 @@ export default function MapScreen() {
   // --- ROUTE & INFO ---
   const [routeCoords, setRouteCoords] = useState([]);
   const [routeInfo, setRouteInfo] = useState(null);
+  const lastSelectedRef = useRef(null);
 
   const snapPoints = useMemo(() => ['30%', '60%', '75%', '90%'], []);
 
   // --- EXPLORE DETAIL SHEET ---
   useEffect(() => {
-    if (map.marker && mode === 'explore') sheetRef.current?.snapToIndex(0);
-    else sheetRef.current?.close();
-  }, [map.marker, mode]);
+  console.log('📦 PlaceDetailSheet useEffect:', {
+    marker: map.marker,
+    mode,
+    fromSource
+  });
+
+  if (mode === 'explore' && !fromSource && map.marker) {
+    sheetRef.current?.snapToIndex(0);
+    console.log('✅ PlaceDetailSheet açıldı');
+  } else {
+    sheetRef.current?.close();
+    console.log('❌ PlaceDetailSheet kapatıldı');
+  }
+}, [map.marker, mode, fromSource]);
 
   // --- INITIAL ZOOM TO USER ---
   useEffect(() => {
@@ -137,9 +183,15 @@ useEffect(() => {
 
   // “Get Directions” butonuna basıldığında ilk adım: overlay aç
   const onGetDirectionsPress = () => {
-    sheetRef.current?.close();
-    setShowFromOverlay(true);
-  };
+  if (map.marker?.coordinate) {
+    lastSelectedRef.current = map.marker;
+  } else {
+    lastSelectedRef.current = null;
+  }
+
+  sheetRef.current?.close();
+  setShowFromOverlay(true);
+};
 
   // Overlay’den “Konumunuz” veya “Arama” geldiğinde:
   // MapScreen.js içinden...
@@ -291,54 +343,85 @@ const handleSelectOriginOnMap = async (coordinate) => {
   }
 };
 
-
+const handleSelectDestinationOnMap = async coord => {
+  const geo = await reverseGeocode(coord);
+  const address = geo[0]?.formatted_address||'Seçilen Konum';
+  setToLocation({ coords:coord, description:address, key:geo[0]?.place_id });
+  setIsSelectingFromOnMap(false);
+  map.setMarker({ coordinate:coord, name:address, address });
+  mapRef.current?.animateToRegion({ ...coord, latitudeDelta:0.01, longitudeDelta:0.01 },500);
+  // rota varsa tekrar çiz:
+  if (fromSource?.coords) {
+    const r = await getRoute(fromSource.coords, coord);
+    const pts = decodePolyline(r.overview_polyline?.points||r.polyline);
+    setRouteCoords(pts);
+    setRouteInfo({ distance:r.distance, duration:r.duration });
+    sheetRefRoute.current?.present();
+  }
+};
 
 // MapScreen.js içindeki handleMapPress fonksiyonu
 const handleMapPress = (e) => {
   const { coordinate } = e.nativeEvent;
 
-  // Eğer rota modundaysak ve henüz "nereden" seçilmediyse,
-  // ilk tıklamayı origin seçimine yönlendir:
-  if (mode === 'route' && !fromSource) {
-    handleSelectOriginOnMap(coordinate);
-    return;
+  console.log('🧭 handleMapPress', {
+    mode,
+    isSelectingFromOnMap,
+    overlayContext,
+    coordinate,
+  });
+
+  if (mode === 'route' && isSelectingFromOnMap) {
+    if (overlayContext === 'from') {
+      console.log('📍 Selecting FROM on map');
+      handleSelectOriginOnMap(coordinate);
+    } else if (overlayContext === 'to') {
+      console.log('🎯 Selecting TO on map');
+      handleSelectDestinationOnMap(coordinate);
+    }
+    
   }
 
-  // Aksi halde explore akışını sürdür:
   map.handleMapPress(e);
 };
 
 
   // Route iptali
   const handleCancelRoute = () => {
+  // 1) Keşif moduna dön
   setMode('explore');
 
-  // ✅ Marker'ı eski hedefe koy
-  if (toLocation?.coords) {
-    map.setMarker({
-      coordinate: toLocation.coords,
-      name: toLocation.description,
-      address: toLocation.description,
-    });
+  // 2) Eğer yedeklenmiş bir marker varsa geri yükle
+  if (lastSelectedRef.current) {
+    console.log('🔁 İptal sonrası marker yüklendi:', lastSelectedRef.current);
+    map.setMarker(lastSelectedRef.current);
 
-    // ✅ HARİTAYI ORAYA HAREKET ETTİR ⬇️
-    mapRef.current?.animateToRegion(
-      {
-        ...toLocation.coords,
+    // 3) Haritayı marker’ın olduğu bölgeye kaydır
+    if (lastSelectedRef.current.coordinate) {
+      mapRef.current?.animateToRegion({
+        ...lastSelectedRef.current.coordinate,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
-      },
-      500
-    );
+      }, 500);
+    }
+
+    // 4) 📢 Detay kartını (PlaceDetailSheet) yeniden aç
+    setTimeout(() => {
+      if (sheetRef.current?.snapToIndex) {
+        sheetRef.current.snapToIndex(0);
+      }
+    }, 150); // Küçük gecikme ile geç render’ı garanti eder
+  } else {
+    console.log('⚠️ İptalde yüklenebilecek marker yok.');
   }
 
+  // 5) State’leri sıfırla
   setFromSource(null);
   setToLocation(null);
   setRouteCoords([]);
   setRouteInfo(null);
   sheetRefRoute.current?.dismiss();
 };
-
 
 
 return (
@@ -477,72 +560,107 @@ return (
         />
       )}
 
-      {/* Route modundaysa "Nereden" ve "Nereye" alanları */}
-      {mode === 'route' && (
-        <View style={styles.routeControls}>
-          <Text style={styles.label}>Nereden</Text>
-                  <TouchableOpacity
-          style={styles.inputButton}
-          onPress={() => {
-            setShowFromOverlay(true);  // 📌 Haritadan değil, overlay’le seçilecek
-          }}
-        >
-          <Text style={styles.inputText}>
-            {fromSource?.description || 'Konum seçin'}
-          </Text>
-        </TouchableOpacity>
+      {/* Route Modundaysa Nereden / Nereye Kontrolleri */}
+      {/* Route modundaysa Nereden / Nereye Kontrolleri */}
+{mode === 'route' && (
+  <View style={styles.routeControls}>
+    {/* ⇄ Tuşu sağ üst */}
+    <TouchableOpacity
+      onPress={handleReverseRoute}
+      style={styles.reverseCornerButton}
+    >
+      <Text style={styles.reverseIcon}>⇄</Text>
+    </TouchableOpacity>
+
+    {/* Nereden */}
+    <Text style={styles.label}>Nereden</Text>
+    <TouchableOpacity
+      style={styles.inputButton}
+      onPress={() => {
+        setOverlayContext('from')
+        setShowOverlay(true)
+      }}
+    >
+      <Text style={styles.inputText}>
+        {fromSource?.description || 'Konum seçin'}
+      </Text>
+    </TouchableOpacity>
+
+    <View style={{ height: 10 }} />
+
+    {/* Nereye */}
+    <Text style={styles.label}>Nereye</Text>
+    <TouchableOpacity
+      style={styles.inputButton}
+      onPress={() => {
+        setOverlayContext('to')
+        setShowOverlay(true)
+      }}
+    >
+      <Text style={styles.inputText}>
+        {toLocation?.description || 'Nereye?'}
+      </Text>
+    </TouchableOpacity>
+  </View>
+)}
 
 
-          <View style={{ height: 10 }} />
-
-          <Text style={styles.label}>Nereye</Text>
-          <TouchableOpacity
-            style={styles.inputButton}
-            onPress={() =>
-              navigation.navigate('PlaceSearchOverlay', {
-                onPlaceSelected: (place) => setToLocation(place),
-              })
-            }
-          >
-            <Text style={styles.inputText}>
-              {toLocation?.description || 'Nereye?'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      {/* 🔄 Ortak GetDirectionsOverlay */}
+      {showOverlay && (
+  <GetDirectionsOverlay
+    visible={showOverlay}
+    userCoords={coords}
+    available={available}
+    refreshLocation={refreshLocation}
+    historyKey={`search_history_${overlayContext}`}
+    favoritesKey={`favorite_places_${overlayContext}`}
+    onCancel={() => setShowOverlay(false)}
+    onFromSelected={(place) => {
+      if (overlayContext === 'from') handleFromSelected(place);
+      else if (overlayContext === 'to') setToLocation(place);
+      setShowOverlay(false);
+    }}
+    onMapSelect={() => {
+      setShowOverlay(false);
+      setIsSelectingFromOnMap(true);
+      // **DİKKAT**: overlayContext değişmeyecek!
+    }}
+  />
+)}
 
       <MapOverlays
-        available={available}
-        coords={coords}
-        onRetry={refreshLocation}
-        onRecenter={(region) => {
-          map.setRegion(region);
-          mapRef.current?.animateToRegion(region, 500);
-        }}
-      />
-    </SafeAreaView>
+  available={available}
+  coords={coords}
+  onRetry={refreshLocation}
+  onRecenter={(region) => {
+    map.setRegion(region);
+    mapRef.current?.animateToRegion(region, 500);
+  }}
+/>
 
-    {/* RouteInfoSheet PORTAL ile dışarıda gösteriliyor */}
-      <RouteInfoSheet
-        ref={sheetRefRoute}
-        distance={routeInfo?.distance}
-        duration={routeInfo?.duration}
-        onCancel={handleCancelRoute}
-        onStart={() => console.log('Navigasyonu başlat')}
-        snapPoints={['30%']}
-      >
-        <View style={styles.routeSheetHeader}>
-          <TouchableOpacity
-            onPress={handleCancelRoute}
-            style={styles.closeButton}
-          >
-            <Text style={styles.closeButtonText}>✕</Text>
-          </TouchableOpacity>
-        </View>
-      </RouteInfoSheet>
+<RouteInfoSheet
+  ref={sheetRefRoute}
+  distance={routeInfo?.distance}
+  duration={routeInfo?.duration}
+  onCancel={handleCancelRoute}
+  onStart={() => console.log('Navigasyonu başlat')}
+  snapPoints={['30%']}
+>
+  <View style={styles.routeSheetHeader}>
+    <TouchableOpacity
+      onPress={handleCancelRoute}
+      style={styles.closeButton}
+    >
+      <Text style={styles.closeButtonText}>✕</Text>
+    </TouchableOpacity>
   </View>
+</RouteInfoSheet>
+
+</SafeAreaView> 
+</View>    
 );
 }
+
 
 const styles = StyleSheet.create({
   
@@ -606,5 +724,31 @@ closeButtonText: {
   fontWeight: 'bold',
   color: '#666',
 },
+reverseButtonWrapper: {
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginVertical: 6,
+},
+
+reverseCornerButton: {
+  position: 'absolute',
+  top: 8,
+  right: 8,
+  width: 32,
+  height: 32,
+  borderRadius: 16,
+  backgroundColor: '#eee',
+  justifyContent: 'center',
+  alignItems: 'center',
+  zIndex: 10,
+  elevation: 3,
+},
+
+reverseIcon: {
+  fontSize: 18,
+  fontWeight: '600',
+  color: '#333',
+},
+
 
 });
