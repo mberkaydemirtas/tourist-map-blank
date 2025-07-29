@@ -29,6 +29,14 @@ export function useMapLogic(mapRef) {
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
   const [mapMoved, setMapMoved] = useState(false);
+   // ➊ Harita her değiştiğinde region ve mapMoved güncellensin
+  const onRegionChange = useCallback(
+   (newRegion) => {
+     _setRegion(newRegion);
+     setMapMoved(true);
+   },
+   []
+ );
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   const [phase, setPhase] = useState('from');          // 'from' | 'to' | 'ready'
@@ -429,6 +437,7 @@ useEffect(() => {
     routeCoords,
     region,
     setRegion,
+    onRegionChange,
     setRouteCoords,
     marker,
     categoryMarkers,

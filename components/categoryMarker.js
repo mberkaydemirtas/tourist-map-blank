@@ -12,43 +12,42 @@ const ICONS = {
 export default function CategoryMarker({ item, onSelect, activeCategory, iconSize = 24 }) {
   // Koordinatları güvenli şekilde al
   const coordinate =
-    item.coordinate ?? item.coords ??
+    item.coords ??
+    item.coordinate ??
     (item.geometry?.location && {
       latitude: item.geometry.location.lat,
       longitude: item.geometry.location.lng,
     });
   if (!coordinate) return null;
 
-  // icon tipini belirle: aktif kategori varsa öncelikli kullan; değilse item.types'tan bul
-  let iconType = null;
-  if (activeCategory && ICONS[activeCategory]) {
-    iconType = activeCategory;
+  // iconKey: aktif kategori varsa; değilse item.types içinde uygun bir type
+  let iconKey = null;
+  if (activeCategory && ICONS[activeCategory.toLowerCase()]) {
+    iconKey = activeCategory.toLowerCase();
   } else if (Array.isArray(item.types)) {
-    iconType = item.types.find(type => ICONS[type]);
+    const found = item.types.find(type => ICONS[type.toLowerCase()]);
+    iconKey = found ? found.toLowerCase() : null;
   }
 
-  const iconSource = ICONS[activeCategory?.toLowerCase?.()];
-if (!coordinate || !iconSource) return null;
-
-
-  // Fallback: icon yoksa default pin göster
-  const MarkerContent = iconSource ? (
-    <Image
-      source={iconSource}
-      style={{ width: iconSize, height: iconSize, resizeMode: 'contain' }}
-    />
-  ) : null;
+  const iconSource = iconKey ? ICONS[iconKey] : null;
 
   return (
     <Marker
       coordinate={coordinate}
       onPress={() => onSelect(item.place_id, coordinate, item.name)}
-      tracksViewChanges={false}
+      tracksViewChanges={false}   // performansı sabitle
+      opacity={1}                  // tam opaklik
       anchor={{ x: 0.5, y: 1 }}
       calloutAnchor={{ x: 0.5, y: -0.5 }}
-      pinColor={iconSource ? undefined : '#FF5A5F'}
+      pinColor={!iconSource ? '#FF5A5F' : undefined}  // fallback pin rengi
+      zIndex={iconSource && iconKey === activeCategory?.toLowerCase() ? 10 : 1}
     >
-      {MarkerContent}
+      {iconSource && (
+        <Image
+          source={iconSource}
+          style={{ width: iconSize, height: iconSize, resizeMode: 'contain', opacity: 1 }}
+        />
+      )}
       <Callout>
         <View style={styles.calloutContainer}>
           <Text style={styles.calloutText}>{item.name}</Text>

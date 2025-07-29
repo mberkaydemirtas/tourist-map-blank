@@ -19,6 +19,7 @@ import { Portal } from '@gorhom/portal';
 
 
 import MapMarkers from './components/MapMarkers';
+import ScanButton from './components/ScanButton';
 import MapHeaderControls from './components/MapHeaderControls';
 import MapOverlays from './components/MapOverlays';
 import PlaceDetailSheet from './components/PlaceDetailSheet';
@@ -594,7 +595,10 @@ return (
     map.handlePoiClick(e);
   }}
       showsUserLocation={available}
-      onRegionChangeComplete={map.setRegion}
+      onRegionChangeComplete={region => {
+   map.setRegion(region);
+   map.setMapMoved(true);
+ }}
     >
       <MapMarkers
   categoryMarkers={map.categoryMarkers}
@@ -670,26 +674,27 @@ return (
       {mode === 'explore' && !fromSource && (
         <>
           <MapHeaderControls
-            query={map.query}
-            onQueryChange={map.setQuery}
-            onPlaceSelect={map.handleSelectPlace}
-            onCategorySelect={map.handleCategorySelect}
-            mapMoved={map.mapMoved}
-            loadingCategory={map.loadingCategory}
-            onSearchArea={map.handleSearchThisArea}
-          />
-          {map.activeCategory && map.categoryMarkers.length > 0 && (
+  query={map.query}
+  onQueryChange={map.setQuery}
+  onPlaceSelect={map.handleSelectPlace}
+  onCategorySelect={map.handleCategorySelect}
+  mapMoved={map.mapMoved}
+  loadingCategory={map.loadingCategory}
+  onSearchArea={map.handleSearchThisArea}
+/>
+
+          {map.activeCategory && map.categoryMarkers.length > 0 && map.mapMoved && (
   <>
     {console.log('📊 Gelen kategori verisi:', map.categoryMarkers?.length, map.categoryMarkers)}
 
     <CategoryList
-      data={map.categoryMarkers}
-      activePlaceId={map.marker?.place_id}
-      onSelect={map.handleSelectPlace}
-      userCoords={coords}
+          data={map.categoryMarkers}
+          activePlaceId={map.marker?.place_id}
+          onSelect={map.handleSelectPlace}
+          userCoords={coords}
     />
-  </>
-)}
+      </>
+    )}
 
           <PlaceDetailSheet
             marker={map.marker}
@@ -716,7 +721,6 @@ return (
         />
       )}
 
-      {/* Route Modundaysa Nereden / Nereye Kontrolleri */}
       {/* Route modundaysa Nereden / Nereye Kontrolleri */}
   {mode === 'route' && (
     <View style={styles.routeControls}>
@@ -912,6 +916,24 @@ reverseIcon: {
   fontWeight: '600',
   color: '#333',
 },
+ searchAreaButton: {
+    position: 'absolute',
+    bottom: 200,            // CategoryList’in hemen üstünde görünmesi için
+    left: 20,
+    right: 20,
+    height: 48,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    zIndex: 5,
+  },
+    searchAreaText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
 
 
 });
