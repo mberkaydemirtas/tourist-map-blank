@@ -1,4 +1,3 @@
-// components/CategoryMarker.js
 import React from 'react';
 import { Marker, Callout } from 'react-native-maps';
 import { View, Text, StyleSheet, Image } from 'react-native';
@@ -11,6 +10,7 @@ const ICONS = {
 };
 
 export default function CategoryMarker({ item, onSelect, activeCategory, iconSize = 24 }) {
+  // Koordinatları güvenli şekilde al
   const coordinate =
     item.coordinate ?? item.coords ??
     (item.geometry?.location && {
@@ -19,8 +19,25 @@ export default function CategoryMarker({ item, onSelect, activeCategory, iconSiz
     });
   if (!coordinate) return null;
 
-  const iconSource = ICONS[activeCategory];
-  if (!iconSource) return null;
+  // icon tipini belirle: aktif kategori varsa öncelikli kullan; değilse item.types'tan bul
+  let iconType = null;
+  if (activeCategory && ICONS[activeCategory]) {
+    iconType = activeCategory;
+  } else if (Array.isArray(item.types)) {
+    iconType = item.types.find(type => ICONS[type]);
+  }
+
+  const iconSource = ICONS[activeCategory?.toLowerCase?.()];
+if (!coordinate || !iconSource) return null;
+
+
+  // Fallback: icon yoksa default pin göster
+  const MarkerContent = iconSource ? (
+    <Image
+      source={iconSource}
+      style={{ width: iconSize, height: iconSize, resizeMode: 'contain' }}
+    />
+  ) : null;
 
   return (
     <Marker
@@ -29,11 +46,9 @@ export default function CategoryMarker({ item, onSelect, activeCategory, iconSiz
       tracksViewChanges={false}
       anchor={{ x: 0.5, y: 1 }}
       calloutAnchor={{ x: 0.5, y: -0.5 }}
+      pinColor={iconSource ? undefined : '#FF5A5F'}
     >
-      <Image
-        source={iconSource}
-        style={{ width: iconSize, height: iconSize, resizeMode: 'contain' }}
-      />
+      {MarkerContent}
       <Callout>
         <View style={styles.calloutContainer}>
           <Text style={styles.calloutText}>{item.name}</Text>

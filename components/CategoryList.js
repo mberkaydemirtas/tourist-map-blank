@@ -10,11 +10,12 @@ import {
   Pressable,
   ScrollView,
   TextInput,
-  Image,
 } from 'react-native';
 
 const CARD_WIDTH = Dimensions.get('window').width * 0.8;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
+
+// ... importlar aynı
 
 export default function CategoryList({ data, activePlaceId, onSelect, userCoords }) {
   const [filterByRating, setFilterByRating] = useState(false);
@@ -31,8 +32,8 @@ export default function CategoryList({ data, activePlaceId, onSelect, userCoords
   const uniqueData = useMemo(() => {
     const seen = new Set();
     return data.filter(item => {
-      const lat = item.coordinate?.latitude ?? item.geometry?.location?.lat;
-      const lng = item.coordinate?.longitude ?? item.geometry?.location?.lng;
+      const lat = item.coords?.latitude ?? item.coordinate?.latitude ?? item.geometry?.location?.lat;
+      const lng = item.coords?.longitude ?? item.coordinate?.longitude ?? item.geometry?.location?.lng;
       const key = `${item.name}-${lat}-${lng}`;
       if (seen.has(key)) return false;
       seen.add(key);
@@ -55,11 +56,11 @@ export default function CategoryList({ data, activePlaceId, onSelect, userCoords
       list.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
     } else if (sortBy === 'distance' && userCoords) {
       list.sort((a, b) => {
-        const aCoord = a.coordinate ?? {
+        const aCoord = a.coords ?? a.coordinate ?? {
           latitude: a.geometry?.location?.lat,
           longitude: a.geometry?.location?.lng,
         };
-        const bCoord = b.coordinate ?? {
+        const bCoord = b.coords ?? b.coordinate ?? {
           latitude: b.geometry?.location?.lat,
           longitude: b.geometry?.location?.lng,
         };
@@ -85,14 +86,16 @@ export default function CategoryList({ data, activePlaceId, onSelect, userCoords
   };
 
   const renderItem = ({ item }) => {
+    const latitude = item.coords?.latitude ?? item.coordinate?.latitude ?? item.geometry?.location?.lat;
+    const longitude = item.coords?.longitude ?? item.coordinate?.longitude ?? item.geometry?.location?.lng;
+    if (latitude == null || longitude == null) return null;
+
     const isActive = activePlaceId === item.place_id;
-    const latitude = item.coordinate.latitude;
-    const longitude = item.coordinate.longitude;
     const distanceText = userCoords
-      ? `${(Math.hypot(userCoords.latitude - latitude, userCoords.longitude - longitude) * 111).toFixed(1)} km uzaklıkta`
+      ? `${(getDistance(userCoords, { latitude, longitude }) * 111).toFixed(1)} km uzaklıkta`
       : null;
 
-     return (
+    return (
       <TouchableOpacity
         onPress={() => onSelect(item.place_id, { latitude, longitude }, item.name)}
         style={[styles.card, isActive && styles.activeCard]}
@@ -113,41 +116,32 @@ export default function CategoryList({ data, activePlaceId, onSelect, userCoords
 
   return (
     <View style={styles.container}>
+      {/* Kontrol barı */}
       <View style={styles.controls}>
         <TouchableOpacity onPress={() => setFilterByRating(prev => !prev)}>
           <Text style={[styles.controlText, filterByRating && styles.controlActive]}>
             {filterByRating ? '4+ filtre ✖️' : '4+ filtre'}
           </Text>
         </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => setSortBy(prev =>
-          prev === 'rating' ? 'default' : 'rating')}>
+        <TouchableOpacity onPress={() => setSortBy(prev => prev === 'rating' ? 'default' : 'rating')}>
           <Text style={[styles.controlText, sortBy === 'rating' && styles.controlActive]}>
             ⭐ sıralama
           </Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => setSortBy(prev =>
-            prev === 'distance' ? 'default' : 'distance')}
-        >
+        <TouchableOpacity onPress={() => setSortBy(prev => prev === 'distance' ? 'default' : 'distance')}>
           <Text style={[styles.controlText, sortBy === 'distance' && styles.controlActive]}>
             📍 yakınlık
           </Text>
         </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => {
-          setFilterByRating(false);
-          setSortBy('default');
-        }}>
+        <TouchableOpacity onPress={() => { setFilterByRating(false); setSortBy('default'); }}>
           <Text style={styles.resetButton}>Sıfırla</Text>
         </TouchableOpacity>
-
         <TouchableOpacity onPress={() => setModalVisible(true)}>
           <Text style={styles.expandButton}>⇅ Genişlet</Text>
         </TouchableOpacity>
       </View>
 
+      {/* Yatay liste */}
       <FlatList
         ref={flatListRef}
         horizontal
@@ -158,6 +152,7 @@ export default function CategoryList({ data, activePlaceId, onSelect, userCoords
         contentContainerStyle={styles.listContent}
       />
 
+      {/* Modal görünüm */}
       <Modal visible={modalVisible} animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
@@ -175,21 +170,11 @@ export default function CategoryList({ data, activePlaceId, onSelect, userCoords
             onChangeText={setSearchQuery}
           />
 
-          <ScrollView
-            contentContainerStyle={styles.modalList}
-            onScrollEndDrag={(e) => {
-              if (e.nativeEvent.contentOffset.y < -30) {
-                setModalVisible(false);
-              }
-            }}
-            scrollEventThrottle={16}
-            showsVerticalScrollIndicator={false}
-            bounces={true}
-            alwaysBounceVertical={true}
-          >
-            {filteredData.map((item) => {
-              const latitude = item.coordinate?.latitude ?? item.geometry?.location?.lat;
-              const longitude = item.coordinate?.longitude ?? item.geometry?.location?.lng;
+          <ScrollView contentContainerStyle={styles.modalList}>
+            {filteredData.map(item => {
+              const latitude = item.coords?.latitude ?? item.coordinate?.latitude ?? item.geometry?.location?.lat;
+              const longitude = item.coords?.longitude ?? item.coordinate?.longitude ?? item.geometry?.location?.lng;
+              if (latitude == null || longitude == null) return null;
 
               return (
                 <TouchableOpacity
@@ -208,7 +193,7 @@ export default function CategoryList({ data, activePlaceId, onSelect, userCoords
                   )}
                   {userCoords && (
                     <Text style={styles.distance}>
-                      {(Math.hypot(userCoords.latitude - latitude, userCoords.longitude - longitude) * 111).toFixed(1)} km uzaklıkta
+                      {(getDistance(userCoords, { latitude, longitude }) * 111).toFixed(1)} km uzaklıkta
                     </Text>
                   )}
                   <Text style={styles.address}>{item.address || 'Adres bilgisi yok'}</Text>
@@ -216,16 +201,16 @@ export default function CategoryList({ data, activePlaceId, onSelect, userCoords
               );
             })}
           </ScrollView>
-
         </View>
       </Modal>
     </View>
   );
 }
 
+
 const styles = StyleSheet.create({
-  container: { position: 'absolute', bottom: 80, left: 0, right: 0, paddingVertical: 8, paddingHorizontal: 10, },
-  controls: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'space-between', marginBottom: 6 },
+  container: { position: 'absolute', bottom: 80, left: 0, right: 0, paddingVertical: 8, paddingHorizontal: 10 },
+  controls: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 6 },
   controlText: { fontSize: 13, color: '#444', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: '#eee' },
   controlActive: { backgroundColor: '#4285F4', color: '#fff', fontWeight: 'bold' },
   resetButton: { fontSize: 13, color: 'white', backgroundColor: '#d9534f', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, fontWeight: 'bold' },

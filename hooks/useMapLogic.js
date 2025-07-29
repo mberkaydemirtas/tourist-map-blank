@@ -180,14 +180,38 @@ export function useMapLogic(mapRef) {
         setRegion(center);
       }
 
-      const places = await getNearbyPlaces(center, type);
+      let rawPlaces = await getNearbyPlaces(center, type);
+
+      // ✅ KOORDİNATLARI AÇIKÇA BELİRLE
+      const places = rawPlaces
+        .map((item) => {
+          const lat =
+            item.coords?.latitude ??
+            item.coordinate?.latitude ??
+            item.geometry?.location?.lat;
+          const lng =
+            item.coords?.longitude ??
+            item.coordinate?.longitude ??
+            item.geometry?.location?.lng;
+
+          if (lat == null || lng == null) return null;
+
+          return {
+            ...item,
+            coordinate: { latitude: lat, longitude: lng },
+          };
+        })
+        .filter(Boolean); // null olanları at
+
       const key = JSON.stringify(places.map(p => p.place_id || p.id || p.name));
 
       if (key !== lastPlacesKey.current) {
-        setCategoryMarkers(places);
+        setTimeout(() => {
+  setCategoryMarkers(places);
+}, 0);
+
         lastPlacesKey.current = key;
 
-        // 🔍 Tüm yeni marker’ları gösterecek şekilde uzaklaş
         if (mapRef.current && places.length > 0) {
           mapRef.current.fitToCoordinates(
             places.map(p => p.coordinate),
@@ -208,6 +232,7 @@ export function useMapLogic(mapRef) {
   },
   [activeCategory, mapRef, region]
 );
+
 
 
   const handleSearchThisArea = useCallback(async () => {
@@ -415,6 +440,8 @@ useEffect(() => {
     activeCategory,
     mapMoved,
     setMapMoved,
+    setFromLocation,
+    setToLocation,
     isLoadingDetails,
     getRouteBetween,
     phase,
