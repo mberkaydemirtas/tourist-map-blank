@@ -1,6 +1,8 @@
 // src/services/maps.js
 import { GOOGLE_MAPS_API_KEY as KEY } from '@env';
 import polyline from '@mapbox/polyline';
+import axios from 'axios';
+import { MAPBOX_ACCESS_TOKEN } from '@env';
 
 const BASE = 'https://maps.googleapis.com/maps/api';
 
@@ -83,6 +85,14 @@ export async function getPlaceDetails(placeId) {
     return null;
   }
 }
+
+export const getTurnByTurnSteps = async (from, to) => {
+  const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${from.lng},${from.lat};${to.lng},${to.lat}?steps=true&geometries=geojson&access_token=${MAPBOX_ACCESS_TOKEN}`;
+
+  const response = await axios.get(url);
+  const steps = response.data.routes[0].legs[0].steps;
+  return steps;
+};
 
 export async function getAddressFromCoords(lat, lng) {
   const url = `${BASE}/geocode/json?latlng=${lat},${lng}&key=${KEY}&language=tr`;
