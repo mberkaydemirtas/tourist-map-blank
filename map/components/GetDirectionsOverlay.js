@@ -12,7 +12,7 @@ import {
   Keyboard,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { autocomplete, getPlaceDetails } from '../services/maps';
+import { autocomplete, getPlaceDetails } from '../maps';
 
 const HISTORY_KEY_BASE = 'search_history';
 const MAX_HISTORY = 5;

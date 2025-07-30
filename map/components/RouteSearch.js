@@ -10,7 +10,7 @@ import {
   Keyboard,
   Platform,
 } from 'react-native';
-import { autocomplete, getPlaceDetails } from '../services/maps';
+import { autocomplete, getPlaceDetails } from '../maps';
 
 export default function RouteSearchBar({ placeholder, value = '', onPlaceSelect }) {
   console.log('🟢 RouteSearchBar RENDER EDİLDİ');

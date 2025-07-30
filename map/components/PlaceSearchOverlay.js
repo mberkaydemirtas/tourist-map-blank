@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { autocomplete, getPlaceDetails } from '../services/maps';
+import { autocomplete, getPlaceDetails } from '../maps';
 
 const HISTORY_KEY = 'search_history';
 const MAX_HISTORY = 5;

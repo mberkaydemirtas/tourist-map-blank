@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 
@@ -7,16 +7,22 @@ import PlaceOpeningHours from './PlaceOpeningHours';
 import PlacePhotoGallery from './PlacePhotoGallery';
 import PlaceContactButtons from './PlaceContactButtons';
 
-export default function PlaceDetailSheet({
-  marker,
-  routeInfo,
-  sheetRef,
-  snapPoints,
-  onGetDirections,
-}) {
+const PlaceDetailSheet = forwardRef(function PlaceDetailSheet(
+  { marker, routeInfo, snapPoints, onGetDirections },
+  ref
+) {
+  const innerRef = useRef(null);
+
+  // Dışarıdan erişim için imperative API
+  useImperativeHandle(ref, () => ({
+    present: () => innerRef.current?.expand?.(),
+    close: () => innerRef.current?.close?.(),
+    snapToIndex: (index) => innerRef.current?.snapToIndex?.(index),
+  }));
+
   return (
     <BottomSheet
-      ref={sheetRef}
+      ref={innerRef}
       index={-1}
       snapPoints={snapPoints}
       enablePanDownToClose
@@ -40,7 +46,9 @@ export default function PlaceDetailSheet({
       </BottomSheetScrollView>
     </BottomSheet>
   );
-}
+});
+
+export default PlaceDetailSheet;
 
 const styles = StyleSheet.create({
   sheetScroll: {

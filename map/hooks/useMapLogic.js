@@ -6,7 +6,7 @@ import {
   getAddressFromCoords,
   getRoute,
   decodePolyline,
-} from '../services/maps';
+} from '../maps';
 import { GOOGLE_MAPS_API_KEY as KEY } from '@env';
 import isEqual from 'lodash.isequal';
 
@@ -42,6 +42,7 @@ export function useMapLogic(mapRef) {
   const [phase, setPhase] = useState('from');          // 'from' | 'to' | 'ready'
   const [fromLocation, setFromLocation] = useState(null);
   const [toLocation, setToLocation] = useState(null);
+  
 
   const lastPlacesKey = useRef(null);
           const getRouteBetween = useCallback(async (startCoord, destCoord) => {
@@ -163,8 +164,20 @@ export function useMapLogic(mapRef) {
 
   const handleCategorySelect = useCallback(
   async (type) => {
-    if (type === activeCategory) return;
+    // Aynı kategoriye tekrar tıklandıysa → KAPAT (toggle)
+    if (type === activeCategory) {
+      setActiveCategory(null);
+      setQuery('');
+      setMarker(null);
+      setCategoryMarkers([]);
+      setRouteCoords(null);
+      setRouteInfo(null);
+      setRouteDrawn(false);
+      setMapMoved(false);
+      return;
+    }
 
+    // Yeni kategori seçildi → TEMİZLE + YENİLE
     setActiveCategory(type);
     setQuery('');
     setMarker(null);
@@ -188,9 +201,7 @@ export function useMapLogic(mapRef) {
         setRegion(center);
       }
 
-      let rawPlaces = await getNearbyPlaces(center, type);
-
-      // ✅ KOORDİNATLARI AÇIKÇA BELİRLE
+      const rawPlaces = await getNearbyPlaces(center, type);
       const places = rawPlaces
         .map((item) => {
           const lat =
@@ -201,28 +212,22 @@ export function useMapLogic(mapRef) {
             item.coords?.longitude ??
             item.coordinate?.longitude ??
             item.geometry?.location?.lng;
-
           if (lat == null || lng == null) return null;
-
-          return {
-            ...item,
-            coordinate: { latitude: lat, longitude: lng },
-          };
+          return { ...item, coordinate: { latitude: lat, longitude: lng } };
         })
-        .filter(Boolean); // null olanları at
+        .filter(Boolean);
 
-      const key = JSON.stringify(places.map(p => p.place_id || p.id || p.name));
+      const key = JSON.stringify(
+        places.map((p) => p.place_id || p.id || p.name)
+      );
 
       if (key !== lastPlacesKey.current) {
-        setTimeout(() => {
-  setCategoryMarkers(places);
-}, 0);
-
+        setCategoryMarkers(places);
         lastPlacesKey.current = key;
 
         if (mapRef.current && places.length > 0) {
           mapRef.current.fitToCoordinates(
-            places.map(p => p.coordinate),
+            places.map((p) => p.coordinate),
             {
               edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
               animated: true,
@@ -240,7 +245,6 @@ export function useMapLogic(mapRef) {
   },
   [activeCategory, mapRef, region]
 );
-
 
 
   const handleSearchThisArea = useCallback(async () => {

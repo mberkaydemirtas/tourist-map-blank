@@ -27,16 +27,26 @@ import CategoryList from './components/CategoryList';
 import GetDirectionsOverlay from './components/GetDirectionsOverlay';
 import RouteInfoSheet from './components/RouteInfoSheet';
 
-import { getRoute, decodePolyline, reverseGeocode, getPlaceDetails  } from './services/maps';
+import { getRoute, decodePolyline, reverseGeocode, getPlaceDetails  } from './maps';
 
 export default function MapScreen() {
   const navigation = useNavigation();
+  const mapRef = useRef(null);
+  const map = useMapLogic(mapRef);
+  const { coords, available, refreshLocation } = useLocation();
+  const route = useRoute();
+  useEffect(() => {
+  if (map.marker && sheetRef.current) {
+    sheetRef.current.present();
+  }
+}, [map.marker]);
+
   useEffect(() => {
   console.log('📣 isSelectingFromOnMap değişti:', isSelectingFromOnMap);
 }, [isSelectingFromOnMap]);
 
-  const route = useRoute();
-  const mapRef = useRef(null);
+  
+  
   const sheetRef = useRef(null);
   const sheetRefRoute = useRef(null);
   const lastAvailable = useRef(false);
@@ -46,8 +56,27 @@ export default function MapScreen() {
   const [showFromOverlay, setShowFromOverlay] = useState(false);
 
 
-  const map = useMapLogic(mapRef);
-  const { coords, available, refreshLocation } = useLocation();
+
+  
+  const [canShowScan, setCanShowScan] = useState(false);
+  const [mapMovedAfterDelay, setMapMovedAfterDelay] = useState(false);
+
+  useEffect(() => {
+    setCanShowScan(false);
+    setMapMovedAfterDelay(false);
+    if (map.activeCategory) {
+      const timer = setTimeout(() => setCanShowScan(true), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [map.activeCategory]);
+
+  const onRegionChangeComplete = region => {
+    map.setRegion(region);
+    if (canShowScan) {
+      setMapMovedAfterDelay(true);
+    }
+  };
+
   const handleReverseRoute = async () => {
   if (!fromSource?.coords || !toLocation?.coords) return;
 
@@ -82,6 +111,7 @@ export default function MapScreen() {
 // MapScreen.js içinde, fonksiyonun en başında (state/ref tanımlarından sonra)
 const prevCatCount = useRef(0);
 
+
 useEffect(() => {
   if (map.categoryMarkers.length > 0) {
     // Koordinatları hazırla
@@ -104,7 +134,6 @@ useEffect(() => {
     }
   }
 }, [map.categoryMarkers]);
-
 
 
 
@@ -575,9 +604,11 @@ return (
       console.log('🛑 Kullanıcı haritayı oynattı, sadece banner gizlendi');
       setShowSelectionHint(false);
     }
+    
     // İZİN VER: isSelectingFromOnMap true kalsın
   }}
-        scrollEnabled={true}         // 🔓 her zaman açık
+      onRegionChangeComplete={onRegionChangeComplete}
+      scrollEnabled={true}         // 🔓 her zaman açık
       zoomEnabled={true}           // 🔓
       rotateEnabled={true}
       pitchEnabled={true}
@@ -595,10 +626,7 @@ return (
     map.handlePoiClick(e);
   }}
       showsUserLocation={available}
-      onRegionChangeComplete={region => {
-   map.setRegion(region);
-   map.setMapMoved(true);
- }}
+      
     >
       <MapMarkers
   categoryMarkers={map.categoryMarkers}
@@ -674,16 +702,17 @@ return (
       {mode === 'explore' && !fromSource && (
         <>
           <MapHeaderControls
-  query={map.query}
-  onQueryChange={map.setQuery}
-  onPlaceSelect={map.handleSelectPlace}
-  onCategorySelect={map.handleCategorySelect}
-  mapMoved={map.mapMoved}
-  loadingCategory={map.loadingCategory}
-  onSearchArea={map.handleSearchThisArea}
-/>
+        query={map.query}
+        onQueryChange={map.setQuery}
+        onPlaceSelect={map.handleSelectPlace}
+        onCategorySelect={map.handleCategorySelect}
+        mapMovedAfterDelay={mapMovedAfterDelay}
+        loadingCategory={map.loadingCategory}
+        onSearchArea={map.handleSearchThisArea}
+        activeCategory={map.activeCategory}
+      />
 
-          {map.activeCategory && map.categoryMarkers.length > 0 && map.mapMoved && (
+          {map.activeCategory && map.categoryMarkers.length > 0 && (
   <>
     {console.log('📊 Gelen kategori verisi:', map.categoryMarkers?.length, map.categoryMarkers)}
 
@@ -695,8 +724,10 @@ return (
     />
       </>
     )}
-
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 30 }}></View>
           <PlaceDetailSheet
+          
+            ref={sheetRef}
             marker={map.marker}
             routeInfo={map.routeInfo}
             sheetRef={sheetRef}
