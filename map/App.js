@@ -8,6 +8,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PortalProvider } from '@gorhom/portal'; // ✅ doğru
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import MapboxGL from '@rnmapbox/maps';
+import { MAPBOX_ACCESS_TOKEN } from '@env';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -18,6 +20,8 @@ import PlaceSearchOverlay from './components/PlaceSearchOverlay';
 if (Platform.OS === 'android') {
   global.XMLHttpRequest = global.originalXMLHttpRequest ?? global.XMLHttpRequest;
 }
+
+MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
 
 LogBox.ignoreLogs([
   'Sending `onAnimatedValueUpdate` with no listeners registered',
@@ -35,6 +39,7 @@ export default function App() {
             <Stack.Navigator initialRouteName="Map" screenOptions={{ headerShown: false }}>
               <Stack.Screen name="Map" component={MapScreen} />
               <Stack.Screen name="PlaceSearchOverlay" component={PlaceSearchOverlay} />
+              <Stack.Screen name="NavigationScreen" component={NavigationScreen} />
             </Stack.Navigator>
           </NavigationContainer>
         </BottomSheetModalProvider>

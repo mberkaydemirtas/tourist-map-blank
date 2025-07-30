@@ -699,6 +699,7 @@ return (
 
     <SafeAreaView pointerEvents="box-none" style={StyleSheet.absoluteFill}>
       {/* EXPLORE modundaysa */}
+      
       {mode === 'explore' && !fromSource && (
         <>
           <MapHeaderControls

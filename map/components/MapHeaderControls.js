@@ -22,9 +22,9 @@ export default function MapHeaderControls({
       />
 
       <CategoryBar
-        selectedCategory={activeCategory}
-        onSelect={onCategorySelect}
-      />
+  activeCategory={activeCategory}
+  onSelect={onCategorySelect}
+/>
 
       {/*
         'Bu bölgeyi tara' butonu:

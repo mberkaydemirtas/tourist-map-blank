@@ -37,7 +37,11 @@ const RouteInfoSheet = forwardRef(({
         <View style={styles.content}>
           <Text style={styles.infoText}>Mesafe: {distance?.text || distance || '–'}</Text>
           <Text style={styles.infoText}>Süre: {duration?.text || duration || '–'}</Text>
-          <Button title="Başlat" onPress={onStart} />
+          <Button title="Başlat" onPress={() => navigation.navigate('NavigationScreen', {
+  from: fromLocation.coords,
+  to: toLocation.coords,
+})}
+ />
         </View>
       </BottomSheetView>
     </BottomSheetModal>
