@@ -55,8 +55,12 @@ export default function MapScreen() {
   const [showOverlay, setShowOverlay] = useState(false);
   const [overlayContext, setOverlayContext] = useState(null); // 'from' | 'to'
   const [showFromOverlay, setShowFromOverlay] = useState(false);
-
-
+  const [selectedMode, setSelectedMode] = useState('driving');
+  const [routeOptions, setRouteOptions] = useState({
+  driving: null,
+  walking: null,
+  cycling: null,
+});
 
   
   const [canShowScan, setCanShowScan] = useState(false);
@@ -77,6 +81,27 @@ export default function MapScreen() {
       setMapMovedAfterDelay(true);
     }
   };
+
+  const calculateRoute = async (origin, destination, selectedMode = 'driving') => {
+  try {
+    const route = await getRoute(origin, destination, selectedMode);
+    if (!route) throw new Error('Rota alınamadı');
+
+    const decoded = route.decodedCoords;
+    setRouteCoords(decoded);
+    setRouteInfo({ distance: route.distance, duration: route.duration });
+
+    mapRef.current?.fitToCoordinates(decoded, {
+      edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+      animated: true,
+    });
+  } catch (e) {
+    console.warn('⚠️ calculateRoute hata:', e);
+    setRouteCoords([]);
+    setRouteInfo(null);
+  }
+};
+
 
   const handleReverseRoute = async () => {
   if (!fromSource?.coords || !toLocation?.coords) return;
@@ -187,32 +212,37 @@ useEffect(() => {
 
   // --- ROUTE CALCULATION WHEN MODE==='route' ---
   useEffect(() => {
-  if (mode !== 'route' || !fromSource?.coords) return; 
+  if (!fromSource?.coords || !toLocation?.coords) return;
   const origin = fromSource.key === 'current' ? coords : fromSource.coords;
-  if (!origin || !toLocation?.coords) return;
 
-  (async () => {
+  const fetchAllRoutes = async () => {
     try {
-      const r = await getRoute(origin, toLocation.coords);
-      console.log('▶️ raw route objesi:', r);
+      const modes = ['driving', 'walking', 'cycling'];
+      const results = await Promise.all(
+        modes.map(mode => getRoute(origin, toLocation.coords, mode))
+      );
 
-      const decoded = decodePolyline(r.polyline);
-      console.log('🟢 Decode edilen rota noktaları:', decoded.length);
-      setRouteCoords(decoded);
-      mapRef.current?.fitToCoordinates(decoded, {
-  edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
-  animated: true,
-});
-      console.log('✅ Polyline state set edildi:', decoded.length);
+      setRouteOptions({
+        driving: results[0],
+        walking: results[1],
+        cycling: results[2],
+      });
 
-      setRouteInfo({ distance: r.distance, duration: r.duration });
+      // default seçili moda göre aktif rotayı da çiz:
+      const selected = results.find((r, i) => modes[i] === selectedMode);
+      if (selected?.decodedCoords) {
+        setRouteCoords(selected.decodedCoords);
+        setRouteInfo({ distance: selected.distance, duration: selected.duration });
+      }
+
     } catch (e) {
-      console.warn('⚠️ Route parse hatası:', e);
-      setRouteCoords([]);
-      setRouteInfo(null);
+      console.warn('❌ Çoklu rota alma hatası:', e);
     }
-  })();
-}, [mode, fromSource, toLocation, coords]);
+  };
+
+  fetchAllRoutes();
+}, [fromSource, toLocation, coords]);
+
 
   useEffect(() => {
     if (routeCoords.length > 0 && mapRef.current) {
@@ -624,8 +654,15 @@ return (
       return;
     }
     // Aksi halde varsayılan POI davranışı (detay açma) devam etsin
-    map.handlePoiClick(e);
-  }}
+    map.handlePoiClick(e, {
+  showOverlay,
+  showFromOverlay,
+  closeOverlays: () => {
+    setShowOverlay(false);
+    setShowFromOverlay(false);
+  },
+  });
+      }}
       showsUserLocation={available}
       
     >
@@ -847,6 +884,9 @@ return (
   toLocation={toLocation}      // 🆕 EKLENDİ
   onStart={() => console.log('Navigasyonu başlat')}
   snapPoints={['30%']}
+  selectedMode={selectedMode}
+  onModeChange={setSelectedMode}
+  routeOptions={routeOptions}
 >
   <View style={styles.routeSheetHeader}>
     <TouchableOpacity

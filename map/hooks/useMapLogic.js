@@ -9,7 +9,6 @@ import {
 } from '../maps';
 import { GOOGLE_MAPS_API_KEY as KEY } from '@env';
 import isEqual from 'lodash.isequal';
-import { showOverlay, showFromOverlay } from '../MapScreen'; 
 
 
 const ANKARA_CENTER = { latitude: 39.925533, longitude: 32.866287 };
@@ -46,20 +45,22 @@ export function useMapLogic(mapRef) {
   
 
   const lastPlacesKey = useRef(null);
-          const getRouteBetween = useCallback(async (startCoord, destCoord) => {
-          try {
-            const route = await getRoute(startCoord, destCoord);
-            setRouteInfo(route);
-            const coords = decodePolyline(route.polyline);
-            setRouteCoords(coords);
-            setRouteDrawn(true);
-          } catch (e) {
-            console.warn('🛑 Rota alınamadı:', e);
-            setRouteInfo(null);
-            setRouteCoords(null);
-            setRouteDrawn(false);
-          }
-        }, []);
+
+  const getRouteBetween = useCallback(async (startCoord, destCoord, mode = 'driving') => {
+  try {
+    const route = await getRoute(startCoord, destCoord, mode);
+    setRouteInfo(route);
+    const coords = decodePolyline(route.polyline);
+    setRouteCoords(coords);
+    setRouteDrawn(true);
+  } catch (e) {
+    console.warn('🛑 Rota alınamadı:', e);
+    setRouteInfo(null);
+    setRouteCoords(null);
+    setRouteDrawn(false);
+  }
+}, []);
+
   const handleSelectFrom = useCallback(place => {
   setFromLocation({
     description: place.description,
@@ -81,7 +82,8 @@ export function useMapLogic(mapRef) {
   setPhase('ready');
 
   if (fromLocation?.coordinate) {
-    await getRouteBetween(fromLocation.coordinate, to.coordinate);
+    await getRouteBetween(fromLocation.coordinate, to.coordinate, selectedMode);
+
   }
 }, [fromLocation, getRouteBetween]);
 
@@ -396,14 +398,14 @@ export function useMapLogic(mapRef) {
     );
 
   const handlePoiClick = useCallback(
-  async e => {
+  async (e, overlayStates = {}) => {
+    const { showOverlay: isOverlayVisible, showFromOverlay: isFromOverlayVisible, closeOverlays } = overlayStates;
     const { placeId, name, coordinate } = e.nativeEvent;
 
     // 🔽 Eğer rota overlay'i açıksa, tıklamada kapat ve çık
-    if (showOverlay || showFromOverlay) {
+    if (isOverlayVisible || isFromOverlayVisible) {
       console.log('🛑 POI tıklandı ama overlay açık, kapatılıyor...');
-      setShowOverlay(false);
-      setShowFromOverlay(false);
+      closeOverlays?.(); // dışarıdan gelen fonksiyon varsa çağır
       return;
     }
 
@@ -436,13 +438,14 @@ export function useMapLogic(mapRef) {
       setRouteInfo(null);
     }
   },
-  [fetchAndSetMarker, showOverlay, showFromOverlay]
+  [fetchAndSetMarker]
 );
 
 
 useEffect(() => {
   if (fromLocation?.coordinate && toLocation?.coordinate) {
-    getRouteBetween(fromLocation.coordinate, toLocation.coordinate);
+    getRouteBetween(fromLocation.coordinate, toLocation.coordinate, selectedMode);
+
   }
 }, [fromLocation, toLocation, getRouteBetween]);
 

@@ -129,20 +129,34 @@ export async function getNearbyPlaces(center, keyword) {
 }
 
 export async function getDirections(origin, destination, mode = 'driving') {
-  const params = new URLSearchParams({
-    origin: `${origin.latitude},${origin.longitude}`,
-    destination: `${destination.latitude},${destination.longitude}`,
-    mode,
-    key: KEY,
-  });
-  const res = await fetch(`${BASE}/directions/json?${params}`);
-  const json = await res.json();
-  console.log('📨 Directions API yanıtı:', JSON.stringify(json, null, 2));
-  return json.status === 'OK' ? json.routes[0] : null;
+  try {
+    const params = new URLSearchParams({
+      origin: `${origin.latitude},${origin.longitude}`,
+      destination: `${destination.latitude},${destination.longitude}`,
+      mode, // 'driving' | 'walking' | 'bicycling' | 'transit'
+      key: KEY,
+    });
+
+    const url = `${BASE}/directions/json?${params}`;
+    const res = await fetch(url);
+    const json = await res.json();
+
+    console.log('📨 Directions API yanıtı:', JSON.stringify(json, null, 2));
+
+    if (json.status !== 'OK' || !json.routes?.length) {
+      console.warn('⚠️ Geçersiz Directions yanıtı:', json.status, json.error_message);
+      return null;
+    }
+
+    return json.routes[0]; // sadece ilk rota
+  } catch (error) {
+    console.error('❌ getDirections hata:', error);
+    return null;
+  }
 }
 
-export async function getRoute(origin, destination) {
-  const raw = await getDirections(origin, destination);
+export async function getRoute(origin, destination, mode = 'driving') {
+  const raw = await getDirections(origin, destination, mode);
   console.log('📡 getRoute() gelen veri:', raw);
 
   if (!raw || !raw.legs?.length) {
@@ -151,19 +165,20 @@ export async function getRoute(origin, destination) {
   }
 
   const leg = raw.legs[0];
-
   const polylineStr = raw.overview_polyline?.points || '';
   const decoded = decodePolyline(polylineStr);
+
   console.log('🟢 Toplam çizilecek nokta:', decoded.length);
 
   return {
     distance: leg?.distance?.text ?? '',
     duration: leg?.duration?.text ?? '',
     polyline: polylineStr,
-    decodedCoords: decoded, // 💡 ekstra log/test için ekleyebilirsin
+    decodedCoords: decoded,
+    steps: leg?.steps ?? [],
+    mode,
   };
 }
-
 
 export function decodePolyline(encoded) {
   try {
