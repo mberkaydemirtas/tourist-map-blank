@@ -18,6 +18,7 @@ import { useMapLogic } from './hooks/useMapLogic';
 import { Portal } from '@gorhom/portal';
 
 
+
 import MapMarkers from './components/MapMarkers';
 import ScanButton from './components/ScanButton';
 import MapHeaderControls from './components/MapHeaderControls';
@@ -842,6 +843,8 @@ return (
   distance={routeInfo?.distance}
   duration={routeInfo?.duration}
   onCancel={handleCancelRoute}
+  fromLocation={fromSource}
+  toLocation={toLocation}      // 🆕 EKLENDİ
   onStart={() => console.log('Navigasyonu başlat')}
   snapPoints={['30%']}
 >

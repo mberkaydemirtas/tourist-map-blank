@@ -89,9 +89,14 @@ export async function getPlaceDetails(placeId) {
 export const getTurnByTurnSteps = async (from, to) => {
   const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${from.lng},${from.lat};${to.lng},${to.lat}?steps=true&geometries=geojson&access_token=${MAPBOX_ACCESS_TOKEN}`;
 
-  const response = await axios.get(url);
-  const steps = response.data.routes[0].legs[0].steps;
-  return steps;
+  try {
+    const response = await axios.get(url);
+    const steps = response.data.routes[0].legs[0].steps;
+    return steps;
+  } catch (error) {
+    console.error('🛑 Error fetching navigation steps:', error);
+    return [];
+  }
 };
 
 export async function getAddressFromCoords(lat, lng) {

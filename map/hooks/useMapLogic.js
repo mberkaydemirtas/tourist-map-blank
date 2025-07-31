@@ -9,6 +9,7 @@ import {
 } from '../maps';
 import { GOOGLE_MAPS_API_KEY as KEY } from '@env';
 import isEqual from 'lodash.isequal';
+import { showOverlay, showFromOverlay } from '../MapScreen'; 
 
 
 const ANKARA_CENTER = { latitude: 39.925533, longitude: 32.866287 };
@@ -395,39 +396,49 @@ export function useMapLogic(mapRef) {
     );
 
   const handlePoiClick = useCallback(
-    async e => {
-      const { placeId, name, coordinate } = e.nativeEvent;
-      if (!placeId || !coordinate) {
-        Alert.alert('Hata', 'Seçilen POI bilgisi alınamadı.');
-        return;
-      }
+  async e => {
+    const { placeId, name, coordinate } = e.nativeEvent;
 
-      setActiveCategory(null);
-      setCategoryMarkers([]);
-      setRouteCoords(null);
+    // 🔽 Eğer rota overlay'i açıksa, tıklamada kapat ve çık
+    if (showOverlay || showFromOverlay) {
+      console.log('🛑 POI tıklandı ama overlay açık, kapatılıyor...');
+      setShowOverlay(false);
+      setShowFromOverlay(false);
+      return;
+    }
+
+    if (!placeId || !coordinate) {
+      Alert.alert('Hata', 'Seçilen POI bilgisi alınamadı.');
+      return;
+    }
+
+    setActiveCategory(null);
+    setCategoryMarkers([]);
+    setRouteCoords(null);
+    setRouteInfo(null);
+    setRouteDrawn(false);
+    setMapMoved(false);
+    setQuery(name);
+
+    await fetchAndSetMarker(placeId, coordinate, name);
+
+    setRegion(r => ({
+      latitude: coordinate.latitude,
+      longitude: coordinate.longitude,
+      latitudeDelta: r.latitudeDelta,
+      longitudeDelta: r.longitudeDelta,
+    }));
+
+    try {
+      const route = await getRoute(ANKARA_CENTER, coordinate);
+      setRouteInfo(route);
+    } catch {
       setRouteInfo(null);
-      setRouteDrawn(false);
-      setMapMoved(false);
-      setQuery(name);
+    }
+  },
+  [fetchAndSetMarker, showOverlay, showFromOverlay]
+);
 
-      await fetchAndSetMarker(placeId, coordinate, name);
-
-      setRegion(r => ({
-        latitude: coordinate.latitude,
-        longitude: coordinate.longitude,
-        latitudeDelta: r.latitudeDelta,
-        longitudeDelta: r.longitudeDelta,
-      }));
-
-      try {
-        const route = await getRoute(ANKARA_CENTER, coordinate);
-        setRouteInfo(route);
-      } catch {
-        setRouteInfo(null);
-      }
-    },
-    [fetchAndSetMarker]
-  );
 
 useEffect(() => {
   if (fromLocation?.coordinate && toLocation?.coordinate) {

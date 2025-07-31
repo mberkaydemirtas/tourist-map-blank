@@ -1,17 +1,21 @@
 // src/components/RouteInfoSheet.js
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Text, Button, StyleSheet, Alert } from 'react-native';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import { useNavigation } from '@react-navigation/native';
 
 const RouteInfoSheet = forwardRef(({
   distance,
   duration,
+  fromLocation,  // ✅ MapScreen'den gelen: fromSource objesi
+  toLocation,
   onCancel,
   onStart,
-  snapPoints = ['50%'],   // TEST İÇİN %50 yaptık
+  snapPoints = ['50%'],
   children,
 }, ref) => {
   const innerRef = useRef(null);
+  const navigation = useNavigation();
 
   useImperativeHandle(ref, () => ({
     present: () => innerRef.current?.present(),
@@ -37,11 +41,27 @@ const RouteInfoSheet = forwardRef(({
         <View style={styles.content}>
           <Text style={styles.infoText}>Mesafe: {distance?.text || distance || '–'}</Text>
           <Text style={styles.infoText}>Süre: {duration?.text || duration || '–'}</Text>
-          <Button title="Başlat" onPress={() => navigation.navigate('NavigationScreen', {
-  from: fromLocation.coords,
-  to: toLocation.coords,
-})}
- />
+          
+          <Button
+            title="Başlat"
+            onPress={() => {
+              if (!fromLocation?.coords || !toLocation?.coords) {
+                Alert.alert('Eksik Bilgi', 'Lütfen önce nereden ve nereye gideceğinizi seçin.');
+                return;
+              }
+
+              navigation.navigate('NavigationScreen', {
+                from: {
+                  lat: fromLocation.coords.latitude,
+                  lng: fromLocation.coords.longitude,
+                },
+                to: {
+                  lat: toLocation.coords.latitude,
+                  lng: toLocation.coords.longitude,
+                },
+              });
+            }}
+          />
         </View>
       </BottomSheetView>
     </BottomSheetModal>

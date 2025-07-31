@@ -35,30 +35,29 @@ export default function CategoryMarker({ item, onSelect, activeCategory, iconSiz
   const iconSource = iconKey ? ICONS[iconKey] : null;
 
   return (
-    <Marker
-      coordinate={coordinate}
-      onPress={() => onSelect(item.place_id, coordinate, item.name)}
-      tracksViewChanges={!loaded}
-      anchor={{ x: 0.5, y: 1 }}
-      calloutAnchor={{ x: 0.5, y: -0.5 }}
-      pinColor={!iconSource ? '#FF5A5F' : undefined}
-      zIndex={
-        iconSource && iconKey === activeCategory?.toLowerCase() ? 10 : 1
-      }
-    >
-      {iconSource && (
-        <Image
-          source={iconSource}
-          style={{ width: iconSize, height: iconSize, resizeMode: 'contain' }}
-          onLoad={() => setLoaded(true)}
-        />
-      )}
-      <Callout>
-        <View style={styles.calloutContainer}>
-          <Text style={styles.calloutText}>{item.name}</Text>
-        </View>
-      </Callout>
-    </Marker>
+<Marker
+  coordinate={coordinate}
+  onPress={() => onSelect(item.place_id, coordinate, item.name)}
+  tracksViewChanges={!loaded}
+  anchor={{ x: 0.5, y: 1 }}
+  calloutAnchor={{ x: 0.5, y: -0.5 }}
+  pinColor={!iconSource || !loaded ? '#FF5A5F' : undefined} // 👈 ikon henüz yüklenmemişse kırmızı pin
+  zIndex={iconSource && iconKey === activeCategory?.toLowerCase() ? 10 : 1}
+>
+  {iconSource && (
+    <Image
+      source={iconSource}
+      style={{ width: iconSize, height: iconSize, resizeMode: 'contain' }}
+      onLoad={() => setLoaded(true)}
+    />
+  )}
+
+  <Callout>
+    <View style={styles.calloutContainer}>
+      <Text style={styles.calloutText}>{item.name}</Text>
+    </View>
+  </Callout>
+</Marker>
   );
 }
 

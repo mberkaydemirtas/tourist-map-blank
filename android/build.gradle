@@ -32,9 +32,20 @@ allprojects {
 
     google()
     mavenCentral()
+    
+    // ✅ Mapbox lisanslı kütüphaneler için gerekli
+    maven {
+      url 'https://api.mapbox.com/downloads/v2/releases/maven'
+      credentials {
+        username = "mapbox"
+        password = project.findProperty("MAPBOX_DOWNLOADS_TOKEN") ?: ""
+      }
+    }
+
     maven { url 'https://www.jitpack.io' }
   }
 }
+
 
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"

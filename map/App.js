@@ -10,6 +10,7 @@ import { PortalProvider } from '@gorhom/portal'; // ✅ doğru
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import MapboxGL from '@rnmapbox/maps';
 import { MAPBOX_ACCESS_TOKEN } from '@env';
+import NavigationScreen from './screens/NavigationScreen';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
