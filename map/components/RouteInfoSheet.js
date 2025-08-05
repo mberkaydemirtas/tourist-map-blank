@@ -4,14 +4,15 @@ import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { useNavigation } from '@react-navigation/native';
 import { checkLocationReady } from '../utils/locationUtils';
+import { handleSelectRoute } from '../hooks/useMapLogic';
 
 const RouteInfoSheet = forwardRef(({
   distance,
   duration,
   fromLocation,
   toLocation,
-  selectedMode,
-  onModeChange,
+  selectedMode={selectedMode},
+  onModeChange={handleSelectRoute},
   onCancel,
   onStart,
   routeOptions,

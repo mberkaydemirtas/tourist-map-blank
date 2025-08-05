@@ -199,9 +199,10 @@ export async function getRoute(origin, destination, mode = 'driving') {
     return {
       id: index, // her rotaya bir ID ver
       isprimary: index === 0, // ilk rota ana rota
-      distance: leg?.distance?.text ?? '',
-      duration: leg?.duration?.text ?? '',
-      polyline: polylineStr,
+      distance: leg.distance.text,
+      duration: leg.duration.text,
+      durationValue: leg.duration.value, // saniye
+      polyline: route.overview_polyline.points,
       decodedCoords: decoded,
       steps: mappedSteps,
       mode,

@@ -14,7 +14,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import RouteSearchBar from './components/RouteSearch';
 import MapSelectionOverlay from './components/MapSelectionOverlay';
 import { useLocation } from './hooks/useLocation';
-import { useMapLogic } from './hooks/useMapLogic';
+import { useMapLogic, handleSelectRoute } from './hooks/useMapLogic';
 import { Portal } from '@gorhom/portal';
 
 import MapMarkers from './components/MapMarkers';
@@ -37,6 +37,7 @@ export default function MapScreen() {
   const map = useMapLogic(mapRef, selectedMode);
   const { coords, available, refreshLocation } = useLocation();
   const route = useRoute();
+  
   useEffect(() => {
   if (map.marker && sheetRef.current) {
     sheetRef.current.present();
@@ -753,7 +754,7 @@ return (
   onRouteSelect={(selected) => {
     const updated = (routeOptions[selectedMode] || []).map(r => ({
       ...r,
-      isPrimary: r === selected,
+      isPrimary: r.id === selected.id,
     }));
 
     setRouteOptions(prev => ({
@@ -771,8 +772,11 @@ return (
       edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
       animated: true,
     });
+
+    sheetRefRoute.current?.present(); // optional
   }}
 />
+
     </MapView>
 
       {showSelectionHint && (
@@ -937,23 +941,23 @@ return (
   ref={sheetRefRoute}
   distance={routeInfo?.distance}
   duration={routeInfo?.duration}
-  onCancel={handleCancelRoute}
   fromLocation={fromSource}
-  toLocation={toLocation}      // 🆕 EKLENDİ
-  onStart={() => {
-  sheetRefRoute.current?.dismiss();
-  setMode('explore');               // 🧼 geri dönünce tertemiz gelsin
-  setRouteInfo(null);
-  setRouteCoords([]);
-  setRouteOptions({});
-  setSelectedMode('driving');
-}}
-
-  snapPoints={['30%']}
+  toLocation={toLocation}
   selectedMode={selectedMode}
-  onModeChange={setSelectedMode}
   routeOptions={routeOptions}
+  snapPoints={['30%']}
+  onCancel={handleCancelRoute}
+  onModeChange={handleSelectRoute} // ✅ doğru fonksiyon: rota bilgilerini de güncelliyor
+  onStart={() => {
+    sheetRefRoute.current?.dismiss();
+    setMode('explore');        // Geri dönünce keşif moduna geç
+    setRouteInfo(null);
+    setRouteCoords([]);
+    setRouteOptions([]);
+    setSelectedMode('driving');
+  }}
 >
+
   <View style={styles.routeSheetHeader}>
     <TouchableOpacity
       onPress={handleCancelRoute}

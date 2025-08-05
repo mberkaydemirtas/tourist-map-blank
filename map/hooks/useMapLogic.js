@@ -74,72 +74,53 @@ export function useMapLogic(mapRef, selectedMode) {
 }, []);
 
   const fetchAllRoutes = async (fromCoord, toCoord) => {
-  const modes = ['driving', 'walking', 'transit']; // istersen 'transit' de ekle
+  const modes = ['driving', 'walking', 'transit'];
+  
+  // Tüm modlar için çoklu rota getir
   const results = await Promise.all(
-  modes.map(async (m) => {
-    const routes = await getRoute(fromCoord, toCoord, m); // artık liste dönüyor
-    if (!routes) return [];
+    modes.map(async (mode) => {
+      const routes = await getRoute(fromCoord, toCoord, mode); // liste dönüyor
+      if (!routes) return [];
 
-    return routes.map((route, index) => {
-      const decodedCoords = decodePolyline(route.polyline);
-      return {
-        ...route,
-        decodedCoords,
-        isPrimary: index === 0,
-        mode: m,
-      };
-    });
-  })
-);
+      return routes.map((route, index) => {
+        const decodedCoords = decodePolyline(route.polyline);
+        return {
+          ...route,
+          decodedCoords,
+          id: `${mode}-${index}`,
+          isPrimary: false, // sonra güncellenecek
+          mode,
+        };
+      });
+    })
+  );
 
-const flattened = results.flat();
-setRouteOptions(prev => ({
-  ...prev,
-  [mode]: updatedRoutesForThisMode,
-}));
+  // Tüm modlardaki rotaları tek listeye düzle
+  const flattened = results.flat();
 
+  // 🔎 En kısa süreli rotayı bul (duration: "13 mins" gibi string olabilir)
+ const shortest = flattened.reduce((best, r) =>
+   r.durationValue < best.durationValue ? r : best
+ , flattened[0]);
 
-// En kısa süreli rotayı bul
-const shortest = flattened.reduce((best, r) => {
-  const dur = parseInt(r.duration.replace(/\D/g, ''), 10); // "13 mins" → 13
-  const bestDur = parseInt(best.duration.replace(/\D/g, ''), 10);
-  return dur < bestDur ? r : best;
-}, flattened[0]);
+  // isPrimary işaretle
+  const updatedRoutes = flattened.map(route => ({
+    ...route,
+    isPrimary: route.id === shortest.id,
+  }));
 
-const updatedRoutes = flattened.map(route => ({
-  ...route,
-  isPrimary: route.id === shortest.id, // sadece en kısa olan true
-}));
-
-setRouteOptions(updatedRoutes);
-
-// Onu ana rota yap
-setRouteCoords(shortest.decodedCoords);
-setRouteInfo({
-  distance: shortest.distance,
-  duration: shortest.duration,
-});
-setRouteDrawn(true);
-
-
-  const routeMap = {};
-  results.forEach((r) => {
-    routeMap[r.mode] = r;
+  // ✔️ Ana state'leri güncelle
+  setRouteOptions(updatedRoutes);
+  setRouteCoords(shortest.decodedCoords);
+  setRouteInfo({
+    distance: shortest.distance,
+    duration: shortest.duration,
   });
-
-  setRouteOptions(routeMap);
-
-  // Varsayılan moda göre ilk çizimi yap
-  const selected = (routeOptions[selectedMode] || []).find(r => r.isPrimary);
-  if (selected?.decodedCoords) {
-    setRouteCoords(selected.decodedCoords);
-    setRouteInfo({
-      distance: selected.distance,
-      duration: selected.duration,
-    });
-    setRouteDrawn(true);
-  }
+  setSelectedMode(shortest.mode);
+  setRouteDrawn(true);
+  sheetRefRoute.current?.present(); // RouteInfoSheet göster
 };
+
 
   const handleSelectTo = useCallback(async place => {
   const to = {
@@ -385,20 +366,36 @@ setRouteDrawn(true);
 
 
   const handleSelectRoute = useCallback((routeId) => {
-  const updated = routeOptions.map(r => ({
-    ...r,
-    isPrimary: r.id === routeId,
+  if (!routeOptions || routeOptions.length === 0) return;
+
+  const updated = routeOptions.map(route => ({
+    ...route,
+    isPrimary: route.id === routeId,
   }));
   setRouteOptions(updated);
 
-  const newPrimary = updated.find(r => r.id === routeId);
-  if (newPrimary) {
-    setRouteCoords(newPrimary.decodedCoords);
-    setRouteInfo({
-      distance: newPrimary.distance,
-      duration: newPrimary.duration,
+  const selected = updated.find(route => route.id === routeId);
+  if (!selected || !selected.decodedCoords?.length) return;
+
+  setSelectedMode(selected.mode);
+  setRouteCoords(selected.decodedCoords);
+  setRouteInfo({
+    distance: selected.distance,
+    duration: selected.duration,
+  });
+  setRouteDrawn(true);
+
+  // Sheet görünür değilse bile zorla aç
+  if (sheetRefRoute.current?.present) {
+    sheetRefRoute.current.present();
+  }
+
+  // Harita ortalama
+  if (mapRef.current?.fitToCoordinates) {
+    mapRef.current.fitToCoordinates(selected.decodedCoords, {
+      edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+      animated: true,
     });
-    setRouteDrawn(true);
   }
 }, [routeOptions]);
 
