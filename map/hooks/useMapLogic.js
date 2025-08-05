@@ -13,7 +13,7 @@ import isEqual from 'lodash.isequal';
 
 const ANKARA_CENTER = { latitude: 39.925533, longitude: 32.866287 };
 
-export function useMapLogic(mapRef) {
+export function useMapLogic(mapRef, selectedMode) {
   const [region, setRegion] = useState({
     ...ANKARA_CENTER,
     latitudeDelta: 0.03,
@@ -29,6 +29,8 @@ export function useMapLogic(mapRef) {
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
   const [mapMoved, setMapMoved] = useState(false);
+  const [routeOptions, setRouteOptions] = useState({});
+
    // ➊ Harita her değiştiğinde region ve mapMoved güncellensin
   const onRegionChange = useCallback(
    (newRegion) => {
@@ -45,6 +47,7 @@ export function useMapLogic(mapRef) {
   
 
   const lastPlacesKey = useRef(null);
+  
 
   const getRouteBetween = useCallback(async (startCoord, destCoord, mode = 'driving') => {
   try {
@@ -70,6 +73,73 @@ export function useMapLogic(mapRef) {
   setPhase('to');
 }, []);
 
+  const fetchAllRoutes = async (fromCoord, toCoord) => {
+  const modes = ['driving', 'walking', 'transit']; // istersen 'transit' de ekle
+  const results = await Promise.all(
+  modes.map(async (m) => {
+    const routes = await getRoute(fromCoord, toCoord, m); // artık liste dönüyor
+    if (!routes) return [];
+
+    return routes.map((route, index) => {
+      const decodedCoords = decodePolyline(route.polyline);
+      return {
+        ...route,
+        decodedCoords,
+        isPrimary: index === 0,
+        mode: m,
+      };
+    });
+  })
+);
+
+const flattened = results.flat();
+setRouteOptions(prev => ({
+  ...prev,
+  [mode]: updatedRoutesForThisMode,
+}));
+
+
+// En kısa süreli rotayı bul
+const shortest = flattened.reduce((best, r) => {
+  const dur = parseInt(r.duration.replace(/\D/g, ''), 10); // "13 mins" → 13
+  const bestDur = parseInt(best.duration.replace(/\D/g, ''), 10);
+  return dur < bestDur ? r : best;
+}, flattened[0]);
+
+const updatedRoutes = flattened.map(route => ({
+  ...route,
+  isPrimary: route.id === shortest.id, // sadece en kısa olan true
+}));
+
+setRouteOptions(updatedRoutes);
+
+// Onu ana rota yap
+setRouteCoords(shortest.decodedCoords);
+setRouteInfo({
+  distance: shortest.distance,
+  duration: shortest.duration,
+});
+setRouteDrawn(true);
+
+
+  const routeMap = {};
+  results.forEach((r) => {
+    routeMap[r.mode] = r;
+  });
+
+  setRouteOptions(routeMap);
+
+  // Varsayılan moda göre ilk çizimi yap
+  const selected = (routeOptions[selectedMode] || []).find(r => r.isPrimary);
+  if (selected?.decodedCoords) {
+    setRouteCoords(selected.decodedCoords);
+    setRouteInfo({
+      distance: selected.distance,
+      duration: selected.duration,
+    });
+    setRouteDrawn(true);
+  }
+};
 
   const handleSelectTo = useCallback(async place => {
   const to = {
@@ -82,10 +152,14 @@ export function useMapLogic(mapRef) {
   setPhase('ready');
 
   if (fromLocation?.coordinate) {
-    await getRouteBetween(fromLocation.coordinate, to.coordinate, selectedMode);
+    // 🔴 Şu an sadece tek mod için rota alıyorsun:
+    // await getRouteBetween(fromLocation.coordinate, to.coordinate, selectedMode);
 
+    // ✅ Yerine tüm modlar için rota al:
+    await fetchAllRoutes(fromLocation.coordinate, to.coordinate);
   }
-}, [fromLocation, getRouteBetween]);
+}, [fromLocation]);
+
 
 
     const fetchAndSetMarker = useCallback(
@@ -291,6 +365,8 @@ export function useMapLogic(mapRef) {
 }
 
 
+
+
       // 📐 Tüm marker’ları kapsayacak şekilde uzaklaş
       if (mapRef.current && newMarkers.length > 0) {
         mapRef.current.fitToCoordinates(
@@ -308,6 +384,23 @@ export function useMapLogic(mapRef) {
 }, [activeCategory, categoryMarkers, region, mapRef]);
 
 
+  const handleSelectRoute = useCallback((routeId) => {
+  const updated = routeOptions.map(r => ({
+    ...r,
+    isPrimary: r.id === routeId,
+  }));
+  setRouteOptions(updated);
+
+  const newPrimary = updated.find(r => r.id === routeId);
+  if (newPrimary) {
+    setRouteCoords(newPrimary.decodedCoords);
+    setRouteInfo({
+      distance: newPrimary.distance,
+      duration: newPrimary.duration,
+    });
+    setRouteDrawn(true);
+  }
+}, [routeOptions]);
 
   const handleMapPress = useCallback(
     async e => {
@@ -441,13 +534,30 @@ export function useMapLogic(mapRef) {
   [fetchAndSetMarker]
 );
 
+  useEffect(() => {
+  const selected = (routeOptions[selectedMode] || []).find(r => r.isPrimary);
 
-useEffect(() => {
-  if (fromLocation?.coordinate && toLocation?.coordinate) {
-    getRouteBetween(fromLocation.coordinate, toLocation.coordinate, selectedMode);
+  console.log('🎯 Yeni mod için rota güncelleniyor:', selectedMode, selected);
 
+  if (selected?.decodedCoords) {
+    setRouteCoords(selected.decodedCoords);
+    setRouteInfo({
+      distance: selected.distance,
+      duration: selected.duration,
+    });
+  } else {
+    console.warn('⚠️ Seçilen mod için rota yok:', selectedMode);
   }
-}, [fromLocation, toLocation, getRouteBetween]);
+}, [selectedMode, routeOptions]);
+
+
+
+  useEffect(() => {
+    if (fromLocation?.coordinate && toLocation?.coordinate) {
+      fetchAllRoutes(fromLocation.coordinate, toLocation.coordinate);
+    }
+  }, [fromLocation, toLocation]);
+
 
   return {
     fetchAndSetMarker,
@@ -483,5 +593,7 @@ useEffect(() => {
     handleMarkerSelect,
     handleDrawRoute,
     handlePoiClick,
+    routeOptions,
+    handleSelectRoute,
   };
 }

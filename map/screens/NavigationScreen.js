@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, PermissionsAndroid, Platform, TouchableOpacity, Text } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import { useRoute } from '@react-navigation/native';
 import * as Speech from 'expo-speech';
 
 import StepInstructionsModal from '../components/StepInstructionsModal';
-import { decodePolyline } from '../maps'; // ✅ ekledik
+import { decodePolyline } from '../maps';
 
 export default function NavigationScreen() {
   const route = useRoute();
@@ -15,8 +15,10 @@ export default function NavigationScreen() {
   const [showSteps, setShowSteps] = useState(false);
   const [steps, setSteps] = useState(initialSteps || []);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const mapCameraRef = useRef(null);
+  const [hasZoomedToUser, setHasZoomedToUser] = useState(false);
+  const [isMapTouched, setIsMapTouched] = useState(false);
 
-  // ✅ Rota çizimi için polyline varsa decode et
   const routeCoordinates = polyline
     ? decodePolyline(polyline).map(coord => [coord.longitude, coord.latitude])
     : [
@@ -51,43 +53,49 @@ export default function NavigationScreen() {
   }, []);
 
   const handleUserLocation = (location) => {
-  if (!steps?.length) return;
+    if (!location?.coords) return;
+    const { latitude, longitude } = location.coords;
 
-  const step = steps[currentStepIndex];
-  if (!step?.maneuver?.location) return; // 💡 Yeni güvenlik kontrolü
+    if (!hasZoomedToUser) {
+      mapCameraRef.current?.setCamera({
+        centerCoordinate: [longitude, latitude],
+        zoomLevel: 17.5,
+        animationMode: 'flyTo',
+        animationDuration: 1000,
+      });
+      setHasZoomedToUser(true);
+    }
 
-  const userCoords = {
-    lat: location.coords.latitude,
-    lng: location.coords.longitude,
+    if (!steps?.length) return;
+
+    const step = steps[currentStepIndex];
+    if (!step?.maneuver?.location) return;
+
+    const userCoords = { lat: latitude, lng: longitude };
+    const target = {
+      lat: step.maneuver.location[1],
+      lng: step.maneuver.location[0],
+    };
+
+    const distance = getDistance(userCoords, target);
+    if (distance < 30) {
+      Speech.speak(step.maneuver.instruction);
+      setCurrentStepIndex(currentStepIndex + 1);
+    }
   };
-
-  const target = {
-    lat: step.maneuver.location[1],
-    lng: step.maneuver.location[0],
-  };
-
-  const distance = getDistance(userCoords, target);
-
-  if (distance < 30) {
-    Speech.speak(step.maneuver.instruction);
-    setCurrentStepIndex(currentStepIndex + 1);
-  }
-};
-
 
   return (
     <View style={styles.container}>
-      <MapboxGL.MapView style={styles.map}>
+      <MapboxGL.MapView
+        style={styles.map}
+        onRegionWillChange={() => setIsMapTouched(true)}
+      >
         {locationPermission && (
           <>
+            <MapboxGL.Camera ref={mapCameraRef} />
             <MapboxGL.UserLocation
               visible={true}
               onUpdate={handleUserLocation}
-            />
-            <MapboxGL.Camera
-              zoomLevel={13}
-              followUserLocation={true}
-              followUserMode="normal"
             />
           </>
         )}
@@ -109,7 +117,26 @@ export default function NavigationScreen() {
         </MapboxGL.ShapeSource>
       </MapboxGL.MapView>
 
-      {/* Adım Adım Tarif Butonu */}
+      {isMapTouched && (
+        <TouchableOpacity
+          style={styles.alignButton}
+          onPress={async () => {
+            const loc = await MapboxGL.locationManager.getLastKnownLocation();
+            if (loc) {
+              mapCameraRef.current?.setCamera({
+                centerCoordinate: [loc.coords.longitude, loc.coords.latitude],
+                zoomLevel: 17.5,
+                animationMode: 'flyTo',
+                animationDuration: 1000,
+              });
+              setIsMapTouched(false);
+            }
+          }}
+        >
+          <Text style={styles.buttonText}>📍 Hizala</Text>
+        </TouchableOpacity>
+      )}
+
       <TouchableOpacity
         onPress={() => {
           if (steps.length) {
@@ -148,6 +175,15 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
     zIndex: 10,
+  },
+  alignButton: {
+    position: 'absolute',
+    bottom: 100,
+    right: 20,
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 8,
+    elevation: 5,
   },
   buttonText: {
     color: 'white',

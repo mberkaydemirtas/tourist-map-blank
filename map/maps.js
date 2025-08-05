@@ -11,15 +11,49 @@ function formatPlaceType(types = []) {
   const match = PRIORITY.find(type => types.includes(type));
   return match || types[0] || 'place';
 }
+function buildDirectionsUrl(origin, destination, mode = 'driving') {
+  const originStr = `${origin.latitude},${origin.longitude}`;
+  const destinationStr = `${destination.latitude},${destination.longitude}`;
+
+  const params = new URLSearchParams({
+    origin: originStr,
+    destination: destinationStr,
+    mode,
+    alternatives: 'true', // ✅ alternatif rotalar
+    key: KEY,
+  });
+
+  if (mode === 'walking') {
+    params.append('avoid', 'highways');
+  } else if (mode === 'driving') {
+    params.append('avoid', 'tolls|ferries');
+  } else if (mode === 'transit') {
+    params.append('avoid', 'highways');
+    params.append('departure_time', 'now');
+  }
+
+  return `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`;
+}
 
 export async function autocomplete(input, { lat, lng } = {}) {
   console.log('🌐 autocomplete çağrıldı:', input);
   const params = new URLSearchParams({
-    input,
-    key: KEY,
-    language: 'tr',
-    ...(lat && lng ? { location: `${lat},${lng}`, radius: '50000' } : {}),
-  });
+  origin: `${from.latitude},${from.longitude}`,
+  destination: `${to.latitude},${to.longitude}`,
+  mode,
+  alternatives: 'true', // ✅ alternatif rotalar
+  key: GOOGLE_MAPS_API_KEY,
+});
+
+// 🚧 Belirli modlar için 'avoid' parametresi uygula
+if (mode === 'walking') {
+  params.append('avoid', 'highways');
+} else if (mode === 'driving') {
+  params.append('avoid', 'tolls|ferries');
+} else if (mode === 'transit') {
+  params.append('avoid', 'highways');
+}
+  const url = `https://maps.googleapis.com/maps/api/directions/json?${params}`;
   const res = await fetch(`${BASE}/place/autocomplete/json?${params}`);
   const json = await res.json();
   console.log('🌐 autocomplete cevap:', json.status, json.predictions?.length);
@@ -128,56 +162,55 @@ export async function getNearbyPlaces(center, keyword) {
   }));
 }
 
-export async function getDirections(origin, destination, mode = 'driving') {
-  try {
-    const params = new URLSearchParams({
-      origin: `${origin.latitude},${origin.longitude}`,
-      destination: `${destination.latitude},${destination.longitude}`,
-      mode, // 'driving' | 'walking' | 'bicycling' | 'transit'
-      key: KEY,
-    });
+import { GOOGLE_MAPS_API_KEY } from '@env';
 
-    const url = `${BASE}/directions/json?${params}`;
-    const res = await fetch(url);
-    const json = await res.json();
+// Bu yardımcı fonksiyon artık parametrelerle tüm yönlendirmeyi alır
 
-    console.log('📨 Directions API yanıtı:', JSON.stringify(json, null, 2));
-
-    if (json.status !== 'OK' || !json.routes?.length) {
-      console.warn('⚠️ Geçersiz Directions yanıtı:', json.status, json.error_message);
-      return null;
-    }
-
-    return json.routes[0]; // sadece ilk rota
-  } catch (error) {
-    console.error('❌ getDirections hata:', error);
-    return null;
-  }
-}
 
 export async function getRoute(origin, destination, mode = 'driving') {
-  const raw = await getDirections(origin, destination, mode);
-  console.log('📡 getRoute() gelen veri:', raw);
+  const url = buildDirectionsUrl(origin, destination, mode);
+  console.log('📡 Directions API isteği:', url);
 
-  if (!raw || !raw.legs?.length) {
-    console.warn('⚠️ Geçersiz rota yanıtı:', raw);
+  const res = await fetch(url);
+  const json = await res.json();
+
+  if (json.status !== 'OK') {
+    console.warn('❌ Directions API hatalı cevap:', json.status, json.error_message);
     return null;
   }
 
-  const leg = raw.legs[0];
-  const polylineStr = raw.overview_polyline?.points || '';
-  const decoded = decodePolyline(polylineStr);
+  // 🔁 Tüm alternatif rotaları işle
+  const processedRoutes = json.routes.map((route, index) => {
+    const leg = route.legs[0];
+    const polylineStr = route.overview_polyline?.points || '';
+    const decoded = decodePolyline(polylineStr);
 
-  console.log('🟢 Toplam çizilecek nokta:', decoded.length);
+    const mappedSteps = leg?.steps?.map(step => ({
+      maneuver: {
+        instruction: step.html_instructions?.replace(/<[^>]+>/g, ''),
+        location: [
+          step.end_location.lng,
+          step.end_location.lat
+        ]
+      },
+      distance: step.distance?.value
+    })) || [];
 
-  return {
-    distance: leg?.distance?.text ?? '',
-    duration: leg?.duration?.text ?? '',
-    polyline: polylineStr,
-    decodedCoords: decoded,
-    steps: leg?.steps ?? [],
-    mode,
-  };
+    return {
+      id: index, // her rotaya bir ID ver
+      isprimary: index === 0, // ilk rota ana rota
+      distance: leg?.distance?.text ?? '',
+      duration: leg?.duration?.text ?? '',
+      polyline: polylineStr,
+      decodedCoords: decoded,
+      steps: mappedSteps,
+      mode,
+    };
+  });
+
+  console.log('🗺️ Alternatif rota sayısı:', processedRoutes.length);
+
+  return processedRoutes;
 }
 
 export function decodePolyline(encoded) {

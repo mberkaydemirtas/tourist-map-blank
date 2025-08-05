@@ -17,8 +17,6 @@ import { useLocation } from './hooks/useLocation';
 import { useMapLogic } from './hooks/useMapLogic';
 import { Portal } from '@gorhom/portal';
 
-
-
 import MapMarkers from './components/MapMarkers';
 import ScanButton from './components/ScanButton';
 import MapHeaderControls from './components/MapHeaderControls';
@@ -27,13 +25,16 @@ import PlaceDetailSheet from './components/PlaceDetailSheet';
 import CategoryList from './components/CategoryList';
 import GetDirectionsOverlay from './components/GetDirectionsOverlay';
 import RouteInfoSheet from './components/RouteInfoSheet';
+import NavigationBanner from './components/NavigationBanner';
+import MapRoutePolyline from './components/MapRoutePolyline';
 
-import { getRoute, decodePolyline, reverseGeocode, getPlaceDetails  } from './maps';
+
+import { getRoute, decodePolyline, reverseGeocode, getPlaceDetails } from './maps';
 
 export default function MapScreen() {
   const navigation = useNavigation();
   const mapRef = useRef(null);
-  const map = useMapLogic(mapRef);
+  const map = useMapLogic(mapRef, selectedMode);
   const { coords, available, refreshLocation } = useLocation();
   const route = useRoute();
   useEffect(() => {
@@ -51,16 +52,24 @@ export default function MapScreen() {
   const sheetRef = useRef(null);
   const sheetRefRoute = useRef(null);
   const lastAvailable = useRef(false);
+  const getRouteColor = (mode) => {
+  switch (mode) {
+    case 'walking': return '#4CAF50'; // yeşil
+    case 'transit': return '#FF9800'; // turuncu
+    case 'driving': default: return '#1E88E5'; // mavi
+  }
+};
+
   
   const [showOverlay, setShowOverlay] = useState(false);
   const [overlayContext, setOverlayContext] = useState(null); // 'from' | 'to'
   const [showFromOverlay, setShowFromOverlay] = useState(false);
   const [selectedMode, setSelectedMode] = useState('driving');
   const [routeOptions, setRouteOptions] = useState({
-  driving: null,
-  walking: null,
-  cycling: null,
-});
+    driving: null,
+    walking: null,
+    transit: null,
+  });
 
   
   const [canShowScan, setCanShowScan] = useState(false);
@@ -133,6 +142,8 @@ export default function MapScreen() {
   }
 };
 
+
+
 // MapScreen içindesin…
 // MapScreen.js içinde, fonksiyonun en başında (state/ref tanımlarından sonra)
 const prevCatCount = useRef(0);
@@ -177,6 +188,9 @@ useEffect(() => {
   // --- ROUTE & INFO ---
   const [routeCoords, setRouteCoords] = useState([]);
   const [routeInfo, setRouteInfo] = useState(null);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [navigationStepIndex, setNavigationStepIndex] = useState(0);
+  const [firstManeuver, setFirstManeuver] = useState(null);
   const lastSelectedRef = useRef(null);
 
   const snapPoints = useMemo(() => ['30%', '60%', '75%', '90%'], []);
@@ -210,6 +224,23 @@ useEffect(() => {
     lastAvailable.current = available;
   }, [available, coords]);
 
+  useEffect(() => {
+  const route = routeOptions[selectedMode];
+  if (!route || !route.decodedCoords?.length) return;
+
+  setRouteCoords(route.decodedCoords);
+  setRouteInfo({
+    distance: route.distance,
+    duration: route.duration,
+  });
+
+  // Sadece mod değişiminden dolayı ortalanıyorsa animasyonlu yap
+  mapRef.current?.fitToCoordinates(route.decodedCoords, {
+    edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+    animated: true,
+  });
+}, [selectedMode]);
+
   // --- ROUTE CALCULATION WHEN MODE==='route' ---
   useEffect(() => {
   if (!fromSource?.coords || !toLocation?.coords) return;
@@ -217,7 +248,7 @@ useEffect(() => {
 
   const fetchAllRoutes = async () => {
     try {
-      const modes = ['driving', 'walking', 'cycling'];
+      const modes = ['driving', 'walking', 'transit'];
       const results = await Promise.all(
         modes.map(mode => getRoute(origin, toLocation.coords, mode))
       );
@@ -225,14 +256,15 @@ useEffect(() => {
       setRouteOptions({
         driving: results[0],
         walking: results[1],
-        cycling: results[2],
+        transit: results[2],
       });
 
       // default seçili moda göre aktif rotayı da çiz:
       const selected = results.find((r, i) => modes[i] === selectedMode);
       if (selected?.decodedCoords) {
-        setRouteCoords(selected.decodedCoords);
-        setRouteInfo({ distance: selected.distance, duration: selected.duration });
+        setRouteCoords(selectedRoute.decodedCoords);
+setRouteInfo({ distance: selectedRoute.distance, duration: selectedRoute.duration });
+sheetRefRoute.current?.present(); // ✨ burada RouteInfoSheet gösteriliyor
       }
 
     } catch (e) {
@@ -242,18 +274,6 @@ useEffect(() => {
 
   fetchAllRoutes();
 }, [fromSource, toLocation, coords]);
-
-
-  useEffect(() => {
-    if (routeCoords.length > 0 && mapRef.current) {
-      mapRef.current.fitToCoordinates(routeCoords, {
-        edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
-        animated: true,
-      });
-    }
-  }, [routeCoords]);
-
-
 
   // --- AUTOMATICALLY OPEN ROUTE INFO SHEET ---
   useEffect(() => {
@@ -473,6 +493,20 @@ useEffect(() => {
     console.warn('❌ Haritadan seçim hatası:', error);
   }
 };
+
+useEffect(() => {
+  if (routeOptions && selectedMode) {
+    const selectedRoute = routeOptions[selectedMode];
+    if (selectedRoute?.decodedCoords) {
+      setRouteCoords(selectedRoute.decodedCoords);
+      setRouteInfo({
+        distance: selectedRoute.distance,
+        duration: selectedRoute.duration,
+      });
+    }
+  }
+}, [selectedMode]);
+
 
 
 
@@ -714,14 +748,31 @@ return (
         />
       )}
 
-      {mode === 'route' && routeCoords.length > 0 && (
-        <Polyline
-          coordinates={routeCoords}
-          strokeColor="#1E88E5"
-          strokeWidth={5}
-          lineJoin="round"
-        />
-      )}
+      <MapRoutePolyline
+  routes={routeOptions[selectedMode] || []}
+  onRouteSelect={(selected) => {
+    const updated = (routeOptions[selectedMode] || []).map(r => ({
+      ...r,
+      isPrimary: r === selected,
+    }));
+
+    setRouteOptions(prev => ({
+      ...prev,
+      [selectedMode]: updated,
+    }));
+
+    setRouteCoords(selected.decodedCoords);
+    setRouteInfo({
+      distance: selected.distance,
+      duration: selected.duration,
+    });
+
+    mapRef.current?.fitToCoordinates(selected.decodedCoords, {
+      edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+      animated: true,
+    });
+  }}
+/>
     </MapView>
 
       {showSelectionHint && (
@@ -864,7 +915,14 @@ return (
   />
 )}
 
-
+{isNavigating && firstManeuver && (
+  <NavigationBanner
+    maneuver={firstManeuver}
+    duration={routeInfo?.duration}
+    distance={routeInfo?.distance}
+    onCancel={handleCancelRoute}
+  />
+)}
       <MapOverlays
   available={available}
   coords={coords}
@@ -882,7 +940,15 @@ return (
   onCancel={handleCancelRoute}
   fromLocation={fromSource}
   toLocation={toLocation}      // 🆕 EKLENDİ
-  onStart={() => console.log('Navigasyonu başlat')}
+  onStart={() => {
+  sheetRefRoute.current?.dismiss();
+  setMode('explore');               // 🧼 geri dönünce tertemiz gelsin
+  setRouteInfo(null);
+  setRouteCoords([]);
+  setRouteOptions({});
+  setSelectedMode('driving');
+}}
+
   snapPoints={['30%']}
   selectedMode={selectedMode}
   onModeChange={setSelectedMode}

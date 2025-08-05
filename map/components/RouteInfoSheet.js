@@ -1,8 +1,9 @@
 // src/components/RouteInfoSheet.js
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
-import { View, Text, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { useNavigation } from '@react-navigation/native';
+import { checkLocationReady } from '../utils/locationUtils';
 
 const RouteInfoSheet = forwardRef(({
   distance,
@@ -13,11 +14,46 @@ const RouteInfoSheet = forwardRef(({
   onModeChange,
   onCancel,
   onStart,
-  routeOptions, // 👈 her mod için mesafe/süre/polilyne içeren objeler
+  routeOptions,
   children,
 }, ref) => {
   const innerRef = useRef(null);
   const navigation = useNavigation();
+
+  const handleStartNavigation = async () => {
+    if (!fromLocation?.coords || !toLocation?.coords) {
+      Alert.alert('Eksik Bilgi', 'Lütfen önce nereden ve nereye gideceğinizi seçin.');
+      return;
+    }
+
+    const ready = await checkLocationReady();
+    if (!ready) {
+      Alert.alert(
+        'Konum Servisi Gerekli',
+        'Navigasyonu başlatmak için konum izni vermeli ve GPS\'i açmalısınız.',
+        [{ text: 'Tamam', onPress: () => {} }]
+      );
+      return;
+    }
+
+    const selectedRoute = routeOptions?.[selectedMode];
+
+    innerRef.current?.dismiss();
+
+    navigation.navigate('NavigationScreen', {
+      from: {
+        lat: fromLocation.coords.latitude,
+        lng: fromLocation.coords.longitude,
+      },
+      to: {
+        lat: toLocation.coords.latitude,
+        lng: toLocation.coords.longitude,
+      },
+      polyline: selectedRoute?.polyline,
+      steps: selectedRoute?.steps,
+      mode: selectedMode,
+    });
+  };
 
   useImperativeHandle(ref, () => ({
     present: () => innerRef.current?.present(),
@@ -25,80 +61,129 @@ const RouteInfoSheet = forwardRef(({
   }));
 
   const modeOptions = [
-    { key: 'driving', label: '🚗' },
-    { key: 'walking', label: '🚶‍♂️' },
-    { key: 'cycling', label: '🚴‍♂️' },
-  ];
+  { key: 'driving', label: '🚗' },
+  { key: 'walking', label: '🚶‍♂️' },
+  { key: 'transit', label: '🚌' },
+];
+  const renderTransitSteps = (steps = []) => {
+  return (
+    <View style={{ marginTop: 12 }}>
+      {steps.map((step, index) => {
+        const isTransit = step.transit_details != null;
+
+        if (isTransit) {
+          const lineName = step.transit_details?.line?.short_name || step.transit_details?.line?.name || 'Hat';
+          const vehicle = step.transit_details?.line?.vehicle?.type || '';
+          const from = step.transit_details?.departure_stop?.name || 'Durağından';
+          const to = step.transit_details?.arrival_stop?.name || 'Durağına';
+          const numStops = step.transit_details?.num_stops ?? '?';
+          return (
+            <View key={index} style={{ marginBottom: 8 }}>
+              <Text style={{ fontSize: 14 }}>🚌 {lineName} ({vehicle})</Text>
+              <Text style={{ fontSize: 13, color: '#444' }}>{from} → {to} ({numStops} durak)</Text>
+            </View>
+          );
+        } else {
+          const distance = step.distance?.text || '';
+          const duration = step.duration?.text || '';
+          const instruction = step.maneuver?.instruction || '';
+          return (
+            <View key={index} style={{ marginBottom: 8 }}>
+              <Text style={{ fontSize: 14 }}>🚶 {distance} ({duration})</Text>
+              <Text style={{ fontSize: 13, color: '#444' }}>{instruction}</Text>
+            </View>
+          );
+        }
+      })}
+    </View>
+  );
+};
 
   return (
-    <BottomSheetModal
-      ref={innerRef}
-      index={0}
-      snapPoints={['30%', '60%', '90%']}
-      enablePanDownToClose={false}
-      enableHandlePanningGesture={true}
-      enableContentPanningGesture={true}
-      backgroundStyle={styles.sheetBackground}
-      handleIndicatorStyle={styles.handleIndicator}
-      onDismiss={onCancel}
-    >
-      <BottomSheetView style={styles.container}>
-        {children}
+  <BottomSheetModal
+    ref={innerRef}
+    index={0}
+    snapPoints={['30%', '60%', '90%']}
+    enablePanDownToClose={false}
+    enableHandlePanningGesture={true}
+    enableContentPanningGesture={true}
+    backgroundStyle={styles.sheetBackground}
+    handleIndicatorStyle={styles.handleIndicator}
+    onDismiss={onCancel}
+  >
+    <BottomSheetView style={styles.container}>
+      {children}
 
-        <View style={styles.content}>
-          <Text style={styles.infoText}>Mesafe: {distance?.text || distance || '–'}</Text>
-          <Text style={styles.infoText}>Süre: {duration?.text || duration || '–'}</Text>
+      <View style={styles.content}>
+        <Text style={styles.infoText}>Mesafe: {distance?.text || distance || '–'}</Text>
+        <Text style={styles.infoText}>Süre: {duration?.text || duration || '–'}</Text>
 
-          <View style={styles.modeContainer}>
-            {modeOptions.map(option => {
-              const route = routeOptions?.[option.key];
-              return (
-                <TouchableOpacity
-                  key={option.key}
-                  style={[
-                    styles.modeButton,
-                    selectedMode === option.key && styles.modeButtonSelected
-                  ]}
-                  onPress={() => onModeChange(option.key)}
-                >
-                  <Text style={styles.modeText}>{option.label}</Text>
-                  <Text style={styles.modeLabel}>
-                    {route?.distance || '—'} • {route?.duration || '—'}
-                  </Text>
-                </TouchableOpacity>
-              );
+        <View style={styles.modeContainer}>
+          {modeOptions.map(option => {
+            const route = routeOptions?.[option.key];
+            return (
+              <TouchableOpacity
+                key={option.key}
+                style={[
+                  styles.modeButton,
+                  selectedMode === option.key && styles.modeButtonSelected
+                ]}
+                onPress={() => onModeChange(option.key)}
+              >
+                <Text style={styles.modeText}>{option.label}</Text>
+                <Text style={styles.modeLabel}>
+                  {route?.distance || '—'} • {route?.duration || '—'}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* 🚇 Transit mod detaylı adımları */}
+        {selectedMode === 'transit' && routeOptions.transit?.steps?.length > 0 && (
+          <View style={{ marginTop: 12 }}>
+            {routeOptions.transit.steps.map((step, index) => {
+              const isTransit = step.transit_details != null;
+
+              if (isTransit) {
+                const lineName = step.transit_details?.line?.short_name || step.transit_details?.line?.name || 'Hat';
+                const vehicle = step.transit_details?.line?.vehicle?.type || '';
+                const from = step.transit_details?.departure_stop?.name || 'Başlangıç';
+                const to = step.transit_details?.arrival_stop?.name || 'Varış';
+                const numStops = step.transit_details?.num_stops ?? '?';
+                return (
+                  <View key={index} style={{ marginBottom: 8 }}>
+                    <Text style={{ fontSize: 14 }}>🚌 {lineName} ({vehicle})</Text>
+                    <Text style={{ fontSize: 13, color: '#444' }}>
+                      {from} → {to} ({numStops} durak)
+                    </Text>
+                  </View>
+                );
+              } else {
+                const distance = step.distance?.text || '';
+                const duration = step.duration?.text || '';
+                const instruction = step.maneuver?.instruction || '';
+                return (
+                  <View key={index} style={{ marginBottom: 8 }}>
+                    <Text style={{ fontSize: 14 }}>🚶 {distance} ({duration})</Text>
+                    <Text style={{ fontSize: 13, color: '#444' }}>{instruction}</Text>
+                  </View>
+                );
+              }
             })}
           </View>
+        )}
 
-          <Button
-            title="Başlat"
-            onPress={() => {
-              if (!fromLocation?.coords || !toLocation?.coords) {
-                Alert.alert('Eksik Bilgi', 'Lütfen önce nereden ve nereye gideceğinizi seçin.');
-                return;
-              }
-
-              const selectedRoute = routeOptions?.[selectedMode];
-
-              navigation.navigate('NavigationScreen', {
-                from: {
-                  lat: fromLocation.coords.latitude,
-                  lng: fromLocation.coords.longitude,
-                },
-                to: {
-                  lat: toLocation.coords.latitude,
-                  lng: toLocation.coords.longitude,
-                },
-                polyline: selectedRoute?.polyline,
-                steps: selectedRoute?.steps,
-                mode: selectedMode,
-              });
-            }}
-          />
-        </View>
-      </BottomSheetView>
-    </BottomSheetModal>
-  );
+        <TouchableOpacity
+          style={styles.startButton}
+          onPress={handleStartNavigation}
+        >
+          <Text style={styles.buttonText}>Başlat</Text>
+        </TouchableOpacity>
+      </View>
+    </BottomSheetView>
+  </BottomSheetModal>
+);
 });
 
 export default RouteInfoSheet;
@@ -149,5 +234,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#333',
     marginTop: 4,
+  },
+  startButton: {
+    backgroundColor: '#007AFF',
+    padding: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
