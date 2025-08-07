@@ -13,14 +13,14 @@ import isEqual from 'lodash.isequal';
 
 const ANKARA_CENTER = { latitude: 39.925533, longitude: 32.866287 };
 
-export function useMapLogic(mapRef, selectedMode) {
+export function useMapLogic(mapRef) {
   const [region, setRegion] = useState({
     ...ANKARA_CENTER,
     latitudeDelta: 0.03,
     longitudeDelta: 0.03,
   });
   const [routeCoords, setRouteCoords] = useState([]);
-
+  const [selectedMode, setSelectedMode] = useState('driving');
   const [marker, setMarker] = useState(null);
   const [categoryMarkers, setCategoryMarkers] = useState([]);
   const [loadingCategory, setLoadingCategory] = useState(false);
@@ -75,52 +75,55 @@ export function useMapLogic(mapRef, selectedMode) {
 
   const fetchAllRoutes = async (fromCoord, toCoord) => {
   const modes = ['driving', 'walking', 'transit'];
-  
-  // Tüm modlar için çoklu rota getir
-  const results = await Promise.all(
-    modes.map(async (mode) => {
-      const routes = await getRoute(fromCoord, toCoord, mode); // liste dönüyor
-      if (!routes) return [];
+  const routeMap = {};
 
-      return routes.map((route, index) => {
-        const decodedCoords = decodePolyline(route.polyline);
-        return {
-          ...route,
-          decodedCoords,
-          id: `${mode}-${index}`,
-          isPrimary: false, // sonra güncellenecek
-          mode,
-        };
-      });
-    })
+  // 1) Her mod için rota al ve decode et
+  for (const mode of modes) {
+    const routes = await getRoute(fromCoord, toCoord, mode);
+    if (!routes || routes.length === 0) continue;
+
+    routeMap[mode] = routes.map((route, index) => ({
+      ...route,
+      decodedCoords: decodePolyline(route.polyline),
+      id: `${mode}-${index}`,
+      isPrimary: false,  // önce tümünü false yap
+      mode,
+    }));
+  }
+
+  // 2) Eğer hiçbir rota yoksa çık
+  const anyRoutes = Object.values(routeMap).flat();
+  if (anyRoutes.length === 0) return;
+
+  // 3) Her modun kendi fastest’ını işaretle
+  Object.entries(routeMap).forEach(([mode, list]) => {
+    if (list.length === 0) return;
+    const fastestMode = list.reduce((a, b) =>
+      a.durationValue < b.durationValue ? a : b
+    );
+    routeMap[mode] = list.map(r => ({
+      ...r,
+      isPrimary: r.id === fastestMode.id,
+    }));
+  });
+
+  // 4) Global en hızlı rotayı seç ve onu çizdir / bilgileri göster
+  const allRoutes = Object.values(routeMap).flat();
+  const fastestGlobal = allRoutes.reduce((a, b) =>
+    a.durationValue < b.durationValue ? a : b
   );
 
-  // Tüm modlardaki rotaları tek listeye düzle
-  const flattened = results.flat();
-
-  // 🔎 En kısa süreli rotayı bul (duration: "13 mins" gibi string olabilir)
- const shortest = flattened.reduce((best, r) =>
-   r.durationValue < best.durationValue ? r : best
- , flattened[0]);
-
-  // isPrimary işaretle
-  const updatedRoutes = flattened.map(route => ({
-    ...route,
-    isPrimary: route.id === shortest.id,
-  }));
-
-  // ✔️ Ana state'leri güncelle
-  setRouteOptions(updatedRoutes);
-  setRouteCoords(shortest.decodedCoords);
+  // State güncellemeleri
+  setRouteOptions(routeMap);
+  setSelectedMode(fastestGlobal.mode);
+  setRouteCoords(fastestGlobal.decodedCoords);
   setRouteInfo({
-    distance: shortest.distance,
-    duration: shortest.duration,
+    distance: fastestGlobal.distance,
+    duration: fastestGlobal.duration,
   });
-  setSelectedMode(shortest.mode);
   setRouteDrawn(true);
-  sheetRefRoute.current?.present(); // RouteInfoSheet göster
+  sheetRefRoute.current?.present();
 };
-
 
   const handleSelectTo = useCallback(async place => {
   const to = {
@@ -365,38 +368,32 @@ export function useMapLogic(mapRef, selectedMode) {
 }, [activeCategory, categoryMarkers, region, mapRef]);
 
 
-  const handleSelectRoute = useCallback((routeId) => {
-  if (!routeOptions || routeOptions.length === 0) return;
-
-  const updated = routeOptions.map(route => ({
-    ...route,
-    isPrimary: route.id === routeId,
-  }));
-  setRouteOptions(updated);
-
-  const selected = updated.find(route => route.id === routeId);
-  if (!selected || !selected.decodedCoords?.length) return;
-
-  setSelectedMode(selected.mode);
-  setRouteCoords(selected.decodedCoords);
-  setRouteInfo({
-    distance: selected.distance,
-    duration: selected.duration,
-  });
-  setRouteDrawn(true);
-
-  // Sheet görünür değilse bile zorla aç
-  if (sheetRefRoute.current?.present) {
-    sheetRefRoute.current.present();
-  }
-
-  // Harita ortalama
-  if (mapRef.current?.fitToCoordinates) {
-    mapRef.current.fitToCoordinates(selected.decodedCoords, {
-      edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
-      animated: true,
+   const handleSelectRoute = useCallback((routeId) => {
+  // ➊ Seçilen routeId’den hem rota objesini hem de modunu bul
+  let found;
+  Object.entries(routeOptions).forEach(([mode, list]) => {
+    list.forEach(r => {
+      if (r.id === routeId) {
+        found = { ...r, mode };
+      }
     });
-  }
+  });
+  if (!found) return;
+
+  // ➋ Seçili modu ve rota bilgilerini güncelle
+  setSelectedMode(found.mode);
+  setRouteCoords(found.decodedCoords);
+  setRouteInfo({ distance: found.distance, duration: found.duration });
+
+  // ➌ Yeni isPrimary atamaları
+  setRouteOptions(prev => {
+    const updated = { ...prev };
+    updated[found.mode] = updated[found.mode].map(r => ({
+      ...r,
+      isPrimary: r.id === found.id,
+    }));
+    return updated;
+  });
 }, [routeOptions]);
 
   const handleMapPress = useCallback(
@@ -532,16 +529,15 @@ export function useMapLogic(mapRef, selectedMode) {
 );
 
   useEffect(() => {
-  const selected = (routeOptions[selectedMode] || []).find(r => r.isPrimary);
-
+  // routeOptions dolu değilse atla
+  if (!routeOptions || Object.keys(routeOptions).length === 0) return;
+  const list = routeOptions[selectedMode] || [];
+  const selected = list.find(r => r.isPrimary);
   console.log('🎯 Yeni mod için rota güncelleniyor:', selectedMode, selected);
 
   if (selected?.decodedCoords) {
     setRouteCoords(selected.decodedCoords);
-    setRouteInfo({
-      distance: selected.distance,
-      duration: selected.duration,
-    });
+    setRouteInfo({ distance: selected.distance, duration: selected.duration });
   } else {
     console.warn('⚠️ Seçilen mod için rota yok:', selectedMode);
   }
@@ -568,6 +564,7 @@ export function useMapLogic(mapRef, selectedMode) {
     categoryMarkers,
     loadingCategory,
     routeInfo,
+    setRouteInfo,
     routeDrawn,
     query,
     setQuery,
@@ -591,6 +588,10 @@ export function useMapLogic(mapRef, selectedMode) {
     handleDrawRoute,
     handlePoiClick,
     routeOptions,
+    setRouteOptions,
     handleSelectRoute,
+    selectedMode,
+    setSelectedMode,
+    fetchAllRoutes,
   };
 }

@@ -11,15 +11,21 @@ const RouteInfoSheet = forwardRef(({
   duration,
   fromLocation,
   toLocation,
-  selectedMode={selectedMode},
+  selectedMode,
   onModeChange={handleSelectRoute},
   onCancel,
   onStart,
-  routeOptions,
+  routeOptions = {},
   children,
 }, ref) => {
   const innerRef = useRef(null);
   const navigation = useNavigation();
+  const getPrimary = mode => {
+  const arr = routeOptions[mode] || [];
+  return arr.find(r => r.isPrimary) || arr[0] || {};
+};
+const selectedRoute = getPrimary(selectedMode);
+
 
   const handleStartNavigation = async () => {
     if (!fromLocation?.coords || !toLocation?.coords) {
@@ -37,7 +43,6 @@ const RouteInfoSheet = forwardRef(({
       return;
     }
 
-    const selectedRoute = routeOptions?.[selectedMode];
 
     innerRef.current?.dismiss();
 
@@ -116,12 +121,14 @@ const RouteInfoSheet = forwardRef(({
       {children}
 
       <View style={styles.content}>
-        <Text style={styles.infoText}>Mesafe: {distance?.text || distance || '–'}</Text>
-        <Text style={styles.infoText}>Süre: {duration?.text || duration || '–'}</Text>
+        <Text>Mesafe: {selectedRoute?.distance || '—'}</Text>
+        <Text>Süre: {selectedRoute?.duration || '—'}</Text>
+
 
         <View style={styles.modeContainer}>
           {modeOptions.map(option => {
-            const route = routeOptions?.[option.key];
+            const route = (routeOptions?.[option.key] || []).find(r => r.isPrimary);
+
             return (
               <TouchableOpacity
                 key={option.key}
@@ -129,21 +136,27 @@ const RouteInfoSheet = forwardRef(({
                   styles.modeButton,
                   selectedMode === option.key && styles.modeButtonSelected
                 ]}
-                onPress={() => onModeChange(option.key)}
+                 onPress={() => {
+    const primary = (routeOptions[option.key] || []).find(r => r.isPrimary)
+    if (primary) {
+      onModeChange(primary.id)
+    }
+  }}
               >
                 <Text style={styles.modeText}>{option.label}</Text>
                 <Text style={styles.modeLabel}>
-                  {route?.distance || '—'} • {route?.duration || '—'}
-                </Text>
+               {route?.distance || '—'} • {route?.duration || '—'}
+         </Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
         {/* 🚇 Transit mod detaylı adımları */}
-        {selectedMode === 'transit' && routeOptions.transit?.steps?.length > 0 && (
+         {selectedMode === 'transit' && selectedRoute.steps?.length > 0 && (
+          
           <View style={{ marginTop: 12 }}>
-            {routeOptions.transit.steps.map((step, index) => {
+            {selectedRoute.steps.map((step, index) => {
               const isTransit = step.transit_details != null;
 
               if (isTransit) {

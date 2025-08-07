@@ -14,8 +14,9 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import RouteSearchBar from './components/RouteSearch';
 import MapSelectionOverlay from './components/MapSelectionOverlay';
 import { useLocation } from './hooks/useLocation';
-import { useMapLogic, handleSelectRoute } from './hooks/useMapLogic';
 import { Portal } from '@gorhom/portal';
+import { useMapLogic } from './hooks/useMapLogic';
+
 
 import MapMarkers from './components/MapMarkers';
 import ScanButton from './components/ScanButton';
@@ -34,7 +35,7 @@ import { getRoute, decodePolyline, reverseGeocode, getPlaceDetails } from './map
 export default function MapScreen() {
   const navigation = useNavigation();
   const mapRef = useRef(null);
-  const map = useMapLogic(mapRef, selectedMode);
+  const map = useMapLogic(mapRef);
   const { coords, available, refreshLocation } = useLocation();
   const route = useRoute();
   
@@ -65,12 +66,7 @@ export default function MapScreen() {
   const [showOverlay, setShowOverlay] = useState(false);
   const [overlayContext, setOverlayContext] = useState(null); // 'from' | 'to'
   const [showFromOverlay, setShowFromOverlay] = useState(false);
-  const [selectedMode, setSelectedMode] = useState('driving');
-  const [routeOptions, setRouteOptions] = useState({
-    driving: null,
-    walking: null,
-    transit: null,
-  });
+
 
   
   const [canShowScan, setCanShowScan] = useState(false);
@@ -94,7 +90,7 @@ export default function MapScreen() {
 
   const calculateRoute = async (origin, destination, selectedMode = 'driving') => {
   try {
-    const route = await getRoute(origin, destination, selectedMode);
+    const route = await getRoute(origin, destination, map.selectedMode);
     if (!route) throw new Error('Rota alınamadı');
 
     const decoded = route.decodedCoords;
@@ -226,7 +222,7 @@ useEffect(() => {
   }, [available, coords]);
 
   useEffect(() => {
-  const route = routeOptions[selectedMode];
+  const route = map.routeOptions[map.selectedMode];
   if (!route || !route.decodedCoords?.length) return;
 
   setRouteCoords(route.decodedCoords);
@@ -240,41 +236,25 @@ useEffect(() => {
     edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
     animated: true,
   });
-}, [selectedMode]);
+}, [map.selectedMode]);
 
   // --- ROUTE CALCULATION WHEN MODE==='route' ---
-  useEffect(() => {
-  if (!fromSource?.coords || !toLocation?.coords) return;
-  const origin = fromSource.key === 'current' ? coords : fromSource.coords;
-
-  const fetchAllRoutes = async () => {
-    try {
-      const modes = ['driving', 'walking', 'transit'];
-      const results = await Promise.all(
-        modes.map(mode => getRoute(origin, toLocation.coords, mode))
-      );
-
-      setRouteOptions({
-        driving: results[0],
-        walking: results[1],
-        transit: results[2],
+useEffect(() => {
+  if (
+    mode === 'route' &&
+    fromSource?.coords &&
+    toLocation?.coords
+  ) {
+    map
+      .fetchAllRoutes(fromSource.coords, toLocation.coords)
+      .then(() => {
+        sheetRefRoute.current?.present();
+      })
+      .catch(err => {
+        console.warn('❌ Rota hesaplama hatası:', err);
       });
-
-      // default seçili moda göre aktif rotayı da çiz:
-      const selected = results.find((r, i) => modes[i] === selectedMode);
-      if (selected?.decodedCoords) {
-        setRouteCoords(selectedRoute.decodedCoords);
-setRouteInfo({ distance: selectedRoute.distance, duration: selectedRoute.duration });
-sheetRefRoute.current?.present(); // ✨ burada RouteInfoSheet gösteriliyor
-      }
-
-    } catch (e) {
-      console.warn('❌ Çoklu rota alma hatası:', e);
-    }
-  };
-
-  fetchAllRoutes();
-}, [fromSource, toLocation, coords]);
+  }
+}, [mode, map.fromSource, map.toLocation]);
 
   // --- AUTOMATICALLY OPEN ROUTE INFO SHEET ---
   useEffect(() => {
@@ -282,14 +262,10 @@ sheetRefRoute.current?.present(); // ✨ burada RouteInfoSheet gösteriliyor
 
     if (mode === 'route' && routeInfo && sheetRefRoute.current?.present) {
       console.log('▶️ Present çağırılıyor');
-      sheetRefRoute.current.present();
     } else {
       console.log('❌ Present çağrı şartları sağlanmadı');
     }
   }, [mode, routeInfo, isSelectingFromOnMap]);
-
-
-
 
 
   // “Get Directions” butonuna basıldığında ilk adım: overlay aç
@@ -496,8 +472,8 @@ sheetRefRoute.current?.present(); // ✨ burada RouteInfoSheet gösteriliyor
 };
 
 useEffect(() => {
-  if (routeOptions && selectedMode) {
-    const selectedRoute = routeOptions[selectedMode];
+  if (map.routeOptions && map.selectedMode) {
+    const selectedRoute = map.routeOptions[map.selectedMode]?.find(r => r.isPrimary);
     if (selectedRoute?.decodedCoords) {
       setRouteCoords(selectedRoute.decodedCoords);
       setRouteInfo({
@@ -506,9 +482,15 @@ useEffect(() => {
       });
     }
   }
-}, [selectedMode]);
+}, [map.selectedMode]);
 
-
+// MapScreen.js içinde, diğer useEffect’lerden birine yakın ekle:
+useEffect(() => {
+  // rota modu aktif ve rota çizildiğinde sheet’i aç
+  if (mode === 'route' && map.routeDrawn) {
+    sheetRefRoute.current?.present();
+  }
+}, [mode, map.routeDrawn]);
 
 
 // MapScreen.js içindeki handleMapPress fonksiyonu
@@ -750,16 +732,17 @@ return (
       )}
 
       <MapRoutePolyline
-  routes={routeOptions[selectedMode] || []}
+       key={map.selectedMode}              // mod değişince yeniden render etmesi için
+       routes={map.routeOptions[map.selectedMode] || []}
   onRouteSelect={(selected) => {
-    const updated = (routeOptions[selectedMode] || []).map(r => ({
+    const updated = (map.routeOptions[map.selectedMode] || []).map(r => ({
       ...r,
       isPrimary: r.id === selected.id,
     }));
 
-    setRouteOptions(prev => ({
+    map.setRouteOptions(prev => ({
       ...prev,
-      [selectedMode]: updated,
+      [map.selectedMode]: updated,
     }));
 
     setRouteCoords(selected.decodedCoords);
@@ -941,13 +924,13 @@ return (
   ref={sheetRefRoute}
   distance={routeInfo?.distance}
   duration={routeInfo?.duration}
-  fromLocation={fromSource}
-  toLocation={toLocation}
-  selectedMode={selectedMode}
-  routeOptions={routeOptions}
+  fromLocation={map.fromSource}
+  toLocation={map.toLocation}
+  selectedMode={map.selectedMode}
+  routeOptions={map.routeOptions}
   snapPoints={['30%']}
   onCancel={handleCancelRoute}
-  onModeChange={handleSelectRoute} // ✅ doğru fonksiyon: rota bilgilerini de güncelliyor
+  onModeChange={map.handleSelectRoute} // ✅ doğru fonksiyon: rota bilgilerini de güncelliyor
   onStart={() => {
     sheetRefRoute.current?.dismiss();
     setMode('explore');        // Geri dönünce keşif moduna geç
