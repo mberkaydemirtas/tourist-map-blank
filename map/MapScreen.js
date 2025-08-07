@@ -110,13 +110,13 @@ export default function MapScreen() {
 
 
   const handleReverseRoute = async () => {
-  if (!fromSource?.coords || !toLocation?.coords) return;
+  if (!map.fromLocation?.coords || !map.toLocation?.coords) return;
 
   // 1. Yerleri değiştir
-  const newFrom = toLocation;
-  const newTo = fromSource;
-  setFromSource(newFrom);
-  setToLocation(newTo);
+  const newFrom = map.toLocation;
+  const newTo = map.fromLocation;
+  map.setFromLocation(newFrom);
+  map.setToLocation(newTo);
 
   try {
     // 2. Rota çiz
@@ -169,17 +169,11 @@ useEffect(() => {
   }
 }, [map.categoryMarkers]);
 
-
-
-  // --- FLAGS FOR “GET DIRECTIONS” FLOW ---
-  // Overlay’de “Konumunuz / Başka Yer / Haritadan Seç”
   // Gerçekten haritaya dokunup origin seçeceğimiz an
   const [isSelectingFromOnMap, setIsSelectingFromOnMap] = useState(false);
   const [showSelectionHint, setShowSelectionHint] = useState(false);
 
-  // --- FROM & TO & MODE STATE ---
-  const [fromSource, setFromSource] = useState(null);
-  const [toLocation, setToLocation] = useState(null);
+
   const [mode, setMode] = useState('explore'); // 'explore' | 'route'
 
   // --- ROUTE & INFO ---
@@ -197,17 +191,17 @@ useEffect(() => {
   console.log('📦 PlaceDetailSheet useEffect:', {
     marker: map.marker,
     mode,
-    fromSource
+    fromLocation:map.fromLocation,
   });
 
-  if (mode === 'explore' && !fromSource && map.marker) {
+  if (mode === 'explore' && !map.fromLocation && map.marker) {
     sheetRef.current?.snapToIndex(0);
     console.log('✅ PlaceDetailSheet açıldı');
   } else {
     sheetRef.current?.close();
     console.log('❌ PlaceDetailSheet kapatıldı');
   }
-}, [map.marker, mode, fromSource]);
+}, [map.marker, mode, map.fromLocation]);
 
   // --- INITIAL ZOOM TO USER ---
   useEffect(() => {
@@ -242,11 +236,11 @@ useEffect(() => {
 useEffect(() => {
   if (
     mode === 'route' &&
-    fromSource?.coords &&
-    toLocation?.coords
+    map.fromLocation?.coords &&
+    map.toLocation?.coords
   ) {
     map
-      .fetchAllRoutes(fromSource.coords, toLocation.coords)
+      .fetchAllRoutes(map.fromLocation.coords, map.toLocation.coords)
       .then(() => {
         sheetRefRoute.current?.present();
       })
@@ -254,7 +248,7 @@ useEffect(() => {
         console.warn('❌ Rota hesaplama hatası:', err);
       });
   }
-}, [mode, map.fromSource, map.toLocation]);
+}, [mode, map.fromLocation, map.toLocation]);
 
   // --- AUTOMATICALLY OPEN ROUTE INFO SHEET ---
   useEffect(() => {
@@ -281,75 +275,60 @@ useEffect(() => {
 };
 
   // Overlay’den “Konumunuz” veya “Arama” geldiğinde:
-  // MapScreen.js içinden...
-  const handleFromSelected = async (src) => {
-    // --------------------------------------------------------------------------------
-    // 1) Haritadan Seç tıklandıysa seçim modundan çık
-    // --------------------------------------------------------------------------------
-    if (src.key === 'map') {
-      setShowFromOverlay(false);
-      setIsSelectingFromOnMap(true);
-      // not: return yok, devam ediyoruz
-    } else {
-      // normal akıştaysa overlay’i kapat
-      setShowFromOverlay(false);
-    }
+const handleFromSelected = async (src) => {
+  // 1. Overlay kapat & haritadan seçim kontrolü
+  setShowFromOverlay(false);
+  if (src.key === 'map') {
+    setIsSelectingFromOnMap(true);
+    return;
+  }
 
-  // --------------------------------------------------------------------------------
-  // 2) description ve placeId belirle (reverse geocode’tan)
-  // --------------------------------------------------------------------------------
-   let address = src.description || 'Seçilen Konum';
-  // 'map' veya 'current' için placeId null
-  let placeId = (src.key === 'map' || src.key === 'current') 
-                  ? null 
-                  : src.key;
+  // 2. Adres belirleme
+  let address = src.description || 'Seçilen Konum';
+  let placeId = (src.key === 'map' || src.key === 'current') ? null : src.key;
 
-  // Eğer haritadan ya da current konumdan geldiyse, kendi koordinatını kullan
   if ((src.key === 'map' || src.key === 'current') && src.coords) {
     try {
-      const geo = src.key === 'map'
-        ? await reverseGeocode(src.coords)
-        : null;
+      const geo = await reverseGeocode(src.coords);
       if (geo?.[0]) {
         address = geo[0].formatted_address || address;
-        // placeId hâlâ null
       }
     } catch (e) {
       console.warn('📛 Reverse geocode alınamadı:', e);
     }
   }
 
-  // --------------------------------------------------------------------------------
-  // 3) fromSource ve mode='route' ayarlaması
-  // --------------------------------------------------------------------------------
-   setFromSource({ coords: src.coords, description: address, key: src.key });
+  // 3. fromLocation set et
+  const fromSrc = {
+    coords: src.coords,
+    description: address,
+    key: src.key,
+  };
+  map.setFromLocation(fromSrc);
   setMode('route');
 
-  // --------------------------------------------------------------------------------
-  // 4) toLocation otomatik ataması (önceki marker’dan)
-  // --------------------------------------------------------------------------------
-  if (!toLocation && map.marker) {
-    setToLocation({
+  // 4. toLocation yoksa marker'dan al
+  let destination = map.toLocation;
+  if (!destination && map.marker?.coordinate) {
+    destination = {
       coords: map.marker.coordinate,
       description: map.marker.name,
-    });
+    };
+    map.setToLocation(destination);
   }
 
-  // --------------------------------------------------------------------------------
-  // 5) Marker oluştur ve haritayı kaynak koordinata zoom et
-  // --------------------------------------------------------------------------------
+  // 5. Marker göster
   try {
     if (placeId) {
-      // Sadece gerçek place_id ile detay iste
       await map.fetchAndSetMarker(placeId, src.coords, address);
     } else {
-      // current veya map durumunda basit setMarker
       map.setMarker({
         coordinate: src.coords,
         name: address,
         address,
       });
     }
+
     mapRef.current?.animateToRegion(
       { ...src.coords, latitudeDelta: 0.05, longitudeDelta: 0.05 },
       500
@@ -357,34 +336,57 @@ useEffect(() => {
   } catch (e) {
     console.warn('🟥 Marker detay çekilemedi:', e);
   }
-  };
 
-  // Overlay’den “Haritadan Seç”e basıldığında:
+  // 6. Rota çizimi
+  if (destination?.coords) {
+    try {
+      const routes = await getRoute(fromSrc.coords, destination.coords);
+      if (!routes?.length) {
+        console.warn('❌ getRoute boş döndü');
+        return;
+      }
+
+      map.setRouteOptions(prev => ({
+        ...prev,
+        [map.selectedMode]: routes,
+      }));
+
+      const primaryRoute = routes[0];
+      const points = decodePolyline(primaryRoute.polyline || '');
+
+      setRouteCoords(points);
+      setRouteInfo({
+        distance: primaryRoute.distance,
+        duration: primaryRoute.duration,
+      });
+
+      sheetRefRoute.current?.present();
+
+    } catch (e) {
+      console.warn('🚫 Rota çizilemedi:', e);
+    }
+  }
+};
+
+
   // Overlay’den “Haritadan Seç”e basıldığında:
   const handleMapSelect = () => {
     setShowFromOverlay(false);
     setMode('route');
     setOverlayContext('from'); // 🔧 EKLENDİ: seçim hangi alan için yapılıyor?
-    setFromSource(null);
+    map.setFromLocation(null);
     setIsSelectingFromOnMap(true);
     setShowSelectionHint(true);
 
     if (map.marker) {
-      setToLocation({
+      map.setToLocation({
         coords: map.marker.coordinate,
         description: map.marker.name,
       });
     }
   };
 
-
-
-
-
-
-
   // Haritaya dokununca, gerçek origin seçim:
-  // MapScreen.js içindeki handleSelectOriginOnMap fonksiyonu:
 
   const handleSelectOriginOnMap = async (coordinate) => {
   console.log('🎯 handleSelectOriginOnMap çalıştı, koordinat:', coordinate);
@@ -409,24 +411,24 @@ useEffect(() => {
     // 3) Açıklama olarak önce name, yoksa address kullan
     const description = name || address || 'Seçilen Konum';
 
-    // 4) fromSource objesini oluştur ve state’e yaz
+    // 4) fromLocation objesini oluştur ve state’e yaz
     const fromSrc = {
       coords: coordinate,
       description,
       key: placeId || 'map',
     };
-    setFromSource(fromSrc);
-    console.log('✅ fromSource set edildi:', fromSrc);
+    map.setFromLocation(fromSrc);
+    console.log('✅ fromLocation set edildi:', fromSrc);
 
     // 5) toLocation belirlenmemişse mevcut marker’dan türet
-    let destination = toLocation;
+    let destination = map.toLocation;
     if (!destination && map.marker?.coordinate) {
       destination = {
         coords: map.marker.coordinate,
         description: map.marker.name || address,
         key: map.marker.place_id || 'map',
       };
-      setToLocation(destination);
+      map.setToLocation(destination);
     }
 
     if (!destination) {
@@ -447,9 +449,19 @@ useEffect(() => {
 
     // 8) Rota çizimi
     console.log('📡 getRoute() çağırılıyor…');
-    const result = await getRoute(fromSrc.coords, destination.coords);
-    const polyline = result.overview_polyline?.points || result.polyline;
-    const points = decodePolyline(polyline || '');
+    const routes = await getRoute(fromSrc.coords, destination.coords);
+    if (!routes?.length) {
+      console.warn('❌ getRoute boş döndü');
+      return;
+    }
+    map.setRouteOptions(prev => ({
+  ...prev,
+  [map.selectedMode]: routes,
+}));
+    const primaryRoute = routes[0];
+    const encoded = primaryRoute.polyline || '';
+    const points = decodePolyline(encoded);
+
 
     if (!points.length) {
       console.warn('⚠️ Polyline decode edilemedi veya boş');
@@ -459,8 +471,8 @@ useEffect(() => {
     console.log('🟢 Toplam çizilecek nokta:', points.length);
     setRouteCoords(points);
     setRouteInfo({
-      distance: result.distance,
-      duration: result.duration,
+      distance: primaryRoute.distance,
+      duration: primaryRoute.duration,
     });
 
     // 9) Alt bilgi kartını göster
@@ -540,7 +552,7 @@ useEffect(() => {
     const description = name || address || 'Seçilen Konum';
 
     // 4) toLocation state’ini güncelle
-    setToLocation({
+    map.setToLocation({
       coords: coordinate,
       description,
       key: placeId || 'map',
@@ -565,12 +577,22 @@ useEffect(() => {
       500
     );
 
-    // 8) Daha önce fromSource varsa rota çiz
-    if (fromSource?.coords) {
+    // 8) Daha önce fromLocation varsa rota çiz
+    if (map.fromLocation?.coords) {
       console.log('📡 getRoute() çağırılıyor (destination)…');
-      const result = await getRoute(fromSource.coords, coordinate);
-      const polyline = result.overview_polyline?.points || result.polyline;
-      const points = decodePolyline(polyline || '');
+    const routes = await getRoute(map.fromLocation.coords, coordinate);
+    if (!routes?.length) {
+      console.warn('❌ getRoute boş döndü');
+      return;
+    }
+    map.setRouteOptions(prev => ({
+  ...prev,
+  [map.selectedMode]: routes,
+}));
+    const primaryRoute = routes[0];
+    const encoded = primaryRoute.polyline || '';
+    const points = decodePolyline(encoded);
+
 
       if (!points.length) {
         console.warn('⚠️ Polyline decode edilemedi veya boş');
@@ -578,8 +600,8 @@ useEffect(() => {
         console.log('🟢 Toplam çizilecek nokta:', points.length);
         setRouteCoords(points);
         setRouteInfo({
-          distance: result.distance,
-          duration: result.duration,
+          distance: primaryRoute.distance,
+          duration: primaryRoute.duration,
         });
         // 9) Alt bilgi kartını göster
         sheetRefRoute.current?.present();
@@ -616,27 +638,32 @@ useEffect(() => {
       if (sheetRef.current?.snapToIndex) {
         sheetRef.current.snapToIndex(0);
       }
-    }, 150); // Küçük gecikme ile geç render’ı garanti eder
+    }, 150);
   } else {
     console.log('⚠️ İptalde yüklenebilecek marker yok.');
+    map.setMarker(null); // güvenlik için marker'ı da temizleyelim
   }
 
-  // 5) State’leri sıfırla
-  setFromSource(null);
-  setToLocation(null);
-  setRouteCoords([]);
-  setRouteInfo(null);
+  // 5) Rota ile ilgili tüm state'leri sıfırla
+  map.setFromLocation(null);
+  map.setToLocation(null);
+  map.setRouteOptions({}); // 🔥 modlara göre saklanan tüm rotaları temizle
+  setRouteCoords([]);      // çizilen polyline'ı temizle
+  setRouteInfo(null);      // mesafe & süre bilgisini temizle
+
+  // 6) Route Sheet kapat
   sheetRefRoute.current?.dismiss();
 };
 
 
+
 return (
   <View style={styles.container}>
-    {console.log('🧭 UI STATE', { mode, fromSource, toLocation })}
+{console.log('🧭 UI STATE', { mode, fromLocation: map.fromLocation, toLocation: map.toLocation })}
     {console.log('🔄 RENDER DURUMU:', {
       mode,
-      hasFrom: Boolean(fromSource),
-      hasTo: Boolean(toLocation),
+      hasFrom: Boolean(map.fromLocation),
+      hasTo: Boolean(map.toLocation),
       routeCoordsLength: routeCoords.length,
     })}
     
@@ -683,6 +710,7 @@ return (
       showsUserLocation={available}
       
     >
+      {mode === 'explore' && (
       <MapMarkers
   categoryMarkers={map.categoryMarkers}
   activeCategory={map.activeCategory}
@@ -698,8 +726,9 @@ return (
       map.handleMarkerSelect(placeId, coordinate, name);
     }
   }}
-  fromSource={fromSource}
+  fromLocation={map.fromLocation}
 />
+ )}
 
 
       {!map.activeCategory && mode === 'explore' && map.marker?.coordinate && (
@@ -719,13 +748,13 @@ return (
         </Marker>
       )}
 
-      {mode === 'route' && fromSource?.coords && (
-        <Marker coordinate={fromSource.coords} pinColor="blue" />
+      {mode === 'route' && map.fromLocation?.coords && (
+        <Marker coordinate={map.fromLocation.coords} pinColor="blue" />
       )}
 
-      {mode === 'route' && toLocation?.coords && (
+      {mode === 'route' && map.toLocation?.coords && (
         <Marker
-          coordinate={toLocation.coords}
+          coordinate={map.toLocation.coords}
           pinColor="#FF5A5F"
           tracksViewChanges={false}
         />
@@ -776,7 +805,7 @@ return (
     <SafeAreaView pointerEvents="box-none" style={StyleSheet.absoluteFill}>
       {/* EXPLORE modundaysa */}
       
-      {mode === 'explore' && !fromSource && (
+      {mode === 'explore' && !map.fromLocation && (
         <>
           <MapHeaderControls
         query={map.query}
@@ -847,7 +876,7 @@ return (
         }}
       >
         <Text style={styles.inputText}>
-          {fromSource?.description || 'Konum seçin'}
+          {map.fromLocation?.description || 'Konum seçin'}
         </Text>
       </TouchableOpacity>
 
@@ -863,7 +892,7 @@ return (
         }}
       >
         <Text style={styles.inputText}>
-          {toLocation?.description || 'Nereye?'}
+          {map.toLocation?.description || 'Nereye?'}
         </Text>
       </TouchableOpacity>
     </View>
@@ -924,7 +953,7 @@ return (
   ref={sheetRefRoute}
   distance={routeInfo?.distance}
   duration={routeInfo?.duration}
-  fromLocation={map.fromSource}
+  fromLocation={map.fromLocation}
   toLocation={map.toLocation}
   selectedMode={map.selectedMode}
   routeOptions={map.routeOptions}

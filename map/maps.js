@@ -38,27 +38,30 @@ function buildDirectionsUrl(origin, destination, mode = 'driving') {
 export async function autocomplete(input, { lat, lng } = {}) {
   console.log('🌐 autocomplete çağrıldı:', input);
   const params = new URLSearchParams({
-  origin: `${from.latitude},${from.longitude}`,
-  destination: `${to.latitude},${to.longitude}`,
-  mode,
-  alternatives: 'true', // ✅ alternatif rotalar
-  key: GOOGLE_MAPS_API_KEY,
-});
+    input,
+    key: KEY,
+    language: 'tr',
+  });
+  if (lat && lng) {
+    params.append('location', `${lat},${lng}`);
+    params.append('radius', '2000');
+  }
+  const url = `${BASE}/place/autocomplete/json?${params.toString()}`;
+  try {
+    const res = await fetch(url);
+    const json = await res.json();
+    console.log('🌐 autocomplete cevap:', json.status, json.predictions?.length);
+    if (json.status !== 'OK') {
+      console.warn('❌ autocomplete hatalı cevap:', json.status);
+      return [];
+    }
+    return json.predictions;
+  } catch (err) {
+    console.error('🌐 autocomplete fetch hatası:', err);
+    return [];
+  }
+}
 
-// 🚧 Belirli modlar için 'avoid' parametresi uygula
-if (mode === 'walking') {
-  params.append('avoid', 'highways');
-} else if (mode === 'driving') {
-  params.append('avoid', 'tolls|ferries');
-} else if (mode === 'transit') {
-  params.append('avoid', 'highways');
-}
-  const url = `https://maps.googleapis.com/maps/api/directions/json?${params}`;
-  const res = await fetch(`${BASE}/place/autocomplete/json?${params}`);
-  const json = await res.json();
-  console.log('🌐 autocomplete cevap:', json.status, json.predictions?.length);
-  return json.status === 'OK' ? json.predictions : [];
-}
 
 export async function getPlaceDetails(placeId) {
   const params = new URLSearchParams({

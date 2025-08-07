@@ -76,6 +76,8 @@ export function useMapLogic(mapRef) {
   const fetchAllRoutes = async (fromCoord, toCoord) => {
   const modes = ['driving', 'walking', 'transit'];
   const routeMap = {};
+  setActiveCategory(null);
+  setCategoryMarkers([]);
 
   // 1) Her mod için rota al ve decode et
   for (const mode of modes) {
@@ -135,14 +137,15 @@ export function useMapLogic(mapRef) {
   setToLocation(to);
   setPhase('ready');
 
-  if (fromLocation?.coordinate) {
-    // 🔴 Şu an sadece tek mod için rota alıyorsun:
-    // await getRouteBetween(fromLocation.coordinate, to.coordinate, selectedMode);
+  // 🔥 Kategorileri temizle
+  setActiveCategory(null);
+  setCategoryMarkers([]);
 
-    // ✅ Yerine tüm modlar için rota al:
+  if (fromLocation?.coordinate) {
     await fetchAllRoutes(fromLocation.coordinate, to.coordinate);
   }
 }, [fromLocation]);
+
 
 
 
@@ -593,5 +596,6 @@ export function useMapLogic(mapRef) {
     selectedMode,
     setSelectedMode,
     fetchAllRoutes,
+    fromLocation,
   };
 }
