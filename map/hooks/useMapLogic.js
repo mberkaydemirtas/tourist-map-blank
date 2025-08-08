@@ -34,7 +34,7 @@ export function useMapLogic(mapRef) {
    // ➊ Harita her değiştiğinde region ve mapMoved güncellensin
   const onRegionChange = useCallback(
    (newRegion) => {
-     _setRegion(newRegion);
+     setRegion(newRegion);
      setMapMoved(true);
    },
    []
@@ -67,7 +67,7 @@ export function useMapLogic(mapRef) {
   const handleSelectFrom = useCallback(place => {
   setFromLocation({
     description: place.description,
-    coordinate: place.coords ?? place.coordinate, // ikisini de destekle
+    coords: place.coords ?? place.coordinate, // ikisini de destekle
     key: place.key || 'from',
   });
   setPhase('to');
@@ -124,7 +124,6 @@ export function useMapLogic(mapRef) {
     duration: fastestGlobal.duration,
   });
   setRouteDrawn(true);
-  sheetRefRoute.current?.present();
 };
 
   const handleSelectTo = useCallback(async place => {
@@ -206,24 +205,55 @@ export function useMapLogic(mapRef) {
 
     // ——— handleSelectPlace: her zaman zoom yapacak ———
   const handleSelectPlace = useCallback(async (placeId, description) => {
-    setMapMoved(false);
-    setRouteCoords(null);
-    setRouteInfo(null);
-    setRouteDrawn(false);
-    setQuery(description);
-    const coord = await fetchAndSetMarker(placeId, null, description);
-    if (coord && mapRef?.current?.animateToRegion) {
-  const newRegion = {
-    latitude: coord.latitude,
-    longitude: coord.longitude,
-    latitudeDelta: 0.008,
-    longitudeDelta: 0.008,
-  };
-  setRegion(newRegion);
-  mapRef.current.animateToRegion(newRegion, 300);
-}
+  setMapMoved(false);
+  setRouteCoords(null);
+  setRouteInfo(null);
+  setRouteDrawn(false);
+  setQuery(description);
 
-  }, [fetchAndSetMarker, mapRef]);
+  const coord = await fetchAndSetMarker(placeId, null, description);
+
+  if (coord && mapRef?.current?.animateToRegion) {
+    const newRegion = {
+      latitude: coord.latitude,
+      longitude: coord.longitude,
+      latitudeDelta: 0.008,
+      longitudeDelta: 0.008,
+    };
+    setRegion(newRegion);
+    mapRef.current.animateToRegion(newRegion, 300);
+  }
+
+  // 🧭 Search ile seçilen yere rota çiz: fromLocation varsa
+  if (fromLocation?.coords && coord) {
+    const routes = await getRoute(fromLocation.coords, coord);
+    if (routes?.length) {
+      const decoded = decodePolyline(routes[0].polyline || '');
+      setRouteCoords(decoded);
+      setRouteInfo({
+        distance: routes[0].distance,
+        duration: routes[0].duration,
+      });
+
+      setRouteDrawn(true);
+
+      // ❗ mod bazlı sakla
+      setRouteOptions(prev => ({
+        ...prev,
+        [selectedMode]: routes.map((r, i) => ({
+          ...r,
+          decodedCoords: decodePolyline(r.polyline),
+          isPrimary: i === 0,
+          id: `${selectedMode}-${i}`,
+          mode: selectedMode,
+        })),
+      }));
+    } else {
+      console.warn('⚠️ Search ile seçilen yere rota alınamadı');
+    }
+  }
+}, [fetchAndSetMarker, mapRef, fromLocation, selectedMode]);
+
 
 
   const handleCategorySelect = useCallback(
@@ -478,7 +508,7 @@ export function useMapLogic(mapRef) {
         mapRef.current.animateToRegion(newRegion, 300);
       }
         try {
-          const route = await getRoute(ANKARA_CENTER, coord);
+          const route = await getRoute(ANKARA_CENTER, coordinate);
           setRouteInfo(route);
         } catch {
           setRouteInfo(null);
@@ -521,6 +551,20 @@ export function useMapLogic(mapRef) {
       longitudeDelta: r.longitudeDelta,
     }));
 
+     // 👇 POI’ye zoom ve merkezleme
+  const newRegion = {
+   latitude: coordinate.latitude,
+   longitude: coordinate.longitude,
+   latitudeDelta: 0.01,
+   longitudeDelta: 0.01,
+ };
+ // state’i güncelle
+ setRegion(newRegion);
+ // haritayı animasyonla taşı
+ requestAnimationFrame(() => {
+   mapRef?.current?.animateToRegion(newRegion, 350);
+ });
+
     try {
       const route = await getRoute(ANKARA_CENTER, coordinate);
       setRouteInfo(route);
@@ -549,8 +593,8 @@ export function useMapLogic(mapRef) {
 
 
   useEffect(() => {
-    if (fromLocation?.coordinate && toLocation?.coordinate) {
-      fetchAllRoutes(fromLocation.coordinate, toLocation.coordinate);
+    if (fromLocation?.coords && toLocation?.coords) {
+      fetchAllRoutes(fromLocation.coords, toLocation.coords);
     }
   }, [fromLocation, toLocation]);
 
@@ -596,6 +640,5 @@ export function useMapLogic(mapRef) {
     selectedMode,
     setSelectedMode,
     fetchAllRoutes,
-    fromLocation,
   };
 }

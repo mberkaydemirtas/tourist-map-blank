@@ -38,21 +38,14 @@ export default function MapScreen() {
   const map = useMapLogic(mapRef);
   const { coords, available, refreshLocation } = useLocation();
   const route = useRoute();
-  
-  useEffect(() => {
-  if (map.marker && sheetRef.current) {
-    sheetRef.current.present();
-  }
-}, [map.marker]);
+  const sheetRef = useRef(null);
+  const sheetRefRoute = useRef(null);
 
   useEffect(() => {
   console.log('📣 isSelectingFromOnMap değişti:', isSelectingFromOnMap);
 }, [isSelectingFromOnMap]);
 
   
-  
-  const sheetRef = useRef(null);
-  const sheetRefRoute = useRef(null);
   const lastAvailable = useRef(false);
   const getRouteColor = (mode) => {
   switch (mode) {
@@ -66,6 +59,10 @@ export default function MapScreen() {
   const [showOverlay, setShowOverlay] = useState(false);
   const [overlayContext, setOverlayContext] = useState(null); // 'from' | 'to'
   const [showFromOverlay, setShowFromOverlay] = useState(false);
+  const handlePlaceDetailDismiss = () => {
+  map.setMarker(null);    // 🧹 Marker'ı temizle
+  map.setQuery('');       // 🔄 SearchBar temizle
+};
 
 
   
@@ -216,21 +213,29 @@ useEffect(() => {
   }, [available, coords]);
 
   useEffect(() => {
-  const route = map.routeOptions[map.selectedMode];
-  if (!route || !route.decodedCoords?.length) return;
+    if (mode !== 'route') return;
 
-  setRouteCoords(route.decodedCoords);
+  const list = map.routeOptions[map.selectedMode] || [];
+  const primary = list.find(r => r.isPrimary);
+  if (!primary?.decodedCoords?.length) {
+    console.warn(`⚠️ Seçilen mod için rota yok: ${map.selectedMode}`);
+    return;
+  }
+
+  // State’leri güncelle
+  setRouteCoords(primary.decodedCoords);
   setRouteInfo({
-    distance: route.distance,
-    duration: route.duration,
+    distance: primary.distance,
+    duration: primary.duration,
   });
 
-  // Sadece mod değişiminden dolayı ortalanıyorsa animasyonlu yap
-  mapRef.current?.fitToCoordinates(route.decodedCoords, {
+  // Haritayı ortala
+  mapRef.current?.fitToCoordinates(primary.decodedCoords, {
     edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
     animated: true,
   });
-}, [map.selectedMode]);
+}, [mode, map.selectedMode, map.routeOptions]);
+
 
   // --- ROUTE CALCULATION WHEN MODE==='route' ---
 useEffect(() => {
@@ -264,11 +269,14 @@ useEffect(() => {
 
   // “Get Directions” butonuna basıldığında ilk adım: overlay aç
   const onGetDirectionsPress = () => {
-  if (map.marker?.coordinate) {
-    lastSelectedRef.current = map.marker;
-  } else {
-    lastSelectedRef.current = null;
-  }
+  if (!map.toLocation && map.marker?.coordinate) {
+  map.setToLocation({
+    coords: map.marker.coordinate,
+    description: map.marker.name || 'Seçilen Yer',
+    key: map.marker.place_id || 'map',
+  });
+  console.log('📍 toLocation manuel set edildi (Yol Tarifi Al basınca)');
+}
 
   sheetRef.current?.close();
   setShowFromOverlay(true);
@@ -309,13 +317,23 @@ const handleFromSelected = async (src) => {
 
   // 4. toLocation yoksa marker'dan al
   let destination = map.toLocation;
-  if (!destination && map.marker?.coordinate) {
+  if (!destination) {
+  const coord = map.marker?.coordinate;
+  const name = map.marker?.name || map.marker?.address || 'Seçilen Konum';
+
+  if (coord?.latitude && coord?.longitude) {
     destination = {
-      coords: map.marker.coordinate,
-      description: map.marker.name,
+      coords: coord,
+      description: name,
+      key: map.marker?.place_id || 'map',
     };
     map.setToLocation(destination);
+    console.log('📍 toLocation set edildi (fallback):', destination);
+  } else {
+    console.warn('🚫 toLocation set edilemedi: Geçerli marker koordinatı yok.');
   }
+}
+
 
   // 5. Marker göster
   try {
@@ -498,11 +516,11 @@ useEffect(() => {
 
 // MapScreen.js içinde, diğer useEffect’lerden birine yakın ekle:
 useEffect(() => {
-  // rota modu aktif ve rota çizildiğinde sheet’i aç
-  if (mode === 'route' && map.routeDrawn) {
+  if (mode === 'route' && routeCoords?.length > 0) {
     sheetRefRoute.current?.present();
   }
-}, [mode, map.routeDrawn]);
+}, [mode, routeCoords]);
+
 
 
 // MapScreen.js içindeki handleMapPress fonksiyonu
@@ -832,13 +850,13 @@ return (
     )}
           <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 30 }}></View>
           <PlaceDetailSheet
-          
             ref={sheetRef}
             marker={map.marker}
             routeInfo={map.routeInfo}
             sheetRef={sheetRef}
             snapPoints={snapPoints}
             onGetDirections={onGetDirectionsPress}
+            onDismiss={handlePlaceDetailDismiss} // 🆕 Burada veriyoruz
           />
         </>
       )}
@@ -965,8 +983,8 @@ return (
     setMode('explore');        // Geri dönünce keşif moduna geç
     setRouteInfo(null);
     setRouteCoords([]);
-    setRouteOptions([]);
-    setSelectedMode('driving');
+    map.setRouteOptions({});
+    map.setSelectedMode('driving');
   }}
 >
 

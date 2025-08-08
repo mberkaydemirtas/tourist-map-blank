@@ -4,7 +4,6 @@ import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { useNavigation } from '@react-navigation/native';
 import { checkLocationReady } from '../utils/locationUtils';
-import { handleSelectRoute } from '../hooks/useMapLogic';
 
 const RouteInfoSheet = forwardRef(({
   distance,
@@ -12,7 +11,7 @@ const RouteInfoSheet = forwardRef(({
   fromLocation,
   toLocation,
   selectedMode,
-  onModeChange={handleSelectRoute},
+  onModeChange,
   onCancel,
   onStart,
   routeOptions = {},
@@ -24,53 +23,66 @@ const RouteInfoSheet = forwardRef(({
   const arr = routeOptions[mode] || [];
   return arr.find(r => r.isPrimary) || arr[0] || {};
 };
+  const modeOptions = [
+    { key: 'driving', label: '🚗' },
+    { key: 'walking', label: '🚶‍♂️' },
+    { key: 'transit', label: '🚌' },
+  ];
 const selectedRoute = getPrimary(selectedMode);
 
-
-  const handleStartNavigation = async () => {
-    if (!fromLocation?.coords || !toLocation?.coords) {
-      Alert.alert('Eksik Bilgi', 'Lütfen önce nereden ve nereye gideceğinizi seçin.');
-      return;
-    }
-
-    const ready = await checkLocationReady();
-    if (!ready) {
-      Alert.alert(
-        'Konum Servisi Gerekli',
-        'Navigasyonu başlatmak için konum izni vermeli ve GPS\'i açmalısınız.',
-        [{ text: 'Tamam', onPress: () => {} }]
-      );
-      return;
-    }
-
-
-    innerRef.current?.dismiss();
-
-    navigation.navigate('NavigationScreen', {
-      from: {
-        lat: fromLocation.coords.latitude,
-        lng: fromLocation.coords.longitude,
-      },
-      to: {
-        lat: toLocation.coords.latitude,
-        lng: toLocation.coords.longitude,
-      },
-      polyline: selectedRoute?.polyline,
-      steps: selectedRoute?.steps,
-      mode: selectedMode,
-    });
-  };
-
+  // expose present/dismiss to parent via ref
   useImperativeHandle(ref, () => ({
     present: () => innerRef.current?.present(),
     dismiss: () => innerRef.current?.dismiss(),
   }));
 
-  const modeOptions = [
-  { key: 'driving', label: '🚗' },
-  { key: 'walking', label: '🚶‍♂️' },
-  { key: 'transit', label: '🚌' },
-];
+
+  const handleStartNavigation = async () => {
+  if (!fromLocation?.coords || !toLocation?.coords) {
+    Alert.alert('Eksik Bilgi', 'Lütfen önce nereden ve nereye gideceğinizi seçin.');
+    return;
+  }
+
+  const ready = await checkLocationReady();
+  if (!ready) {
+    Alert.alert(
+      'Konum Servisi Gerekli',
+      'Navigasyonu başlatmak için konum izni vermeli ve GPS\'i açmalısınız.',
+      [{ text: 'Tamam', onPress: () => {} }]
+    );
+    return;
+  }
+
+  // 🧠 Verileri önce al
+  const from = {
+    lat: fromLocation.coords.latitude,
+    lng: fromLocation.coords.longitude,
+  };
+  const to = {
+    lat: toLocation.coords.latitude,
+    lng: toLocation.coords.longitude,
+  };
+  const polyline = selectedRoute?.polyline;
+  const steps = selectedRoute?.steps || [];
+  const mode = selectedMode;
+
+  // Modalı kapat
+  innerRef.current?.dismiss();
+
+  // 🔀 Navigasyon ekranına geçiş
+  navigation.navigate('NavigationScreen', {
+    from,
+    to,
+    polyline,
+    steps,
+    mode,
+  });
+
+  // 🧼 Sonra state temizle
+  onCancel?.(); // bu zaten çoğunu yapıyor ama garanti için:
+
+};
+
   const renderTransitSteps = (steps = []) => {
   return (
     <View style={{ marginTop: 12 }}>

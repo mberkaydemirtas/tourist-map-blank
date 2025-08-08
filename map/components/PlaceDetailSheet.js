@@ -8,7 +8,7 @@ import PlacePhotoGallery from './PlacePhotoGallery';
 import PlaceContactButtons from './PlaceContactButtons';
 
 const PlaceDetailSheet = forwardRef(function PlaceDetailSheet(
-  { marker, routeInfo, snapPoints, onGetDirections },
+  { marker, routeInfo, snapPoints, onGetDirections, onDismiss },
   ref
 ) {
   const innerRef = useRef(null);
@@ -28,6 +28,13 @@ const PlaceDetailSheet = forwardRef(function PlaceDetailSheet(
       enablePanDownToClose
       enableContentPanningGesture={false}
       enableHandlePanningGesture
+       onChange={(idx) => {
+   // -1 kapalı; bazı versiyonlarda -1 dönmez, o yüzden idx === -1 ya da idx === 0 dışı gibi kontrol edebilirsin
+   if (idx === -1) {
+     // parent’a haber ver
+    typeof onDismiss === 'function' && onDismiss();
+   }
+ }}
       handleComponent={() => (
         <PlaceDetailHeader
           marker={marker}
