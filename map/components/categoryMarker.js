@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Marker, Callout } from 'react-native-maps';
 import { View, Text, StyleSheet, Image } from 'react-native';
+import { normalizeCoord } from '../utils/coords';
 
 const ICONS = {
   cafe: require('../../assets/icons/cafe.png'),
@@ -14,14 +15,8 @@ export default function CategoryMarker({ item, onSelect, activeCategory, iconSiz
   const [loaded, setLoaded] = useState(false);
 
   // Koordinatları güvenli şekilde al
-  const coordinate =
-    item.coords ??
-    item.coordinate ??
-    (item.geometry?.location && {
-      latitude: item.geometry.location.lat,
-      longitude: item.geometry.location.lng,
-    });
-  if (!coordinate) return null;
+  const coordinate = normalizeCoord(item?.coords ?? item);
+  if (!coordinate) return null
 
   // iconKey: aktif kategori varsa; değilse item.types içinde uygun bir type
   let iconKey = null;

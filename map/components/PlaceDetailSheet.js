@@ -6,6 +6,7 @@ import PlaceDetailHeader from './PlaceDetailHeader';
 import PlaceOpeningHours from './PlaceOpeningHours';
 import PlacePhotoGallery from './PlacePhotoGallery';
 import PlaceContactButtons from './PlaceContactButtons';
+import { toCoordsObject, normalizeCoord } from '../utils/coords';
 
 const PlaceDetailSheet = forwardRef(function PlaceDetailSheet(
   { marker, routeInfo, snapPoints, onGetDirections, onDismiss },
@@ -20,7 +21,21 @@ const PlaceDetailSheet = forwardRef(function PlaceDetailSheet(
     snapToIndex: (index) => innerRef.current?.snapToIndex?.(index),
   }));
 
-  return (
+   // "Yol Tarifi Al" tıklanınca marker'ı normalize edip üst bileşene gönder
+   const handleGetDirectionsPress = () => {
+     if (!marker || !onGetDirections) return;
+     const normalized =
+       toCoordsObject(marker) ??
+       {
+         ...marker,
+         coords: normalizeCoord(
+           marker?.coords ?? marker?.coordinate ?? marker?.geometry?.location ?? marker
+         ),
+       };
+     onGetDirections(normalized);
+   };
+ 
+   return (
     <BottomSheet
       ref={innerRef}
       index={-1}
@@ -39,7 +54,7 @@ const PlaceDetailSheet = forwardRef(function PlaceDetailSheet(
         <PlaceDetailHeader
           marker={marker}
           routeInfo={routeInfo}
-          onGetDirections={onGetDirections}
+          onGetDirections={handleGetDirectionsPress}
         />
       )}
     >

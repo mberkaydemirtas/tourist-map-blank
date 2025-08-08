@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { autocomplete, getPlaceDetails } from '../maps';
+import { toCoordsObject, normalizeCoord } from '../utils/coords';
 
 const HISTORY_KEY_BASE = 'search_history';
 const MAX_HISTORY = 5;
@@ -55,9 +56,14 @@ export default function GetDirectionsOverlay({
     console.log('🚀 Overlay seçildi (ön):', item);
 
     // Current location
-    if (item.key === 'current') {
-      selected = { key: 'current', description: 'Konumunuz', coords: userCoords };
+  if (item.key === 'current') {
+    const c = normalizeCoord(userCoords);
+    if (!c) {
+      console.warn('❌ Geçersiz current location');
+      return;
     }
+    selected = { key: 'current', description: 'Konumunuz', coords: c };
+  }
 
     // Map-select
     if (item.key === 'map') {
@@ -81,8 +87,13 @@ export default function GetDirectionsOverlay({
           selected = { key: placeId, description: res[0].description };
         }
         console.log('📦 Detay almak için placeId:', placeId);
-        const details = await getPlaceDetails(placeId);
-        selected = { key: placeId, description: selected.description, coords: details.coords };
+      const details = await getPlaceDetails(placeId);
+      const detCoord = normalizeCoord(details?.coords ?? details?.geometry?.location ?? details);
+      if (!detCoord) {
+        console.warn('❌ Koordinat normalize edilemedi (place details)');
+        return;
+      }
+      selected = { key: placeId, description: selected.description, coords: detCoord };
       } catch (err) {
         console.warn('❌ Koordinat alınamadı:', err);
         return;

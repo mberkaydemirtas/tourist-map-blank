@@ -9,6 +9,7 @@ import {
 } from '../maps';
 import { GOOGLE_MAPS_API_KEY as KEY } from '@env';
 import isEqual from 'lodash.isequal';
+import { normalizeCoord, toCoordsObject } from '../utils/coords';
 
 
 const ANKARA_CENTER = { latitude: 39.925533, longitude: 32.866287 };
@@ -59,7 +60,7 @@ export function useMapLogic(mapRef) {
   } catch (e) {
     console.warn('🛑 Rota alınamadı:', e);
     setRouteInfo(null);
-    setRouteCoords(null);
+    setRouteCoords([]);
     setRouteDrawn(false);
   }
 }, []);
@@ -129,7 +130,7 @@ export function useMapLogic(mapRef) {
   const handleSelectTo = useCallback(async place => {
   const to = {
     description: place.description,
-    coordinate: place.coords ?? place.coordinate,
+    coords: normalizeCoord(place.coords ?? place.coordinate ?? place),
     key: place.key || 'to',
   };
 
@@ -140,8 +141,8 @@ export function useMapLogic(mapRef) {
   setActiveCategory(null);
   setCategoryMarkers([]);
 
-  if (fromLocation?.coordinate) {
-    await fetchAllRoutes(fromLocation.coordinate, to.coordinate);
+  if (fromLocation?.coords && to?.coords) {
+    await fetchAllRoutes(fromLocation.coords, to.coords);
   }
 }, [fromLocation]);
 
@@ -158,7 +159,7 @@ export function useMapLogic(mapRef) {
           return null;
         }
 
-        const coord = fallbackCoord || details.coords;
+        const coord = normalizeCoord(fallbackCoord || details.coords || details.geometry?.location);
         const photos = details.photos || [];
         const reviews = details.reviews || [];
         const types = details.types || [];
@@ -205,56 +206,70 @@ export function useMapLogic(mapRef) {
 
     // ——— handleSelectPlace: her zaman zoom yapacak ———
   const handleSelectPlace = useCallback(async (placeId, description) => {
-  setMapMoved(false);
-  setRouteCoords(null);
-  setRouteInfo(null);
-  setRouteDrawn(false);
-  setQuery(description);
+  try {
+    // UI/state reset
+    setMapMoved(false);
+    setRouteCoords([]);
+    setRouteInfo(null);
+    setRouteDrawn(false);
+    setQuery(description);
 
-  const coord = await fetchAndSetMarker(placeId, null, description);
-
-  if (coord && mapRef?.current?.animateToRegion) {
-    const newRegion = {
-      latitude: coord.latitude,
-      longitude: coord.longitude,
-      latitudeDelta: 0.008,
-      longitudeDelta: 0.008,
-    };
-    setRegion(newRegion);
-    mapRef.current.animateToRegion(newRegion, 300);
-  }
-
-  // 🧭 Search ile seçilen yere rota çiz: fromLocation varsa
-  if (fromLocation?.coords && coord) {
-    const routes = await getRoute(fromLocation.coords, coord);
-    if (routes?.length) {
-      const decoded = decodePolyline(routes[0].polyline || '');
-      setRouteCoords(decoded);
-      setRouteInfo({
-        distance: routes[0].distance,
-        duration: routes[0].duration,
-      });
-
-      setRouteDrawn(true);
-
-      // ❗ mod bazlı sakla
-      setRouteOptions(prev => ({
-        ...prev,
-        [selectedMode]: routes.map((r, i) => ({
-          ...r,
-          decodedCoords: decodePolyline(r.polyline),
-          isPrimary: i === 0,
-          id: `${selectedMode}-${i}`,
-          mode: selectedMode,
-        })),
-      }));
-    } else {
-      console.warn('⚠️ Search ile seçilen yere rota alınamadı');
+    // Marker + koordinatları çek
+    const rawCoord = await fetchAndSetMarker(placeId, null, description);
+    const coord = normalizeCoord(rawCoord);
+    if (!coord) {
+      console.warn('⚠️ handleSelectPlace: koordinat alınamadı');
+      return;
     }
+
+    // Haritayı odakla
+    if (mapRef?.current?.animateToRegion) {
+      const newRegion = {
+        latitude: coord.latitude,
+        longitude: coord.longitude,
+        latitudeDelta: 0.008,
+        longitudeDelta: 0.008,
+      };
+      setRegion(newRegion);
+      mapRef.current.animateToRegion(newRegion, 300);
+    }
+
+    // 🧭 fromLocation varsa seçilen yere rota oluştur
+    const fromCoord = normalizeCoord(fromLocation?.coords);
+    if (fromCoord) {
+      const routes = await getRoute(fromCoord, coord);
+
+      if (routes?.length) {
+        // Varsayılan (ilk) rotayı çiz
+        const primary = routes[0];
+        const decoded = decodePolyline(primary.polyline || '');
+
+        setRouteCoords(decoded);
+        setRouteInfo({
+          distance: primary.distance,
+          duration: primary.duration,
+        });
+        setRouteDrawn(true);
+
+        // ❗ mod bazlı sakla
+        setRouteOptions(prev => ({
+          ...prev,
+          [selectedMode]: routes.map((r, i) => ({
+            ...r,
+            decodedCoords: decodePolyline(r.polyline || ''),
+            isPrimary: i === 0,
+            id: `${selectedMode}-${i}`,
+            mode: selectedMode,
+          })),
+        }));
+      } else {
+        console.warn('⚠️ Search ile seçilen yere rota alınamadı');
+      }
+    }
+  } catch (err) {
+    console.warn('handleSelectPlace hata:', err);
   }
 }, [fetchAndSetMarker, mapRef, fromLocation, selectedMode]);
-
-
 
   const handleCategorySelect = useCallback(
   async (type) => {
@@ -264,7 +279,7 @@ export function useMapLogic(mapRef) {
       setQuery('');
       setMarker(null);
       setCategoryMarkers([]);
-      setRouteCoords(null);
+      setRouteCoords([]);
       setRouteInfo(null);
       setRouteDrawn(false);
       setMapMoved(false);
@@ -275,7 +290,7 @@ export function useMapLogic(mapRef) {
     setActiveCategory(type);
     setQuery('');
     setMarker(null);
-    setRouteCoords(null);
+    setRouteCoords([]);
     setRouteInfo(null);
     setRouteDrawn(false);
     setMapMoved(false);
@@ -440,7 +455,7 @@ export function useMapLogic(mapRef) {
 
       setActiveCategory(null);
       setCategoryMarkers([]);
-      setRouteCoords(null);
+      setRouteCoords([]);
       setRouteInfo(null);
       setRouteDrawn(false);
       setMapMoved(false);
@@ -467,17 +482,20 @@ export function useMapLogic(mapRef) {
 
   const handleMarkerSelect = useCallback(
     async (placeId, coordinate, fallbackName = '') => {
-      setRouteCoords(null);
+      setRouteCoords([]);
       setRouteInfo(null);
       setRouteDrawn(false);
       setMapMoved(false);
 
 
-      await fetchAndSetMarker(placeId, coordinate, fallbackName);
-
-      if (coordinate && mapRef?.current?.getMapBoundaries) {
-        const bounds = await mapRef.current.getMapBoundaries();
-        const { latitude, longitude } = coordinate;
+    // 1) Koordinatı normalize et (her formatı {latitude, longitude}'a çevir)
+     const coord = normalizeCoord(coordinate);
+     // 2) Marker'ı detaylarıyla çek (içeride de coords normalize edildiğinden emin ol)
+     await fetchAndSetMarker(placeId, coord, fallbackName);
+    // 3) Görünürlük/zoom: coord varsa sınır kontrolü yap
+     if (coord && mapRef?.current?.getMapBoundaries) {
+       const bounds = await mapRef.current.getMapBoundaries();
+       const { latitude, longitude } = coord;
 
         const padding = 0.005;
         const isVisible =
@@ -486,36 +504,42 @@ export function useMapLogic(mapRef) {
           longitude < bounds.northEast.longitude - padding &&
           longitude > bounds.southWest.longitude + padding;
 
-        if (!isVisible) {
-          const newRegion = {
-            latitude,
-            longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          };
-          setRegion(newRegion);
-          mapRef.current.animateToRegion(newRegion, 300);
-        }
-      } else if (coordinate && mapRef?.current?.animateToRegion) {
-        // Harita sınırlarını alamıyorsak yine de zoom yap
-        const newRegion = {
-          latitude: coordinate.latitude,
-          longitude: coordinate.longitude,
+      if (!isVisible) {
+       const newRegion = {
+          latitude,
+          longitude,
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         };
         setRegion(newRegion);
         mapRef.current.animateToRegion(newRegion, 300);
       }
-        try {
-          const route = await getRoute(ANKARA_CENTER, coordinate);
-          setRouteInfo(route);
-        } catch {
-          setRouteInfo(null);
-        }
-      },
-      [fetchAndSetMarker]
-    );
+    } else if (coord && mapRef?.current?.animateToRegion) {
+      // Harita sınırlarını alamıyorsak yine de zoom yap
+      const newRegion = {
+        latitude: coord.latitude,
+        longitude: coord.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      };
+      setRegion(newRegion);
+      mapRef.current.animateToRegion(newRegion, 300);
+    }
+
+    // 4) RouteInfo için tek atışlık örnek (mevcut mantığınıza göre kaldırılabilir)
+    try {
+      if (coord) {
+        const route = await getRoute(ANKARA_CENTER, coord);
+        setRouteInfo(route);
+      } else {
+        setRouteInfo(null);
+     }
+    } catch {
+      setRouteInfo(null);
+    }
+  },
+  [fetchAndSetMarker]
+);
 
   const handlePoiClick = useCallback(
   async (e, overlayStates = {}) => {
@@ -536,7 +560,7 @@ export function useMapLogic(mapRef) {
 
     setActiveCategory(null);
     setCategoryMarkers([]);
-    setRouteCoords(null);
+    setRouteCoords([]);
     setRouteInfo(null);
     setRouteDrawn(false);
     setMapMoved(false);

@@ -11,10 +11,10 @@ export default function PlaceDetailHeader({ marker, routeInfo, onGetDirections }
       <View style={styles.handleContent}>
         <Text style={styles.name}>{marker.name}</Text>
         <View style={styles.subHeaderRow}>
-          {marker.rating != null && marker.googleSearchUrl && (
+          {typeof marker.rating === 'number' && marker.googleSearchUrl && (
             <TouchableOpacity onPress={() => Linking.openURL(marker.googleSearchUrl)}>
               <Text style={styles.rating}>
-                {'⭐'.repeat(Math.round(marker.rating))} {marker.rating.toFixed(1)}
+                {'⭐'.repeat(Math.max(0, Math.round(marker.rating)))} {marker.rating.toFixed(1)}
               </Text>
             </TouchableOpacity>
           )}

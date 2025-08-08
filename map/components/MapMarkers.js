@@ -2,33 +2,36 @@ import React from 'react';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import { View, Text, StyleSheet, Linking } from 'react-native';
 import CategoryMarker from './categoryMarker';
+import { normalizeCoord } from '../utils/coords';
 
-export default function MapMarkers({ categoryMarkers, activeCategory, onMarkerPress, fromSource, selectedMarker }) {
-  // Güvenli liste: categoryMarkers array değilse boş dizi kullan
-  const markers = Array.isArray(categoryMarkers) ? categoryMarkers : [];
+export default function MapMarkers({ categoryMarkers, activeCategory, onMarkerPress, mode, selectedMarker }) {
+   // route modda gizle
+   if (mode !== 'explore') return null;
+   const markers = Array.isArray(categoryMarkers) ? categoryMarkers : [];
+   if (!markers.length) return null;
 
   // Geçersiz koordinata sahip marker'ları at
-  const safeMarkers = markers.filter(item => {
-    const lat = item.coords?.latitude ?? item.coordinate?.latitude ?? item.geometry?.location?.lat;
-    const lng = item.coords?.longitude ?? item.coordinate?.longitude ?? item.geometry?.location?.lng;
-    return lat != null && lng != null;
-  });
+  const safeMarkers = markers.filter(item =>
+    !!normalizeCoord(item?.coords ?? item?.coordinate ?? item?.geometry?.location ?? item)
+  );
 
   return (
     <>
       {/* Kategori marker'ları */}
       {safeMarkers.map(item => {
-        const latitude = item.coords?.latitude ?? item.coordinate?.latitude ?? item.geometry?.location?.lat;
-        const longitude = item.coords?.longitude ?? item.coordinate?.longitude ?? item.geometry?.location?.lng;
+      const coordinate = normalizeCoord(item?.coords ?? item?.coordinate ?? item?.geometry?.location ?? item);
+
         return (
-          <CategoryMarker
-            key={item.place_id || item.id}
-            item={{ ...item, coordinate: { latitude, longitude } }}
-            activeCategory={activeCategory}
-            onSelect={onMarkerPress}
-            iconSize={24}
-          />
-        );
+      coordinate && (
+        <CategoryMarker
+          key={item.place_id || item.id}
+          item={{ ...item, coordinate }}
+          activeCategory={activeCategory}
+          onSelect={onMarkerPress}
+          iconSize={24}
+        />
+      )
+    );
       })}
 
       {/* Seçilen marker için detay Callout */}

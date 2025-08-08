@@ -1,5 +1,5 @@
 // src/MapScreen.js
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback  } from 'react';
 import {
   View,
   StyleSheet,
@@ -28,6 +28,7 @@ import GetDirectionsOverlay from './components/GetDirectionsOverlay';
 import RouteInfoSheet from './components/RouteInfoSheet';
 import NavigationBanner from './components/NavigationBanner';
 import MapRoutePolyline from './components/MapRoutePolyline';
+import { normalizeCoord,toCoordsObject } from './utils/coords';
 
 
 import { getRoute, decodePolyline, reverseGeocode, getPlaceDetails } from './maps';
@@ -40,11 +41,6 @@ export default function MapScreen() {
   const route = useRoute();
   const sheetRef = useRef(null);
   const sheetRefRoute = useRef(null);
-
-  useEffect(() => {
-  console.log('📣 isSelectingFromOnMap değişti:', isSelectingFromOnMap);
-}, [isSelectingFromOnMap]);
-
   
   const lastAvailable = useRef(false);
   const getRouteColor = (mode) => {
@@ -85,14 +81,55 @@ export default function MapScreen() {
     }
   };
 
-  const calculateRoute = async (origin, destination, selectedMode = 'driving') => {
-  try {
-    const route = await getRoute(origin, destination, map.selectedMode);
-    if (!route) throw new Error('Rota alınamadı');
+  const setToFromMarkerIfMissing = useCallback(() => {
+  if (map.toLocation) return;
 
-    const decoded = route.decodedCoords;
+  // marker içinde olası koordinat alanlarını normalize et
+  const c = normalizeCoord(
+    map.marker?.coords ?? map.marker?.coordinate ?? map.marker?.geometry?.location ?? map.marker
+  );
+  if (!c) return;
+
+  // isim/adres fallback sırası
+  const desc =
+    map.marker?.name ||
+    map.marker?.formatted_address ||
+    map.marker?.address ||
+    'Seçilen Konum';
+
+  map.setToLocation({
+    coords: c,
+    description: desc,
+    key: map.marker?.place_id || 'map',
+  });
+}, [map.toLocation, map.marker, map.setToLocation]);
+
+  const calculateRoute = async (origin, destination, selectedMode = map.selectedMode) => {
+  try {
+    const fromC = normalizeCoord(origin);
+    const toC = normalizeCoord(destination);
+    if (!fromC || !toC) throw new Error('Geçersiz koordinat');
+
+    // getRoute tek obje veya dizi döndürebilir → normalize et
+    const res = await getRoute(fromC, toC, selectedMode);
+    const routes = Array.isArray(res) ? res : (res ? [res] : []);
+    if (!routes.length) throw new Error('Rota alınamadı');
+
+    // routeOptions’a yaz: decodedCoords ve isPrimary hazırlansın
+    const decorated = routes.map((r, i) => ({
+      ...r,
+      decodedCoords: r.decodedCoords || decodePolyline(r.polyline || ''),
+      isPrimary: i === 0,
+      id: `${selectedMode}-${i}`,
+      mode: selectedMode,
+    }));
+    map.setRouteOptions(prev => ({ ...prev, [selectedMode]: decorated }));
+
+    // Çizim için birincil rotayı kullan
+    const primary = decorated.find(r => r.isPrimary) || decorated[0];
+    const decoded = primary.decodedCoords;
     setRouteCoords(decoded);
-    setRouteInfo({ distance: route.distance, duration: route.duration });
+    setRouteInfo({ distance: primary.distance, duration: primary.duration });
 
     mapRef.current?.fitToCoordinates(decoded, {
       edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
@@ -105,7 +142,6 @@ export default function MapScreen() {
   }
 };
 
-
   const handleReverseRoute = async () => {
   if (!map.fromLocation?.coords || !map.toLocation?.coords) return;
 
@@ -116,21 +152,7 @@ export default function MapScreen() {
   map.setToLocation(newTo);
 
   try {
-    // 2. Rota çiz
-    const r = await getRoute(newFrom.coords, newTo.coords);
-    const decoded = decodePolyline(r.overview_polyline?.points || r.polyline);
-    setRouteCoords(decoded);
-    setRouteInfo({ distance: r.distance, duration: r.duration });
-
-    // 3. Haritayı ortala
-    mapRef.current?.fitToCoordinates(decoded, {
-      edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
-      animated: true,
-    });
-
-    // 4. Sheet'i yeniden göster
-    sheetRefRoute.current?.present();
-
+    await calculateRoute(newFrom.coords, newTo.coords, map.selectedMode);
   } catch (e) {
     console.warn('🚫 Reverse rota çizilemedi:', e);
   }
@@ -142,28 +164,26 @@ export default function MapScreen() {
 // MapScreen.js içinde, fonksiyonun en başında (state/ref tanımlarından sonra)
 const prevCatCount = useRef(0);
 
+useEffect(() => {
+  console.log('📣 isSelectingFromOnMap değişti:', isSelectingFromOnMap);
+}, [isSelectingFromOnMap]);
 
 useEffect(() => {
-  if (map.categoryMarkers.length > 0) {
-    // Koordinatları hazırla
-    const coords = map.categoryMarkers
-      .map(item => {
-        const latitude = item.coords?.latitude ?? item.coordinate?.latitude ?? item.geometry?.location?.lat;
-        const longitude = item.coords?.longitude ?? item.coordinate?.longitude ?? item.geometry?.location?.lng;
-        return latitude && longitude ? { latitude, longitude } : null;
-      })
-      .filter(Boolean);
-
-    // 500ms delay ile marker'lar render edilsin sonra fit yapalım
-    if (coords.length > 0) {
-      setTimeout(() => {
-        mapRef.current?.fitToCoordinates(coords, {
-          edgePadding: { top: 100, bottom: 300, left: 100, right: 100 },
-          animated: true,
-        });
-      }, 500);
+    if (map.categoryMarkers.length > 0) {
+      const coords = map.categoryMarkers
+        .map(item => normalizeCoord(item?.coords ?? item?.coordinate ?? item?.geometry?.location ?? item))
+        .filter(Boolean);
+      let t;
+      if (coords.length > 0) {
+        t = setTimeout(() => {
+          mapRef.current?.fitToCoordinates(coords, {
+            edgePadding: { top: 100, bottom: 300, left: 100, right: 100 },
+            animated: true,
+          });
+        }, 500);
+      }
+      return () => t && clearTimeout(t);
     }
-  }
 }, [map.categoryMarkers]);
 
   // Gerçekten haritaya dokunup origin seçeceğimiz an
@@ -213,6 +233,12 @@ useEffect(() => {
   }, [available, coords]);
 
   useEffect(() => {
+  if (mode === 'route' && !map.toLocation) {
+    setToFromMarkerIfMissing();
+  }
+}, [mode, map.toLocation, setToFromMarkerIfMissing]);
+
+  useEffect(() => {
     if (mode !== 'route') return;
 
   const list = map.routeOptions[map.selectedMode] || [];
@@ -239,21 +265,11 @@ useEffect(() => {
 
   // --- ROUTE CALCULATION WHEN MODE==='route' ---
 useEffect(() => {
-  if (
-    mode === 'route' &&
-    map.fromLocation?.coords &&
-    map.toLocation?.coords
-  ) {
-    map
-      .fetchAllRoutes(map.fromLocation.coords, map.toLocation.coords)
-      .then(() => {
-        sheetRefRoute.current?.present();
-      })
-      .catch(err => {
-        console.warn('❌ Rota hesaplama hatası:', err);
-      });
+  if (mode === 'route' && map.fromLocation?.coords && map.toLocation?.coords) {
+    calculateRoute(map.fromLocation.coords, map.toLocation.coords, map.selectedMode)
+      .catch(err => console.warn('❌ Rota hesaplama hatası:', err));
   }
-}, [mode, map.fromLocation, map.toLocation]);
+}, [mode, map.fromLocation, map.toLocation, map.selectedMode]);
 
   // --- AUTOMATICALLY OPEN ROUTE INFO SHEET ---
   useEffect(() => {
@@ -269,14 +285,15 @@ useEffect(() => {
 
   // “Get Directions” butonuna basıldığında ilk adım: overlay aç
   const onGetDirectionsPress = () => {
-  if (!map.toLocation && map.marker?.coordinate) {
-  map.setToLocation({
-    coords: map.marker.coordinate,
-    description: map.marker.name || 'Seçilen Yer',
-    key: map.marker.place_id || 'map',
-  });
-  console.log('📍 toLocation manuel set edildi (Yol Tarifi Al basınca)');
-}
+  if (!map.toLocation && (map.marker?.coords || map.marker?.coordinate)) {
+    const c = normalizeCoord(map.marker?.coords ?? map.marker?.coordinate);
+    map.setToLocation({
+      coords: c,
+      description: map.marker.name || 'Seçilen Yer',
+      key: map.marker.place_id || 'map',
+    });
+    console.log('📍 toLocation manuel set edildi (Yol Tarifi Al basınca)');
+  }
 
   sheetRef.current?.close();
   setShowFromOverlay(true);
@@ -284,20 +301,21 @@ useEffect(() => {
 
   // Overlay’den “Konumunuz” veya “Arama” geldiğinde:
 const handleFromSelected = async (src) => {
-  // 1. Overlay kapat & haritadan seçim kontrolü
+  // 1) Overlay kapat & "haritadan seç" ise seçim moduna geç
   setShowFromOverlay(false);
   if (src.key === 'map') {
     setIsSelectingFromOnMap(true);
     return;
   }
 
-  // 2. Adres belirleme
+  // 2) Adres belirleme (map/current seçimi için reverse geocode)
   let address = src.description || 'Seçilen Konum';
   let placeId = (src.key === 'map' || src.key === 'current') ? null : src.key;
 
-  if ((src.key === 'map' || src.key === 'current') && src.coords) {
+  const srcCoord = normalizeCoord(src?.coords ?? src);
+  if ((src.key === 'map' || src.key === 'current') && srcCoord) {
     try {
-      const geo = await reverseGeocode(src.coords);
+      const geo = await reverseGeocode(srcCoord);
       if (geo?.[0]) {
         address = geo[0].formatted_address || address;
       }
@@ -306,86 +324,86 @@ const handleFromSelected = async (src) => {
     }
   }
 
-  // 3. fromLocation set et
+  // 3) fromLocation set et (normalize edilmiş)
+  const normFrom = toCoordsObject(src) ?? { ...src, coords: srcCoord };
   const fromSrc = {
-    coords: src.coords,
+    ...normFrom,
     description: address,
     key: src.key,
   };
   map.setFromLocation(fromSrc);
   setMode('route');
+  setToFromMarkerIfMissing();
 
-  // 4. toLocation yoksa marker'dan al
-  let destination = map.toLocation;
-  if (!destination) {
-  const coord = map.marker?.coordinate;
-  const name = map.marker?.name || map.marker?.address || 'Seçilen Konum';
-
-  if (coord?.latitude && coord?.longitude) {
-    destination = {
-      coords: coord,
-      description: name,
-      key: map.marker?.place_id || 'map',
-    };
-    map.setToLocation(destination);
-    console.log('📍 toLocation set edildi (fallback):', destination);
-  } else {
-    console.warn('🚫 toLocation set edilemedi: Geçerli marker koordinatı yok.');
-  }
-}
-
-
-  // 5. Marker göster
+  // 5) Marker göster / güncelle ve haritayı odakla
   try {
     if (placeId) {
-      await map.fetchAndSetMarker(placeId, src.coords, address);
-    } else {
+      await map.fetchAndSetMarker(placeId, fromSrc.coords, address);
+    } else if (fromSrc.coords) {
       map.setMarker({
-        coordinate: src.coords,
+        coords: fromSrc.coords,
         name: address,
         address,
       });
     }
 
-    mapRef.current?.animateToRegion(
-      { ...src.coords, latitudeDelta: 0.05, longitudeDelta: 0.05 },
-      500
-    );
+    if (fromSrc?.coords && mapRef.current?.animateToRegion) {
+      mapRef.current.animateToRegion(
+        {
+          ...fromSrc.coords,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        },
+        500
+      );
+    }
   } catch (e) {
     console.warn('🟥 Marker detay çekilemedi:', e);
   }
 
-  // 6. Rota çizimi
-  if (destination?.coords) {
+  // 6) Rota çizimi
+  const destination = map.toLocation;
+  if (destination?.coords && fromSrc?.coords) {
     try {
-      const routes = await getRoute(fromSrc.coords, destination.coords);
+      const fromC = normalizeCoord(fromSrc.coords);
+      const toC = normalizeCoord(destination.coords);
+      if (!fromC || !toC) {
+        console.warn('❌ getRoute: koordinatlar eksik');
+        return;
+      }
+
+      const routes = await getRoute(fromC, toC);
       if (!routes?.length) {
         console.warn('❌ getRoute boş döndü');
         return;
       }
 
-      map.setRouteOptions(prev => ({
+      // Mod bazlı sakla
+      map.setRouteOptions((prev) => ({
         ...prev,
-        [map.selectedMode]: routes,
+        [map.selectedMode]: routes.map((r, i) => ({
+          ...r,
+          decodedCoords: decodePolyline(r.polyline || ''),
+          isPrimary: i === 0,
+          id: `${map.selectedMode}-${i}`,
+          mode: map.selectedMode,
+        })),
       }));
 
+      // Birincil rotayı çiz
       const primaryRoute = routes[0];
       const points = decodePolyline(primaryRoute.polyline || '');
-
       setRouteCoords(points);
       setRouteInfo({
         distance: primaryRoute.distance,
         duration: primaryRoute.duration,
       });
 
-      sheetRefRoute.current?.present();
-
     } catch (e) {
       console.warn('🚫 Rota çizilemedi:', e);
     }
   }
 };
-
 
   // Overlay’den “Haritadan Seç”e basıldığında:
   const handleMapSelect = () => {
@@ -462,39 +480,11 @@ const handleFromSelected = async (src) => {
     if (placeId) {
       await map.fetchAndSetMarker(placeId, coordinate, description);
     } else {
-      map.setMarker({ coordinate, name: description, address: description });
+      map.setMarker({ coords: normalizeCoord(coordinate), name: description, address: description });
     }
 
-    // 8) Rota çizimi
-    console.log('📡 getRoute() çağırılıyor…');
-    const routes = await getRoute(fromSrc.coords, destination.coords);
-    if (!routes?.length) {
-      console.warn('❌ getRoute boş döndü');
-      return;
-    }
-    map.setRouteOptions(prev => ({
-  ...prev,
-  [map.selectedMode]: routes,
-}));
-    const primaryRoute = routes[0];
-    const encoded = primaryRoute.polyline || '';
-    const points = decodePolyline(encoded);
-
-
-    if (!points.length) {
-      console.warn('⚠️ Polyline decode edilemedi veya boş');
-      return;
-    }
-
-    console.log('🟢 Toplam çizilecek nokta:', points.length);
-    setRouteCoords(points);
-    setRouteInfo({
-      distance: primaryRoute.distance,
-      duration: primaryRoute.duration,
-    });
-
-    // 9) Alt bilgi kartını göster
-    sheetRefRoute.current?.present();
+    // 8) Rota çizimi (tek yerden)
+    await calculateRoute(fromSrc.coords, destination.coords, map.selectedMode);
 
   } catch (error) {
     console.warn('❌ Haritadan seçim hatası:', error);
@@ -516,35 +506,14 @@ useEffect(() => {
 
 // MapScreen.js içinde, diğer useEffect’lerden birine yakın ekle:
 useEffect(() => {
-  if (mode === 'route' && routeCoords?.length > 0) {
-    sheetRefRoute.current?.present();
-  }
-}, [mode, routeCoords]);
-
-
-
-// MapScreen.js içindeki handleMapPress fonksiyonu
-  const handleMapPress = (e) => {
-    const { coordinate } = e.nativeEvent;
-
-    console.log('🧪 TIKLAMA - mode:', mode, 'isSelectingFromOnMap:', isSelectingFromOnMap, 'overlayContext:', overlayContext);
-
-    if (mode === 'route' && isSelectingFromOnMap) {
-      console.log('📌 Seçim Modu Aktif! Context:', overlayContext);
-      if (overlayContext === 'from') {
-        console.log('📍 Başlangıç seçiliyor');
-        handleSelectOriginOnMap(coordinate);
-      } else if (overlayContext === 'to') {
-        console.log('🎯 Hedef seçiliyor');
-        handleSelectDestinationOnMap(coordinate);
-      }
-      return;
-    }
-
-    map.handleMapPress(e); // fallback
-  };
-
-
+   const ready = mode === 'route' && Array.isArray(routeCoords) && routeCoords.length > 0;
+   if (ready) {
+     const id = setTimeout(() => sheetRefRoute.current?.present?.(), 0);
+     return () => clearTimeout(id);
+   } else {
+     sheetRefRoute.current?.dismiss?.();
+   }
+ }, [mode, routeCoords]);
 
   const handleSelectDestinationOnMap = async (coordinate) => {
   console.log('🎯 handleSelectDestinationOnMap çalıştı, koordinat:', coordinate);
@@ -571,7 +540,7 @@ useEffect(() => {
 
     // 4) toLocation state’ini güncelle
     map.setToLocation({
-      coords: coordinate,
+      coords: normalizeCoord(coordinate),
       description,
       key: placeId || 'map',
     });
@@ -586,7 +555,7 @@ useEffect(() => {
       await map.fetchAndSetMarker(placeId, coordinate, description);
     } else {
       // “map” veya “current” gibi place_id yoksa basit marker
-      map.setMarker({ coordinate, name: description, address: description });
+     map.setMarker({ coords: normalizeCoord(coordinate), name: description, address: description });
     }
 
     // 7) Haritayı seçilen bölgeye kaydır
@@ -595,42 +564,32 @@ useEffect(() => {
       500
     );
 
-    // 8) Daha önce fromLocation varsa rota çiz
-    if (map.fromLocation?.coords) {
-      console.log('📡 getRoute() çağırılıyor (destination)…');
-    const routes = await getRoute(map.fromLocation.coords, coordinate);
-    if (!routes?.length) {
-      console.warn('❌ getRoute boş döndü');
-      return;
-    }
-    map.setRouteOptions(prev => ({
-  ...prev,
-  [map.selectedMode]: routes,
-}));
-    const primaryRoute = routes[0];
-    const encoded = primaryRoute.polyline || '';
-    const points = decodePolyline(encoded);
-
-
-      if (!points.length) {
-        console.warn('⚠️ Polyline decode edilemedi veya boş');
-      } else {
-        console.log('🟢 Toplam çizilecek nokta:', points.length);
-        setRouteCoords(points);
-        setRouteInfo({
-          distance: primaryRoute.distance,
-          duration: primaryRoute.duration,
-        });
-        // 9) Alt bilgi kartını göster
-        sheetRefRoute.current?.present();
-      }
-    }
+    await calculateRoute(map.fromLocation.coords, coordinate, map.selectedMode);
   } catch (error) {
     console.warn('❌ handleSelectDestinationOnMap hata:', error);
   }
 };
 
+// MapScreen.js içindeki handleMapPress fonksiyonu
+  const handleMapPress = (e) => {
+    const { coordinate } = e.nativeEvent;
 
+    console.log('🧪 TIKLAMA - mode:', mode, 'isSelectingFromOnMap:', isSelectingFromOnMap, 'overlayContext:', overlayContext);
+
+    if (mode === 'route' && isSelectingFromOnMap) {
+      console.log('📌 Seçim Modu Aktif! Context:', overlayContext);
+      if (overlayContext === 'from') {
+        console.log('📍 Başlangıç seçiliyor');
+        handleSelectOriginOnMap(coordinate);
+      } else if (overlayContext === 'to') {
+        console.log('🎯 Hedef seçiliyor');
+        handleSelectDestinationOnMap(coordinate);
+      }
+      return;
+    }
+
+    map.handleMapPress(e); // fallback
+  };
 
   // Route iptali
   const handleCancelRoute = () => {
@@ -730,6 +689,7 @@ return (
     >
       {mode === 'explore' && (
       <MapMarkers
+      mode={mode}
   categoryMarkers={map.categoryMarkers}
   activeCategory={map.activeCategory}
   onMarkerPress={(placeId, coordinate, name) => {
@@ -802,8 +762,6 @@ return (
       edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
       animated: true,
     });
-
-    sheetRefRoute.current?.present(); // optional
   }}
 />
 
