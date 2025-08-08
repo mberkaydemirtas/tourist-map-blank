@@ -1,40 +1,51 @@
 import React from 'react';
-import MapView, { Marker, Callout } from 'react-native-maps';
+import { Marker, Callout } from 'react-native-maps';
 import { View, Text, StyleSheet, Linking } from 'react-native';
 import CategoryMarker from './categoryMarker';
 import { normalizeCoord } from '../utils/coords';
 
-export default function MapMarkers({ categoryMarkers, activeCategory, onMarkerPress, mode, selectedMarker }) {
-   // route modda gizle
-   if (mode !== 'explore') return null;
-   const markers = Array.isArray(categoryMarkers) ? categoryMarkers : [];
-   if (!markers.length) return null;
+export default function MapMarkers({
+  mode,
+  categoryMarkers,
+  activeCategory,
+  onMarkerPress,        // (placeId, coord, name)
+  selectedMarker,       // parent gerçekten bunu geçiriyor mu?
+}) {
+  // Route modda kategori marker’larını gizle
+  if (mode !== 'explore') return null;
 
-  // Geçersiz koordinata sahip marker'ları at
-  const safeMarkers = markers.filter(item =>
-    !!normalizeCoord(item?.coords ?? item?.coordinate ?? item?.geometry?.location ?? item)
-  );
+  const markers = Array.isArray(categoryMarkers) ? categoryMarkers : [];
+  if (!markers.length) return null;
 
   return (
     <>
       {/* Kategori marker'ları */}
-      {safeMarkers.map(item => {
-      const coordinate = normalizeCoord(item?.coords ?? item?.coordinate ?? item?.geometry?.location ?? item);
+      {markers.map((item, idx) => {
+        const coord = normalizeCoord(
+          item?.coords ?? item?.coordinate ?? item?.geometry?.location ?? item
+        );
+        if (!coord) return null;
+
+        const key =
+          item.place_id || item.id || `${activeCategory || 'cat'}-${idx}`;
+        const name = item.name || item.description || 'Yer';
 
         return (
-      coordinate && (
-        <CategoryMarker
-          key={item.place_id || item.id}
-          item={{ ...item, coordinate }}
-          activeCategory={activeCategory}
-          onSelect={onMarkerPress}
-          iconSize={24}
-        />
-      )
-    );
+          <CategoryMarker
+            key={key}
+            item={{ ...item, coordinate: coord }}
+            activeCategory={activeCategory}
+            iconSize={24}
+            // CategoryMarker içinde onPress olduğunda ŞU sırayla çağırmalı:
+            // onSelect(placeId, coord, name)
+            onSelect={(placeId, coordinate, title) =>
+              onMarkerPress?.(placeId || key, coordinate || coord, title || name)
+            }
+          />
+        );
       })}
 
-      {/* Seçilen marker için detay Callout */}
+      {/* Seçilen marker için detay Callout (opsiyonel) */}
       {selectedMarker?.coordinate && (
         <Marker
           key="selected"
@@ -44,9 +55,13 @@ export default function MapMarkers({ categoryMarkers, activeCategory, onMarkerPr
         >
           <Callout tooltip>
             <View style={styles.callout}>
-              <Text style={styles.title}>{selectedMarker.name}</Text>
-              <Text style={styles.text}>{selectedMarker.address}</Text>
-              {selectedMarker.website && (
+              {!!selectedMarker.name && (
+                <Text style={styles.title}>{selectedMarker.name}</Text>
+              )}
+              {!!selectedMarker.address && (
+                <Text style={styles.text}>{selectedMarker.address}</Text>
+              )}
+              {!!selectedMarker.website && (
                 <Text
                   style={[styles.text, styles.link]}
                   onPress={() => Linking.openURL(selectedMarker.website)}
@@ -69,17 +84,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 6,
   },
-  title: {
-    fontWeight: 'bold',
-    marginBottom: 4,
-    color: '#000',
-  },
-  text: {
-    color: '#000',
-  },
-  link: {
-    color: '#4285F4',
-    textDecorationLine: 'underline',
-    marginTop: 4,
-  },
+  title: { fontWeight: 'bold', marginBottom: 4, color: '#000' },
+  text: { color: '#000' },
+  link: { color: '#4285F4', textDecorationLine: 'underline', marginTop: 4 },
 });

@@ -21,6 +21,7 @@ function buildDirectionsUrl(origin, destination, mode = 'driving') {
     mode,
     alternatives: 'true', // ✅ alternatif rotalar
     key: KEY,
+    language: 'tr',
   });
 
   if (mode === 'walking') {
@@ -124,7 +125,7 @@ export async function getPlaceDetails(placeId) {
 }
 
 export const getTurnByTurnSteps = async (from, to) => {
-  const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${from.lng},${from.lat};${to.lng},${to.lat}?steps=true&geometries=geojson&access_token=${MAPBOX_ACCESS_TOKEN}`;
+  const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${from.lng},${from.lat};${to.lng},${to.lat}?steps=true&geometries=geojson&language=tr&access_token=${MAPBOX_ACCESS_TOKEN}`;
 
   try {
     const response = await axios.get(url);

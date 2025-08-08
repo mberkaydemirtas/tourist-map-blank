@@ -15,9 +15,12 @@ export default function CategoryMarker({ item, onSelect, activeCategory, iconSiz
   const [loaded, setLoaded] = useState(false);
 
   // Koordinatları güvenli şekilde al
-  const coordinate = normalizeCoord(item?.coords ?? item);
+  const coordinate = normalizeCoord(
+    item?.coords ?? item?.coordinate ?? item?.geometry?.location ?? item
+  );
   if (!coordinate) return null
-
+  const placeId = item.place_id || item.id;
+  const title = item.name || item.description || 'Yer';
   // iconKey: aktif kategori varsa; değilse item.types içinde uygun bir type
   let iconKey = null;
   if (activeCategory && ICONS[activeCategory.toLowerCase()]) {
@@ -32,7 +35,7 @@ export default function CategoryMarker({ item, onSelect, activeCategory, iconSiz
   return (
 <Marker
   coordinate={coordinate}
-  onPress={() => onSelect(item.place_id, coordinate, item.name)}
+  onPress={() => onSelect?.(placeId, coordinate, title)}
   tracksViewChanges={!loaded}
   anchor={{ x: 0.5, y: 1 }}
   calloutAnchor={{ x: 0.5, y: -0.5 }}
