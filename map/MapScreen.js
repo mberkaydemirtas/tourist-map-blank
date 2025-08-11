@@ -239,29 +239,26 @@ useEffect(() => {
 }, [mode, map.toLocation, setToFromMarkerIfMissing]);
 
   useEffect(() => {
-    if (mode !== 'route') return;
-
-  const list = map.routeOptions[map.selectedMode] || [];
-  const primary = list.find(r => r.isPrimary);
-  if (!primary?.decodedCoords?.length) {
-    console.warn(`⚠️ Seçilen mod için rota yok: ${map.selectedMode}`);
-    return;
-  }
-
-  // State’leri güncelle
-  setRouteCoords(primary.decodedCoords);
-  setRouteInfo({
-    distance: primary.distance,
-    duration: primary.duration,
-  });
-
-  // Haritayı ortala
-  mapRef.current?.fitToCoordinates(primary.decodedCoords, {
-    edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
-    animated: true,
-  });
+   if (mode !== 'route') return;
+ 
+   const list = map.routeOptions?.[map.selectedMode];
+   // Liste henüz yok/boş → sessizce bekle
+   if (!Array.isArray(list) || list.length === 0) return;
+ 
+   // Primary yoksa ilk rotayı fallback al
+   const primary = list.find(r => r.isPrimary) ?? list[0];
+ 
+   if (primary?.decodedCoords?.length) {
+     setRouteCoords(primary.decodedCoords);
+     setRouteInfo({ distance: primary.distance, duration: primary.duration });
+     mapRef.current?.fitToCoordinates(primary.decodedCoords, {
+       edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+       animated: true,
+     });
+   } else {
+     console.warn(`⚠️ Seçilen mod için rota listesi var ama geometri yok: ${map.selectedMode}`);
+   }
 }, [mode, map.selectedMode, map.routeOptions]);
-
 
   // --- ROUTE CALCULATION WHEN MODE==='route' ---
 useEffect(() => {
@@ -491,18 +488,6 @@ const handleFromSelected = async (src) => {
   }
 };
 
-useEffect(() => {
-  if (map.routeOptions && map.selectedMode) {
-    const selectedRoute = map.routeOptions[map.selectedMode]?.find(r => r.isPrimary);
-    if (selectedRoute?.decodedCoords) {
-      setRouteCoords(selectedRoute.decodedCoords);
-      setRouteInfo({
-        distance: selectedRoute.distance,
-        duration: selectedRoute.duration,
-      });
-    }
-  }
-}, [map.selectedMode]);
 
 // MapScreen.js içinde, diğer useEffect’lerden birine yakın ekle:
 useEffect(() => {
