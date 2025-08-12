@@ -1,45 +1,67 @@
 // App.js
 import 'react-native-gesture-handler';
-import 'react-native-reanimated';
 import React from 'react';
-import { Platform, LogBox } from 'react-native';
+import { StatusBar } from 'react-native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PortalProvider } from '@gorhom/portal';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+// Ekranlar
+import HomePage from '../homePage/HomePage';
+import MapScreen from './MapScreen'; // mevcut dosyanız (explore modu)
 
-import MapScreen from './MapScreen';
-import PlaceSearchOverlay from './components/PlaceSearchOverlay';
-import NavigationScreen from './screens/NavigationScreen';
-
-if (Platform.OS === 'android') {
-  global.XMLHttpRequest = global.originalXMLHttpRequest ?? global.XMLHttpRequest;
-}
-
-LogBox.ignoreLogs([
-  'Sending `onAnimatedValueUpdate` with no listeners registered',
-]);
+// (İstersen ileride NavigationScreen vb. ekleyebiliriz)
+// import NavigationScreen from './src/screens/NavigationScreen';
 
 const Stack = createNativeStackNavigator();
+
+const theme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: '#0B0B0B', // Dark-mode dostu arkaplan
+    text: '#FFFFFF',
+  },
+};
 
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <PortalProvider>
-          <BottomSheetModalProvider>
-            <NavigationContainer>
-              <Stack.Navigator initialRouteName="Map" screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="Map" component={MapScreen} />
-                <Stack.Screen name="PlaceSearchOverlay" component={PlaceSearchOverlay} />
-                <Stack.Screen name="NavigationScreen" component={NavigationScreen} />
+        {/* 🔧 BottomSheetModal için zorunlu provider */}
+        <BottomSheetModalProvider>
+          {/* Portallar (sheet/callout vs.) için */}
+          <PortalProvider>
+            <StatusBar barStyle="light-content" />
+            <NavigationContainer theme={theme}>
+              <Stack.Navigator
+                initialRouteName="Home"
+                screenOptions={{
+                  headerShown: false,
+                  animation: 'fade',
+                }}
+              >
+                {/* Ana ekran: mini harita + kartlar */}
+                <Stack.Screen name="Home" component={HomePage} />
+
+                {/* Explore modu: tam ekran MapScreen */}
+                <Stack.Screen
+                  name="Map"
+                  component={MapScreen}
+                  initialParams={{ entryPoint: 'home-preview' }}
+                />
+
+                {/*
+                // İleride eklemek istersen:
+                <Stack.Screen name="Navigation" component={NavigationScreen} />
+                */}
               </Stack.Navigator>
             </NavigationContainer>
-          </BottomSheetModalProvider>
-        </PortalProvider>
+          </PortalProvider>
+        </BottomSheetModalProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
