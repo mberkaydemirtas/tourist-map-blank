@@ -386,17 +386,25 @@ function buildDirectionsUrl(originIn, destinationIn, mode = 'driving', extra = {
  * Google Directions – her zaman LİSTE döndürür.
  * routes[i] = {
  *   id, distance, duration, polyline, geometry, decodedCoords, steps[], mode,
- *   bounds, summary, warnings, legs
+ *   bounds, summary, warnings, legs, waypointOrder
  * }
  */
 export async function getRoute(origin, destination, mode = 'driving', opts = {}) {
   try {
+    const hasWps = Array.isArray(opts.waypoints) && opts.waypoints.length > 0;
+
+    // transit + waypoints => driving
+    if (mode === 'transit' && hasWps) mode = 'driving';
+
+    // alternatives: waypoints varsa default false, yoksa true
+    const alternatives = (opts.alternatives != null) ? opts.alternatives : !hasWps;
+
     const url = buildDirectionsUrl(origin, destination, mode, {
-      alternatives: opts.alternatives !== false,
+      alternatives,
       waypoints: opts.waypoints || [],
       optimize: opts.optimize === true,
       avoidTolls: opts.avoidTolls === true,
-      trafficModel: opts.trafficModel, // best_guess | pessimistic | optimistic
+      trafficModel: opts.trafficModel, // driving + departure_time=now gerektirir (buildDirectionsUrl içinde ayarla)
     });
 
     if (!url) {
@@ -418,12 +426,10 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
       const lineCoords = decoded.map(p => [p.longitude, p.latitude]); // [lng,lat]
       const legs = Array.isArray(route.legs) ? route.legs : [];
 
-      const totalDistance = legs.reduce((s, l) => s + (l.distance?.value || 0), 0); // metres
-      // varsa duration_in_traffic, yoksa duration
+      const totalDistance = legs.reduce((s, l) => s + (l.distance?.value || 0), 0);
       const totalDuration = legs.reduce((s, l) =>
-        s + (l.duration_in_traffic?.value ?? l.duration?.value ?? 0), 0); // seconds
+        s + (l.duration_in_traffic?.value ?? l.duration?.value ?? 0), 0);
 
-      // tüm leg step'lerini düzleştir
       const steps = legs.flatMap((leg, legIdx) => {
         const legSteps = Array.isArray(leg.steps) ? leg.steps : [];
         return legSteps.map(s => {
@@ -431,15 +437,13 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
           const stepDec = stepPoly ? decodePolyline(stepPoly) : [];
           const stepCoords = stepDec.length ? stepDec.map(p => [p.longitude, p.latitude]) : undefined;
 
-          // Maneuver normalize
           let type = null, modifier = null;
           if (typeof s.maneuver === 'string') {
-            const parts = s.maneuver.split('-'); // "turn-left"
+            const parts = s.maneuver.split('-');
             type = parts[0] || null;
             modifier = parts[1] || null;
           }
 
-          // bearing_after tahmini (son iki noktanın doğrultusu)
           let bearing_after = undefined;
           if (stepCoords && stepCoords.length >= 2) {
             const a = { lat: stepCoords[stepCoords.length - 2][1], lng: stepCoords[stepCoords.length - 2][0] };
@@ -447,10 +451,10 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
             bearing_after = bearingDeg(a, b);
           }
 
-          const stepObj = {
+          return {
             legIndex: legIdx,
             distance: s.distance?.value ?? null,
-            duration: (s.duration?.value ?? null),
+            duration: s.duration?.value ?? null,
             polyline: stepPoly || null,
             geometry: stepCoords ? { type: 'LineString', coordinates: stepCoords } : undefined,
             maneuver: {
@@ -459,11 +463,9 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
               location: s.end_location ? [s.end_location.lng, s.end_location.lat] : undefined,
               bearing_after,
             },
-            // Google özgün alanları da saklayalım:
             start_location: s.start_location,
             end_location: s.end_location,
           };
-          return stepObj;
         });
       });
 
@@ -473,17 +475,18 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
         duration: totalDuration,
         polyline: overviewPoly,
         geometry: { type: 'LineString', coordinates: lineCoords },
-        decodedCoords: decoded, // [{latitude,longitude,lat,lng}]
+        decodedCoords: decoded, // [{latitude, longitude}]
         steps,
         mode,
         bounds: getBoundsFromCoords(decoded),
         summary: route.summary,
         warnings: route.warnings || [],
         legs,
+        waypointOrder: route.waypoint_order || null, // 👈 optimize:true ise dolu
       };
     });
 
-    return mapped;
+    return mapped; // Üst katman tek rota bekliyorsa `return mapped[0]`
   } catch (e) {
     console.error('🟥 getRoute error:', e?.message || e);
     return [];

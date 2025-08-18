@@ -13,10 +13,72 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { autocomplete, getPlaceDetails } from '../maps';
-import { toCoordsObject, normalizeCoord } from '../utils/coords';
+import { normalizeCoord } from '../utils/coords';
 
 const HISTORY_KEY_BASE = 'search_history';
-const MAX_HISTORY = 5;
+const MAX_HISTORY = 20;
+
+/* ---------- helpers ---------- */
+const labelOf = (x) => {
+  if (!x) return '';
+  if (typeof x === 'string') return x;
+  return (
+    x.description ||
+    x.name ||
+    x?.structured_formatting?.main_text ||
+    x?.address ||
+    'Seçilen yer'
+  );
+};
+const subOf = (x) => {
+  if (!x || typeof x === 'string') return '';
+  return x.address || x?.structured_formatting?.secondary_text || '';
+};
+const keyOf = (x, i) => {
+  if (!x) return `k_${i}`;
+  if (typeof x === 'string') return `s_${x}_${i}`;
+  const pid = x.place_id || x.id || x.key;
+  if (pid) return String(pid);
+  const lat = x?.coords?.latitude ?? x?.geometry?.location?.lat ?? x?.lat;
+  const lng = x?.coords?.longitude ?? x?.geometry?.location?.lng ?? x?.lng;
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    return `${Math.round(lat * 1e6)}_${Math.round(lng * 1e6)}`;
+  }
+  return `k_${i}`;
+};
+const normalizeEntry = (x) => {
+  if (!x) return null;
+  if (typeof x === 'string') {
+    return {
+      description: x,
+      address: '',
+      place_id: null,
+      coords: undefined,
+    };
+  }
+  // Şema uyumlama
+  const lat =
+    x?.coords?.latitude ??
+    x?.geometry?.location?.lat ??
+    x.lat;
+  const lng =
+    x?.coords?.longitude ??
+    x?.geometry?.location?.lng ??
+    x.lng;
+
+  const coords =
+    Number.isFinite(lat) && Number.isFinite(lng)
+      ? { latitude: lat, longitude: lng }
+      : undefined;
+
+  return {
+    ...x,
+    description: x.description || x.name || x.address || 'Seçilen yer',
+    address: x.address || x?.structured_formatting?.secondary_text || '',
+    place_id: x.place_id || x.id || x.key || null,
+    coords,
+  };
+};
 
 export default function GetDirectionsOverlay({
   userCoords,
@@ -27,102 +89,143 @@ export default function GetDirectionsOverlay({
   onCancel,
   onMapSelect,
   historyKey,
+  favoritesKey, // MapScreen bazen gönderiyor
 }) {
   const inputRef = useRef(null);
   const [query, setQuery] = useState('');
-  const [history, setHistory] = useState([]);
-  const [suggestions, setSuggestions] = useState([]);
+  const [history, setHistory] = useState([]);     // normalized objects
+  const [favorites, setFavorites] = useState([]); // optional
+  const [suggestions, setSuggestions] = useState([]); // preds
 
+  /* focus + storage load */
   useEffect(() => {
     requestAnimationFrame(() => inputRef.current?.focus());
-    const key = historyKey || HISTORY_KEY_BASE;
-    AsyncStorage.getItem(key).then(h => setHistory(h ? JSON.parse(h) : []));
-  }, [historyKey]);
+    let mounted = true;
 
+    const load = async () => {
+      try {
+        const hKey = historyKey || HISTORY_KEY_BASE;
+        const rawH = await AsyncStorage.getItem(hKey);
+        const rawF = favoritesKey ? await AsyncStorage.getItem(favoritesKey) : null;
+
+        const arrH = rawH ? JSON.parse(rawH) : [];
+        const arrF = rawF ? JSON.parse(rawF) : [];
+
+        if (!mounted) return;
+        setHistory(Array.isArray(arrH) ? arrH.map(normalizeEntry).filter(Boolean) : []);
+        setFavorites(Array.isArray(arrF) ? arrF.map(normalizeEntry).filter(Boolean) : []);
+      } catch {
+        if (!mounted) return;
+        setHistory([]);
+        setFavorites([]);
+      }
+    };
+
+    load();
+    return () => { mounted = false; };
+  }, [historyKey, favoritesKey]);
+
+  /* autocomplete */
   useEffect(() => {
-    if (query.length >= 2) {
-      autocomplete(query).then(preds => {
-        const items = preds.map(p => ({ key: p.place_id, description: p.description }));
+    let active = true;
+    const run = async () => {
+      if (query.trim().length < 2) {
+        setSuggestions([]);
+        return;
+      }
+      try {
+        const preds = await autocomplete(query.trim());
+        if (!active) return;
+        const items = preds.map(p => ({
+          key: p.place_id,
+          place_id: p.place_id,
+          description: p.description,
+          structured_formatting: p.structured_formatting,
+        }));
         setSuggestions(items);
-      });
-    } else {
-      setSuggestions([]);
-    }
+      } catch {
+        if (active) setSuggestions([]);
+      }
+    };
+    run();
+    return () => { active = false; };
   }, [query]);
 
-  const handleSelectItem = async item => {
+  const emitSelection = (selected) => {
+    // Önce To, yoksa From
+    if (onToSelected) onToSelected(selected);
+    else if (onFromSelected) onFromSelected(selected);
+  };
+
+  const handleSelectItem = async (item) => {
     Keyboard.dismiss();
-    let selected = { ...item };
-    console.log('🚀 Overlay seçildi (ön):', item);
 
-    // Current location
-  if (item.key === 'current') {
-    const c = normalizeCoord(userCoords);
-    if (!c) {
-      console.warn('❌ Geçersiz current location');
-      return;
-    }
-    selected = { key: 'current', description: 'Konumunuz', coords: c };
-  }
-
-    // Map-select
-    if (item.key === 'map') {
-      onCancel();
-      onMapSelect();
+    // current location
+    if (item?.key === 'current') {
+      const c = normalizeCoord(userCoords);
+      if (!c) return;
+      emitSelection({ key: 'current', description: 'Konumunuz', coords: c });
       return;
     }
 
-    // Öneri veya geçmişten seçim koordinat almak
-    if (!selected.coords && item.key !== 'current') {
-      try {
-        let placeId = selected.key;
-        if (item.isHistory) {
-          console.log('🔄 History için autocomplete:', selected.description);
-          const res = await autocomplete(selected.description);
-          if (!res.length) {
-            console.warn('❌ Autocomplete sonuc yok:', selected.description);
-            return;
-          }
-          placeId = res[0].place_id;
-          selected = { key: placeId, description: res[0].description };
-        }
-        console.log('📦 Detay almak için placeId:', placeId);
+    // map select
+    if (item?.key === 'map') {
+      onCancel?.();
+      onMapSelect?.();
+      return;
+    }
+
+    // HISTORY / FAVORITES nesneleri: elden geldiğince direkt kullan
+    const hist = normalizeEntry(item);
+    const hasCoords =
+      !!hist?.coords ||
+      Number.isFinite(hist?.geometry?.location?.lat) &&
+      Number.isFinite(hist?.geometry?.location?.lng);
+
+    if (hasCoords) {
+      const coord =
+        hist.coords ||
+        normalizeCoord(hist.geometry.location);
+      emitSelection({
+        key: hist.place_id || hist.key || keyOf(hist),
+        description: labelOf(hist),
+        coords: coord,
+      });
+      return;
+    }
+
+    // ÖNERİ/STRING: place details ile koordinat çek
+    try {
+      let placeId = hist.place_id || hist.key;
+      // Sadece string eski kayıt ise önce autocomplete dene
+      if (!placeId && typeof item === 'string') {
+        const preds = await autocomplete(item);
+        placeId = preds?.[0]?.place_id;
+      }
+      if (!placeId) return;
+
       const details = await getPlaceDetails(placeId);
-      const detCoord = normalizeCoord(details?.coords ?? details?.geometry?.location ?? details);
-      if (!detCoord) {
-        console.warn('❌ Koordinat normalize edilemedi (place details)');
-        return;
-      }
-      selected = { key: placeId, description: selected.description, coords: detCoord };
-      } catch (err) {
-        console.warn('❌ Koordinat alınamadı:', err);
-        return;
-      }
-    }
+      const detCoord = normalizeCoord(
+        details?.coords ?? details?.geometry?.location ?? details
+      );
+      if (!detCoord) return;
 
-    // History kaydet
-    if (selected.description && selected.coords) {
-      const key = historyKey || HISTORY_KEY_BASE;
-      const newHist = [selected.description, ...history.filter(h => h !== selected.description)].slice(0, MAX_HISTORY);
-      setHistory(newHist);
-      AsyncStorage.setItem(key, JSON.stringify(newHist));
-    }
+      emitSelection({
+        key: placeId,
+        description: labelOf(hist) || details?.name || 'Seçilen yer',
+        coords: detCoord,
+      });
 
-    console.log('✅ Overlay seçimi sonrası final:', selected);
-    // Doğru callback'i çağır
-    if (onToSelected) {
-      onToSelected(selected);
-    } else if (onFromSelected) {
-      onFromSelected(selected);
+      // Not: Storage'a yazmayı MapScreen yapıyor; overlay yazmaz.
+    } catch (e) {
+      // sessiz geç
     }
   };
 
   const sections = [
-    query.length >= 2 && { title: 'Öneriler', data: suggestions },
-    query.length === 0 && history.length > 0 && {
-      title: 'Geçmiş',
-      data: history.map(desc => ({ key: desc, description: desc, isHistory: true })),
-    },
+    query.trim().length >= 2 && { title: 'Öneriler', data: suggestions },
+    !query && favorites.length > 0 && { title: 'Favoriler', data: favorites },
+    !query && history.length > 0 && { title: 'Geçmiş', data: history },
   ].filter(Boolean);
 
   return (
@@ -135,7 +238,7 @@ export default function GetDirectionsOverlay({
           <TextInput
             ref={inputRef}
             style={styles.input}
-            placeholder="Konum Girin"
+            placeholder="Konum girin"
             placeholderTextColor="#888"
             value={query}
             onChangeText={setQuery}
@@ -164,13 +267,26 @@ export default function GetDirectionsOverlay({
 
         <SectionList
           sections={sections}
-          keyExtractor={item => item.key}
+          keyExtractor={(item, i) => keyOf(item, i)}
           renderSectionHeader={({ section }) =>
-            section.data.length ? <Text style={styles.section}>{section.title}</Text> : null
+            section.data.length ? (
+              <Text style={styles.section}>{section.title}</Text>
+            ) : null
           }
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.item} onPress={() => handleSelectItem(item)}>
-              <Text style={styles.itemText}>{item.description}</Text>
+            <TouchableOpacity
+              style={styles.item}
+              onPress={() => handleSelectItem(item)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.itemText} numberOfLines={1}>
+                {labelOf(item)}
+              </Text>
+              {!!subOf(item) && (
+                <Text style={styles.itemSub} numberOfLines={1}>
+                  {subOf(item)}
+                </Text>
+              )}
             </TouchableOpacity>
           )}
           keyboardShouldPersistTaps="handled"
@@ -201,6 +317,7 @@ const styles = StyleSheet.create({
   quickButton: { backgroundColor: '#f0f0f0', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8 },
   quickText: { fontSize: 16, color: '#000' },
   section: { fontSize: 14, fontWeight: '600', marginTop: 16, marginLeft: 16, color: '#444' },
-  item: { padding: 12 },
+  item: { paddingVertical: 10, paddingHorizontal: 16 },
   itemText: { fontSize: 16, color: '#000' },
+  itemSub: { fontSize: 12, color: '#666', marginTop: 2 },
 });

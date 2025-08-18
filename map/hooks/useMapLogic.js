@@ -30,6 +30,62 @@ export function useMapLogic(mapRef) {
   const [mapMoved, setMapMoved] = useState(false);
   const [routeOptions, setRouteOptions] = useState({});
 
+  const [waypoints, setWaypoints] = useState([]); // [{latitude, longitude, name?, place_id?}]
+
+  const fitPolyline = useCallback((coords=[]) => {
+    if (!coords.length) return;
+    mapRef?.current?.fitToCoordinates(coords, {
+      edgePadding: { top: 60, left: 40, right: 40, bottom: 260 },
+      animated: true,
+    });
+  }, [mapRef]);
+
+  const calculateRouteSimple = useCallback(async () => {
+    if (!fromLocation?.coords || !toLocation?.coords) return;
+    const out = await getRoute(fromLocation.coords, toLocation.coords, selectedMode, { alternatives: true });
+    const first = Array.isArray(out) ? out[0] : out;
+    const decoded = first?.decodedCoords?.map(p => ({ latitude: p.latitude, longitude: p.longitude })) || [];
+    setRouteCoords(decoded);
+    setRouteInfo(first ? { distanceValue: first.distance, durationValue: first.duration } : null);
+    fitPolyline(decoded);
+  }, [fromLocation, toLocation, selectedMode, fitPolyline]);
+
+  const calculateRouteWithStops = useCallback(async ({ optimize=false } = {}) => {
+    if (!fromLocation?.coords || !toLocation?.coords) return;
+    const mode = (selectedMode === 'transit' && waypoints.length) ? 'driving' : selectedMode;
+
+    const out = await getRoute(
+      fromLocation.coords,
+      toLocation.coords,
+      mode,
+      {
+        alternatives: false,
+        waypoints,             // 👈 {latitude, longitude}
+        optimize: !!optimize,
+      }
+    );
+    const first = Array.isArray(out) ? out[0] : out;
+
+    // optimize:true ise waypoint_order gelebilir -> sadece ara durakları sırala
+    if (first?.waypointOrder?.length === waypoints.length) {
+      setWaypoints(first.waypointOrder.map(i => waypoints[i]));
+    }
+
+    const decoded = first?.decodedCoords?.map(p => ({ latitude: p.latitude, longitude: p.longitude })) || [];
+    setRouteCoords(decoded);
+    setRouteInfo(first ? { distanceValue: first.distance, durationValue: first.duration } : null);
+    fitPolyline(decoded);
+  }, [fromLocation, toLocation, selectedMode, waypoints, fitPolyline]);
+
+  useEffect(() => {
+    if (!fromLocation?.coords || !toLocation?.coords) return;
+    if (waypoints.length > 0) {
+      calculateRouteWithStops({ optimize: false });
+    } else {
+      calculateRouteSimple();
+    }
+  }, [waypoints, fromLocation, toLocation, calculateRouteWithStops, calculateRouteSimple]);
+
   const onRegionChange = useCallback((newRegion) => {
     setRegion(newRegion);
     setMapMoved(true);
@@ -632,6 +688,9 @@ useEffect(() => {
     setRegion,
     onRegionChange,
     setRouteCoords,
+    waypoints, 
+    setWaypoints,
+    calculateRouteWithStops,
     marker,
     categoryMarkers,
     loadingCategory,
