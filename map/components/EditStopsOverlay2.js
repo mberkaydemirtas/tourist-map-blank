@@ -1,5 +1,5 @@
 // src/components/EditStopsOverlay.js
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet, Platform, FlatList } from 'react-native';
 import DraggableFlatList from 'react-native-draggable-flatlist';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -11,10 +11,10 @@ export default function EditStopsOverlay({
   stops = [],                 // [from, ...waypoints, to]
   onClose,
   onConfirm,
-  onDragEnd,                  // (fromIndex, toIndex) => void
-  onDelete,                   // (index) => void
-  onInsertAt,                 // (index) => void
-  onReplaceAt,                // (index) => void
+  onDragEnd,                  // (fromIndex, toIndex) => void  -> GLOBAL index bekler
+  onDelete,                   // (index) => void                -> GLOBAL index
+  onInsertAt,                 // (index) => void                -> GLOBAL index (splice hedefi)
+  onReplaceAt,                // (index) => void                -> GLOBAL index
 }) {
   // Stabil key üret
   const data = useMemo(() => {
@@ -27,6 +27,11 @@ export default function EditStopsOverlay({
       return { ...s, _key };
     });
   }, [stops]);
+
+  const lastIdx = data.length - 1;
+  const start   = data[0];
+  const end     = data[lastIdx];
+  const mids    = lastIdx >= 1 ? data.slice(1, lastIdx) : []; // sadece orta duraklar draggable
 
   const isFirst = (i) => i === 0;
   const isLast  = (i) => i === data.length - 1;
@@ -43,7 +48,7 @@ export default function EditStopsOverlay({
       activeOpacity={0.9}
       onPress={() => {
         console.log('[Overlay] InsertBar press -> index=', index);
-        onInsertAt?.(index);
+        onInsertAt?.(index); // 👉 GLOBAL index (splice target)
       }}
       style={styles.insertBar}
     >
@@ -51,133 +56,153 @@ export default function EditStopsOverlay({
     </TouchableOpacity>
   );
 
-  const RowCore = ({ item, drag, isActive, i }) => {
-    const canDelete   = !isFirst(i) && !isLast(i);
-    const canReplace  = !isFirst(i);
-    const dragDisabled = isFirst(i) || isLast(i);
+  // 🚩/🏁 uç noktalar – draggable değil, “buton/pill” görünüm
+  const EndpointRow = ({ item, globalIndex }) => {
+    const isStart = globalIndex === 0;
+    return (
+      <View style={[styles.endpointRow, isStart ? styles.endpointStart : styles.endpointEnd]}>
+        <Text style={styles.endpointIcon}>{isStart ? '🚩' : '🏁'}</Text>
+        <View style={styles.rowCenter}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={styles.endpointTitle} numberOfLines={1}>
+              {item?.name || (isStart ? 'Başlangıç' : 'Bitiş')}
+            </Text>
+            <Label i={globalIndex} />
+          </View>
+          <Text style={styles.endpointSub} numberOfLines={1}>
+            {item?.place_id
+              ? `#${String(item.place_id).slice(0, 6)}`
+              : `${(+item?.lat).toFixed?.(5)}, ${(+item?.lng).toFixed?.(5)}`}
+          </Text>
+        </View>
+      </View>
+    );
+  };
 
+  // Orta durak: draggable + aksiyonlar, GLOBAL index = midIndex + 1
+  const WaypointRow = ({ item, drag, isActive, midIndex }) => {
+    const globalIndex = midIndex + 1;
     return (
       <View style={[styles.row, isActive && styles.rowActive]}>
         <TouchableOpacity
-          style={[styles.dragHandle, dragDisabled && { opacity: 0.35 }]}
+          style={styles.dragHandle}
           onLongPress={drag}
           delayLongPress={120}
-          disabled={!USE_DRAGGABLE || dragDisabled}
+          disabled={!USE_DRAGGABLE}
         >
           <Text style={styles.dragIcon}>≡</Text>
         </TouchableOpacity>
 
         <View style={styles.rowCenter}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={styles.rowTitle} numberOfLines={1}>
-              {item.name || `Durak ${i + 1}`}
-            </Text>
-            <Label i={i} />
-          </View>
+          <Text style={styles.rowTitle} numberOfLines={1}>
+            {item?.name || `Durak ${globalIndex}`}
+          </Text>
           <Text style={styles.rowSub} numberOfLines={1}>
-            {item.place_id
+            {item?.place_id
               ? `#${String(item.place_id).slice(0, 6)}`
-              : `${(+item.lat).toFixed?.(5)}, ${(+item.lng).toFixed?.(5)}`}
+              : `${(+item?.lat).toFixed?.(5)}, ${(+item?.lng).toFixed?.(5)}`}
           </Text>
         </View>
 
         <View style={styles.rowActions}>
-          {canReplace && (
-            <TouchableOpacity
-              style={[styles.miniBtn, styles.replaceBtn]}
-              onPress={() => {
-                console.log('[Overlay] Replace press -> i=', i);
-                onReplaceAt?.(i);
-              }}
-            >
-              <Text style={styles.miniTxt}>Değiştir</Text>
-            </TouchableOpacity>
-          )}
-          {canDelete && (
-            <TouchableOpacity
-              style={[styles.miniBtn, styles.delBtn]}
-              onPress={() => {
-                console.log('[Overlay] Delete press -> i=', i);
-                onDelete?.(i);
-              }}
-            >
-              <Text style={[styles.miniTxt, styles.delTxt]}>Sil</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            style={[styles.miniBtn, styles.replaceBtn]}
+            onPress={() => {
+              console.log('[Overlay] Replace press -> i=', globalIndex);
+              onReplaceAt?.(globalIndex); // sadece mid satırlarda aktif
+            }}
+          >
+            <Text style={styles.miniTxt}>Değiştir</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.miniBtn, styles.delBtn]}
+            onPress={() => {
+              console.log('[Overlay] Delete press -> i=', globalIndex);
+              onDelete?.(globalIndex); // sadece mid satırlarda aktif
+            }}
+          >
+            <Text style={[styles.miniTxt, styles.delTxt]}>Sil</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
   };
 
-  const getSafeIndex = (params) => {
-    if (Number.isFinite(params.index)) return params.index;
-    const k = params?.item?._key || params?.item?.key;
-    const idx = data.findIndex((d) => d._key === k || d.key === k);
-    return idx >= 0 ? idx : 0;
-  };
-
-  const renderItem = (params) => {
-    const { item, drag, isActive } = params;
-    const i = getSafeIndex(params);
+  const renderMidItem = ({ item, drag, isActive, index: midIndex }) => {
+    const globalIndex = midIndex + 1;
     return (
       <View>
-        <RowCore item={item} drag={drag} isActive={isActive} i={i} />
-        {/* ⛔ Bitişin altında InsertBar yok */}
-        {!isLast(i) && <InsertBar index={i + 1} />}
+        <WaypointRow item={item} drag={drag} isActive={isActive} midIndex={midIndex} />
+        {/* Her orta durağın altına insert bar – globalIndex+1 hedefi */}
+        <InsertBar index={globalIndex + 1} />
       </View>
     );
   };
 
-  // ❗ Geçersiz drop’ta revert için küçük bir nonce
+  // ❗ Draggable list referansı (gerekirse ileri kullanım için)
+  const listRef = useRef(null);
+
+  // ❗ Geçersiz drop’u baştan imkansız kıldık: mids dışında hiçbir yere düşülemez.
+  // Sadece mids içinde reorder olduğundan "duvar" hissi doğal olarak oluşuyor.
   const [dragNonce, setDragNonce] = useState(0);
 
   const ListBody = USE_DRAGGABLE ? DraggableFlatList : FlatList;
 
+  // Draggable sadece mid’lerde çalışır – global indexe çevirerek parent’a iletiriz
   const listProps = USE_DRAGGABLE
     ? {
-        data,
-        keyExtractor: (it) => it._key,
-        renderItem,
-        contentContainerStyle: styles.list,
+        ref: listRef,
+        data: mids,
+        keyExtractor: (it, i) => it._key ?? `mid-${i}`,
+        renderItem: renderMidItem,
+        contentContainerStyle: styles.listInner,
         activationDistance: Platform.select({ ios: 12, android: 4 }),
         autoscrollThreshold: 40,
         autoscrollSpeed: 50,
-        extraData: dragNonce,                     // 👈 revert tetikleyici
+        extraData: dragNonce,
         onDragEnd: ({ from, to }) => {
-          const lastIdx = data.length - 1;
-          const midMin = 1;
-          const midMax = Math.max(1, lastIdx - 1);
-
-          // başlangıç/bitişten drag başlatılamaz (handle kapalı) ama yine de emniyet:
-          if (from < midMin || from > midMax) {
-            console.log('[Overlay] invalid drag FROM=', from, '→ revert');
-            setDragNonce((n) => n + 1);
-            return;
-          }
-
-          // hedefi orta aralığa kilitle
-          const clampedTo = Math.max(midMin, Math.min(to, midMax));
-
-          if (clampedTo !== to) {
-            console.log('[Overlay] drop to out-of-bounds: to=', to, '→ clamp', clampedTo, 'and revert visual');
-            // Görseli geri almak için nonce; sıralama parent’ta sadece geçerli aralıkta yapılır
-            setDragNonce((n) => n + 1);
-          }
-
-          if (from !== clampedTo) {
-            console.log('[Overlay] dragEnd apply', from, '→', clampedTo);
-            onDragEnd?.(from, clampedTo);
-          }
+          if (from === to) return;
+          const fromGlobal = from + 1;
+          const toGlobal   = to + 1;
+          console.log('[Overlay] dragEnd mids:', from, '→', to, ' | global:', fromGlobal, '→', toGlobal);
+          onDragEnd?.(fromGlobal, toGlobal);
         },
         scrollEnabled: true,
         keyboardShouldPersistTaps: 'handled',
+        ListHeaderComponent: (
+          <View style={styles.listHeader}>
+            {/* 🚩 Başlangıç satırı */}
+            {start && <EndpointRow item={start} globalIndex={0} />}
+            {/* ✅ Başlangıcın hemen ALTINDA insert bar */}
+            <InsertBar index={1} />
+          </View>
+        ),
+        ListFooterComponent: (
+          <View style={styles.listFooter}>
+            {/* 🏁 Bitiş satırı */}
+            {end && <EndpointRow item={end} globalIndex={lastIdx} />}
+            {/* Bitişten sonra insert bar YOK */}
+          </View>
+        ),
       }
     : {
-        data,
-        keyExtractor: (it) => it._key,
-        renderItem,
-        contentContainerStyle: styles.list,
+        data: mids,
+        keyExtractor: (it, i) => it._key ?? `mid-${i}`,
+        renderItem: renderMidItem,
+        contentContainerStyle: styles.listInner,
         scrollEnabled: true,
+        ListHeaderComponent: (
+          <View style={styles.listHeader}>
+            {start && <EndpointRow item={start} globalIndex={0} />}
+            <InsertBar index={1} />
+          </View>
+        ),
+        ListFooterComponent: (
+          <View style={styles.listFooter}>
+            {end && <EndpointRow item={end} globalIndex={lastIdx} />}
+          </View>
+        ),
       };
 
   return (
@@ -209,6 +234,7 @@ export default function EditStopsOverlay({
   );
 }
 
+/* ------------------------------- Styles ------------------------------- */
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },
   sheet: {
@@ -224,7 +250,9 @@ const styles = StyleSheet.create({
   closeBtn: { padding: 6, paddingHorizontal: 8 },
   closeTxt: { fontSize: 16, color: '#444' },
 
-  list: { paddingHorizontal: 10, paddingBottom: 10 },
+  listInner: { paddingHorizontal: 10, paddingBottom: 10 },
+  listHeader: { paddingHorizontal: 0 },
+  listFooter: { paddingHorizontal: 0 },
 
   insertBar: {
     borderWidth: StyleSheet.hairlineWidth,
@@ -238,6 +266,22 @@ const styles = StyleSheet.create({
   },
   insertText: { fontSize: 12, fontWeight: '700', color: '#1E7E34' },
 
+  // Uç noktalar
+  endpointRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    padding: 10,
+    marginVertical: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  endpointStart: { backgroundColor: '#eef8ee', borderColor: '#cfe8cf' },
+  endpointEnd:   { backgroundColor: '#eef5ff', borderColor: '#cfe0ff' },
+  endpointIcon:  { fontSize: 18, marginRight: 10 },
+  endpointTitle: { fontSize: 14, fontWeight: '800', color: '#111' },
+  endpointSub:   { marginTop: 2, fontSize: 12, color: '#666' },
+
+  // Orta duraklar
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -258,8 +302,8 @@ const styles = StyleSheet.create({
   dragIcon: { fontSize: 18, color: '#666' },
 
   rowCenter: { flex: 1 },
-  rowTitle: { fontSize: 14, fontWeight: '700', color: '#111' },
-  rowSub: { marginTop: 2, fontSize: 12, color: '#666' },
+  rowTitle:  { fontSize: 14, fontWeight: '700', color: '#111' },
+  rowSub:    { marginTop: 2, fontSize: 12, color: '#666' },
 
   badgeWrap: { flexDirection: 'row', gap: 6 },
   badge: { fontSize: 11, fontWeight: '700', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
@@ -270,7 +314,6 @@ const styles = StyleSheet.create({
   miniBtn: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
   replaceBtn: { backgroundColor: '#eef5ff', borderColor: '#cfe0ff' },
   delBtn: { backgroundColor: '#fdecec', borderColor: '#f5c2c0' },
-
   miniTxt: { fontSize: 12, fontWeight: '700', color: '#111' },
   delTxt: { color: '#B42318' },
 

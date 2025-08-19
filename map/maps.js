@@ -351,60 +351,115 @@ function buildDirectionsUrl(originIn, destinationIn, mode = 'driving', extra = {
     params.append('departure_time', 'now'); // canlı trafik
     avoidSet.add('ferries');
     if (extra.avoidTolls) avoidSet.add('tolls');
-    if (extra.trafficModel) params.append('traffic_model', String(extra.trafficModel)); // best_guess, pessimistic, optimistic
+    if (extra.trafficModel) params.append('traffic_model', String(extra.trafficModel));
   } else if (mode === 'transit') {
     params.append('departure_time', 'now');
   }
   if (avoidSet.size) params.append('avoid', Array.from(avoidSet).join('|'));
 
-  // Waypoints
-  if (Array.isArray(extra.waypoints) && extra.waypoints.length) {
-    const items = extra.waypoints
-      .map(w => {
-        const lt = w.lat ?? w.latitude ?? w.coords?.latitude;
-        const lg = w.lng ?? w.longitude ?? w.coords?.longitude;
-        if (!Number.isFinite(lt) || !Number.isFinite(lg)) return null;
-        return `${lt},${lg}`;
-      })
-      .filter(Boolean);
+  // --- WAYPOINT SERİALİZASYON ---
 
-    if (items.length) {
-      if (extra.optimize) {
-        params.append('waypoints', `optimize:true|${items.join('|')}`);
-      } else {
-        // sabit sıra için via: kullan (yol üzerinden zorunlu geçiş)
-        const viaItems = items.map(s => `via:${s}`).join('|');
-        params.append('waypoints', viaItems);
+  // Her formattaki girdiyi "waypoints" param'ına dönüştürür.
+  // Desteklenen girişler:
+  //  - String: "via:place_id:XYZ", "place_id:XYZ", "via:lat,lng", "lat,lng"
+  //  - Array: [lat, lng]
+  //  - Object: { place_id } | { lat,lng } | { latitude,longitude } | { coords:{latitude,longitude} } | { location:{lat,lng} }
+  const serializeWaypoints = (raw, { optimize = false } = {}) => {
+    const list = Array.isArray(raw) ? raw : [];
+    const tokens = [];
+
+    for (const w of list) {
+      if (!w) continue;
+
+      // 1) String türü → aynen al, optimize:false ise via: ile başlat
+      if (typeof w === 'string') {
+        let tok = w.trim();
+        if (!tok) continue;
+        if (!optimize && !/^via:/i.test(tok)) tok = `via:${tok}`;
+        tokens.push(tok);
+        continue;
+      }
+
+      // 2) Array [lat,lng]
+      if (Array.isArray(w) && w.length >= 2 && Number.isFinite(w[0]) && Number.isFinite(w[1])) {
+        let tok = `${w[0]},${w[1]}`;
+        if (!optimize) tok = `via:${tok}`;
+        tokens.push(tok);
+        continue;
+      }
+
+      // 3) Object
+      const placeId = w.place_id || w.placeId || w.id || null;
+      const loc     = w.location || w.coords || w.coordinate || w;
+      const lt      = loc?.lat ?? loc?.latitude;
+      const lg      = loc?.lng ?? loc?.longitude;
+
+      if (placeId) {
+        let tok = `place_id:${placeId}`;
+        if (!optimize) tok = `via:${tok}`;
+        tokens.push(tok);
+        continue;
+      }
+
+      if (Number.isFinite(lt) && Number.isFinite(lg)) {
+        let tok = `${lt},${lg}`;
+        if (!optimize) tok = `via:${tok}`;
+        tokens.push(tok);
       }
     }
+
+    if (!tokens.length) return null;
+
+    // optimize:true → via: kullanmayız, "optimize:true|" prefix’i ekleriz
+    if (optimize) {
+      return `optimize:true|${tokens.map(t => t.replace(/^via:/i, '')).join('|')}`;
+    }
+    return tokens.join('|');
+  };
+
+  // waypoints kaynakları: waypoints, viaWaypoints, waypointsLL (ilk dolu olan kullanılır)
+  let wpParam = null;
+
+  if (Array.isArray(extra.waypoints) && extra.waypoints.length) {
+    wpParam = serializeWaypoints(extra.waypoints, { optimize: !!extra.optimize });
   }
+  if (!wpParam && Array.isArray(extra.viaWaypoints) && extra.viaWaypoints.length) {
+    // viaWaypoints her hâlükârda "via:" olarak gider (optimize=no)
+    wpParam = serializeWaypoints(extra.viaWaypoints, { optimize: false });
+  }
+  if (!wpParam && Array.isArray(extra.waypointsLL) && extra.waypointsLL.length) {
+    wpParam = serializeWaypoints(extra.waypointsLL, { optimize: !!extra.optimize });
+  }
+
+  if (wpParam) params.append('waypoints', wpParam);
 
   return `${BASE}/directions/json?${params.toString()}`;
 }
 
 /**
  * Google Directions – her zaman LİSTE döndürür.
- * routes[i] = {
- *   id, distance, duration, polyline, geometry, decodedCoords, steps[], mode,
- *   bounds, summary, warnings, legs, waypointOrder
- * }
  */
 export async function getRoute(origin, destination, mode = 'driving', opts = {}) {
   try {
-    const hasWps = Array.isArray(opts.waypoints) && opts.waypoints.length > 0;
+    const hasWps =
+      (Array.isArray(opts.waypoints)    && opts.waypoints.length > 0) ||
+      (Array.isArray(opts.viaWaypoints) && opts.viaWaypoints.length > 0) ||
+      (Array.isArray(opts.waypointsLL)  && opts.waypointsLL.length  > 0);
 
-    // transit + waypoints => driving
+    // transit + waypoint → driving'e düş
     if (mode === 'transit' && hasWps) mode = 'driving';
 
-    // alternatives: waypoints varsa default false, yoksa true
+    // alternatives: waypoint varsa default false, yoksa true
     const alternatives = (opts.alternatives != null) ? opts.alternatives : !hasWps;
 
     const url = buildDirectionsUrl(origin, destination, mode, {
       alternatives,
-      waypoints: opts.waypoints || [],
-      optimize: opts.optimize === true,
-      avoidTolls: opts.avoidTolls === true,
-      trafficModel: opts.trafficModel, // driving + departure_time=now gerektirir (buildDirectionsUrl içinde ayarla)
+      waypoints:   opts.waypoints   || [],
+      viaWaypoints:opts.viaWaypoints|| [],
+      waypointsLL: opts.waypointsLL || [],
+      optimize:    opts.optimize === true,
+      avoidTolls:  opts.avoidTolls === true,
+      trafficModel: opts.trafficModel,
     });
 
     if (!url) {
@@ -475,24 +530,23 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
         duration: totalDuration,
         polyline: overviewPoly,
         geometry: { type: 'LineString', coordinates: lineCoords },
-        decodedCoords: decoded, // [{latitude, longitude}]
+        decodedCoords: decoded,
         steps,
         mode,
         bounds: getBoundsFromCoords(decoded),
         summary: route.summary,
         warnings: route.warnings || [],
         legs,
-        waypointOrder: route.waypoint_order || null, // 👈 optimize:true ise dolu
+        waypointOrder: route.waypoint_order || null,
       };
     });
 
-    return mapped; // Üst katman tek rota bekliyorsa `return mapped[0]`
+    return mapped;
   } catch (e) {
     console.error('🟥 getRoute error:', e?.message || e);
     return [];
   }
 }
-
 /* ---------------------------- Mapbox turn-by-turn ------------------------- */
 /** Step’leri Mapbox’tan çekmek için (geometri gerekli olduğunda) */
 export const getTurnByTurnSteps = async (from, to) => {

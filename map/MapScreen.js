@@ -40,7 +40,6 @@ import {
 } from './maps';
 
 /* ------------------------- küçük yardımcılar ------------------------- */
-// route_stop_* ve favorite_* için zengin obje formu
 const placeForHistory = ({ lat, lng, name, address, place_id, description }) => {
   const n   = name ?? description ?? 'Seçilen yer';
   const adr = address ?? description ?? '';
@@ -58,7 +57,6 @@ const placeForHistory = ({ lat, lng, name, address, place_id, description }) => 
   };
 };
 
-// (1) Zengin obje listesine upsert (route_stop_history gibi)
 const upsertHistoryObject = async (key, item, maxLen = 30) => {
   try {
     const raw = await AsyncStorage.getItem(key);
@@ -71,7 +69,6 @@ const upsertHistoryObject = async (key, item, maxLen = 30) => {
   } catch {}
 };
 
-// (2) Sadece label tutan string history (search_history* GDO için)
 const pushLabelHistory = async (key, label, maxLen = 20) => {
   try {
     const raw = await AsyncStorage.getItem(key);
@@ -98,6 +95,72 @@ const meters = (a, b) => {
   return 2 * R * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
 };
 const poiIdOf = (p) => p?.place_id || p?.id || `${p?.geometry?.location?.lng}_${p?.geometry?.location?.lat}`;
+const clamp = (min, max, v) => Math.min(max, Math.max(min, v));
+
+/* NEW: kesin lat/lng, eşitlik ve dedup yardımcıları */
+const toStrictLL = (c) => {
+  const lat = c?.lat ?? c?.latitude;
+  const lng = c?.lng ?? c?.longitude;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+};
+const nearlySame = (a, b, m = 5) => {
+  if (!a || !b) return false;
+  try { return meters(a, b) <= m; } catch { return false; }
+};
+const dedupWaypoints = (wps, fromLL, toLL) => {
+  const out = [];
+  for (const w of wps) {
+    const llOnly = toStrictLL(w);
+    if (!llOnly) continue;
+    // place_id'yi KORU (veya id)
+    const ll = { ...llOnly, place_id: w.place_id ?? w.id ?? null };
+    if (fromLL && nearlySame(ll, fromLL)) continue;
+    if (toLL && nearlySame(ll, toLL)) continue;
+    if (out.some(prev => nearlySame(prev, ll))) continue;
+    out.push(ll);
+  }
+  return out;
+};
+
+/* ------------ WAYPOINT KAPSAMA KONTROLÜ (yaklaşık) + SEGMENT FALLBACK ------------ */
+// decoded polyline içindeki herhangi bir nokta waypoint'e yeterince yakın mı? (derece toleransı)
+const approxRouteCoversWaypoints = (decodedCoords, wpsLL, tolDeg = 0.0015 /* ~150-170m */) => {
+  if (!Array.isArray(decodedCoords) || decodedCoords.length === 0) return false;
+  const toDegDiff = (a, b) => Math.sqrt(
+    Math.pow((a.latitude ?? a.lat) - b.lat, 2) +
+    Math.pow((a.longitude ?? a.lng) - b.lng, 2)
+  );
+  for (const w of wpsLL) {
+    let ok = false;
+    for (let i = 0; i < decodedCoords.length; i++) {
+      const d = toDegDiff(decodedCoords[i], w);
+      if (d <= tolDeg) { ok = true; break; }
+    }
+    if (!ok) return false;
+  }
+  return true;
+};
+
+// Segment segment rota hesaplayıp tek polyline'a birleştirir
+const stitchSegments = (segments) => {
+  const all = [];
+  for (let i = 0; i < segments.length; i++) {
+    const part = segments[i];
+    if (!Array.isArray(part) || part.length === 0) continue;
+    if (i > 0 && all.length) {
+      const first = part[0], last = all[all.length - 1];
+      if (
+        Math.abs((first.latitude ?? first.lat) - (last.latitude ?? last.lat)) < 1e-6 &&
+        Math.abs((first.longitude ?? first.lng) - (last.longitude ?? last.lng)) < 1e-6
+      ) {
+        part.shift(); // eklemeden önce eklemlenme noktasındaki duplicate'i at
+      }
+    }
+    all.push(...part);
+  }
+  return all;
+};
 
 export default function MapScreen() {
   const navigation = useNavigation();
@@ -132,6 +195,9 @@ export default function MapScreen() {
   const [addStopOpen, setAddStopOpen] = useState(false);
   const [editStopsOpen, setEditStopsOpen] = useState(false);
   const [draftStops, setDraftStops] = useState([]); // [from, ...wps, to]
+
+  // EditStopsOverlay'den gelen "buraya ekle" / "değiştir" işlemini bekletmek için
+  const [pendingEditOp, setPendingEditOp] = useState(null); // { type: 'insert'|'replace', index: number }
 
   // POI along route
   const [candidateStop, setCandidateStop] = useState(null);
@@ -180,34 +246,28 @@ export default function MapScreen() {
 
     const migrateHistory = async () => {
       try {
-        // search_history* içinde obje varsa -> stringe çevir
         for (const k of HISTORY_KEYS_LABEL) {
           const raw = await AsyncStorage.getItem(k);
           if (!raw) continue;
           let arr = JSON.parse(raw);
           if (!Array.isArray(arr)) continue;
-
-          // herhangi bir eleman obje ise, hepsini label string'e dönüştür
           const containsObject = arr.some(x => x && typeof x === 'object');
           if (containsObject) {
             const next = arr
               .map(x => {
                 if (typeof x === 'string') return x;
                 if (!x || typeof x !== 'object') return null;
-                return x.description || x.name || x.address || ''; // en iyi tahmin
+                return x.description || x.name || x.address || '';
               })
               .filter(Boolean);
             await AsyncStorage.setItem(k, JSON.stringify(next));
           }
         }
-
-        // obje-tabanlı keylerde (route_stop_history vs) bir şey yapma
         for (const k of HISTORY_KEYS_OBJECT) {
           const raw = await AsyncStorage.getItem(k);
           if (!raw) continue;
           const arr = JSON.parse(raw);
           if (!Array.isArray(arr)) continue;
-          // burada şema düzeltmesi gerekmez; bırak
         }
       } catch (e) {
         console.warn('history migration error', e);
@@ -271,60 +331,173 @@ export default function MapScreen() {
   };
 
   /* --------------------------- ROTA --------------------------- */
-  const recalcRoute = useCallback(
-    async (selMode = map.selectedMode, waypointsOverride = null) => {
-      const fromC = normalizeCoord(map.fromLocation?.coords);
-      const toC   = normalizeCoord(map.toLocation?.coords);
-      if (!fromC || !toC) return;
 
+  // SEGMENTLİ FALLBACK: from → ...wps → to
+  const buildSegmentedRoute = useCallback(
+    async (fromLL, toLL, cleanLL, selMode) => {
+      try {
+        const nodes = [fromLL, ...cleanLL, toLL];
+        const segments = [];
+        let totalDist = 0;
+        let totalDur = 0;
+
+        for (let i = 0; i < nodes.length - 1; i++) {
+          const a = nodes[i], b = nodes[i + 1];
+          console.log('[route:fallback] segment', i, '->', i + 1, a, b);
+          const raw = await getRoute(a, b, selMode, { optimize: false, alternatives: false, __seg: i });
+          const seg = Array.isArray(raw) ? raw[0] : raw;
+          const dec = seg?.decodedCoords || decodePolyline(seg?.polyline || '');
+          if (!dec || !dec.length) {
+            console.warn('[route:fallback] segment failed (no polyline)', i);
+            return null;
+          }
+          segments.push(dec);
+          totalDist += seg?.distance || 0;
+          totalDur  += seg?.duration || 0;
+        }
+
+        const mergedCoords = stitchSegments(segments);
+        const merged = {
+          id: `${selMode}-segmented`,
+          isPrimary: true,
+          decodedCoords: mergedCoords,
+          distance: totalDist,
+          duration: totalDur,
+          mode: selMode,
+        };
+        console.log('[route:fallback] merged ok. legs:', nodes.length - 1, 'coords:', mergedCoords.length);
+        return merged;
+      } catch (e) {
+        console.warn('[route:fallback] error', e?.message || e);
+        return null;
+      }
+    },
+    []
+  );
+
+    const recalcRoute = useCallback(
+      async (
+        selMode = map.selectedMode,
+        waypointsOverride = null,
+        fromOverride = null,
+        toOverride = null
+      ) => {
+      // from/to'yu kesin lat/lng'e çevir
+     const fromC0 = normalizeCoord(fromOverride ?? map.fromLocation?.coords);
+     const toC0   = normalizeCoord(toOverride  ?? map.toLocation?.coords);
+      const fromLL = toStrictLL(fromC0);
+      const toLL   = toStrictLL(toC0);
+      if (!fromLL || !toLL) return;
+
+      // kaynak waypoint'ler
       const srcWps = Array.isArray(waypointsOverride) ? waypointsOverride : map.waypoints;
-      const wps = Array.isArray(srcWps)
+      const wpsLL  = Array.isArray(srcWps)
         ? srcWps
-            .map(w => ({ lat: w.lat ?? w.latitude, lng: w.lng ?? w.longitude }))
+            .map(w => ({ lat: w.lat ?? w.latitude, lng: w.lng ?? w.longitude, place_id: w.place_id || null }))
             .filter(w => Number.isFinite(w.lat) && Number.isFinite(w.lng))
         : [];
 
-      try {
-        const raw = await getRoute(fromC, toC, selMode, {
-          waypoints: wps.length ? wps.map(w => ({ ...w, via: true })) : undefined,
-          optimize : wps.length ? false : true,
-          alternatives: true,
-        });
+      // çok yakındaki/tekrarlı waypoint'leri temizle
+      const cleanLL = dedupWaypoints(wpsLL, fromLL, toLL);
 
-        const routes = (Array.isArray(raw) ? raw : raw ? [raw] : [])
-          .map((r, i) => ({
+      // üç farklı deneme stratejisi hazırla
+      const wpPlaceId = cleanLL.map(w => w.place_id ? `via:place_id:${w.place_id}` : null).filter(Boolean);
+      const wpViaLatLng = cleanLL.map(w => `via:${w.lat.toFixed(6)},${w.lng.toFixed(6)}`);
+      const wpLLForFallback = cleanLL.map(w => ({ lat: w.lat, lng: w.lng }));
+
+      const baseOpts = { optimize: false, alternatives: cleanLL.length === 0 };
+
+      // denemeleri sırayla çalıştır
+      const attempts = [
+        wpPlaceId.length ? { ...baseOpts, waypoints: wpPlaceId, __attempt: 'via:place_id' } : null,
+        wpViaLatLng.length ? { ...baseOpts, waypoints: wpViaLatLng, __attempt: 'via:latlng' } : null,
+        wpLLForFallback.length ? { ...baseOpts, waypointsLL: wpLLForFallback, __attempt: 'LL-array' } : null,
+      ].filter(Boolean);
+
+      console.log('[route] recalc start', {
+        mode: selMode,
+        fromLL, toLL,
+        wpCount: cleanLL.length,
+        attemptTypes: attempts.map(a => a.__attempt),
+        placeIds: wpPlaceId,
+        viaLatLng: wpViaLatLng
+      });
+
+      let routes = null;
+      let lastErr = null;
+
+      for (const opts of attempts) {
+        try {
+          console.log('[route] trying attempt:', opts.__attempt);
+          const raw = await getRoute(fromLL, toLL, selMode, { ...opts, __debug: true });
+
+          const list = (Array.isArray(raw) ? raw : raw ? [raw] : []).map((r, i) => ({
             ...r,
             decodedCoords: r.decodedCoords || decodePolyline(r.polyline || ''),
             isPrimary: i === 0,
-            id: `${selMode}-${i}`,
+            id: `${selMode}-${opts.__attempt}-${i}`,
             mode: selMode,
           }));
 
-        map.setRouteOptions(prev => ({ ...prev, [selMode]: routes }));
+          const ok = list.length && list[0].decodedCoords && list[0].decodedCoords.length;
+          console.log('[route] attempt', opts.__attempt, 'ok:', ok, 'altCount:', list.length);
 
-        const primary = routes.find(r => r.isPrimary) || routes[0];
-        if (primary?.decodedCoords?.length) {
-          setRouteCoords(primary.decodedCoords);
-          setRouteInfo({ distance: primary.distance, duration: primary.duration });
-
-          mapRef.current?.fitToCoordinates(primary.decodedCoords, {
-            edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
-            animated: true,
-          });
-
-          // sheet’i garanti aç
-          setTimeout(() => sheetRefRoute.current?.present?.(), 0);
-        } else {
-          setRouteCoords([]);
-          setRouteInfo(null);
+          if (ok) {
+            // Waypoint kapsaması kontrolü
+            if (cleanLL.length) {
+              const covers = approxRouteCoversWaypoints(list[0].decodedCoords, cleanLL);
+              console.log('[route] covers waypoints?:', covers, 'wpCount:', cleanLL.length);
+              if (!covers) {
+                // Segment fallback dene
+                console.warn('[route] waypoints seem ignored. using segmented fallback…');
+                const merged = await buildSegmentedRoute(fromLL, toLL, cleanLL, selMode);
+                if (merged) {
+                  routes = [merged];
+                  break;
+                }
+              }
+            }
+            routes = list;
+            break;
+          }
+        } catch (e) {
+          lastErr = e;
+          console.warn('getRoute attempt failed', opts.__attempt, e?.message || e);
         }
-      } catch (e) {
-        console.warn('recalcRoute error:', e);
+      }
+
+      // hiçbiri olmadıysa ve waypoint varsa, son çare segment fallback
+      if (!routes && cleanLL.length) {
+        console.warn('[route] all attempts failed or empty. trying segmented fallback as last resort.');
+        const merged = await buildSegmentedRoute(fromLL, toLL, cleanLL, selMode);
+        if (merged) {
+          routes = [merged];
+        }
+      }
+
+      if (!routes) {
+        console.warn('Directions API: ZERO_RESULTS / uygun rota bulunamadı', lastErr?.message);
         setRouteCoords([]);
         setRouteInfo(null);
+        map.setRouteOptions(prev => ({ ...prev, [selMode]: [] }));
+        return;
+      }
+
+      // başarılı sonuç → state güncelle
+      map.setRouteOptions(prev => ({ ...prev, [selMode]: routes }));
+      const primary = routes.find(r => r.isPrimary) || routes[0];
+      setRouteCoords(primary.decodedCoords || []);
+      setRouteInfo({ distance: primary.distance, duration: primary.duration });
+
+      if (primary?.decodedCoords?.length) {
+        mapRef.current?.fitToCoordinates(primary.decodedCoords, {
+          edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+          animated: true,
+        });
+        setTimeout(() => sheetRefRoute.current?.present?.(), 0);
       }
     },
-    [map.fromLocation, map.toLocation, map.waypoints, map.selectedMode]
+    [map.fromLocation, map.toLocation, map.waypoints, map.selectedMode, buildSegmentedRoute]
   );
 
   useEffect(() => {
@@ -353,6 +526,79 @@ export default function MapScreen() {
       sheetRefRoute.current?.dismiss?.();
     }
   }, [mode, routeCoords]);
+
+  // RoutePlannerCard -> Map geçişini karşıla
+  useEffect(() => {
+    const req = route?.params?.routeRequest;
+    if (!req || !req.from || !req.to) return;
+
+    // 1) normalize coords
+    const fromC = normalizeCoord(req.from);
+    const toC   = normalizeCoord(req.to);
+    if (!fromC || !toC) {
+      return;
+    }
+
+    // 2) Map state'ini besle
+    setMode('route');
+    map.setFromLocation({
+      coords: fromC,
+      description: req.from.name || 'Başlangıç',
+      key: req.from.place_id || 'external',
+    });
+    map.setToLocation({
+      coords: toC,
+      description: req.to.name || 'Bitiş',
+      key: req.to.place_id || 'external',
+    });
+
+  const wps = Array.isArray(req.waypoints)
+    ? req.waypoints
+        .map(w => {
+          const lat =
+            w.lat ?? w.latitude ??
+            w?.coords?.latitude ?? w?.location?.lat;
+          const lng =
+            w.lng ?? w.longitude ??
+            w?.coords?.longitude ?? w?.location?.lng;
+          return {
+            lat,
+            lng,
+            name: w.name,
+            address: w.address,
+            place_id: w.place_id || w.id || null,
+          };
+        })
+        .filter(w => Number.isFinite(w.lat) && Number.isFinite(w.lng))
+    : [];
+
+    map.setWaypoints(wps);
+    if (req.mode) map.setSelectedMode(req.mode);
+
+    // 3) Kamerayı noktaların tamamına oturt
+    const toFit = [
+      { latitude: fromC.latitude, longitude: fromC.longitude },
+      ...wps.map(w => ({ latitude: w.lat, longitude: w.lng })),
+      { latitude: toC.latitude,   longitude: toC.longitude },
+    ];
+    requestAnimationFrame(() => {
+      if (mapRef.current && toFit.length >= 2) {
+        mapRef.current.fitToCoordinates(toFit, {
+          edgePadding: { top: 60, right: 60, bottom: 220, left: 60 },
+          animated: true,
+        });
+      }
+    });
+
+     // State commit beklemeden, doğrudan bu from/to ile hesapla:
+     setTimeout(() => {
+       recalcRoute(req.mode, wps, fromC, toC);
+     }, 0);
+
+    // 5) Paramı temizle (geri gelip tekrar tetiklenmesin)
+    navigation.setParams({ routeRequest: undefined });
+  }, [route?.params?.routeRequest, navigation, recalcRoute, map.setFromLocation, map.setToLocation, map.setWaypoints, map.setSelectedMode]);
+
 
   /* --------------------- FROM/TO seçim --------------------- */
   const setToFromMarkerIfMissing = useCallback(() => {
@@ -417,7 +663,6 @@ export default function MapScreen() {
 
     map.setFromLocation(fromSrc);
 
-    // GDO ile uyumlu: sadece label stringini yaz
     await pushLabelHistory('search_history', fromSrc.description);
     await pushLabelHistory('search_history_from', fromSrc.description);
 
@@ -466,7 +711,6 @@ export default function MapScreen() {
 
         map.setToLocation({ coords: coord, description: label, key: pid || 'map' });
 
-        // GDO ile uyumlu: sadece label stringini yaz
         await pushLabelHistory('search_history', label);
         await pushLabelHistory('search_history_to', label);
 
@@ -697,10 +941,95 @@ export default function MapScreen() {
   }, []);
 
   /* ---------- DURAK EKLEME (WAYPOINT) ---------- */
+
+  const normalizePlaceToStop = useCallback(async (place) => {
+    try {
+      let lat, lng, name, place_id, address;
+
+      if (typeof place === 'string') {
+        const preds = await autocomplete(place);
+        const pid = preds?.[0]?.place_id;
+        if (!pid) return null;
+        const d = await getPlaceDetails(pid);
+        place_id = d?.place_id || pid;
+        lat = d?.geometry?.location?.lat;
+        lng = d?.geometry?.location?.lng;
+        name = d?.name || preds?.[0]?.structured_formatting?.main_text || place;
+        address = d?.formatted_address || preds?.[0]?.description || '';
+      } else if (place?.geometry?.location || place?.coords || (Number.isFinite(place?.lat) && Number.isFinite(place?.lng))) {
+        place_id = place?.place_id || place?.id || null;
+        lat =
+          place?.geometry?.location?.lat ??
+          place?.coords?.latitude ??
+          place?.lat;
+        lng =
+          place?.geometry?.location?.lng ??
+          place?.coords?.longitude ??
+          place?.lng;
+        name =
+          place?.name ||
+          place?.structured_formatting?.main_text ||
+          place?.description ||
+          place?.address ||
+          'Seçilen yer';
+        address =
+          place?.vicinity ||
+          place?.formatted_address ||
+          place?.structured_formatting?.secondary_text ||
+          place?.address ||
+          '';
+      } else if (place?.place_id || place?.id) {
+        const pid = place.place_id || place.id;
+        const d = await getPlaceDetails(pid);
+        place_id = d?.place_id || pid;
+        lat = d?.geometry?.location?.lat;
+        lng = d?.geometry?.location?.lng;
+        name = d?.name || place?.name || 'Seçilen yer';
+        address = d?.formatted_address || d?.vicinity || place?.description || '';
+      } else if (candidateStop) {
+        const { lat: clat, lng: clng, name: cname, place_id: cpid, address: caddr } = candidateStop;
+        lat = clat; lng = clng; name = cname; place_id = cpid; address = caddr;
+      } else {
+        return null;
+      }
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      return { lat, lng, name, address, place_id: place_id || null };
+    } catch {
+      return null;
+    }
+  }, [candidateStop]);
+
+  const applyPendingEditStop = useCallback((payload) => {
+    if (!pendingEditOp || !payload) return;
+    setDraftStops(prev => {
+      if (!Array.isArray(prev) || prev.length < 2) return prev;
+      const lastIdx = prev.length - 1;
+
+      if (pendingEditOp.type === 'insert') {
+        const idx = clamp(1, lastIdx, pendingEditOp.index);
+        const next = [...prev];
+        next.splice(idx, 0, payload);
+        return next;
+      }
+      if (pendingEditOp.type === 'replace') {
+        const idx = clamp(1, lastIdx - 1, pendingEditOp.index);
+        const next = [...prev];
+        next[idx] = payload;
+        return next;
+      }
+      return prev;
+    });
+    setPendingEditOp(null);
+    setAddStopOpen(false);
+    setEditStopsOpen(true);
+    setCandidateStop(null);
+    setPoiMarkers([]);
+  }, [pendingEditOp]);
+
   const insertOrAppendStop = useCallback(
     ({ lat, lng, name, place_id, address }) => {
       const payload = { lat, lng, name, place_id, address };
-
       const cur = Array.isArray(map.waypoints) ? map.waypoints : [];
       const wps = [...cur, payload];
       map.setWaypoints(wps);
@@ -713,124 +1042,41 @@ export default function MapScreen() {
     [map.waypoints, recalcRoute, map.selectedMode]
   );
 
-  // Geçmiş/suggestion tıklanınca önce adayı göster (gerekirse detay çek)
+  const handleAddStopFlexible = useCallback(
+    async (place) => {
+      const payload = await normalizePlaceToStop(place);
+      if (!payload) return;
+
+      if (pendingEditOp) {
+        applyPendingEditStop(payload);
+      } else {
+        insertOrAppendStop(payload);
+        await saveHistoryObjects(['route_stop_history'], payload);
+      }
+    },
+    [pendingEditOp, normalizePlaceToStop, applyPendingEditStop, insertOrAppendStop]
+  );
+
   const handlePickStop = useCallback(
     async (place) => {
       try {
-        let pid, lat, lng, name, address;
-
-        if (typeof place === 'string') {
-          const preds = await autocomplete(place);
-          pid = preds?.[0]?.place_id || null;
-          if (!pid) return;
-          const d = await getPlaceDetails(pid);
-          lat = d?.geometry?.location?.lat;
-          lng = d?.geometry?.location?.lng;
-          name = d?.name || preds?.[0]?.structured_formatting?.main_text || place;
-          address = d?.formatted_address || preds?.[0]?.description || '';
+        const payload = await normalizePlaceToStop(place);
+        if (!payload) return;
+        if (pendingEditOp) {
+          applyPendingEditStop(payload);
         } else {
-          pid = place?.place_id || place?.id;
-          lat =
-            place?.geometry?.location?.lat ??
-            place?.coords?.latitude ??
-            place?.location?.lat ??
-            place?.lat;
-          lng =
-            place?.geometry?.location?.lng ??
-            place?.coords?.longitude ??
-            place?.location?.lng ??
-            place?.lng;
-          name =
-            place?.name ||
-            place?.structured_formatting?.main_text ||
-            place?.description ||
-            place?.address ||
-            'Seçilen yer';
-          address =
-            place?.vicinity ||
-            place?.formatted_address ||
-            place?.structured_formatting?.secondary_text ||
-            place?.description ||
-            place?.address ||
-            '';
-
-          if ((!Number.isFinite(lat) || !Number.isFinite(lng)) && pid) {
-            const d = await getPlaceDetails(pid);
-            lat = d?.geometry?.location?.lat ?? lat;
-            lng = d?.geometry?.location?.lng ?? lng;
-            name = d?.name || name;
-            address = d?.formatted_address || d?.vicinity || address;
-          }
+          setCandidateStop(payload);
         }
-
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-
-        // Aday pini göster (kullanıcı callout'tan ekleyebilir)
-        setCandidateStop({ lat, lng, name, place_id: pid || null, address });
       } catch {}
     },
-    []
+    [normalizePlaceToStop, pendingEditOp, applyPendingEditStop]
   );
 
-  // Doğrudan durak ekle (CTA)
   const handleAddStopFromPOI = useCallback(
     async (place) => {
-      let lat, lng, name, place_id, address;
-
-      try {
-        if (typeof place === 'string') {
-          const preds = await autocomplete(place);
-          const pid = preds?.[0]?.place_id;
-          if (!pid) return;
-          const d = await getPlaceDetails(pid);
-          place_id = d?.place_id || pid;
-          lat = d?.geometry?.location?.lat;
-          lng = d?.geometry?.location?.lng;
-          name = d?.name || preds?.[0]?.structured_formatting?.main_text || place;
-          address = d?.formatted_address || preds?.[0]?.description || '';
-        } else if (place?.geometry?.location || place?.coords || (Number.isFinite(place?.lat) && Number.isFinite(place?.lng))) {
-          place_id = place?.place_id || place?.id || null;
-          lat =
-            place?.geometry?.location?.lat ??
-            place?.coords?.latitude ??
-            place?.lat;
-          lng =
-            place?.geometry?.location?.lng ??
-            place?.coords?.longitude ??
-            place?.lng;
-          name =
-            place?.name ||
-            place?.structured_formatting?.main_text ||
-            place?.description ||
-            place?.address ||
-            'Seçilen yer';
-          address =
-            place?.vicinity ||
-            place?.formatted_address ||
-            place?.structured_formatting?.secondary_text ||
-            place?.address ||
-            '';
-        } else if (place?.place_id || place?.id) {
-          const pid = place.place_id || place.id;
-          const d = await getPlaceDetails(pid);
-          place_id = d?.place_id || pid;
-          lat = d?.geometry?.location?.lat;
-          lng = d?.geometry?.location?.lng;
-          name = d?.name || place?.name || 'Seçilen yer';
-          address = d?.formatted_address || d?.vicinity || place?.description || '';
-        } else if (candidateStop) {
-          ({ lat, lng, name, place_id, address } = candidateStop);
-        } else {
-          return;
-        }
-
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-
-        insertOrAppendStop({ lat, lng, name, place_id, address });
-        await saveHistoryObjects(['route_stop_history'], { lat, lng, name, address, place_id });
-      } catch {}
+      await handleAddStopFlexible(place);
     },
-    [candidateStop, insertOrAppendStop]
+    [handleAddStopFlexible]
   );
 
   const openEditStops = useCallback(() => {
@@ -958,7 +1204,10 @@ export default function MapScreen() {
               <View style={styles.calloutCard}>
                 <Text style={styles.calloutTitle} numberOfLines={1}>{candidateStop.name || 'Seçilen yer'}</Text>
                 {!!candidateStop.address && <Text style={styles.calloutSub} numberOfLines={1}>{candidateStop.address}</Text>}
-                <TouchableOpacity style={styles.calloutCta} onPress={() => handleAddStopFromPOI(candidateStop)}>
+                <TouchableOpacity
+                  style={styles.calloutCta}
+                  onPress={() => handleAddStopFlexible(candidateStop)}
+                >
                   <Text style={styles.calloutCtaText}>Durak ekle</Text>
                 </TouchableOpacity>
               </View>
@@ -984,7 +1233,7 @@ export default function MapScreen() {
                 e?.stopPropagation?.();
                 onPoiPress(p);
               }}
-              onCalloutPress={() => handleAddStopFromPOI(p)}
+              onCalloutPress={() => handleAddStopFlexible(p)}
             >
               <View style={styles.poiDotOuter}><Text style={styles.poiEmoji}>📍</Text></View>
               <Callout tooltip={Platform.OS === 'ios'}>
@@ -993,7 +1242,7 @@ export default function MapScreen() {
                   <Text style={styles.calloutSub} numberOfLines={1}>
                     {(p?.rating ? `★ ${p.rating} • ` : '') + (p?.vicinity || '')}
                   </Text>
-                  <TouchableOpacity style={styles.calloutCta} onPress={() => handleAddStopFromPOI(p)} activeOpacity={0.8}>
+                  <TouchableOpacity style={styles.calloutCta} onPress={() => handleAddStopFlexible(p)} activeOpacity={0.8}>
                     <Text style={styles.calloutCtaText}>Durak ekle</Text>
                   </TouchableOpacity>
                 </View>
@@ -1204,7 +1453,7 @@ export default function MapScreen() {
       {/* AddStopOverlay */}
       <AddStopOverlay
         visible={addStopOpen}
-        onClose={() => { setAddStopOpen(false); setCandidateStop(null); setPoiMarkers([]); }}
+        onClose={() => { setAddStopOpen(false); setCandidateStop(null); setPoiMarkers([]); setPendingEditOp(null); }}
         onCategorySelect={async (type) => {
           await fetchPlacesAlongRoute({ type, noCorridor: false });
         }}
@@ -1212,7 +1461,7 @@ export default function MapScreen() {
           await fetchPlacesAlongRoute({ text, noCorridor: true });
         }}
         onPickStop={handlePickStop}
-        onAddStop={handleAddStopFromPOI}
+        onAddStop={handleAddStopFlexible}
         routeBounds={routeBounds}
         historyKey="route_stop_history"
         favoritesKey="route_stop_favorites"
@@ -1222,7 +1471,7 @@ export default function MapScreen() {
       <EditStopsOverlay
         visible={editStopsOpen}
         stops={draftStops}
-        onClose={() => { setEditStopsOpen(false); setDraftStops([]); }}
+        onClose={() => { setEditStopsOpen(false); setDraftStops([]); setPendingEditOp(null); }}
         onConfirm={confirmEditStops}
         onDragEnd={(from, to) => setDraftStops(prev => {
           if (from === to) return prev;
@@ -1231,9 +1480,25 @@ export default function MapScreen() {
           next.splice(to, 0, it);
           return next;
         })}
-        onDelete={(i) => setDraftStops(prev => prev.filter((_, idx) => idx !== i))}
-        onInsertAt={(i) => { /* opsiyonel: ekleme indeksleri kullanılmıyor */ }}
-        onReplaceAt={(i) => { /* opsiyonel */ }}
+        onDelete={(i) => setDraftStops(prev => {
+          const last = (prev?.length ?? 0) - 1;
+          if (i <= 0 || i >= last) return prev; // Başlangıç/Bitiş silinmez
+          return prev.filter((_, idx) => idx !== i);
+        })}
+        onInsertAt={(i) => {
+          const last = (draftStops?.length ?? 0) - 1;   // Bitiş indeksi
+          const target = clamp(1, last, i - 1);
+          setPendingEditOp({ type: 'insert', index: target });
+          setAddStopOpen(true);
+          setEditStopsOpen(false);
+        }}
+        onReplaceAt={(i) => {
+          const last = (draftStops?.length ?? 0) - 1;
+          if (i <= 0 || i >= last) return;
+          setPendingEditOp({ type: 'replace', index: i });
+          setAddStopOpen(true);
+          setEditStopsOpen(false);
+        }}
       />
 
       {/* opsiyonel nav banner */}

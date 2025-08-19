@@ -1,3 +1,4 @@
+// RoutePlannerCard.js
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
@@ -8,15 +9,18 @@ import {
   FlatList,
   Modal,
   TextInput,
-  KeyboardAvoidingView,
   ActivityIndicator,
   SafeAreaView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useLocation } from '../map/hooks/useLocation';
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { autocomplete, getPlaceDetails } from '../map/maps'; // ← projendeki yol
+import { autocomplete, getPlaceDetails } from '../map/maps';
+
+/* ===== Debug helpers ===== */
+const DEBUG = true; // ← kapatmak için false yap
+const dlog = (...args) => DEBUG && console.log('[RoutePlanner]', ...args);
+const plog = (...args) => DEBUG && console.log('[PlacePicker]', ...args);
 
 let DraggableFlatList = null;
 const USE_DRAGGABLE = true;
@@ -26,29 +30,34 @@ try {
   DraggableFlatList = null;
 }
 
-/* -------------------- küçük yardımcılar -------------------- */
+/* -------------------- yardımcılar -------------------- */
 const toLatLng = (any) => {
   if (!any) return null;
-  // { latitude, longitude }
   if (typeof any.latitude === 'number' && typeof any.longitude === 'number') {
     return { latitude: any.latitude, longitude: any.longitude };
   }
-  // { lat, lng } (Google geometry.location)
   if (typeof any.lat === 'number' && typeof any.lng === 'number') {
     return { latitude: any.lat, longitude: any.lng };
   }
-  // [lat, lng]
   if (Array.isArray(any) && any.length >= 2 && typeof any[0] === 'number' && typeof any[1] === 'number') {
     return { latitude: any[0], longitude: any[1] };
   }
+  // Google LatLng objesi: lat(), lng()
+  if (typeof any.lat === 'function' && typeof any.lng === 'function') {
+    try {
+      const lat = Number(any.lat());
+      const lng = Number(any.lng());
+      if (!Number.isNaN(lat) && !Number.isNaN(lng)) return { latitude: lat, longitude: lng };
+    } catch {}
+  }
   return null;
 };
+
 const makeStop = (patch = {}) => ({
   id: String(Math.random()),
   name: null,
   place_id: null,
-  coords: null, // { latitude, longitude }
-  // ekstra: gösterim için hafif metadata
+  coords: null,
   address: null,
   rating: null,
   user_ratings_total: null,
@@ -73,12 +82,17 @@ const saveToHistory = async (item) => {
       ...(!exists ? list : list.filter((x) => x.place_id !== item.place_id)),
     ].slice(0, 10);
     await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(next));
-  } catch {}
+    dlog('saveToHistory ok', { place_id: item.place_id, name: item.name });
+  } catch (e) {
+    dlog('saveToHistory error', e?.message);
+  }
 };
 const loadHistory = async () => {
   try {
     const raw = (await AsyncStorage.getItem(HISTORY_KEY)) || '[]';
-    return JSON.parse(raw);
+    const list = JSON.parse(raw);
+    dlog('loadHistory', { count: list.length });
+    return list;
   } catch {
     return [];
   }
@@ -94,16 +108,13 @@ const useDebounced = (value, delay = 300) => {
 };
 
 const formatDetails = (item) => {
-  // alt satırda gösterilecek kısa bilgi
   const parts = [];
   if (item.address) parts.push(item.address);
   if (item.rating) {
     parts.push(`${item.rating.toFixed ? item.rating.toFixed(1) : item.rating}★${item.user_ratings_total ? ` (${item.user_ratings_total})` : ''}`);
   }
   if (parts.length === 0 && item?.coords) {
-    parts.push(
-      `${(+item.coords.latitude).toFixed?.(5)}, ${(+item.coords.longitude).toFixed?.(5)}`
-    );
+    parts.push(`${(+item.coords.latitude).toFixed?.(5)}, ${(+item.coords.longitude).toFixed?.(5)}`);
   }
   if (parts.length === 0 && item.place_id) parts.push(`#${String(item.place_id).slice(0, 6)}`);
   return parts.join(' • ');
@@ -133,56 +144,30 @@ function PlacePickerOverlay({ visible, onClose, onPick, placeholder = 'Yer ara' 
       setLoading(true);
       try {
         const res = await autocomplete(dq.trim());
+        plog('autocomplete', dq.trim(), { count: res?.length ?? 0 });
         if (!cancelled) setSuggestions(res || []);
-      } catch {
+      } catch (e) {
+        plog('autocomplete error', e?.message);
         if (!cancelled) setSuggestions([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
     run();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [dq]);
 
-  const pickPlace = async (pred) => {
-    try {
-      setLoading(true);
-      const det = await getPlaceDetails(pred.place_id);
-      const coordsRaw =
-        det?.coords ??
-        det?.location ??
-        det?.geometry?.location ??
-        null;
-      const coords = toLatLng(coordsRaw);
-      const item = {
-        name: det?.name || pred?.structured_formatting?.main_text || pred?.description || 'Seçilen yer',
-        place_id: pred.place_id,
-        coords,
-        address:
-          det?.formatted_address ||
-          det?.vicinity ||
-          pred?.structured_formatting?.secondary_text ||
-          null,
-        rating: det?.rating ?? null,
-        user_ratings_total: det?.user_ratings_total ?? null,
-      };
-    if (item.coords) {        
-      await saveToHistory(item);
-        onPick?.(item);
-      }
-    } catch (e) {
-           onPick?.({
-       name: pred?.structured_formatting?.main_text || pred?.description || 'Seçilen yer',
-       place_id: pred.place_id,
-       coords: null,
-       address: pred?.structured_formatting?.secondary_text || null,
-     });
-      // noop
-    } finally {
-      setLoading(false);
-    }
+  const pickPlace = (pred) => {
+    const item = {
+      name: pred?.structured_formatting?.main_text || pred?.description || 'Seçilen yer',
+      place_id: pred.place_id,
+      coords: null,
+      address: pred?.structured_formatting?.secondary_text || null,
+      rating: null,
+      user_ratings_total: null,
+    };
+    plog('pickPlace → onPick', { place_id: item.place_id, name: item.name });
+    onPick?.(item);
   };
 
   const renderSuggestion = ({ item }) => (
@@ -199,7 +184,10 @@ function PlacePickerOverlay({ visible, onClose, onPick, placeholder = 'Yer ara' 
   const renderHistory = ({ item }) => (
     <TouchableOpacity
       style={styles.suggestRow}
-      onPress={() => onPick?.({ ...item, coords: toLatLng(item.coords) || item.coords })}
+      onPress={() => {
+        plog('history pick → onPick', { place_id: item.place_id, name: item.name, hasCoords: !!item.coords });
+        onPick?.({ ...item, coords: toLatLng(item.coords) || item.coords });
+      }}
     >
       <Text style={styles.suggestTitle} numberOfLines={1}>{item.name}</Text>
       <Text style={styles.suggestSub} numberOfLines={1}>
@@ -211,17 +199,17 @@ function PlacePickerOverlay({ visible, onClose, onPick, placeholder = 'Yer ara' 
       </Text>
     </TouchableOpacity>
   );
-  // Üstte sabit arama barı + altında liste
+
   return (
-        <Modal
-          visible={visible}
-          animationType="fade"
-          transparent={false}
-          statusBarTranslucent
-          presentationStyle="fullScreen"
-          onRequestClose={onClose}
-        >     
-  <SafeAreaView style={styles.overlayFull}>
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent={false}
+      statusBarTranslucent
+      presentationStyle="fullScreen"
+      onRequestClose={() => { plog('onRequestClose'); onClose?.(); }}
+    >
+      <SafeAreaView style={styles.overlayFull}>
         <View style={styles.overlayTopBar}>
           <TextInput
             value={q}
@@ -232,7 +220,7 @@ function PlacePickerOverlay({ visible, onClose, onPick, placeholder = 'Yer ara' 
             autoFocus
             returnKeyType="search"
           />
-          <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, left: 12, right: 12, bottom: 12 }}>
+          <TouchableOpacity onPress={() => { plog('Close button'); onClose?.(); }} hitSlop={{ top: 12, left: 12, right: 12, bottom: 12 }}>
             <Text style={styles.overlayCloseTop}>Kapat</Text>
           </TouchableOpacity>
         </View>
@@ -275,19 +263,16 @@ export default function RoutePlannerCard() {
   const navigation = useNavigation();
   const { coords } = useLocation();
 
-  // Başlangıç sabit: konumunuz
-  const from = useMemo(
-    () => ({
-      id: 'from',
-      name: 'Konumunuz',
-      place_id: null,
-      coords: coords ? { latitude: coords.latitude, longitude: coords.longitude } : null,
-      address: null,
-      rating: null,
-      user_ratings_total: null,
-    }),
-    [coords]
-  );
+  // Başlangıç: sabit (Konumunuz)
+  const from = useMemo(() => ({
+    id: 'from',
+    name: 'Konumunuz',
+    place_id: null,
+    coords: coords ? { latitude: coords.latitude, longitude: coords.longitude } : null,
+    address: null,
+    rating: null,
+    user_ratings_total: null,
+  }), [coords]);
 
   // stops = [from, ...waypoints, to]
   const [waypoints, setWaypoints] = useState([]);
@@ -301,101 +286,141 @@ export default function RoutePlannerCard() {
   const isFirst = (i) => i === 0;
   const isLast  = (i) => i === stops.length - 1;
 
-  // ---- Overlay kontrolü ----
+  // Overlay kontrolü
   const [pickerVisible, setPickerVisible] = useState(false);
-  const targetIndexRef = useRef(null); // stops içindeki index
+  const targetIndexRef = useRef(null);
 
   const openPickerForIndex = (index) => {
-    targetIndexRef.current = index;
+    const n = Number(index);
+    if (!Number.isFinite(n)) { dlog('openPickerForIndex ignored (invalid index)', index); return; }
+    dlog('openPickerForIndex', n);
+    targetIndexRef.current = n;
     setPickerVisible(true);
   };
   const closePicker = () => {
+    dlog('closePicker()');
     setPickerVisible(false);
+    targetIndexRef.current = null; // manuel kapama
+  };
+
+  // Optimistic satır doldurma
+  const fillRowOptimistic = (idx, base) => {
+    dlog('fillRowOptimistic', { idx, baseHasCoords: !!base.coords, base });
+    if (isLast(idx)) {
+      setTo((prev) => ({
+        id: 'to',
+        name: base.name ?? prev?.name ?? null,
+        place_id: base.place_id ?? prev?.place_id ?? null,
+        coords: base.coords ?? prev?.coords ?? null,
+        address: base.address ?? prev?.address ?? null,
+        rating: base.rating ?? prev?.rating ?? null,
+        user_ratings_total: base.user_ratings_total ?? prev?.user_ratings_total ?? null,
+      }));
+      return;
+    }
+    const wpIndex = idx - 1;
+    setWaypoints((prev) => {
+      const arr = [...prev];
+      if (!arr[wpIndex]) arr.splice(wpIndex, 0, makeStop());
+      arr[wpIndex] = { ...arr[wpIndex], ...base };
+      return arr;
+    });
+  };
+
+  const resolveCoordsLater = async (idx, base) => {
+    if (base.coords || !base.place_id) {
+      dlog('resolveCoordsLater skipped', { hasCoords: !!base.coords, hasPlaceId: !!base.place_id });
+      return;
+    }
+    try {
+      const det = await getPlaceDetails(base.place_id);
+      const coordsResolved = toLatLng(det?.coords || det?.location || det?.geometry?.location);
+      dlog('getPlaceDetails result', {
+        name: det?.name,
+        hasCoords: !!coordsResolved,
+        geometryType: det?.geometry && typeof det?.geometry?.location,
+      });
+      const patch = {
+        name: base.name || det?.name || null,
+        coords: coordsResolved || null,
+        address: base.address || det?.formatted_address || det?.vicinity || null,
+        rating: base.rating ?? det?.rating ?? null,
+        user_ratings_total: base.user_ratings_total ?? det?.user_ratings_total ?? null,
+      };
+
+      if (isLast(idx)) {
+        setTo((prev) => ({ ...(prev || { id: 'to' }), ...patch }));
+        if (patch.coords) await saveToHistory({ ...(base || {}), ...patch });
+        return;
+      }
+
+      const wpIndex = idx - 1;
+      setWaypoints((prev) => {
+        const arr = [...prev];
+        if (!arr[wpIndex]) arr.splice(wpIndex, 0, makeStop());
+        arr[wpIndex] = { ...arr[wpIndex], ...patch };
+        return arr;
+      });
+      if (patch.coords) await saveToHistory({ ...(base || {}), ...patch });
+    } catch (e) {
+      dlog('getPlaceDetails error', e?.message);
+    }
+  };
+
+  // Seçim uygulanması
+  const applyPickedPlace = async (picked) => {
+    const idx = targetIndexRef.current;
+    dlog('applyPickedPlace called', { idx, picked });
+    setPickerVisible(false);
+
+    const base = {
+      name: picked?.name || 'Seçilen yer',
+      place_id: picked?.place_id || null,
+      coords: toLatLng(picked?.coords) || picked?.coords || null,
+      address: picked?.address ?? null,
+      rating: picked?.rating ?? null,
+      user_ratings_total: picked?.user_ratings_total ?? null,
+    };
+    dlog('normalized base', base);
+
+    if (!Number.isFinite(idx)) { dlog('applyPickedPlace: idx invalid → bail'); targetIndexRef.current = null; return; }
+    if (isFirst(idx)) { dlog('applyPickedPlace: first row (start) is fixed → ignore'); targetIndexRef.current = null; return; }
+
+    // 1) Optimistic yaz
+    fillRowOptimistic(idx, base);
+    // 2) Koordinat eksikse detaydan tamamla
+    resolveCoordsLater(idx, base);
+
     targetIndexRef.current = null;
   };
 
-// Seçilen yer, tıklanan pozisyona yazılsın (insert’te de replace’te de)
- const applyPickedPlace = async (picked) => {
-   // overlay’i hemen kapat (UX)
-   closePicker();
-   let norm = { ...picked, coords: toLatLng(picked.coords) || picked.coords }; 
-   // Koordinat yoksa burada getir
-   if (!norm.coords && picked?.place_id) {
-     try {
-       const det = await getPlaceDetails(picked.place_id);
-       const coords = toLatLng(det?.coords || det?.location || det?.geometry?.location);
-       norm = {
-         ...norm,
-         coords,
-         name: norm.name || det?.name,
-         address: norm.address || det?.formatted_address || det?.vicinity || null,
-         rating: norm.rating ?? det?.rating ?? null,
-         user_ratings_total: norm.user_ratings_total ?? det?.user_ratings_total ?? null,
-       };
-     } catch {}
-   }
-   if (!norm.coords) return; // hâlâ yoksa vazgeç
-
-  const idx = targetIndexRef.current;
-  if (idx == null) return;
-
-  if (isLast(idx)) {
-    // Bitiş
-    setTo({
-      id: 'to',
-      name: norm.name,
-      place_id: norm.place_id,
-      coords: norm.coords,
-      address: norm.address ?? null,
-      rating: norm.rating ?? null,
-      user_ratings_total: norm.user_ratings_total ?? null,
-    });
-  } else if (!isFirst(idx)) {
-    // Waypoint – yeni eklenen boş satır da olabilir, mevcut satırı değiştirmek de olabilir
-    const wpIndex = idx - 1;
-    setWaypoints((prev) => {
-      const arr = [...prev]; // 👈 EKSİK OLAN BUYDU
-      arr[wpIndex] = {
-        ...(arr[wpIndex] || makeStop()),
-        name: norm.name,
-        place_id: norm.place_id,
-        coords: norm.coords,
-        address: norm.address ?? null,
-        rating: norm.rating ?? null,
-        user_ratings_total: norm.user_ratings_total ?? null,
-      };
-      return arr;
-    });
-  }
-};
-
   /* --------- ekleme/silme/yer değiştir --------- */
   const insertAt = (index) => {
-    // from ve to arasına BOŞ bir waypoint satırı koy → hemen picker aç
     const wpIndex = Math.max(0, Math.min(index - 1, waypoints.length));
+    dlog('insertAt', { index, wpIndex });
     setWaypoints((prev) => {
       const cp = [...prev];
       cp.splice(wpIndex, 0, makeStop());
       return cp;
     });
-    // yeni eklenen satırın stops-index’i tam olarak "index"
     openPickerForIndex(index);
   };
 
   const deleteAt = (index) => {
     if (isFirst(index) || isLast(index)) return;
     const wpIndex = index - 1;
+    dlog('deleteAt', { index, wpIndex });
     setWaypoints((prev) => prev.filter((_, i) => i !== wpIndex));
   };
 
   const replaceAt = (index) => {
-    // from dışındakiler için picker aç → ek SATIR eklemiyoruz, sadece seçilen satırı güncelleyeceğiz
-    if (isFirst(index)) return;
+    if (isFirst(index)) { dlog('replaceAt ignored (start row)'); return; }
+    dlog('replaceAt', index);
     openPickerForIndex(index);
   };
 
+  // Waypoint’ler yalnızca 1..len-2 aralığında taşınabilir (başlangıç/bitiş sınırları korunur)
   const moveStop = (fromIdx, toIdx) => {
-    // from (0) ve to (last) taşınamaz; yalnızca 1..len-2
     const min = 1;
     const max = stops.length - 2;
     if (fromIdx < min || fromIdx > max) return;
@@ -404,6 +429,8 @@ export default function RoutePlannerCard() {
 
     const fromWp = fromIdx - 1;
     const toWp = clampedTo - 1;
+
+    dlog('moveStop', { fromIdx, toIdx, clampedTo, fromWp, toWp });
 
     setWaypoints((prev) => {
       const arr = [...prev];
@@ -414,30 +441,50 @@ export default function RoutePlannerCard() {
   };
 
   const createRoute = () => {
+    dlog('createRoute click', {
+      fromHas: !!from.coords,
+      toHas: !!to?.coords,
+      wps: waypoints.map((w, i) => ({ i, has: !!w?.coords, name: w?.name })),
+    });
+
     if (!from.coords || !to?.coords) {
       console.warn('Lütfen başlangıç (otomatik) ve bitiş seçin.');
       return;
     }
-    const cleanWps = waypoints.filter((w) => w?.coords);
-    navigation.navigate('Navigation', {
-      // NavigationScreen.norm bunları direkt alacak
-      from: { latitude: from.coords.latitude, longitude: from.coords.longitude },
-      to:   { latitude: to.coords.latitude,   longitude: to.coords.longitude },
-      // NavigationScreen’de beklenen sade waypoint formatına çevir
-      waypoints: cleanWps.map(w => ({
+    const cleanWps = waypoints
+      .filter((w) => w?.coords)
+      .map((w) => ({
         lat: w.coords.latitude,
         lng: w.coords.longitude,
         name: w.name,
         place_id: w.place_id,
         address: w.address,
-      })),
-      mode: 'driving',
-      // istersen ileride kullanırız
-      autoStart: true,
-    });
+      }));
+
+   navigation.navigate('Map', {
+     entryPoint: 'route-planner',
+     routeRequest: {
+       from: { lat: from.coords.latitude, lng: from.coords.longitude },
+       to:   { lat: to.coords.latitude,   lng: to.coords.longitude },
+       waypoints: cleanWps,
+       mode: 'driving',
+       autoDraw: true,
+     }
+   });
   };
 
+  /* --------- debug watchers --------- */
+  useEffect(() => {
+    dlog('waypoints changed →', waypoints.map((w,i)=>({
+      i, name:w?.name, hasCoords:!!w?.coords, place_id:w?.place_id
+    })));
+  }, [waypoints]);
+  useEffect(() => {
+    dlog('to changed →', to && { name: to?.name, hasCoords: !!to?.coords, place_id: to?.place_id });
+  }, [to]);
+
   /* -------------------- render -------------------- */
+
   const Badge = ({ i }) => (
     <View style={styles.badgeWrap}>
       {isFirst(i) && <Text style={[styles.badge, styles.badgeStart]}>Başlangıç</Text>}
@@ -456,14 +503,17 @@ export default function RoutePlannerCard() {
     const canReplace   = !isFirst(i);
     const dragDisabled = isFirst(i) || isLast(i);
 
-    // Başlık (ör: "Ankara")
     const title =
-      item.name ||
+      item?.name ||
       (isFirst(i) ? 'Konumunuz' : isLast(i) ? 'Bitiş seç' : `Durak ${i}`);
 
-    // Alt satır (adres • puan)
-    const sub = item?.name || item?.place_id || item?.coords ? formatDetails(item) :
-      (isLast(i) ? '— bitiş seçilmedi —' : '— durak seçilmedi —');
+    const hasAny = !!(item?.name || item?.place_id || item?.coords);
+    const sub =
+      hasAny
+        ? (item?.name && !item?.coords ? 'Koordinat alınıyor…' : formatDetails(item))
+        : (isLast(i) ? '— bitiş seçilmedi —'
+            : isFirst(i) ? (from.coords ? '—' : '— konum alınıyor —')
+            : '— durak seçilmedi —');
 
     return (
       <View style={[styles.row, isActive && styles.rowActive]}>
@@ -490,7 +540,7 @@ export default function RoutePlannerCard() {
               style={[styles.miniBtn, styles.replaceBtn]}
               onPress={() => replaceAt(i)}
             >
-              <Text style={styles.miniTxt}>{item?.name ? 'Değiştir' : 'Seç'}</Text>
+              <Text style={styles.miniTxt}>{hasAny ? 'Değiştir' : 'Seç'}</Text>
             </TouchableOpacity>
           )}
           {canDelete && (
@@ -503,43 +553,62 @@ export default function RoutePlannerCard() {
     );
   };
 
-  const keyExtractor = (s, idx) => s.id || `stop-${idx}`;
+  // Draggable ve FlatList için GÜVENLİ index hesaplayıcı
+  const getSafeIndex = (params, item) => {
+    if (typeof params.index === 'number') return params.index;
+    if (typeof params.getIndex === 'function') {
+      const gi = params.getIndex();
+      if (typeof gi === 'number') return gi;
+    }
+    const fi = stops.findIndex((s) => s?.id && item?.id && s.id === item.id);
+    return fi >= 0 ? fi : 0;
+  };
 
   const renderItem = (params) => {
-    const { item, drag, isActive, index } = params;
+    const { item, drag, isActive } = params;
+    const i = getSafeIndex(params, item); // 👈 kritik
     return (
       <View>
-        <Row item={item} drag={drag} isActive={isActive} i={index} />
-        {/* Bitişin ALTINA insert bar koymuyoruz */}
-        {!isLast(index) && <InsertBar index={index + 1} />}
+        <Row item={item} drag={drag} isActive={isActive} i={i} />
+        {!isLast(i) && <InsertBar index={i + 1} />}
       </View>
     );
   };
 
+  const listRef = useRef(null);
+
   const ListBody = DraggableFlatList && USE_DRAGGABLE ? DraggableFlatList : FlatList;
 
-  const listProps =
-    DraggableFlatList && USE_DRAGGABLE
-      ? {
-          data: stops,
-          keyExtractor,
-          renderItem,
-          contentContainerStyle: styles.list,
-          activationDistance: Platform.select({ ios: 12, android: 4 }),
-          autoscrollThreshold: 40,
-          autoscrollSpeed: 50,
-          onDragEnd: ({ from: fi, to: ti }) => moveStop(fi, ti),
-          scrollEnabled: true,
-          keyboardShouldPersistTaps: 'handled',
-        }
-      : {
-          data: stops,
-          keyExtractor,
-          renderItem,
-          contentContainerStyle: styles.list,
-          scrollEnabled: true,
-          keyboardShouldPersistTaps: 'handled',
-        };
+  const commonListProps = {
+    data: stops,
+    keyExtractor: (s, idx) => (s && s.id) ? s.id : `stop-${idx}`,
+    renderItem,
+    contentContainerStyle: styles.list,
+    keyboardShouldPersistTaps: 'handled',
+  };
+
+  const draggableProps = DraggableFlatList && USE_DRAGGABLE ? {
+    activationDistance: Platform.select({ ios: 12, android: 4 }),
+    autoscrollThreshold: 40,
+    autoscrollSpeed: 50,
+    onDragBegin: (index) => dlog('onDragBegin', index),
+    // Sınırların dışına bırakmayı engelle: 1..len-2’ye klampla
+    onDragEnd: ({ from, to }) => {
+      dlog('onDragEnd', { from, to });
+      const min = 1;
+      const max = stops.length - 2;
+      const clamped = Math.max(min, Math.min(max, to));
+      moveStop(from, clamped);
+    },
+    // Görsel placeholder izleme (bilgi amaçlı)
+    onPlaceholderIndexChange: (pi) => {
+      const min = 1, max = stops.length - 2;
+      const inside = pi >= min && pi <= max;
+      dlog('onPlaceholderIndexChange', { pi, allowed: inside });
+    },
+    ref: listRef,
+    scrollEnabled: true,
+  } : {};
 
   return (
     <View style={styles.card}>
@@ -547,14 +616,25 @@ export default function RoutePlannerCard() {
       <Text style={styles.subtitle}>Duraklarını belirle ve rotanı oluştur</Text>
 
       <View style={styles.sheetDark}>
-        <ListBody {...listProps} />
+        <ListBody {...commonListProps} {...draggableProps} />
       </View>
 
       <TouchableOpacity style={styles.primaryBtn} onPress={createRoute}>
         <Text style={styles.primaryText}>Rota Oluştur</Text>
       </TouchableOpacity>
 
-      {/* 🔎 Durak seçme overlay’i – arama çubuğu yukarıda sabit */}
+      {/* Debug küçük özet */}
+      {DEBUG ? (
+        <View style={{ marginTop: 10 }}>
+          <Text style={{ color: '#9aa4b2', fontSize: 11 }}>
+            debug → from: {from?.coords ? 'ok' : 'null'}
+            {'  '}| to: {to?.coords ? 'ok' : (to?.name ? 'waiting-coords' : 'empty')}
+            {'  '}| wps: {waypoints.length}
+          </Text>
+        </View>
+      ) : null}
+
+      {/* 🔎 Durak seçme overlay’i */}
       <PlacePickerOverlay
         visible={pickerVisible}
         onClose={closePicker}
@@ -567,7 +647,6 @@ export default function RoutePlannerCard() {
 
 /* -------------------- styles -------------------- */
 const styles = StyleSheet.create({
-  // Kart kabuğu (dark)
   card: {
     backgroundColor: '#1A1C22',
     borderRadius: 16,
@@ -579,7 +658,6 @@ const styles = StyleSheet.create({
   title: { color: '#fff', fontSize: 18, fontWeight: '800' },
   subtitle: { color: '#A8A8B3', fontSize: 13, marginTop: 4, marginBottom: 10 },
 
-  // İç gövde (EditStopsOverlay hissi, dark varyant)
   sheetDark: {
     maxHeight: 360,
     backgroundColor: '#14161c',
@@ -653,11 +731,8 @@ const styles = StyleSheet.create({
   },
   primaryText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 
-  /* Overlay – tam ekran, üstte arama */
-  overlayFull: {
-    flex: 1,
-    backgroundColor: '#0f1117',
-  },
+  /* Overlay */
+  overlayFull: { flex: 1, backgroundColor: '#0f1117' },
   overlayTopBar: {
     paddingHorizontal: 14,
     paddingTop: 8,
@@ -681,13 +756,7 @@ const styles = StyleSheet.create({
   },
   overlayCloseTop: { color: '#9aa4b2', fontSize: 13, fontWeight: '700' },
 
-  loadingRowTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
+  loadingRowTop: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8 },
   loadingTxt: { color: '#c6cfdd', fontSize: 13 },
 
   historyTitle: { color: '#9aa4b2', fontSize: 12, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 8 },

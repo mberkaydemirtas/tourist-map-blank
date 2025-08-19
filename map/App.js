@@ -1,72 +1,124 @@
-// App.js
+// map/App.js
 import 'react-native-gesture-handler';
 import 'react-native-reanimated';
-import React from 'react';
-import { Platform, StatusBar, LogBox } from 'react-native';
+import React, { useEffect } from 'react';
+import { Platform, StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { PortalProvider, PortalHost } from '@gorhom/portal';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 // Ekranlar
 import HomePage from '../homePage/HomePage';
 import MapScreen from './MapScreen';
-import PlaceSearchOverlay from './components/PlaceSearchOverlay';
-import NavigationScreen from './screens/NavigationScreen';
+import TripsListScreen from '../trips/TripsListScreen';
+import TripEditorScreen from '../trips/TripEditorScreen';
+import CreateTripWizardScreen from '../trips/CreateTripWizardScreen';
 
-// Android debug network fix
-if (Platform.OS === 'android') {
-  global.XMLHttpRequest = global.originalXMLHttpRequest ?? global.XMLHttpRequest;
+// Veri sürücüsü (local-first)
+import { setTripsDriver } from '../trips/shared/tripsRepo';
+import createAsyncStorageDriver from '../trips/shared/localDrivers/asyncStorageDriver';
+
+const Tab = createBottomTabNavigator();
+const HomeStack = createNativeStackNavigator();
+const TripsStack = createNativeStackNavigator();
+
+function HomeNavigator() {
+  return (
+    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+      <HomeStack.Screen name="Home" component={HomePage} />
+      {/* HomePage içinde navigate('Map') dediğin için adı 'Map' */}
+      <HomeStack.Screen name="Map" component={MapScreen} />
+    </HomeStack.Navigator>
+  );
 }
 
-// Gürültülü logları sustur
-LogBox.ignoreLogs([
-  'Sending `onAnimatedValueUpdate` with no listeners registered',
-]);
+function TripsNavigator() {
+  return (
+    <TripsStack.Navigator screenOptions={{ headerTitleAlign: 'center' }}>
+      <TripsStack.Screen
+        name="TripsHome"
+        component={TripsListScreen}
+        options={{ title: 'Gezilerim' }}
+      />
+      <TripsStack.Screen
+        name="CreateTripWizard"
+        component={CreateTripWizardScreen}
+        options={{ title: 'Yeni Gezi' }}
+      />
+      <TripsStack.Screen
+        name="TripEditor"
+        component={TripEditorScreen}
+        options={{ title: 'Gezi Detayı' }}
+      />
+    </TripsStack.Navigator>
+  );
+}
 
-const Stack = createNativeStackNavigator();
-
-const theme = {
+// Koyu tema
+const navTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: '#0B0B0B',
+    background: '#101014',
+    card: '#0D0F14',
     text: '#FFFFFF',
+    border: '#23262F',
   },
 };
 
 export default function App() {
+  useEffect(() => {
+    setTripsDriver(createAsyncStorageDriver());
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <NavigationContainer theme={theme}>
-          <StatusBar barStyle="light-content" backgroundColor="#0B0B0B" />
-          <BottomSheetModalProvider>
-            <Stack.Navigator
-              initialRouteName="Home"
-              screenOptions={{
-                headerShown: false,
-                animation: 'fade',
-              }}
-            >
-              {/* Ana sayfa: mini harita + kartlar + Rota Planla */}
-              <Stack.Screen name="Home" component={HomePage} />
-
-              {/* Explore modu: tam ekran harita */}
-              <Stack.Screen
-                name="Map"
-                component={MapScreen}
-                initialParams={{ entryPoint: 'home-preview' }}
+      {/* ⤵️ BottomSheet provider mutlaka en üstte ve GestureHandler içinde olmalı */}
+      <BottomSheetModalProvider>
+        <SafeAreaProvider>
+          <PortalProvider>
+            <NavigationContainer theme={navTheme}>
+              <StatusBar
+                barStyle="light-content"
+                backgroundColor={Platform.OS === 'android' ? '#000' : undefined}
               />
 
-              <Stack.Screen name="PlaceSearchOverlay" component={PlaceSearchOverlay} />
-              <Stack.Screen name="NavigationScreen" component={NavigationScreen} />
-            </Stack.Navigator>
-          </BottomSheetModalProvider>
-        </NavigationContainer>
-      </SafeAreaProvider>
+              <Tab.Navigator
+                screenOptions={({ route }) => ({
+                  headerShown: false,
+                  tabBarStyle: {
+                    height: 56,
+                    backgroundColor: '#0D0F14',
+                    borderTopColor: '#23262F',
+                  },
+                  tabBarActiveTintColor: '#FFFFFF',
+                  tabBarInactiveTintColor: '#A8A8B3',
+                  tabBarLabelStyle: { fontSize: 12 },
+                  tabBarIcon: ({ color, size, focused }) => {
+                    let icon = 'compass-outline';
+                    if (route.name === 'Keşfet') icon = focused ? 'compass' : 'compass-outline';
+                    if (route.name === 'Gezilerim') icon = focused ? 'calendar' : 'calendar-outline';
+                    return <Ionicons name={icon} size={size} color={color} />;
+                  },
+                })}
+              >
+                {/* 1) Keşfet: Home + Map aynı stack içinde */}
+                <Tab.Screen name="Keşfet" component={HomeNavigator} />
+                {/* 2) Gezilerim: Liste + Wizard + Editor */}
+                <Tab.Screen name="Gezilerim" component={TripsNavigator} />
+              </Tab.Navigator>
+            </NavigationContainer>
+
+            {/* bottom sheets / modallar için portal hedefi */}
+            <PortalHost name="root-portal" />
+          </PortalProvider>
+        </SafeAreaProvider>
+      </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );
 }

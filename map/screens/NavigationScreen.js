@@ -373,7 +373,23 @@ const estimateSpeechMs = (text) => {
 // [lng,lat] -> { latitude, longitude } yardımcıları (RN Maps Polyline için)
 const toLatLng = ([lng, lat]) => ({ latitude: lat, longitude: lng });
 const toLatLngArr = (coords = []) => coords.map(toLatLng);
-
+// Polyline güvenliği: yalnızca sayısal noktaları geçir
+const useSafePolyline = (coords) => {
+  return useMemo(() => {
+    const arr = toLatLngArr(coords)
+      .filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude));
+    // ardışık aynı noktaları at → bazı sürümlerde çizim hatasını tetikler
+    const out = [];
+    for (let i = 0; i < arr.length; i++) {
+      const prev = out[out.length - 1];
+      const cur = arr[i];
+      if (!prev || prev.latitude !== cur.latitude || prev.longitude !== cur.longitude) {
+        out.push(cur);
+      }
+    }
+    return out;
+  }, [coords]);
+};
 const arrayMove = (arr, from, to) => {
   const a = [...arr];
   const item = a.splice(from, 1)[0];
@@ -386,6 +402,7 @@ const arrayMove = (arr, from, to) => {
 export default function NavigationScreen() {
   const route = useRoute();
   const navigation = useNavigation();
+  const [mapReady, setMapReady] = useState(false);
 
   // ---- Parametreler ----
   const {
@@ -486,7 +503,7 @@ export default function NavigationScreen() {
   }, [polyline, from, to]);
 
   const routeCoordinates = dynamicRouteCoords.length ? dynamicRouteCoords : baseRouteCoordinates;
-
+  const safePolylineCoords = useSafePolyline(routeCoordinates);
   const stablePoiList = useMemo(() => {
     const arr = Array.isArray(poiMarkers) ? poiMarkers : [];
     return arr
@@ -1203,12 +1220,15 @@ export default function NavigationScreen() {
       camHeadingRef.current = smoothH;
 
       try {
-        cameraRef.current.setCamera({
-          centerCoordinate: [longitude, latitude],
-          heading: smoothH,
-          pitch: camPitchRef.current,
-          animationDuration: CAMERA_ANIM_MS,
-        });
+        if (mapready) {
+          cameraRef.current?.setCamera({
+            centerCoordinate: [longitude, latitude],
+            heading: smoothH,
+            pitch: camPitchRef.current,
+            zoom: camZoomRef.current,
+            animationDuration: CAMERA_ANIM_MS,
+          });
+        }
       } catch {}
     }
 
@@ -1741,103 +1761,120 @@ export default function NavigationScreen() {
   );
 
   // UI
-  return (
-    <View style={styles.container}>
-      <MapView
-        ref={mapRef}
-        provider={PROVIDER_GOOGLE}
-        style={styles.map}
-        initialRegion={{
-          latitude: from?.latitude ?? 39.92,
-          longitude: from?.longitude ?? 32.85,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }}
-        showsUserLocation={!!locationPermission}
-        onUserLocationChange={(e) => {
-          const c = e?.nativeEvent?.coordinate;
-          if (c) onGPSUpdate({ coords: {
+return (
+  <View style={styles.container}>
+    <MapView
+      ref={mapRef}
+      provider={PROVIDER_GOOGLE}
+      style={styles.map}
+      renderToHardwareTextureAndroid
+      androidHardwareAccelerationDisabled={false}
+      onMapReady={() => setMapReady(true)}
+      initialRegion={{
+        latitude: from?.latitude ?? 39.92,
+        longitude: from?.longitude ?? 32.85,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      }}
+      showsUserLocation={!!locationPermission}
+      onUserLocationChange={(e) => {
+        const c = e?.nativeEvent?.coordinate;
+        if (c) onGPSUpdate({
+          coords: {
             latitude: c.latitude,
             longitude: c.longitude,
             heading: c.heading,
             speed: c.speed,
             accuracy: c.accuracy,
-          }});
-        }}
-        onPress={() => {
-          setIsMapTouched(true);
-          if (!followBackSuppressedRef.current) scheduleFollowBack();
-        }}
-        onPanDrag={() => {
-          setIsMapTouched(true);
-          setIsFollowing(false);
-          if (!followBackSuppressedRef.current) scheduleFollowBack();
-        }}
-        onRegionChangeComplete={(region) => {
-          setCameraCenter({ latitude: region.latitude, longitude: region.longitude });
-        }}
-      >
-        {/* Başlangıç */}
-        {from && (
-          <Marker coordinate={{ latitude: from.latitude, longitude: from.longitude }} />
-        )}
+          },
+        });
+      }}
+      onPress={() => {
+        setIsMapTouched(true);
+        if (!followBackSuppressedRef.current) scheduleFollowBack();
+      }}
+      onPanDrag={() => {
+        setIsMapTouched(true);
+        setIsFollowing(false);
+        if (!followBackSuppressedRef.current) scheduleFollowBack();
+      }}
+      onRegionChangeComplete={(region) => {
+        setCameraCenter({ latitude: region.latitude, longitude: region.longitude });
+      }}
+    >
+      {/* Başlangıç */}
+      {from && (
+        <Marker coordinate={{ latitude: from.latitude, longitude: from.longitude }} />
+      )}
 
-        {/* Varış */}
-        {to && (
-          <Marker coordinate={{ latitude: to.latitude, longitude: to.longitude }} />
-        )}
+      {/* Varış */}
+      {to && (
+        <Marker coordinate={{ latitude: to.latitude, longitude: to.longitude }} />
+      )}
 
-        {/* Aday durak */}
-        {candidateStop && Number.isFinite(candidateStop.lat) && Number.isFinite(candidateStop.lng) && (
-          <Marker coordinate={{ latitude: candidateStop.lat, longitude: candidateStop.lng }}>
-            <View style={styles.candidateDotOuter}>
-              <View style={styles.candidateDotInner} />
+      {/* Aday durak */}
+      {candidateStop && Number.isFinite(candidateStop.lat) && Number.isFinite(candidateStop.lng) && (
+        <Marker coordinate={{ latitude: candidateStop.lat, longitude: candidateStop.lng }}>
+          <View style={styles.candidateDotOuter}>
+            <View style={styles.candidateDotInner} />
+          </View>
+        </Marker>
+      )}
+
+      {/* Waypoints */}
+      {waypoints.map((w, idx) => (
+        <Marker
+          key={`wp_${idx}_${w.place_id || `${w.lat}_${w.lng}`}`}
+          coordinate={{ latitude: w.lat, longitude: w.lng }}
+        >
+          <View style={styles.wpDotOuter}>
+            <View style={styles.wpDotInner}>
+              <Text style={styles.wpNum}>{idx + 1}</Text>
             </View>
-          </Marker>
-        )}
+          </View>
+        </Marker>
+      ))}
 
-        {/* Waypoints */}
-        {waypoints.map((w, idx) => (
+      {/* POI’ler */}
+      {stablePoiList.map((p) => {
+        const lat = p?.geometry?.location?.lat, lng = p?.geometry?.location?.lng;
+        if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+        const id = p.__id;
+
+        return (
           <Marker
-            key={`wp_${idx}_${w.place_id || `${w.lat}_${w.lng}`}`}
-            coordinate={{ latitude: w.lat, longitude: w.lng }}
+            ref={(r) => setMarkerRef(id, r)}
+            key={`poi_${id}`}
+            coordinate={{ latitude: lat, longitude: lng }}
+            anchor={{ x: 0.5, y: 1 }}
+            calloutAnchor={{ x: 0.5, y: 0 }}
+            tracksViewChanges={false}
+            zIndex={9999}
+            onPress={(e) => {
+              e?.stopPropagation?.();
+              setSelectedId(id);
+              onPoiPress(p);
+            }}
+            onCalloutPress={() => handleAddStopFromPOI(p)}
           >
-            <View style={styles.wpDotOuter}>
-              <View style={styles.wpDotInner}>
-                <Text style={styles.wpNum}>{idx + 1}</Text>
-              </View>
+            <View key={`pin_${id}`} collapsable={false} style={styles.poiDotOuter}>
+              <Text style={styles.poiEmoji}>📍</Text>
             </View>
-          </Marker>
-        ))}
 
-        {/* POI’ler */}
-        {stablePoiList.map((p) => {
-          const lat = p?.geometry?.location?.lat, lng = p?.geometry?.location?.lng;
-          if (typeof lat !== 'number' || typeof lng !== 'number') return null;
-          const id = p.__id;
-
-          return (
-            <Marker
-              ref={(r) => setMarkerRef(id, r)}
-              key={`poi_${id}`}
-              coordinate={{ latitude: lat, longitude: lng }}
-              anchor={{ x: 0.5, y: 1 }}
-              calloutAnchor={{ x: 0.5, y: 0 }}
-              tracksViewChanges={false}
-              zIndex={9999}
-              onPress={(e) => {
-                e?.stopPropagation?.();
-                setSelectedId(id);
-                onPoiPress(p);
-              }}
-              onCalloutPress={() => handleAddStopFromPOI(p)}
-            >
-              <View key={`pin_${id}`} collapsable={false} style={styles.poiDotOuter}>
-                <Text style={styles.poiEmoji}>📍</Text>
-              </View>
-       <Callout key={`co_${id}`} tooltip={Platform.OS === 'ios'}>
-    <View style={[styles.calloutOuter, Platform.OS === 'android' && { maxWidth: 440, minWidth: 300 }]} collapsable={false}>
-      <View style={[styles.calloutCard, Platform.OS === 'android' && { maxWidth: 440, minWidth: 300 }]}>
+            <Callout key={`co_${id}`} tooltip={Platform.OS === 'ios'}>
+              <View
+                style={[
+                  styles.calloutOuter,
+                  Platform.OS === 'android' && { maxWidth: 440, minWidth: 300 },
+                ]}
+                collapsable={false}
+              >
+                <View
+                  style={[
+                    styles.calloutCard,
+                    Platform.OS === 'android' && { maxWidth: 440, minWidth: 300 },
+                  ]}
+                >
                   <Text style={styles.calloutTitle} numberOfLines={1}>
                     {p?.name || 'Seçilen yer'}
                   </Text>
@@ -1852,330 +1889,358 @@ export default function NavigationScreen() {
                     <Text style={styles.calloutCtaText}>Durak ekle</Text>
                   </TouchableOpacity>
                 </View>
+              </View>
+            </Callout>
+          </Marker>
+        );
+      })}
+
+      {/* Mavi aktif rota */}
+      {safePolylineCoords.length > 1 && (
+        <Polyline coordinates={safePolylineCoords} strokeWidth={6} strokeColor="#1E88E5" />
+      )}
+
+      {/* Gri alternatif rotalar */}
+      {altMode &&
+        !altFetching &&
+        !isAddingStop &&
+        altRoutes.map((r) => (
+          <Polyline
+            key={`alt_${r.id}`}
+            coordinates={toLatLngArr(r.coords)}
+            strokeWidth={4}
+            strokeColor="#777"
+            lineDashPattern={[6, 6]}
+            tappable
+            onPress={() => applyAlternative(r)}
+          />
+        ))}
+
+      {/* Alternatif rota etiketleri */}
+      {altMode &&
+        !altFetching &&
+        !isAddingStop &&
+        altRoutes.map((r) => {
+          const baselineSec = effSec;
+          const midIdx = Math.floor(r.coords.length / 2);
+          const mid = r.coords[midIdx] || r.coords[0];
+          const cmp = formatAltComparison(baselineSec, r.duration);
+          const label = cmp.text;
+          const tone = cmp.tone;
+          return (
+            <Marker key={`alt_label_${r.id}`} coordinate={{ latitude: mid[1], longitude: mid[0] }}>
+              <TouchableOpacity onPress={() => applyAlternative(r)} activeOpacity={0.8}>
+                <View style={[styles.altLabel, styles[`alt_${tone}`]]}>
+                  <Text style={[styles.altLabelText, styles[`altText_${tone}`]]}>{label}</Text>
                 </View>
-              </Callout>
+              </TouchableOpacity>
             </Marker>
           );
         })}
 
-        {/* Mavi aktif rota */}
-        {routeCoordinates.length > 0 && (
-          <Polyline coordinates={toLatLngArr(routeCoordinates)} strokeWidth={6} strokeColor="#1E88E5" />
-        )}
-
-        {/* Gri alternatif rotalar */}
-        {altMode &&
-          !altFetching &&
-          !isAddingStop &&
-          altRoutes.map((r) => (
-            <Polyline
-              key={`alt_${r.id}`}
-              coordinates={toLatLngArr(r.coords)}
-              strokeWidth={4}
-              strokeColor="#777"
-              lineDashPattern={[6, 6]}
-              tappable
-              onPress={() => applyAlternative(r)}
-            />
-          ))}
-
-        {/* Alternatif rota etiketleri */}
-        {altMode &&
-          !altFetching &&
-          !isAddingStop &&
-          altRoutes.map((r) => {
-            const baselineSec = effSec;
-            const midIdx = Math.floor(r.coords.length / 2);
-            const mid = r.coords[midIdx] || r.coords[0];
-            const cmp = formatAltComparison(baselineSec, r.duration);
-            const label = cmp.text;
-            const tone = cmp.tone;
-            return (
-              <Marker key={`alt_label_${r.id}`} coordinate={{ latitude: mid[1], longitude: mid[0] }}>
-                <TouchableOpacity onPress={() => applyAlternative(r)} activeOpacity={0.8}>
-                  <View style={[styles.altLabel, styles[`alt_${tone}`]]}>
-                    <Text style={[styles.altLabelText, styles[`altText_${tone}`]]}>{label}</Text>
-                  </View>
-                </TouchableOpacity>
-              </Marker>
-            );
-          })}
-
-        {/* Simülasyon kullanıcı noktası */}
-        {simActive && simCoord && (
-          <Marker coordinate={{ latitude: simCoord.lat, longitude: simCoord.lng }}>
-            <View style={styles.simUserDotOuter}>
-              <View style={styles.simUserDotInner} />
-            </View>
-          </Marker>
-        )}
-
-        {/* Snap-to-route hayalet */}
-        {snapCoord && isFollowing && (
-          <Marker coordinate={{ latitude: snapCoord.lat, longitude: snapCoord.lng }}>
-            <View style={styles.snapDot} />
-          </Marker>
-        )}
-      </MapView>
-
-      {isRerouting && (
-        <View style={styles.rerouteBadge}>
-          <Text style={styles.rerouteText}>Rota güncelleniyor…</Text>
-        </View>
+      {/* Simülasyon kullanıcı noktası */}
+      {simActive && simCoord && (
+        <Marker coordinate={{ latitude: simCoord.lat, longitude: simCoord.lng }}>
+          <View style={styles.simUserDotOuter}>
+            <View style={styles.simUserDotInner} />
+          </View>
+        </Marker>
       )}
 
-      {/* Harita üstü kontroller */}
-      <View style={styles.topControls}>
-        <TouchableOpacity
-          style={[
-            styles.topBtn,
-            altMode && !isAddingStop && styles.topBtnActive,
-            isAddingStop && styles.topBtnDisabled,
-          ]}
-          onPress={toggleAlternatives}
-          disabled={isAddingStop}
-        >
-          <Text style={styles.topBtnIcon}>
-            {waypoints.length > 0 ? '⛔' : altMode ? (altFetching ? '⏳' : '✖️') : '🛣️'}
-          </Text>
-        </TouchableOpacity>
+      {/* Snap-to-route hayalet */}
+      {snapCoord && isFollowing && (
+        <Marker coordinate={{ latitude: snapCoord.lat, longitude: snapCoord.lng }}>
+          <View style={styles.snapDot} />
+        </Marker>
+      )}
+    </MapView>
 
-        <TouchableOpacity
-          style={styles.actionBtn}
-          onPress={() => {
-            Speech.stop();
-            setMuted((m) => !m);
-          }}
-        >
-          <Text style={styles.actionIcon}>{muted ? '🔇' : '🔊'}</Text>
-        </TouchableOpacity>
+    {isRerouting && (
+      <View style={styles.rerouteBadge}>
+        <Text style={styles.rerouteText}>Rota güncelleniyor…</Text>
       </View>
+    )}
 
-      {/* Üst banner */}
+    {/* Harita üstü kontroller */}
+    <View style={styles.topControls} pointerEvents="box-none">
       <TouchableOpacity
-        activeOpacity={0.8}
-        style={styles.banner}
-        onPress={() => speak(steps?.[currentStepIndex] ? formatInstructionRelativeTR(heading, steps[currentStepIndex]) : 'Navigasyon')}
+        style={[
+          styles.topBtn,
+          altMode && !isAddingStop && styles.topBtnActive,
+          isAddingStop && styles.topBtnDisabled,
+        ]}
+        onPress={toggleAlternatives}
+        disabled={isAddingStop}
       >
-        <View style={styles.bannerStack}>
-          <LaneGuidanceBar step={steps?.[currentStepIndex]} iconsOnly style={{ marginBottom: 6 }} />
-          <Text style={styles.bannerTitle}>
-            {formatInstructionRelativeTR(heading, steps?.[currentStepIndex])}
-            {distanceToManeuver != null ? ` • ${metersFmt(distanceToManeuver)}` : ''}
-          </Text>
-        </View>
-
-        {!!steps?.[currentStepIndex + 1] && (
-          <NextManeuverChip
-            step={steps[currentStepIndex + 1]}
-            distance={getStepDistanceValue(steps[currentStepIndex + 1])}
-          />
-        )}
+        <Text style={styles.topBtnIcon}>
+          {waypoints.length > 0 ? '⛔' : altMode ? (altFetching ? '⏳' : '✖️') : '🛣️'}
+        </Text>
       </TouchableOpacity>
 
-      {distKm && durMin && (
-        <View style={styles.infoBar}>
-          <Text style={styles.infoText}>
-            {durMin} dk • {distKm} km
-          </Text>
-        </View>
-      )}
+      <TouchableOpacity
+        style={styles.actionBtn}
+        onPress={() => {
+          Speech.stop();
+          setMuted((m) => !m);
+        }}
+      >
+        <Text style={styles.actionIcon}>{muted ? '🔇' : '🔊'}</Text>
+      </TouchableOpacity>
+    </View>
 
-      {/* Tek buton: Durak ekle */}
-      <AddStopButton onPress={() => setAddStopOpen(true)} />
-
-      {/* Alt çubuk */}
-      <View style={styles.bottomBar}>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
-        </View>
-
-        <View style={styles.bottomRow}>
-          <View style={styles.bottomInfo}>
-            <Text style={styles.etaTitle}>Varış: {etaStr}</Text>
-            <Text style={styles.etaSub}>
-              {remainDistStr} • {remainDurStr}
-              {waypoints.length ? ` • ${waypoints.length} durak` : ''}
-            </Text>
-          </View>
-
-          <View style={styles.bottomActions}>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => setSimActive((v) => !v)}>
-              <Text style={styles.actionIcon}>{simActive ? '⏸️' : '▶️'}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionBtn}
-              onPress={() => setSimSpeedKmh((s) => (s <= 10 ? 30 : s <= 30 ? 60 : 10))}
-            >
-              <Text style={styles.actionIcon}>
-                {simActive ? (simSpeedKmh <= 10 ? '🐢' : simSpeedKmh <= 30 ? '🚗' : '🏎️') : '🏁'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionBtn, styles.exitBtn]}
-              onPress={() => {
-                Speech.stop();
-                if (simTimerRef.current) clearInterval(simTimerRef.current);
-                setSimActive(false);
-                setSimCoord(null);
-                navigation.goBack();
-              }}
-            >
-              <Text style={styles.exitIcon}>✕</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+    {/* Üst banner */}
+    <TouchableOpacity
+      activeOpacity={0.8}
+      style={styles.banner}
+      onPress={() =>
+        speak(
+          steps?.[currentStepIndex]
+            ? formatInstructionRelativeTR(heading, steps[currentStepIndex])
+            : 'Navigasyon'
+        )
+      }
+    >
+      <View style={styles.bannerStack}>
+        <LaneGuidanceBar step={steps?.[currentStepIndex]} iconsOnly style={{ marginBottom: 6 }} />
+        <Text style={styles.bannerTitle}>
+          {formatInstructionRelativeTR(heading, steps?.[currentStepIndex])}
+          {distanceToManeuver != null ? ` • ${metersFmt(distanceToManeuver)}` : ''}
+        </Text>
       </View>
 
-      {/* Haritayı hizala butonu */}
-      {isMapTouched && (
-        <TouchableOpacity style={styles.alignButton} onPress={goFollowNow}>
-          <Text style={styles.alignText}>📍 Hizala</Text>
-        </TouchableOpacity>
+      {!!steps?.[currentStepIndex + 1] && (
+        <NextManeuverChip
+          step={steps[currentStepIndex + 1]}
+          distance={getStepDistanceValue(steps[currentStepIndex + 1])}
+        />
       )}
+    </TouchableOpacity>
 
-      {/* “Durakları düzenle” kısayolu */}
-      {waypoints.length > 0 && !addStopOpen && !poiActive.type && !poiActive.query && (
-        <TouchableOpacity
-          style={[styles.actionBtn, { position:'absolute', right:16, bottom: 200 }]}
-          onPress={() => {
-            const fromStop = { lat: from.latitude, lng: from.longitude, name: 'Başlangıç' };
-            const toStop   = { lat: to.latitude,   lng: to.longitude,   name: 'Bitiş' };
-            setDraftStops([fromStop, ...waypoints, toStop]);
-            setEditStopsOpen(true);
-          }}
-          activeOpacity={0.9}
-        >
-          <Text style={styles.actionIcon}> Durakları düzenle</Text>
-        </TouchableOpacity>
-      )}
+    {distKm && durMin && (
+      <View style={styles.infoBar}>
+        <Text style={styles.infoText}>
+          {durMin} dk • {distKm} km
+        </Text>
+      </View>
+    )}
 
-      {/* “Ekleme” modu iptal */}
-      {isAddingStop && (
-        <TouchableOpacity
-          style={styles.cancelAddBtn}
-          onPress={() => {
-            setAddStopOpen(false);
-            setSelectedId(null);
-            setCandidateStop(null);
-            clearPoi();
-            setInsertIndex(null);
-            insertIndexRef.current = null;
-            pendingInsertRef.current = null;
-            replaceModeRef.current = false;
-            if (Platform.OS === 'ios') {
-              markerRefs.current.forEach(ref => ref?.hideCallout?.());
-            }
-          }}
-          activeOpacity={0.9}
-        >
-          <Text style={styles.cancelAddText}>Durak İptali</Text>
-        </TouchableOpacity>
-      )}
+    {/* Tek buton: Durak ekle */}
+    <AddStopButton onPress={() => setAddStopOpen(true)} />
 
-      {/* Durak Ekle Overlay */}
-      <AddStopOverlay
-        visible={addStopOpen}
-        onClose={() => {
+    {/* Alt çubuk */}
+    <View style={styles.bottomBar} pointerEvents="box-none">
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
+      </View>
+
+      <View style={styles.bottomRow}>
+        <View style={styles.bottomInfo}>
+          <Text style={styles.etaTitle}>Varış: {etaStr}</Text>
+          <Text style={styles.etaSub}>
+            {remainDistStr} • {remainDurStr}
+            {waypoints.length ? ` • ${waypoints.length} durak` : ''}
+          </Text>
+        </View>
+
+        <View style={styles.bottomActions}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => setSimActive((v) => !v)}>
+            <Text style={styles.actionIcon}>{simActive ? '⏸️' : '▶️'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => setSimSpeedKmh((s) => (s <= 10 ? 30 : s <= 30 ? 60 : 10))}
+          >
+            <Text style={styles.actionIcon}>
+              {simActive ? (simSpeedKmh <= 10 ? '🐢' : simSpeedKmh <= 30 ? '🚗' : '🏎️') : '🏁'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.exitBtn]}
+            onPress={() => {
+              Speech.stop();
+              if (simTimerRef.current) clearInterval(simTimerRef.current);
+              setSimActive(false);
+              setSimCoord(null);
+              navigation.goBack();
+            }}
+          >
+            <Text style={styles.exitIcon}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+
+    {/* Haritayı hizala butonu */}
+    {isMapTouched && (
+      <TouchableOpacity style={styles.alignButton} onPress={goFollowNow}>
+        <Text style={styles.alignText}>📍 Hizala</Text>
+      </TouchableOpacity>
+    )}
+
+    {/* “Durakları düzenle” kısayolu */}
+    {waypoints.length > 0 && !addStopOpen && !poiActive.type && !poiActive.query && (
+      <TouchableOpacity
+        style={[styles.actionBtn, { position: 'absolute', right: 16, bottom: 200 }]}
+        onPress={() => {
+          const fromStop = { lat: from.latitude, lng: from.longitude, name: 'Başlangıç' };
+          const toStop = { lat: to.latitude, lng: to.longitude, name: 'Bitiş' };
+          setDraftStops([fromStop, ...waypoints, toStop]);
+          setEditStopsOpen(true);
+        }}
+        activeOpacity={0.9}
+      >
+        <Text style={styles.actionIcon}> Durakları düzenle</Text>
+      </TouchableOpacity>
+    )}
+
+    {/* “Ekleme” modu iptal */}
+    {isAddingStop && (
+      <TouchableOpacity
+        style={styles.cancelAddBtn}
+        onPress={() => {
           setAddStopOpen(false);
-          clearPoi();
+          setSelectedId(null);
           setCandidateStop(null);
-        }}
-        onCategorySelect={(type) => {
-          if (!type) return clearPoi();
-          handleNavCategorySelect(type);
-        }}
-        onQuerySubmit={handleQuerySubmit}
-        onPickStop={handlePickStop}
-        onAddStop={handleAddStopFromPOI}
-        routeBounds={poiActive?.type ? (() => {
-          const coords = routeCoordinates;
-          if (!coords || coords.length < 2) return null;
-          let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
-          for (const [lng, lat] of coords) {
-            if (lat < minLat) minLat = lat;
-            if (lat > maxLat) maxLat = lat;
-            if (lng < minLng) minLng = lng;
-            if (lng > maxLng) maxLng = lng;
-          }
-          const pad = 0.02;
-          return { sw: { lat: minLat - pad, lng: minLng - pad }, ne: { lat: maxLat + pad, lng: maxLng + pad } };
-        })() : null}
-      />
-
-      {/* Durakları düzenle */}
-      <EditStopsOverlay
-        visible={editStopsOpen}
-        stops={draftStops}
-        onClose={() => { setEditStopsOpen(false); setDraftStops([]); setInsertIndex(null); }}
-        onConfirm={() => {
-          if (!draftStops || draftStops.length < 2) return;
-          const newFrom = draftStops[0];
-          const newTo   = draftStops[draftStops.length - 1];
-          const newWps  = draftStops.slice(1, -1);
-
-          setFrom({ latitude: newFrom.lat, longitude: newFrom.lng });
-          setTo({ latitude: newTo.lat,   longitude: newTo.lng });
-          setWaypoints(newWps);
-
-          setEditStopsOpen(false);
+          clearPoi();
           setInsertIndex(null);
-
-          recalcRoute({
-            keepSpeak: false,
-            waypointsOverride: newWps,
-            originLat: newFrom.lat,
-            originLng: newFrom.lng,
-          });
+          insertIndexRef.current = null;
+          pendingInsertRef.current = null;
+          replaceModeRef.current = false;
+          if (Platform.OS === 'ios') {
+            markerRefs.current.forEach((ref) => ref?.hideCallout?.());
+          }
         }}
-        onDragEnd={(fromIdx, toIdx) => setDraftStops(prev => {
+        activeOpacity={0.9}
+      >
+        <Text style={styles.cancelAddText}>Durak İptali</Text>
+      </TouchableOpacity>
+    )}
+
+    {/* Durak Ekle Overlay */}
+    <AddStopOverlay
+      visible={addStopOpen}
+      onClose={() => {
+        setAddStopOpen(false);
+        clearPoi();
+        setCandidateStop(null);
+      }}
+      onCategorySelect={(type) => {
+        if (!type) return clearPoi();
+        handleNavCategorySelect(type);
+      }}
+      onQuerySubmit={handleQuerySubmit}
+      onPickStop={handlePickStop}
+      onAddStop={handleAddStopFromPOI}
+      routeBounds={
+        poiActive?.type
+          ? (() => {
+              const coords = routeCoordinates;
+              if (!coords || coords.length < 2) return null;
+              let minLat = 90,
+                maxLat = -90,
+                minLng = 180,
+                maxLng = -180;
+              for (const [lng, lat] of coords) {
+                if (lat < minLat) minLat = lat;
+                if (lat > maxLat) maxLat = lat;
+                if (lng < minLng) minLng = lng;
+                if (lng > maxLng) maxLng = lng;
+              }
+              const pad = 0.02;
+              return {
+                sw: { lat: minLat - pad, lng: minLng - pad },
+                ne: { lat: maxLat + pad, lng: maxLng + pad },
+              };
+            })()
+          : null
+      }
+    />
+
+    {/* Durakları düzenle */}
+    <EditStopsOverlay
+      visible={editStopsOpen}
+      stops={draftStops}
+      onClose={() => {
+        setEditStopsOpen(false);
+        setDraftStops([]);
+        setInsertIndex(null);
+      }}
+      onConfirm={() => {
+        if (!draftStops || draftStops.length < 2) return;
+        const newFrom = draftStops[0];
+        const newTo = draftStops[draftStops.length - 1];
+        const newWps = draftStops.slice(1, -1);
+
+        setFrom({ latitude: newFrom.lat, longitude: newFrom.lng });
+        setTo({ latitude: newTo.lat, longitude: newTo.lng });
+        setWaypoints(newWps);
+
+        setEditStopsOpen(false);
+        setInsertIndex(null);
+
+        recalcRoute({
+          keepSpeak: false,
+          waypointsOverride: newWps,
+          originLat: newFrom.lat,
+          originLng: newFrom.lng,
+        });
+      }}
+      onDragEnd={(fromIdx, toIdx) =>
+        setDraftStops((prev) => {
           if (fromIdx === toIdx) return prev;
           const next = [...prev];
           const [it] = next.splice(fromIdx, 1);
           next.splice(toIdx, 0, it);
           return next;
-        })}
-        onDelete={(i) => setDraftStops(prev => prev.filter((_, idx) => idx !== i))}
-        onInsertAt={(i) => {
-          if (!Number.isFinite(i)) return;
-          insertIndexRef.current   = i;
-          pendingInsertRef.current = i;
-          pendingOpRef.current     = { type: 'insert', index: i };
-          replaceModeRef.current   = false;
+        })
+      }
+      onDelete={(i) => setDraftStops((prev) => prev.filter((_, idx) => idx !== i))}
+      onInsertAt={(i) => {
+        if (!Number.isFinite(i)) return;
+        insertIndexRef.current = i;
+        pendingInsertRef.current = i;
+        pendingOpRef.current = { type: 'insert', index: i };
+        replaceModeRef.current = false;
 
-          setInsertIndex(i);
-          setAddStopOpen(true);
-          setEditStopsOpen(false);
-        }}
-        onReplaceAt={(i) => {
-          if (!Number.isFinite(i)) return;
-          insertIndexRef.current   = i;
-          pendingInsertRef.current = i;
-          pendingOpRef.current     = { type: 'replace', index: i };
-          replaceModeRef.current   = true;
+        setInsertIndex(i);
+        setAddStopOpen(true);
+        setEditStopsOpen(false);
+      }}
+      onReplaceAt={(i) => {
+        if (!Number.isFinite(i)) return;
+        insertIndexRef.current = i;
+        pendingInsertRef.current = i;
+        pendingOpRef.current = { type: 'replace', index: i };
+        replaceModeRef.current = true;
 
-          setInsertIndex(i);
-          setAddStopOpen(true);
-          setEditStopsOpen(false);
-        }}
-      />
+        setInsertIndex(i);
+        setAddStopOpen(true);
+        setEditStopsOpen(false);
+      }}
+    />
 
-      <StepInstructionsModal visible={showSteps} steps={steps} onClose={() => setShowSteps(false)} />
-    </View>
-  );
-}
+    <StepInstructionsModal visible={showSteps} steps={steps} onClose={() => setShowSteps(false)} />
+  </View>
+);
+};
 
 /* --------------------------------- Styles --------------------------------- */
-
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff', // siyah ekranı maskeleyen güvenli zemin
+  },
+  map: {
+    ...StyleSheet.absoluteFillObject, // flex:1 yerine
+  },
+
   calloutOuter: {
     shadowOpacity: 0.12, shadowRadius: 8, shadowOffset:{width:0,height:4},
     elevation: 4,
   },
   infoText: { color: '#fff', fontWeight: '700' },
-  map: { flex: 1 },
   poiDotOuter: {
     backgroundColor: 'white',
     borderRadius: 12,
@@ -2186,7 +2251,7 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
   },
   poiEmoji: { fontSize: 16 },
-calloutCard: {
+  calloutCard: {
     minWidth: 280,
     maxWidth: 440,
     backgroundColor: '#fff',
@@ -2195,18 +2260,19 @@ calloutCard: {
     paddingHorizontal: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#ddd',
-   },
+  },
   calloutTitle: { fontSize: 16, fontWeight: '700', color: '#111' },
   calloutSub: { marginTop: 6, fontSize: 13, color: '#555' },
   calloutCta: {
     marginTop: 10,
-     alignSelf: 'flex-start',
-     backgroundColor: '#E6F4EA',
-     paddingVertical: 6,
-     paddingHorizontal: 10,
-     borderRadius: 10,
-   },
+    alignSelf: 'flex-start',
+    backgroundColor: '#E6F4EA',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+  },
   calloutCtaText: { fontSize: 13, fontWeight: '700', color: '#111' },
+
   banner: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 50 : 20,
