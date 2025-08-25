@@ -69,6 +69,7 @@ export function useMapLogic(mapRef) {
     // optimize:true ise waypoint_order gelebilir -> sadece ara durakları sırala
     if (first?.waypointOrder?.length === waypoints.length) {
       setWaypoints(first.waypointOrder.map(i => waypoints[i]));
+      
     }
 
     const decoded = first?.decodedCoords?.map(p => ({ latitude: p.latitude, longitude: p.longitude })) || [];
@@ -671,14 +672,6 @@ useEffect(() => {
     setRouteInfo(null);
   }
 }, [selectedMode, routeOptions, makeRouteInfo]);
-
-
-  useEffect(() => {
-    if (fromLocation?.coords && toLocation?.coords) {
-      // Yeni rota akışında ilk seçim zaten handleSelectTo içinde driving’e çekildi.
-      fetchAllRoutes(fromLocation.coords, toLocation.coords);
-    }
-  }, [fromLocation, toLocation]);
 
   return {
     fetchAndSetMarker,

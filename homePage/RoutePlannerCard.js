@@ -53,6 +53,71 @@ const toLatLng = (any) => {
   return null;
 };
 
+// eksik koordinatları çözen yardımcılar
+const ensureLatLngFromDetails = async (item) => {
+  if (!item) return item;
+  const hasCoords =
+    item.coords && typeof item.coords.latitude === 'number' && typeof item.coords.longitude === 'number';
+  if (hasCoords) return item;
+
+  if (!item.place_id) return item; // çözebileceğimiz bir şey yok
+  try {
+    const det = await getPlaceDetails(item.place_id);
+    const coordsResolved = toLatLng(det?.coords || det?.location || det?.geometry?.location);
+    return {
+      ...item,
+      coords: coordsResolved || null,
+      name: item.name || det?.name || null,
+      address: item.address || det?.formatted_address || det?.vicinity || null,
+      rating: item.rating ?? det?.rating ?? null,
+      user_ratings_total: item.user_ratings_total ?? det?.user_ratings_total ?? null,
+    };
+  } catch {
+    return item;
+  }
+};
+
+const resolveAllStops = async ({ from, waypoints, to }) => {
+  const toResolve = [
+    ensureLatLngFromDetails(from),
+    ...waypoints.map(w => ensureLatLngFromDetails(w)),
+    ensureLatLngFromDetails(to),
+  ];
+  const [fromR, ...rest] = await Promise.all(toResolve);
+  const toR = rest.pop();
+  const wpsR = rest;
+  return { fromR, wpsR, toR };
+};
+
+// küçük geo yardımcıları (MapScreen ile uyumlu)
+const meters = (a, b) => {
+  const toRad = (v) => (v * Math.PI) / 180;
+  const R = 6371e3;
+  const dφ = toRad(b.latitude - a.latitude);
+  const dλ = toRad(b.longitude - a.longitude);
+  const φ1 = toRad(a.latitude), φ2 = toRad(b.latitude);
+  const s = Math.sin(dφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(dλ / 2) ** 2;
+  return 2 * R * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+};
+const nearlySameLL = (a, b, tolM = 5) => {
+  if (!a || !b) return false;
+  try { return meters(a, b) <= tolM; } catch { return false; }
+};
+
+// from/to ile aynı olan veya kendi aralarında çok yakın olan wps’leri at
+const dedupWaypointsForRequest = (wps, fromLL, toLL) => {
+  const out = [];
+  for (const w of wps) {
+    const ll = toLatLng(w);
+    if (!ll) continue;
+    if (fromLL && nearlySameLL(ll, fromLL)) continue;
+    if (toLL && nearlySameLL(ll, toLL)) continue;
+    if (out.some(prev => nearlySameLL(prev, ll))) continue;
+    out.push({ ...w, latitude: ll.latitude, longitude: ll.longitude });
+  }
+  return out;
+};
+
 const makeStop = (patch = {}) => ({
   id: String(Math.random()),
   name: null,
@@ -440,37 +505,66 @@ export default function RoutePlannerCard() {
     });
   };
 
-  const createRoute = () => {
+  const createRoute = async () => {
     dlog('createRoute click', {
       fromHas: !!from.coords,
       toHas: !!to?.coords,
       wps: waypoints.map((w, i) => ({ i, has: !!w?.coords, name: w?.name })),
     });
 
-    if (!from.coords || !to?.coords) {
+    if (!from.coords || !(to?.coords || to?.place_id)) {
       console.warn('Lütfen başlangıç (otomatik) ve bitiş seçin.');
       return;
     }
-    const cleanWps = waypoints
-      .filter((w) => w?.coords)
-      .map((w) => ({
+
+    // ⤵️ Tüm eksik koordinatları senkron çöz
+    const { fromR, wpsR, toR } = await resolveAllStops({
+      from,
+      waypoints,
+      to,
+    });
+
+    if (!fromR?.coords || !toR?.coords) {
+      console.warn('Konum ayrıntıları alınamadı. Lütfen tekrar deneyin.');
+      return;
+    }
+
+    // ham wps → {lat,lng,name,place_id,address}
+    const rawWps = wpsR
+      .filter(w => w && w.coords)
+      .map(w => ({
         lat: w.coords.latitude,
         lng: w.coords.longitude,
         name: w.name,
-        place_id: w.place_id,
+        place_id: w.place_id || null,
         address: w.address,
       }));
 
-   navigation.navigate('Map', {
-     entryPoint: 'route-planner',
-     routeRequest: {
-       from: { lat: from.coords.latitude, lng: from.coords.longitude },
-       to:   { lat: to.coords.latitude,   lng: to.coords.longitude },
-       waypoints: cleanWps,
-       mode: 'driving',
-       autoDraw: true,
-     }
-   });
+    // from/to ile çakışan ya da birbirine çok yakın waypoint’leri at
+    const fromLL = { latitude: fromR.coords.latitude, longitude: fromR.coords.longitude };
+    const toLL   = { latitude: toR.coords.latitude,   longitude: toR.coords.longitude   };
+    const cleanWps = dedupWaypointsForRequest(
+      rawWps.map(w => ({ latitude: w.lat, longitude: w.lng, place_id: w.place_id, name: w.name, address: w.address })),
+      fromLL,
+      toLL
+    ).map(w => ({ lat: w.latitude, lng: w.longitude, place_id: w.place_id || null, name: w.name, address: w.address }));
+
+    dlog('createRoute → resolved', {
+      from: fromR.coords,
+      to: toR.coords,
+      wpCount: cleanWps.length,
+    });
+
+    navigation.navigate('Map', {
+      entryPoint: 'route-planner',
+      routeRequest: {
+        from: { lat: fromR.coords.latitude, lng: fromR.coords.longitude, place_id: fromR.place_id || null, name: fromR.name || 'Başlangıç' },
+        to:   { lat: toR.coords.latitude,   lng: toR.coords.longitude,   place_id: toR.place_id   || null, name: toR.name   || 'Bitiş' },
+        waypoints: cleanWps,
+        mode: 'driving',
+        autoDraw: true,
+      },
+    });
   };
 
   /* --------- debug watchers --------- */

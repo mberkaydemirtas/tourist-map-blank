@@ -108,41 +108,52 @@ const nearlySame = (a, b, m = 5) => {
   if (!a || !b) return false;
   try { return meters(a, b) <= m; } catch { return false; }
 };
-const dedupWaypoints = (wps, fromLL, toLL) => {
+const dedupWaypoints = (wps, fromLL, toLL_) => {
   const out = [];
   for (const w of wps) {
     const llOnly = toStrictLL(w);
     if (!llOnly) continue;
-    // place_id'yi KORU (veya id)
     const ll = { ...llOnly, place_id: w.place_id ?? w.id ?? null };
     if (fromLL && nearlySame(ll, fromLL)) continue;
-    if (toLL && nearlySame(ll, toLL)) continue;
+    if (toLL_ && nearlySame(ll, toLL_)) continue;
     if (out.some(prev => nearlySame(prev, ll))) continue;
     out.push(ll);
   }
   return out;
 };
 
-/* ------------ WAYPOINT KAPSAMA KONTROLÜ (yaklaşık) + SEGMENT FALLBACK ------------ */
-// decoded polyline içindeki herhangi bir nokta waypoint'e yeterince yakın mı? (derece toleransı)
-const approxRouteCoversWaypoints = (decodedCoords, wpsLL, tolDeg = 0.0015 /* ~150-170m */) => {
+/* ------------ WAYPOINT KAPSAMA KONTROLÜ + SEGMENT FALLBACK ------------ */
+const approxRouteCoversWaypoints = (decodedCoords, wpsLL, tolMeters = 120) => {
   if (!Array.isArray(decodedCoords) || decodedCoords.length === 0) return false;
-  const toDegDiff = (a, b) => Math.sqrt(
-    Math.pow((a.latitude ?? a.lat) - b.lat, 2) +
-    Math.pow((a.longitude ?? a.lng) - b.lng, 2)
-  );
-  for (const w of wpsLL) {
-    let ok = false;
-    for (let i = 0; i < decodedCoords.length; i++) {
-      const d = toDegDiff(decodedCoords[i], w);
-      if (d <= tolDeg) { ok = true; break; }
+
+  const pts = decodedCoords
+    .map(p => {
+      const lat = p.latitude ?? p.lat;
+      const lng = p.longitude ?? p.lng;
+      return (Number.isFinite(lat) && Number.isFinite(lng)) ? { lat, lng } : null;
+    })
+    .filter(Boolean);
+
+  const nearestIdx = (w) => {
+    let bestI = -1, bestD = Infinity;
+    for (let i = 0; i < pts.length; i++) {
+      try {
+        const d = meters(pts[i], w);
+        if (d < bestD) { bestD = d; bestI = i; }
+      } catch {}
     }
-    if (!ok) return false;
+    return { i: bestI, d: bestD };
+  };
+
+  const hits = wpsLL.map(nearestIdx);
+  const covers = hits.every(h => Number.isFinite(h.d) && h.d <= tolMeters);
+  if (!covers) return false;
+  for (let k = 1; k < hits.length; k++) {
+    if (!(hits[k - 1].i < hits[k].i)) return false;
   }
   return true;
 };
 
-// Segment segment rota hesaplayıp tek polyline'a birleştirir
 const stitchSegments = (segments) => {
   const all = [];
   for (let i = 0; i < segments.length; i++) {
@@ -154,7 +165,7 @@ const stitchSegments = (segments) => {
         Math.abs((first.latitude ?? first.lat) - (last.latitude ?? last.lat)) < 1e-6 &&
         Math.abs((first.longitude ?? first.lng) - (last.longitude ?? last.lng)) < 1e-6
       ) {
-        part.shift(); // eklemeden önce eklemlenme noktasındaki duplicate'i at
+        part.shift();
       }
     }
     all.push(...part);
@@ -162,16 +173,44 @@ const stitchSegments = (segments) => {
   return all;
 };
 
+/* --- Request key helpers --- */
+const recHashNum = (v) => (Number.isFinite(v) ? v.toFixed(6) : 'x');
+const recHashPoint = (p) =>
+  p ? `${recHashNum(p.lat ?? p.latitude)},${recHashNum(p.lng ?? p.longitude)}` : 'x,x';
+const makeRequestKey = (mode, fromLL, toLL_, wpsArr) => {
+  const wpsSig = (Array.isArray(wpsArr) ? wpsArr : [])
+    .map(w => `${recHashPoint(w)}#${w.place_id || ''}`)
+    .join('|');
+  return `m:${mode}|f:${recHashPoint(fromLL)}|t:${recHashPoint(toLL_)}|w:${wpsSig}`;
+};
+
 export default function MapScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
+  const picker = route.params?.picker?.enabled ? route.params.picker : null; // { enabled, which: 'start'|'end'|'lodging', cityKey, sheetInitial? }
   const mapRef = useRef(null);
   const map = useMapLogic(mapRef);
   const { coords, available, refreshLocation } = useLocation();
-  const route = useRoute();
+  const routeCalcSeqRef = useRef(0);
+  const routeActiveKeyRef = useRef(null);
 
   // sheets
   const sheetRef = useRef(null);
   const sheetRefRoute = useRef(null);
+
+  const presentRouteSheet = useCallback(() => {
+    const r = sheetRefRoute.current;
+    if (!r) return;
+    r.present?.();
+    r.expand?.();
+    r.snapToIndex?.(0);
+  }, []);
+  const dismissRouteSheet = useCallback(() => {
+    const r = sheetRefRoute.current;
+    if (!r) return;
+    r.dismiss?.();
+    r.close?.();
+  }, []);
 
   // UI
   const [mode, setMode] = useState('explore'); // 'explore' | 'route'
@@ -195,8 +234,6 @@ export default function MapScreen() {
   const [addStopOpen, setAddStopOpen] = useState(false);
   const [editStopsOpen, setEditStopsOpen] = useState(false);
   const [draftStops, setDraftStops] = useState([]); // [from, ...wps, to]
-
-  // EditStopsOverlay'den gelen "buraya ekle" / "değiştir" işlemini bekletmek için
   const [pendingEditOp, setPendingEditOp] = useState(null); // { type: 'insert'|'replace', index: number }
 
   // POI along route
@@ -212,7 +249,6 @@ export default function MapScreen() {
     return arr.map(p => ({ ...p, __id: poiIdOf(p) })).sort((a, b) => (a.__id > b.__id ? 1 : -1));
   }, [poiMarkers]);
 
-  // bounds for AddStopOverlay bias + POI sampling
   const routeBounds = useMemo(() => {
     if (!Array.isArray(routeCoords) || routeCoords.length < 2) return null;
     let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
@@ -230,6 +266,23 @@ export default function MapScreen() {
   }, [routeCoords]);
 
   /* -------------------------- MIGRASYON -------------------------- */
+  // Picker 'lodging' ise sheet'i yarım açmayı dene
+  useEffect(() => {
+    if (picker?.which === 'lodging') {
+      try { sheetRef.current?.snapToIndex?.(1); } catch (e) {}
+    }
+  }, [picker]);
+
+   // Wizard'dan picker.center geldiyse o şehrin merkezine zoomla
+  useEffect(() => {
+    const c = picker?.center ? normalizeCoord(picker.center) : null;
+    if (c && mapRef.current) {
+      const region = { ...c, latitudeDelta: 0.08, longitudeDelta: 0.08 };
+      map.setRegion(region);
+      mapRef.current.animateToRegion(region, 500);
+    }
+  }, [picker?.center]);
+
   useEffect(() => {
     const HISTORY_KEYS_OBJECT = [
       'route_stop_history',
@@ -332,18 +385,16 @@ export default function MapScreen() {
 
   /* --------------------------- ROTA --------------------------- */
 
-  // SEGMENTLİ FALLBACK: from → ...wps → to
   const buildSegmentedRoute = useCallback(
-    async (fromLL, toLL, cleanLL, selMode) => {
+    async (fromLL, toLL_, cleanLL, selMode) => {
       try {
-        const nodes = [fromLL, ...cleanLL, toLL];
+        const nodes = [fromLL, ...cleanLL, toLL_];
         const segments = [];
         let totalDist = 0;
         let totalDur = 0;
 
         for (let i = 0; i < nodes.length - 1; i++) {
           const a = nodes[i], b = nodes[i + 1];
-          console.log('[route:fallback] segment', i, '->', i + 1, a, b);
           const raw = await getRoute(a, b, selMode, { optimize: false, alternatives: false, __seg: i });
           const seg = Array.isArray(raw) ? raw[0] : raw;
           const dec = seg?.decodedCoords || decodePolyline(seg?.polyline || '');
@@ -365,7 +416,6 @@ export default function MapScreen() {
           duration: totalDur,
           mode: selMode,
         };
-        console.log('[route:fallback] merged ok. legs:', nodes.length - 1, 'coords:', mergedCoords.length);
         return merged;
       } catch (e) {
         console.warn('[route:fallback] error', e?.message || e);
@@ -375,115 +425,134 @@ export default function MapScreen() {
     []
   );
 
-    const recalcRoute = useCallback(
-      async (
-        selMode = map.selectedMode,
-        waypointsOverride = null,
-        fromOverride = null,
-        toOverride = null
-      ) => {
-      // from/to'yu kesin lat/lng'e çevir
-     const fromC0 = normalizeCoord(fromOverride ?? map.fromLocation?.coords);
-     const toC0   = normalizeCoord(toOverride  ?? map.toLocation?.coords);
+  const recalcRoute = useCallback(
+    async (
+      selMode = map.selectedMode,
+      waypointsOverride = null,
+      fromOverride = null,
+      toOverride = null
+    ) => {
+      const mySeq = ++routeCalcSeqRef.current;
+
+      const fromC0 = normalizeCoord(fromOverride ?? map.fromLocation?.coords);
+      const toC0   = normalizeCoord(toOverride  ?? map.toLocation?.coords);
       const fromLL = toStrictLL(fromC0);
-      const toLL   = toStrictLL(toC0);
-      if (!fromLL || !toLL) return;
+      const toLL_  = toStrictLL(toC0);
+      if (!fromLL || !toLL_) return;
 
-      // kaynak waypoint'ler
       const srcWps = Array.isArray(waypointsOverride) ? waypointsOverride : map.waypoints;
-      const wpsLL  = Array.isArray(srcWps)
-        ? srcWps
-            .map(w => ({ lat: w.lat ?? w.latitude, lng: w.lng ?? w.longitude, place_id: w.place_id || null }))
-            .filter(w => Number.isFinite(w.lat) && Number.isFinite(w.lng))
-        : [];
 
-      // çok yakındaki/tekrarlı waypoint'leri temizle
-      const cleanLL = dedupWaypoints(wpsLL, fromLL, toLL);
+      const wpIdsRaw = (Array.isArray(srcWps) ? srcWps : [])
+        .map(w => w?.place_id || w?.id)
+        .filter(Boolean);
 
-      // üç farklı deneme stratejisi hazırla
-      const wpPlaceId = cleanLL.map(w => w.place_id ? `via:place_id:${w.place_id}` : null).filter(Boolean);
-      const wpViaLatLng = cleanLL.map(w => `via:${w.lat.toFixed(6)},${w.lng.toFixed(6)}`);
-      const wpLLForFallback = cleanLL.map(w => ({ lat: w.lat, lng: w.lng }));
+      const wpsLL_raw  = (Array.isArray(srcWps) ? srcWps : [])
+        .map(w => ({
+          lat: w?.lat ?? w?.latitude ?? w?.coords?.latitude ?? w?.location?.lat,
+          lng: w?.lng ?? w?.longitude ?? w?.coords?.longitude ?? w?.location?.lng,
+          place_id: w?.place_id || w?.id || null
+        }))
+        .filter(w => Number.isFinite(w.lat) && Number.isFinite(w.lng));
 
+      const cleanLL = dedupWaypoints(wpsLL_raw, fromLL, toLL_);
+
+      const reqKey = makeRequestKey(selMode, fromLL, toLL_, [
+        ...cleanLL.map(w => ({ latitude: w.lat, longitude: w.lng, place_id: w.place_id })),
+        ...wpIdsRaw
+          .filter(pid => !cleanLL.some(w => w.place_id === pid))
+          .map(pid => ({ latitude: NaN, longitude: NaN, place_id: pid }))
+      ]);
+      routeActiveKeyRef.current = reqKey;
+
+      const wpPlaceId      = Array.from(new Set(wpIdsRaw)).map(pid => `via:place_id:${pid}`);
+      const wpViaLatLng    = cleanLL.map(w => `via:${w.lat.toFixed(6)},${w.lng.toFixed(6)}`);
+      const wpLLForSegment = cleanLL.map(w => ({ lat: w.lat, lng: w.lng }));
       const baseOpts = { optimize: false, alternatives: cleanLL.length === 0 };
 
-      // denemeleri sırayla çalıştır
       const attempts = [
-        wpPlaceId.length ? { ...baseOpts, waypoints: wpPlaceId, __attempt: 'via:place_id' } : null,
-        wpViaLatLng.length ? { ...baseOpts, waypoints: wpViaLatLng, __attempt: 'via:latlng' } : null,
-        wpLLForFallback.length ? { ...baseOpts, waypointsLL: wpLLForFallback, __attempt: 'LL-array' } : null,
+        wpPlaceId.length      ? { ...baseOpts, waypoints: wpPlaceId,   __attempt: 'via:place_id' } : null,
+        wpViaLatLng.length    ? { ...baseOpts, waypoints: wpViaLatLng, __attempt: 'via:latlng' }   : null,
+        wpLLForSegment.length ? { ...baseOpts, waypointsLL: wpLLForSegment, __attempt: 'LL-array' } : null,
       ].filter(Boolean);
-
-      console.log('[route] recalc start', {
-        mode: selMode,
-        fromLL, toLL,
-        wpCount: cleanLL.length,
-        attemptTypes: attempts.map(a => a.__attempt),
-        placeIds: wpPlaceId,
-        viaLatLng: wpViaLatLng
-      });
 
       let routes = null;
       let lastErr = null;
 
+      const normalizeList = (raw, attemptTag) => {
+        const list = (Array.isArray(raw) ? raw : raw ? [raw] : []).map((r, i) => ({
+          ...r,
+          decodedCoords: r.decodedCoords || decodePolyline(r.polyline || ''),
+          isPrimary: i === 0,
+          id: `${selMode}-${attemptTag}-${i}`,
+          mode: selMode,
+        }));
+        return list;
+      };
+
       for (const opts of attempts) {
         try {
-          console.log('[route] trying attempt:', opts.__attempt);
-          const raw = await getRoute(fromLL, toLL, selMode, { ...opts, __debug: true });
+          const raw   = await getRoute(fromLL, toLL_, selMode, { ...opts, __debug: true });
+          let list    = normalizeList(raw, opts.__attempt);
+          const ok    = list.length && list[0].decodedCoords?.length > 0;
 
-          const list = (Array.isArray(raw) ? raw : raw ? [raw] : []).map((r, i) => ({
-            ...r,
-            decodedCoords: r.decodedCoords || decodePolyline(r.polyline || ''),
-            isPrimary: i === 0,
-            id: `${selMode}-${opts.__attempt}-${i}`,
-            mode: selMode,
-          }));
+          if (!ok) continue;
 
-          const ok = list.length && list[0].decodedCoords && list[0].decodedCoords.length;
-          console.log('[route] attempt', opts.__attempt, 'ok:', ok, 'altCount:', list.length);
-
-          if (ok) {
-            // Waypoint kapsaması kontrolü
-            if (cleanLL.length) {
-              const covers = approxRouteCoversWaypoints(list[0].decodedCoords, cleanLL);
-              console.log('[route] covers waypoints?:', covers, 'wpCount:', cleanLL.length);
-              if (!covers) {
-                // Segment fallback dene
-                console.warn('[route] waypoints seem ignored. using segmented fallback…');
-                const merged = await buildSegmentedRoute(fromLL, toLL, cleanLL, selMode);
-                if (merged) {
-                  routes = [merged];
-                  break;
+          const hasCheckable = cleanLL.length > 0;
+          if (hasCheckable) {
+            const covers = approxRouteCoversWaypoints(list[0].decodedCoords, cleanLL);
+            if (!covers) {
+              if (opts.__attempt !== 'via:latlng' && wpViaLatLng.length) {
+                try {
+                  const raw2  = await getRoute(fromLL, toLL_, selMode, { ...baseOpts, waypoints: wpViaLatLng, __attempt: 'via:latlng:forced' });
+                  const list2 = normalizeList(raw2, 'via:latlng:forced');
+                  const ok2   = list2.length && list2[0].decodedCoords?.length > 0;
+                  const cov2  = ok2 && approxRouteCoversWaypoints(list2[0].decodedCoords, cleanLL);
+                  if (ok2 && cov2) {
+                    list = list2;
+                  } else {
+                    const merged = await buildSegmentedRoute(fromLL, toLL_, cleanLL, selMode);
+                    if (merged) { merged.isPrimary = true; routes = [merged]; break; }
+                    else { continue; }
+                  }
+                } catch {
+                  const merged = await buildSegmentedRoute(fromLL, toLL_, cleanLL, selMode);
+                  if (merged) { merged.isPrimary = true; routes = [merged]; break; }
+                  else { continue; }
                 }
+              } else {
+                const merged = await buildSegmentedRoute(fromLL, toLL_, cleanLL, selMode);
+                if (merged) { merged.isPrimary = true; routes = [merged]; break; }
+                else { continue; }
               }
             }
-            routes = list;
-            break;
           }
+
+          routes = list;
+          break;
         } catch (e) {
           lastErr = e;
           console.warn('getRoute attempt failed', opts.__attempt, e?.message || e);
         }
       }
 
-      // hiçbiri olmadıysa ve waypoint varsa, son çare segment fallback
       if (!routes && cleanLL.length) {
-        console.warn('[route] all attempts failed or empty. trying segmented fallback as last resort.');
-        const merged = await buildSegmentedRoute(fromLL, toLL, cleanLL, selMode);
-        if (merged) {
-          routes = [merged];
-        }
+        const merged = await buildSegmentedRoute(fromLL, toLL_, cleanLL, selMode);
+        if (merged) { merged.isPrimary = true; routes = [merged]; }
       }
 
+      const stale = mySeq !== routeCalcSeqRef.current || reqKey !== routeActiveKeyRef.current;
       if (!routes) {
-        console.warn('Directions API: ZERO_RESULTS / uygun rota bulunamadı', lastErr?.message);
+        if (stale) return;
+        const hadPrev = Array.isArray(map.routeOptions?.[selMode]) && map.routeOptions[selMode].length > 0;
+        if (hadPrev) return;
         setRouteCoords([]);
         setRouteInfo(null);
         map.setRouteOptions(prev => ({ ...prev, [selMode]: [] }));
         return;
       }
 
-      // başarılı sonuç → state güncelle
+      if (stale) return;
+
       map.setRouteOptions(prev => ({ ...prev, [selMode]: routes }));
       const primary = routes.find(r => r.isPrimary) || routes[0];
       setRouteCoords(primary.decodedCoords || []);
@@ -494,10 +563,10 @@ export default function MapScreen() {
           edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
           animated: true,
         });
-        setTimeout(() => sheetRefRoute.current?.present?.(), 0);
+        requestAnimationFrame(presentRouteSheet);
       }
     },
-    [map.fromLocation, map.toLocation, map.waypoints, map.selectedMode, buildSegmentedRoute]
+    [map.fromLocation, map.toLocation, map.waypoints, map.selectedMode, buildSegmentedRoute, presentRouteSheet, map, mapRef]
   );
 
   useEffect(() => {
@@ -513,33 +582,29 @@ export default function MapScreen() {
         edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
         animated: true,
       });
-      setTimeout(() => sheetRefRoute.current?.present?.(), 0);
+      requestAnimationFrame(presentRouteSheet);
     }
-  }, [mode, map.selectedMode, map.routeOptions]);
+  }, [mode, map.selectedMode, map.routeOptions, presentRouteSheet]);
 
   useEffect(() => {
     const ready = mode === 'route' && Array.isArray(routeCoords) && routeCoords.length > 0;
     if (ready) {
-      const id = setTimeout(() => sheetRefRoute.current?.present?.(), 0);
+      const id = setTimeout(() => presentRouteSheet(), 0);
       return () => clearTimeout(id);
     } else {
-      sheetRefRoute.current?.dismiss?.();
+      dismissRouteSheet();
     }
-  }, [mode, routeCoords]);
+  }, [mode, routeCoords, presentRouteSheet, dismissRouteSheet]);
 
   // RoutePlannerCard -> Map geçişini karşıla
   useEffect(() => {
     const req = route?.params?.routeRequest;
     if (!req || !req.from || !req.to) return;
 
-    // 1) normalize coords
     const fromC = normalizeCoord(req.from);
     const toC   = normalizeCoord(req.to);
-    if (!fromC || !toC) {
-      return;
-    }
+    if (!fromC || !toC) return;
 
-    // 2) Map state'ini besle
     setMode('route');
     map.setFromLocation({
       coords: fromC,
@@ -552,30 +617,29 @@ export default function MapScreen() {
       key: req.to.place_id || 'external',
     });
 
-  const wps = Array.isArray(req.waypoints)
-    ? req.waypoints
-        .map(w => {
-          const lat =
-            w.lat ?? w.latitude ??
-            w?.coords?.latitude ?? w?.location?.lat;
-          const lng =
-            w.lng ?? w.longitude ??
-            w?.coords?.longitude ?? w?.location?.lng;
-          return {
-            lat,
-            lng,
-            name: w.name,
-            address: w.address,
-            place_id: w.place_id || w.id || null,
-          };
-        })
-        .filter(w => Number.isFinite(w.lat) && Number.isFinite(w.lng))
-    : [];
+    const wps = Array.isArray(req.waypoints)
+      ? req.waypoints
+          .map(w => {
+            const lat =
+              w.lat ?? w.latitude ??
+              w?.coords?.latitude ?? w?.location?.lat;
+            const lng =
+              w.lng ?? w.longitude ??
+              w?.coords?.longitude ?? w?.location?.lng;
+            return {
+              lat,
+              lng,
+              name: w.name,
+              address: w.address,
+              place_id: w.place_id || w.id || null,
+            };
+          })
+          .filter(w => Number.isFinite(w.lat) && Number.isFinite(w.lng))
+      : [];
 
     map.setWaypoints(wps);
     if (req.mode) map.setSelectedMode(req.mode);
 
-    // 3) Kamerayı noktaların tamamına oturt
     const toFit = [
       { latitude: fromC.latitude, longitude: fromC.longitude },
       ...wps.map(w => ({ latitude: w.lat, longitude: w.lng })),
@@ -590,15 +654,12 @@ export default function MapScreen() {
       }
     });
 
-     // State commit beklemeden, doğrudan bu from/to ile hesapla:
-     setTimeout(() => {
-       recalcRoute(req.mode, wps, fromC, toC);
-     }, 0);
+    setTimeout(() => {
+      recalcRoute(req.mode, wps, fromC, toC);
+    }, 0);
 
-    // 5) Paramı temizle (geri gelip tekrar tetiklenmesin)
     navigation.setParams({ routeRequest: undefined });
   }, [route?.params?.routeRequest, navigation, recalcRoute, map.setFromLocation, map.setToLocation, map.setWaypoints, map.setSelectedMode]);
-
 
   /* --------------------- FROM/TO seçim --------------------- */
   const setToFromMarkerIfMissing = useCallback(() => {
@@ -614,7 +675,7 @@ export default function MapScreen() {
       'Seçilen Konum';
 
     map.setToLocation({ coords: c, description: desc, key: map.marker?.place_id || 'map' });
-  }, [map.toLocation, map.marker]);
+  }, [map.toLocation, map.marker, map]);
 
   const handleReverseRoute = async () => {
     if (!map.fromLocation?.coords || !map.toLocation?.coords) return;
@@ -727,7 +788,7 @@ export default function MapScreen() {
         console.warn('handleToSelected error:', e);
       }
     },
-    [recalcRoute]
+    [recalcRoute, map, mapRef]
   );
 
   const confirmEditStops = useCallback(() => {
@@ -736,7 +797,7 @@ export default function MapScreen() {
     map.setWaypoints(newWps);
     setEditStopsOpen(false);
     recalcRoute(map.selectedMode, newWps);
-  }, [draftStops, recalcRoute, map.selectedMode]);
+  }, [draftStops, recalcRoute, map.selectedMode, map]);
 
   // haritadan tek dokunuşla from/to seçimi
   const handleSelectOriginOnMap = async (coordinate) => {
@@ -807,7 +868,7 @@ export default function MapScreen() {
     setPoiMarkers([]);
     setRouteCoords([]);
     setRouteInfo(null);
-    sheetRefRoute.current?.dismiss();
+    dismissRouteSheet();
   };
 
   /* ------------------------- ROTA KORİDORU POI ------------------------- */
@@ -941,7 +1002,6 @@ export default function MapScreen() {
   }, []);
 
   /* ---------- DURAK EKLEME (WAYPOINT) ---------- */
-
   const normalizePlaceToStop = useCallback(async (place) => {
     try {
       let lat, lng, name, place_id, address;
@@ -1039,7 +1099,7 @@ export default function MapScreen() {
       setMode('route');
       recalcRoute(map.selectedMode, wps);
     },
-    [map.waypoints, recalcRoute, map.selectedMode]
+    [map.waypoints, recalcRoute, map.selectedMode, map]
   );
 
   const handleAddStopFlexible = useCallback(
@@ -1264,7 +1324,7 @@ export default function MapScreen() {
               edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
               animated: true,
             });
-            setTimeout(() => sheetRefRoute.current?.present?.(), 0);
+            requestAnimationFrame(presentRouteSheet);
           }}
         />
       </MapView>
@@ -1307,9 +1367,41 @@ export default function MapScreen() {
               ref={sheetRef}
               marker={map.marker}
               routeInfo={map.routeInfo}
-              sheetRef={sheetRef}
               snapPoints={['30%', '60%', '75%', '90%']}
               onGetDirections={onGetDirectionsPress}
+              overrideCtaLabel={
+                picker
+                  ? (picker.which === 'start'
+                      ? 'Başlangıç ekle'
+                      : picker.which === 'end'
+                        ? 'Bitiş ekle'
+                        : 'Konaklama ekle')
+                  : undefined
+              }
+              overrideCtaOnPress={
+                picker
+                  ? () => {
+                      const p = map.marker || {};
+                      const loc =
+                        p.location ||
+                        p.geometry?.location ||
+                        (p.coordinate && { lat: p.coordinate.latitude, lng: p.coordinate.longitude }) ||
+                        null;
+
+                      const hub = {
+                        name: p.name || p.title || 'Seçilen Nokta',
+                        place_id: p.place_id || p.id || null,
+                        location: loc,
+                      };
+
+                      const payload = { which: picker.which, cityKey: picker.cityKey, hub };
+                      navigation.navigate('Gezilerim', {
+                        screen: 'CreateTripWizard',
+                        params: { pickFromMap: payload },
+                      });
+                    }
+                  : undefined
+              }
               onDismiss={() => { map.setMarker(null); map.setQuery(''); }}
             />
           </>
@@ -1403,7 +1495,7 @@ export default function MapScreen() {
           toLocation={map.toLocation}
           selectedMode={map.selectedMode}
           routeOptions={map.routeOptions}
-          waypoints={map.waypoints || []}        
+          waypoints={map.waypoints || []}
           snapPoints={['30%']}
           onCancel={handleCancelRoute}
           onModeChange={(m) => {
@@ -1411,7 +1503,7 @@ export default function MapScreen() {
             setTimeout(() => recalcRoute(m), 0);
           }}
           onStart={() => {
-            sheetRefRoute.current?.dismiss();
+            dismissRouteSheet();
             setMode('explore');
             setRouteInfo(null);
             setRouteCoords([]);
@@ -1496,6 +1588,7 @@ export default function MapScreen() {
           const last = (draftStops?.length ?? 0) - 1;
           if (i <= 0 || i >= last) return;
           setPendingEditOp({ type: 'replace', index: i });
+          setAddStopOpen(false);
           setAddStopOpen(true);
           setEditStopsOpen(false);
         }}

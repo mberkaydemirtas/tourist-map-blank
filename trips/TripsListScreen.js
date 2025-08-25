@@ -1,6 +1,5 @@
-// src/trips/TripsListScreen.js
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl, Platform } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { listTrips, deleteTrip, duplicateTrip } from './services/tripsService';
@@ -31,26 +30,43 @@ export default function TripsListScreen() {
   };
   const onDuplicate = async (id) => { await duplicateTrip(id); load(); };
 
-  const header = useMemo(() => (
+  const Header = useMemo(() => (
     <View style={styles.tableHeader}>
-      <Text style={[styles.cell, styles.flex2, styles.headerText]}>Adı</Text>
-      <Text style={[styles.cell, styles.center, styles.headerText]}>Durak</Text>
-      <Text style={[styles.cell, styles.flex1, styles.headerText]}>Oluşturulma</Text>
-      <Text style={[styles.cell, styles.flex1, styles.headerText]}>Güncellendi</Text>
-      <Text style={[styles.cell, styles.actionsHeader]} />
+      <Text style={[styles.hCell, styles.flex3]}>Gezi</Text>
+      <Text style={[styles.hCell, styles.center, styles.flex1]}>Durak</Text>
+      <Text style={[styles.hCell, styles.flex1]}>Oluşturma</Text>
+      <Text style={[styles.hCell, styles.flex1]}>Güncelleme</Text>
+      <Text style={[styles.hCell, styles.actionsHeader]} />
     </View>
   ), []);
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={() => nav.navigate('TripEditor', { id: item.id })}>
-      <Text style={[styles.cell, styles.flex2]} numberOfLines={1}>{item.title}</Text>
-      <Text style={[styles.cell, styles.center]}>{item.stops?.length ?? 0}</Text>
-      <Text style={[styles.cell, styles.flex1]}>{formatDate(item.createdAt)}</Text>
-      <Text style={[styles.cell, styles.flex1]}>{formatDate(item.updatedAt)}</Text>
+    <TouchableOpacity
+      style={styles.row}
+      activeOpacity={0.8}
+      onPress={() => nav.navigate('TripEditor', { id: item.id })}
+      onLongPress={() => nav.navigate('TripEditor', { id: item.id })}
+    >
+      {/* Sol: Başlık + tarih alt yazısı */}
+      <View style={[styles.cell, styles.flex3]}>
+        <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+        <Text style={styles.subTitle} numberOfLines={1}>
+          {item?.dateRange?.start || '—'} → {item?.dateRange?.end || '—'}
+        </Text>
+      </View>
+
+      {/* Orta: durak sayısı */}
+      <Text style={[styles.cell, styles.center, styles.badge]}>{item.stops?.length ?? 0}</Text>
+
+      {/* Tarihler */}
+      <Text style={[styles.cell, styles.flex1]} numberOfLines={1}>{formatDate(item.createdAt)}</Text>
+      <Text style={[styles.cell, styles.flex1]} numberOfLines={1}>{formatDate(item.updatedAt)}</Text>
+
+      {/* Aksiyonlar */}
       <View style={[styles.cell, styles.actions]}>
-        <TouchableOpacity onPress={() => onDuplicate(item.id)} style={styles.iconBtn}><Ionicons name="copy-outline" size={20} color="#fff" /></TouchableOpacity>
-        <TouchableOpacity onPress={() => nav.navigate('TripEditor', { id: item.id })} style={styles.iconBtn}><Ionicons name="pencil-outline" size={20} color="#fff" /></TouchableOpacity>
-        <TouchableOpacity onPress={() => onDelete(item.id, item.title)} style={styles.iconBtn}><Ionicons name="trash-outline" size={20} color="#ef4444" /></TouchableOpacity>
+        <TouchableOpacity onPress={() => onDuplicate(item.id)} style={styles.iconBtn}><Ionicons name="copy-outline" size={22} color="#fff" /></TouchableOpacity>
+        <TouchableOpacity onPress={() => nav.navigate('TripEditor', { id: item.id })} style={styles.iconBtn}><Ionicons name="pencil-outline" size={22} color="#fff" /></TouchableOpacity>
+        <TouchableOpacity onPress={() => onDelete(item.id, item.title)} style={styles.iconBtn}><Ionicons name="trash-outline" size={22} color="#ef4444" /></TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -58,23 +74,23 @@ export default function TripsListScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
-        <Text style={styles.title}>Gezilerim</Text>
-        <TouchableOpacity onPress={() => setOverlay(true)} style={styles.newBtn} activeOpacity={0.8}>
+        <Text style={styles.screenTitle}>Gezilerim</Text>
+        <TouchableOpacity onPress={() => setOverlay(true)} style={styles.newBtn} activeOpacity={0.9}>
           <Ionicons name="add" size={20} color="#fff" />
           <Text style={styles.newBtnText}>Yeni Gezi</Text>
         </TouchableOpacity>
       </View>
 
-      {header}
-
       <FlatList
         data={items}
         keyExtractor={(it) => it.id}
         renderItem={renderItem}
+        ListHeaderComponent={Header}
+        stickyHeaderIndices={[0]}                 // 👈 Header sabit
         refreshControl={<RefreshControl tintColor="#fff" refreshing={loading} onRefresh={load} />}
         ListEmptyComponent={!loading ? (
           <View style={styles.empty}>
-            <Ionicons name="calendar-outline" size={22} color="#A8A8B3" />
+            <Ionicons name="calendar-outline" size={24} color="#A8A8B3" />
             <Text style={styles.emptyText}>Henüz gezi yok. “Yeni Gezi” ile başlayın.</Text>
           </View>
         ) : null}
@@ -99,20 +115,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
-  title: { fontSize: 20, fontWeight: '700', color: '#fff' },
-  newBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#2563EB', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, gap: 6 },
-  newBtnText: { color: '#fff', fontWeight: '600' },
+  screenTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
 
-  tableHeader: { flexDirection: 'row', borderTopWidth: 1, borderBottomWidth: 1, borderColor: BORDER, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: '#0D0F14' },
-  headerText: { fontWeight: '700', color: '#FFFFFF' },
+  tableHeader: {
+    flexDirection: 'row', paddingVertical: 10, paddingHorizontal: 12,
+    borderTopWidth: 1, borderBottomWidth: 1, borderColor: BORDER, backgroundColor: '#0D0F14',
+  },
+  hCell: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
+  row: {
+    flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 12,
+    borderBottomWidth: 1, borderColor: BORDER, gap: 8,
+  },
 
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 12, borderBottomWidth: 1, borderColor: BORDER },
-  cell: { paddingHorizontal: 6, fontSize: 14, color: '#FFFFFF' },
-  flex2: { flex: 2 }, flex1: { flex: 1 }, center: { textAlign: 'center' },
+  cell: { paddingHorizontal: 6 },
+  title: { color: '#fff', fontSize: 16, fontWeight: '700', lineHeight: 20 },
+  subTitle: { color: '#A8A8B3', fontSize: 12, marginTop: 2 },
+  badge: {
+    color: '#fff', fontWeight: '800', textAlign: 'center',
+    paddingHorizontal: 10, paddingVertical: Platform.select({ ios: 4, android: 6 }),
+    borderWidth: 1, borderColor: BORDER, borderRadius: 10, minWidth: 42,
+  },
 
-  actionsHeader: { width: 96, textAlign: 'right' },
-  actions: { width: 96, flexDirection: 'row', justifyContent: 'flex-end' },
-  iconBtn: { padding: 6, marginLeft: 4 },
+  flex3: { flex: 3 }, flex1: { flex: 1 }, center: { textAlign: 'center' },
+
+  actionsHeader: { width: 120, textAlign: 'right' },
+  actions: { width: 120, flexDirection: 'row', justifyContent: 'flex-end' },
+  iconBtn: { padding: 6, marginLeft: 6 },
 
   empty: { alignItems: 'center', padding: 24, gap: 8 },
   emptyText: { color: '#A8A8B3' },

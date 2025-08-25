@@ -1,8 +1,17 @@
 // src/components/EditStopsOverlay.js
 import React, { useMemo, useRef, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet, Platform, FlatList } from 'react-native';
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+  FlatList,
+} from 'react-native';
 import DraggableFlatList from 'react-native-draggable-flatlist';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const USE_DRAGGABLE = true;
 
@@ -16,11 +25,17 @@ export default function EditStopsOverlay({
   onInsertAt,                 // (index) => void                -> GLOBAL index (splice hedefi)
   onReplaceAt,                // (index) => void                -> GLOBAL index
 }) {
+  const insets = useSafeAreaInsets();
+
   // Stabil key üret
   const data = useMemo(() => {
     const seen = new Map();
     return (stops || []).map((s, i) => {
-      const base = s?.place_id ?? (Number.isFinite(s?.lat) && Number.isFinite(s?.lng) ? `${s.lat},${s.lng}` : `idx-${i}`);
+      const base =
+        s?.place_id ??
+        (Number.isFinite(s?.lat) && Number.isFinite(s?.lng)
+          ? `${s.lat},${s.lng}`
+          : `idx-${i}`);
       const n = (seen.get(base) || 0) + 1;
       seen.set(base, n);
       const _key = n > 1 ? `${base}#${n}` : base;
@@ -46,10 +61,7 @@ export default function EditStopsOverlay({
   const InsertBar = ({ index }) => (
     <TouchableOpacity
       activeOpacity={0.9}
-      onPress={() => {
-        console.log('[Overlay] InsertBar press -> index=', index);
-        onInsertAt?.(index); // 👉 GLOBAL index (splice target)
-      }}
+      onPress={() => onInsertAt?.(index)} // 👉 GLOBAL index (splice target)
       style={styles.insertBar}
     >
       <Text style={styles.insertText}>＋ Yeni durak buraya</Text>
@@ -60,7 +72,12 @@ export default function EditStopsOverlay({
   const EndpointRow = ({ item, globalIndex }) => {
     const isStart = globalIndex === 0;
     return (
-      <View style={[styles.endpointRow, isStart ? styles.endpointStart : styles.endpointEnd]}>
+      <View
+        style={[
+          styles.endpointRow,
+          isStart ? styles.endpointStart : styles.endpointEnd,
+        ]}
+      >
         <Text style={styles.endpointIcon}>{isStart ? '🚩' : '🏁'}</Text>
         <View style={styles.rowCenter}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -107,20 +124,14 @@ export default function EditStopsOverlay({
         <View style={styles.rowActions}>
           <TouchableOpacity
             style={[styles.miniBtn, styles.replaceBtn]}
-            onPress={() => {
-              console.log('[Overlay] Replace press -> i=', globalIndex);
-              onReplaceAt?.(globalIndex); // sadece mid satırlarda aktif
-            }}
+            onPress={() => onReplaceAt?.(globalIndex)}
           >
             <Text style={styles.miniTxt}>Değiştir</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.miniBtn, styles.delBtn]}
-            onPress={() => {
-              console.log('[Overlay] Delete press -> i=', globalIndex);
-              onDelete?.(globalIndex); // sadece mid satırlarda aktif
-            }}
+            onPress={() => onDelete?.(globalIndex)}
           >
             <Text style={[styles.miniTxt, styles.delTxt]}>Sil</Text>
           </TouchableOpacity>
@@ -133,23 +144,23 @@ export default function EditStopsOverlay({
     const globalIndex = midIndex + 1;
     return (
       <View>
-        <WaypointRow item={item} drag={drag} isActive={isActive} midIndex={midIndex} />
+        <WaypointRow
+          item={item}
+          drag={drag}
+          isActive={isActive}
+          midIndex={midIndex}
+        />
         {/* Her orta durağın altına insert bar – globalIndex+1 hedefi */}
         <InsertBar index={globalIndex + 1} />
       </View>
     );
   };
 
-  // ❗ Draggable list referansı (gerekirse ileri kullanım için)
   const listRef = useRef(null);
-
-  // ❗ Geçersiz drop’u baştan imkansız kıldık: mids dışında hiçbir yere düşülemez.
-  // Sadece mids içinde reorder olduğundan "duvar" hissi doğal olarak oluşuyor.
   const [dragNonce, setDragNonce] = useState(0);
 
   const ListBody = USE_DRAGGABLE ? DraggableFlatList : FlatList;
 
-  // Draggable sadece mid’lerde çalışır – global indexe çevirerek parent’a iletiriz
   const listProps = USE_DRAGGABLE
     ? {
         ref: listRef,
@@ -165,22 +176,24 @@ export default function EditStopsOverlay({
           if (from === to) return;
           const fromGlobal = from + 1;
           const toGlobal   = to + 1;
-          console.log('[Overlay] dragEnd mids:', from, '→', to, ' | global:', fromGlobal, '→', toGlobal);
           onDragEnd?.(fromGlobal, toGlobal);
+          setDragNonce((n) => n + 1);
         },
         scrollEnabled: true,
         keyboardShouldPersistTaps: 'handled',
+        windowSize: 10,
+        initialNumToRender: 8,
+        maxToRenderPerBatch: 8,
+        showsVerticalScrollIndicator: false,
         ListHeaderComponent: (
           <View style={styles.listHeader}>
-            {/* 🚩 Başlangıç satırı */}
             {start && <EndpointRow item={start} globalIndex={0} />}
             {/* ✅ Başlangıcın hemen ALTINDA insert bar */}
             <InsertBar index={1} />
           </View>
         ),
         ListFooterComponent: (
-          <View style={styles.listFooter}>
-            {/* 🏁 Bitiş satırı */}
+          <View style={[styles.listFooter, { paddingBottom: Math.max(insets.bottom, 0) } ]}>
             {end && <EndpointRow item={end} globalIndex={lastIdx} />}
             {/* Bitişten sonra insert bar YOK */}
           </View>
@@ -192,6 +205,7 @@ export default function EditStopsOverlay({
         renderItem: renderMidItem,
         contentContainerStyle: styles.listInner,
         scrollEnabled: true,
+        showsVerticalScrollIndicator: false,
         ListHeaderComponent: (
           <View style={styles.listHeader}>
             {start && <EndpointRow item={start} globalIndex={0} />}
@@ -199,7 +213,7 @@ export default function EditStopsOverlay({
           </View>
         ),
         ListFooterComponent: (
-          <View style={styles.listFooter}>
+          <View style={[styles.listFooter, { paddingBottom: Math.max(insets.bottom, 0) } ]}>
             {end && <EndpointRow item={end} globalIndex={lastIdx} />}
           </View>
         ),
@@ -209,7 +223,7 @@ export default function EditStopsOverlay({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={styles.backdrop}>
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'ios' ? 18 : 10) }]}>
             <View style={styles.header}>
               <Text style={styles.title}>Durakları düzenle</Text>
               <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
@@ -243,7 +257,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingTop: 10,
-    paddingBottom: Platform.OS === 'ios' ? 18 : 10,
   },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, marginBottom: 6 },
   title: { fontSize: 16, fontWeight: '700', color: '#111', flex: 1 },

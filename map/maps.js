@@ -76,7 +76,7 @@ const getAutocompleteSessionToken = () => {
 export const resetAutocompleteSession = () => { _acSessionToken = null; };
 
 /**
- * Rota-bias'lı autocomplete
+ * Rota-bias'lı autocomplete (genel amaçlı)
  * @param {string} input
  * @param {object} opts
  *  - bounds: { sw:{lat,lng}, ne:{lat,lng} } // rota dikdörtgeni (tercih)
@@ -158,6 +158,42 @@ export async function autocomplete(input, opts = {}) {
   }
 }
 
+/**
+ * ŞEHİR autocomplete (ülkeye kısıtlı, dünya geneli)
+ * @param {{input:string, country?:string, language?:string, sessiontoken?:string}} args
+ */
+export async function autocompleteCities({ input, country, language = 'tr', sessiontoken } = {}) {
+  const q = String(input || '').trim();
+  if (!q) return [];
+  const params = new URLSearchParams({
+    input: q,
+    key: KEY,
+    language,
+    types: '(cities)',            // şehir hedefi
+  });
+  if (country) params.append('components', `country:${country}`);
+  const token = sessiontoken || getAutocompleteSessionToken();
+  if (token) params.append('sessiontoken', token);
+
+  try {
+    const res = await fetch(`${BASE}/place/autocomplete/json?${params.toString()}`);
+    const json = await res.json();
+    if (json.status !== 'OK' && json.status !== 'ZERO_RESULTS') {
+      console.warn('❌ autocompleteCities:', json.status, json?.error_message);
+      return [];
+    }
+    return (json.predictions || []).map(p => ({
+      description: p.description,
+      place_id: p.place_id,
+      main_text: p.structured_formatting?.main_text,
+      secondary_text: p.structured_formatting?.secondary_text,
+    }));
+  } catch (e) {
+    console.error('🌐 autocompleteCities error:', e?.message || e);
+    return [];
+  }
+}
+
 /* ------------------------------ Place Details ----------------------------- */
 export async function getPlaceDetails(placeId) {
   const params = new URLSearchParams({
@@ -207,6 +243,35 @@ export async function getPlaceDetails(placeId) {
     };
   } catch (err) {
     console.error('🟥 getPlaceDetails fetch hatası:', err?.message || err);
+    return null;
+  }
+}
+
+/**
+ * Sade şehir/yer koordinatı: ad + address + geometry/location
+ */
+export async function getPlaceLatLng(place_id, language = 'tr') {
+  const params = new URLSearchParams({
+    place_id,
+    key: KEY,
+    language,
+    fields: 'name,formatted_address,geometry/location',
+  });
+  try {
+    const res = await fetch(`${BASE}/place/details/json?${params.toString()}`);
+    const json = await res.json();
+    if (json.status !== 'OK') {
+      console.warn('❌ getPlaceLatLng:', json.status, json?.error_message);
+      return null;
+    }
+    const r = json.result;
+    return r ? {
+      name: r.name,
+      address: r.formatted_address,
+      location: r.geometry?.location, // {lat,lng}
+    } : null;
+  } catch (e) {
+    console.error('🌐 getPlaceLatLng error:', e?.message || e);
     return null;
   }
 }
@@ -310,6 +375,40 @@ export async function getNearbyPlaces(arg1, maybeKeyword) {
   });
 }
 
+/**
+ * Hub arayıcı (dünya geneli): type = airport | train_station | bus_station | car_rental | parking
+ */
+export async function nearbyHubs({ lat, lng, type, radius }) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || !type) return [];
+  const r = radius ?? (type === 'airport' ? 100_000 : 30_000);
+  const params = new URLSearchParams({
+    location: `${lat},${lng}`,
+    radius: r.toString(),
+    type,
+    language: 'tr',
+    key: KEY,
+  });
+  try {
+    const res = await fetch(`${BASE}/place/nearbysearch/json?${params.toString()}`);
+    const json = await res.json();
+    if (json.status !== 'OK' && json.status !== 'ZERO_RESULTS') {
+      console.warn('nearbyHubs:', json.status, json?.error_message);
+      return [];
+    }
+    return (json.results || []).map(x => ({
+      place_id: x.place_id,
+      name: x.name,
+      rating: x.rating,
+      user_ratings_total: x.user_ratings_total,
+      vicinity: x.vicinity,
+      location: x.geometry?.location, // {lat,lng}
+    }));
+  } catch (e) {
+    console.error('🌐 nearbyHubs error:', e?.message || e);
+    return [];
+  }
+}
+
 /* --------------------------- Directions / Routing ------------------------- */
 function getBoundsFromCoords(coords = []) {
   if (!coords.length) return null;
@@ -358,12 +457,6 @@ function buildDirectionsUrl(originIn, destinationIn, mode = 'driving', extra = {
   if (avoidSet.size) params.append('avoid', Array.from(avoidSet).join('|'));
 
   // --- WAYPOINT SERİALİZASYON ---
-
-  // Her formattaki girdiyi "waypoints" param'ına dönüştürür.
-  // Desteklenen girişler:
-  //  - String: "via:place_id:XYZ", "place_id:XYZ", "via:lat,lng", "lat,lng"
-  //  - Array: [lat, lng]
-  //  - Object: { place_id } | { lat,lng } | { latitude,longitude } | { coords:{latitude,longitude} } | { location:{lat,lng} }
   const serializeWaypoints = (raw, { optimize = false } = {}) => {
     const list = Array.isArray(raw) ? raw : [];
     const tokens = [];
@@ -446,19 +539,19 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
       (Array.isArray(opts.viaWaypoints) && opts.viaWaypoints.length > 0) ||
       (Array.isArray(opts.waypointsLL)  && opts.waypointsLL.length  > 0);
 
-    // transit + waypoint → driving'e düş
-    if (mode === 'transit' && hasWps) mode = 'driving';
+    // Transit modunda waypoints desteklenmez → otomatik driving'e düş
+    const effectiveMode = (mode === 'transit' && hasWps) ? 'driving' : mode;
 
     // alternatives: waypoint varsa default false, yoksa true
     const alternatives = (opts.alternatives != null) ? opts.alternatives : !hasWps;
 
-    const url = buildDirectionsUrl(origin, destination, mode, {
+    const url = buildDirectionsUrl(origin, destination, effectiveMode, {
       alternatives,
-      waypoints:   opts.waypoints   || [],
-      viaWaypoints:opts.viaWaypoints|| [],
-      waypointsLL: opts.waypointsLL || [],
-      optimize:    opts.optimize === true,
-      avoidTolls:  opts.avoidTolls === true,
+      waypoints:    opts.waypoints    || [],
+      viaWaypoints: opts.viaWaypoints || [],
+      waypointsLL:  opts.waypointsLL  || [],
+      optimize:     opts.optimize === true,
+      avoidTolls:   opts.avoidTolls === true,
       trafficModel: opts.trafficModel,
     });
 
@@ -532,7 +625,7 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
         geometry: { type: 'LineString', coordinates: lineCoords },
         decodedCoords: decoded,
         steps,
-        mode,
+        mode: effectiveMode,
         bounds: getBoundsFromCoords(decoded),
         summary: route.summary,
         warnings: route.warnings || [],
@@ -547,6 +640,7 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
     return [];
   }
 }
+
 /* ---------------------------- Mapbox turn-by-turn ------------------------- */
 /** Step’leri Mapbox’tan çekmek için (geometri gerekli olduğunda) */
 export const getTurnByTurnSteps = async (from, to) => {

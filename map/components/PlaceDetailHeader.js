@@ -2,34 +2,48 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 
-export default function PlaceDetailHeader({ marker, routeInfo, onGetDirections }) {
+export default function PlaceDetailHeader({
+  marker,
+  routeInfo,
+  onGetDirections,
+  ctaLabel = 'Yol Tarifi Al', // ← dışarıdan override edilebilir
+}) {
   if (!marker) return null;
+
+  const hasRating = typeof marker.rating === 'number';
+  const ratingText = hasRating ? `${'⭐'.repeat(Math.max(0, Math.round(marker.rating)))} ${marker.rating.toFixed(1)}` : null;
 
   return (
     <View style={styles.handleContainer}>
       <View style={styles.dragHandle} />
       <View style={styles.handleContent}>
-        <Text style={styles.name}>{marker.name}</Text>
+        <Text style={styles.name}>{marker.name || 'Seçilen Yer'}</Text>
+
         <View style={styles.subHeaderRow}>
-          {typeof marker.rating === 'number' && marker.googleSearchUrl && (
+          {hasRating && marker.googleSearchUrl ? (
             <TouchableOpacity onPress={() => Linking.openURL(marker.googleSearchUrl)}>
-              <Text style={styles.rating}>
-                {'⭐'.repeat(Math.max(0, Math.round(marker.rating)))} {marker.rating.toFixed(1)}
-              </Text>
+              <Text style={styles.rating}>{ratingText}</Text>
             </TouchableOpacity>
-          )}
+          ) : hasRating ? (
+            <Text style={styles.rating}>{ratingText}</Text>
+          ) : null}
+
           {marker.types?.length > 0 && (
-            <Text style={styles.type}>{marker.types[0].replace(/_/g, ' ')}</Text>
+            <Text style={styles.type}>{String(marker.types[0]).replace(/_/g, ' ')}</Text>
           )}
-          {routeInfo && (
+
+          {routeInfo && (routeInfo.duration || routeInfo.distance) && (
             <Text style={styles.driveTime}>
-              🚗 {routeInfo.duration} · {routeInfo.distance}
+              🚗 {routeInfo.duration ?? ''}{routeInfo.duration && routeInfo.distance ? ' · ' : ''}{routeInfo.distance ?? ''}
             </Text>
           )}
         </View>
-        <TouchableOpacity style={styles.directionsButton} onPress={onGetDirections}>
-          <Text style={styles.directionsText}>Get Directions</Text>
-        </TouchableOpacity>
+
+        {!!onGetDirections && (
+          <TouchableOpacity style={styles.directionsButton} onPress={onGetDirections}>
+            <Text style={styles.directionsText}>{ctaLabel}</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -61,6 +75,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   rating: {
     fontSize: 14,
@@ -71,6 +87,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#555',
     marginRight: 8,
+    textTransform: 'capitalize',
   },
   driveTime: {
     fontSize: 14,

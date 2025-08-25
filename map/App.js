@@ -31,7 +31,7 @@ function HomeNavigator() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
       <HomeStack.Screen name="Home" component={HomePage} />
-      {/* HomePage içinde navigate('Map') dediğin için adı 'Map' */}
+      {/* HomePage -> navigate('Map') */}
       <HomeStack.Screen name="Map" component={MapScreen} />
     </HomeStack.Navigator>
   );
@@ -78,10 +78,11 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {/* ⤵️ BottomSheet provider mutlaka en üstte ve GestureHandler içinde olmalı */}
+      {/* BottomSheetModal context'i en üstte olmalı */}
       <BottomSheetModalProvider>
-        <SafeAreaProvider>
-          <PortalProvider>
+        {/* @gorhom/portal → bottom sheets / custom modallar için */}
+        <PortalProvider>
+          <SafeAreaProvider>
             <NavigationContainer theme={navTheme}>
               <StatusBar
                 barStyle="light-content"
@@ -116,8 +117,8 @@ export default function App() {
 
             {/* bottom sheets / modallar için portal hedefi */}
             <PortalHost name="root-portal" />
-          </PortalProvider>
-        </SafeAreaProvider>
+          </SafeAreaProvider>
+        </PortalProvider>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );
