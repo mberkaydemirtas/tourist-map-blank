@@ -5,7 +5,6 @@ import MapView, { Marker, Polyline, PROVIDER_GOOGLE, Callout } from 'react-nativ
 import { useRoute, useNavigation } from '@react-navigation/native';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
-
 import {
   decodePolyline,
   getTurnByTurnSteps,
@@ -13,7 +12,6 @@ import {
   getNearbyPlaces,
   getPlaceDetails,
 } from '../maps';
-
 import StepInstructionsModal from '../components/StepInstructionsModal';
 import LaneGuidanceBar from '../components/LaneGuidanceBar';
 import NextManeuverChip from '../components/NextManeuverChip';

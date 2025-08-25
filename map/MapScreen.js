@@ -26,10 +26,7 @@ import NavigationBanner from './components/NavigationBanner';
 import MapRoutePolyline from './components/MapRoutePolyline';
 import AddStopOverlay from './components/AddStopOverlay';
 import EditStopsOverlay from './components/EditStopsOverlay2';
-
 import { normalizeCoord, toCoordsObject } from './utils/coords';
-
-// maps helpers
 import {
   getRoute,
   decodePolyline,
