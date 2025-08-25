@@ -7,7 +7,7 @@ export default function MapRoutePolyline({ routes, onRouteSelect }) {
   if (!routes || routes.length === 0) return null;
 
   const primary = routes.find(r => r.isPrimary);
-  const primaryDuration = primary?.durationValue ?? null;
+  const primaryDuration = primary?.duration ?? null;
 
   // Orta noktayı bulmak için yardımcı fonksiyon
   const getMidpoint = coords => {
@@ -23,7 +23,7 @@ export default function MapRoutePolyline({ routes, onRouteSelect }) {
         const strokeWidth = isPrimary ? 6 : 4;
         const zIndex = isPrimary ? 2 : 1;
         const label = !isPrimary && primaryDuration
-          ? getDeltaLabel(primaryDuration, route.durationValue)
+          ? getDeltaLabel(primaryDuration, route.duration)
           : null;
 
         return (

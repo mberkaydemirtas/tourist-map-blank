@@ -30,6 +30,99 @@ export function useMapLogic(mapRef) {
   const [mapMoved, setMapMoved] = useState(false);
   const [routeOptions, setRouteOptions] = useState({});
 
+  const [waypoints, setWaypoints] = useState([]); // [{latitude, longitude, name?, place_id?}]
+
+  const fitPolyline = useCallback((coords=[]) => {
+    if (!coords.length) return;
+    mapRef?.current?.fitToCoordinates(coords, {
+      edgePadding: { top: 60, left: 40, right: 40, bottom: 260 },
+      animated: true,
+    });
+  }, [mapRef]);
+
+  const calculateRouteSimple = useCallback(async () => {
+    if (!fromLocation?.coords || !toLocation?.coords) return;
+     const out = await getRoute(
+       fromLocation.coords,
+       toLocation.coords,
+       selectedMode,
+       { alternatives: true }
+     );
+ 
+     const list = (Array.isArray(out) ? out : out ? [out] : [])
+       .map((r, i) => ({
+         ...r,
+         decodedCoords: r.decodedCoords || decodePolyline(r.polyline || ''),
+         id: `${selectedMode}-${i}`,
+         isPrimary: i === 0,
+         mode: selectedMode,
+       }))
+       .filter(r => (r.decodedCoords?.length ?? 0) > 1);
+ 
+     setRouteOptions(prev => ({ ...prev, [selectedMode]: list }));
+ 
+     const first = list[0];
+     if (first) {
+       setRouteCoords(first.decodedCoords);
+       setRouteInfo({ distance: first.distance, duration: first.duration });
+       fitPolyline(first.decodedCoords);
+     } else {
+       setRouteCoords([]);
+       setRouteInfo(null);
+     }
+  }, [fromLocation, toLocation, selectedMode, fitPolyline]);
+
+  const calculateRouteWithStops = useCallback(async ({ optimize=false } = {}) => {
+    if (!fromLocation?.coords || !toLocation?.coords) return;
+    const mode = (selectedMode === 'transit' && waypoints.length) ? 'driving' : selectedMode;
+
+    const out = await getRoute(
+      fromLocation.coords,
+      toLocation.coords,
+      mode,
+      {
+        alternatives: false,
+        waypoints,             // 👈 {latitude, longitude}
+        optimize: !!optimize,
+      }
+    );
+    const list = (Array.isArray(out) ? out : out ? [out] : [])
+      .map((r, i) => ({
+        ...r,
+        decodedCoords: r.decodedCoords || decodePolyline(r.polyline || ''),
+        id: `${mode}-${i}`,
+        isPrimary: i === 0,
+        mode,
+      }))
+      .filter(r => (r.decodedCoords?.length ?? 0) > 1);
+
+    // optimize:true ise waypoint_order gelebilir -> sadece ara durakları sırala
+     const primary = list[0];
+     if (primary?.waypointOrder?.length === waypoints.length) {
+       setWaypoints(primary.waypointOrder.map(i => waypoints[i]));
+     }
+ 
+     setRouteOptions(prev => ({ ...prev, [mode]: list }));
+ 
+     if (primary) {
+       setRouteCoords(primary.decodedCoords);
+       setRouteInfo({ distance: primary.distance, duration: primary.duration });
+       fitPolyline(primary.decodedCoords);
+     } else {
+       setRouteCoords([]);
+       setRouteInfo(null);
+     }
+  }, [fromLocation, toLocation, selectedMode, waypoints, fitPolyline]);
+
+  useEffect(() => {
+    if (!fromLocation?.coords || !toLocation?.coords) return;
+    if (waypoints.length > 0) {
+      calculateRouteWithStops({ optimize: false });
+    } else {
+      calculateRouteSimple();
+    }
+  }, [waypoints, fromLocation, toLocation, calculateRouteWithStops, calculateRouteSimple]);
+
   const onRegionChange = useCallback((newRegion) => {
     setRegion(newRegion);
     setMapMoved(true);
@@ -616,14 +709,6 @@ useEffect(() => {
   }
 }, [selectedMode, routeOptions, makeRouteInfo]);
 
-
-  useEffect(() => {
-    if (fromLocation?.coords && toLocation?.coords) {
-      // Yeni rota akışında ilk seçim zaten handleSelectTo içinde driving’e çekildi.
-      fetchAllRoutes(fromLocation.coords, toLocation.coords);
-    }
-  }, [fromLocation, toLocation]);
-
   return {
     fetchAndSetMarker,
     setMarker,
@@ -632,6 +717,9 @@ useEffect(() => {
     setRegion,
     onRegionChange,
     setRouteCoords,
+    waypoints, 
+    setWaypoints,
+    calculateRouteWithStops,
     marker,
     categoryMarkers,
     loadingCategory,
