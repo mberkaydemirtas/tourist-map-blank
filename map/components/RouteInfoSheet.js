@@ -1,6 +1,20 @@
 // src/components/RouteInfoSheet.js
-import React, { forwardRef, useImperativeHandle, useRef } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useMemo,
+  useEffect,
+} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+  Platform,
+  StatusBar,
+} from 'react-native';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { useNavigation } from '@react-navigation/native';
 import { checkLocationReady } from '../utils/locationUtils';
@@ -10,199 +24,208 @@ const fmtDistance = (m) =>
 const fmtDuration = (s) =>
   Number.isFinite(Number(s)) ? `${Math.round(Number(s) / 60)} dk` : '—';
 
-const RouteInfoSheet = forwardRef(({
-  distance,           // (opsiyonel) üstten ham metre gelebilir
-  duration,           // (opsiyonel) üstten ham saniye gelebilir
-  fromLocation,
-  toLocation,
-  selectedMode,
-  onModeChange,       // beklenen: routeId (primary.id)
-  onCancel,
-  onStart,
-  routeOptions = {},
-  children,
-}, ref) => {
-  const innerRef = useRef(null);
-  const navigation = useNavigation();
+const RouteInfoSheet = forwardRef(
+  (
+    {
+      distance,
+      duration,
+      fromLocation,
+      toLocation,
+      selectedMode,
+      onModeChange,      // beklenen: routeId (primary.id)
+      onModeRequest,     // YENİ: veri yoksa sadece 'mode' (driving/walking/transit) gönder
+      onCancel,
+      onStart,
+      routeOptions = {},
+      waypoints = [],
+      snapPoints = ['30%'],
+      openOnReady = true,
+      children,
+    },
+    ref
+  ) => {
+    const modalRef = useRef(null);
+    const navigation = useNavigation();
+    const presentedRef = useRef(false);
 
-  const getPrimary = (mode) => {
-    const arr = routeOptions?.[mode] || [];
-    return arr.find(r => r.isPrimary) || null;
-  };
-
-  const modeOptions = [
-    { key: 'driving', label: '🚗' },
-    { key: 'walking', label: '🚶‍♂️' },
-    { key: 'transit', label: '🚌' },
-  ];
-
-  const selectedPrimary = getPrimary(selectedMode);
-
-  // expose present/dismiss to parent via ref
-  useImperativeHandle(ref, () => ({
-    present: () => innerRef.current?.present(),
-    dismiss: () => innerRef.current?.dismiss(),
-  }));
-
-  const handleStartNavigation = async () => {
-    if (!fromLocation?.coords || !toLocation?.coords) {
-      Alert.alert('Eksik Bilgi', 'Lütfen önce nereden ve nereye gideceğinizi seçin.');
-      return;
-    }
-
-    const ready = await checkLocationReady();
-    if (!ready) {
-      Alert.alert(
-        'Konum Servisi Gerekli',
-        'Navigasyonu başlatmak için konum izni vermeli ve GPS\'i açmalısınız.',
-        [{ text: 'Tamam', onPress: () => {} }]
-      );
-      return;
-    }
-
-    // 🧠 Verileri önce al
-    const from = {
-      lat: fromLocation.coords.latitude,
-      lng: fromLocation.coords.longitude,
+    const getPrimary = (mode) => {
+      const arr = routeOptions?.[mode] || [];
+      return arr.find((r) => r.isPrimary) || arr[0] || null;
     };
-    const to = {
-      lat: toLocation.coords.latitude,
-      lng: toLocation.coords.longitude,
+
+    const selectedPrimary = useMemo(
+      () => getPrimary(selectedMode),
+      [routeOptions, selectedMode]
+    );
+
+    useImperativeHandle(ref, () => ({
+      present: () => {
+        presentedRef.current = true;
+        modalRef.current?.present();
+      },
+      dismiss: () => {
+        presentedRef.current = false;
+        modalRef.current?.dismiss();
+      },
+      snapToIndex: (i) => modalRef.current?.snapToIndex?.(i),
+    }));
+
+    // Otomatik aç
+    useEffect(() => {
+      if (!openOnReady) return;
+
+      const hasCoords = !!(fromLocation?.coords && toLocation?.coords);
+      const hasMetrics =
+        Number.isFinite(selectedPrimary?.distance ?? distance) &&
+        Number.isFinite(selectedPrimary?.duration ?? duration);
+      const hasShape =
+        (selectedPrimary?.decodedCoords?.length ?? 0) > 1 ||
+        !!selectedPrimary?.polyline;
+
+      if (hasCoords && (hasMetrics || hasShape) && !presentedRef.current) {
+        const t = setTimeout(() => {
+          modalRef.current?.present();
+          presentedRef.current = true;
+        }, 0);
+        return () => clearTimeout(t);
+      }
+    }, [
+      fromLocation?.coords,
+      toLocation?.coords,
+      selectedPrimary,
+      distance,
+      duration,
+      openOnReady,
+    ]);
+
+    const handleStartNavigation = async () => {
+      if (!fromLocation?.coords || !toLocation?.coords) {
+        Alert.alert('Eksik Bilgi', 'Lütfen önce nereden ve nereye gideceğinizi seçin.');
+        return;
+      }
+      const ready = await checkLocationReady();
+      if (!ready) {
+        Alert.alert(
+          'Konum Servisi Gerekli',
+          "Navigasyonu başlatmak için konum izni vermeli ve GPS'i açmalısınız.",
+          [{ text: 'Tamam' }]
+        );
+        return;
+      }
+
+      const from = {
+        lat: fromLocation.coords.latitude,
+        lng: fromLocation.coords.longitude,
+      };
+      const to = {
+        lat: toLocation.coords.latitude,
+        lng: toLocation.coords.longitude,
+      };
+      const polyline = selectedPrimary?.polyline;
+      const steps = selectedPrimary?.steps || [];
+      const mode = selectedMode;
+
+      modalRef.current?.dismiss();
+      presentedRef.current = false;
+
+      navigation.navigate('NavigationScreen', {
+        from,
+        to,
+        polyline,
+        steps,
+        mode,
+        waypoints,
+      });
+
+      onStart?.();
     };
-    const polyline = selectedPrimary?.polyline;
-    const steps = selectedPrimary?.steps || [];
-    const mode = selectedMode;
 
-    // Modalı kapat
-    innerRef.current?.dismiss();
+    const modeOptions = [
+      { key: 'driving', label: '🚗' },
+      { key: 'walking', label: '🚶‍♂️' },
+      { key: 'transit', label: '🚌' },
+    ];
 
-    // 🔀 Navigasyon ekranına geçiş
-    navigation.navigate('NavigationScreen', {
-      from,
-      to,
-      polyline,
-      steps,
-      mode,
-    });
+    return (
+      <BottomSheetModal
+        ref={modalRef}
+        snapPoints={snapPoints}
+        enablePanDownToClose
+        backgroundStyle={styles.sheetBackground}
+        handleIndicatorStyle={styles.handleIndicator}
+        topInset={Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0}
+        onDismiss={() => {
+          presentedRef.current = false;
+        }}
+      >
+        <BottomSheetView style={styles.container}>
+          {children}
 
-    // 🧼 Sonra state temizle
-    onCancel?.();
-  };
+          <View style={styles.content}>
+            <Text>Mesafe: {fmtDistance(selectedPrimary?.distance ?? distance)}</Text>
+            <Text>Süre: {fmtDuration(selectedPrimary?.duration ?? duration)}</Text>
 
-  return (
-    <BottomSheetModal
-      ref={innerRef}
-      index={0}
-      snapPoints={['30%', '60%', '90%']}
-      enablePanDownToClose={false}
-      enableHandlePanningGesture={true}
-      enableContentPanningGesture={true}
-      backgroundStyle={styles.sheetBackground}
-      handleIndicatorStyle={styles.handleIndicator}
-      onDismiss={onCancel}
-    >
-      <BottomSheetView style={styles.container}>
-        {children}
+            <View style={styles.modeContainer}>
+              {modeOptions.map((option) => {
+                const primary = getPrimary(option.key);
+                const isSelected = selectedMode === option.key;
+                const hasData = !!primary; // sadece görsel amaçlı
 
-        <View style={styles.content}>
-          {/* Üst özet — seçili modun primary rotası varsa onu göster, yoksa prop'lardan düş */}
-          <Text>Mesafe: {fmtDistance(selectedPrimary?.distance ?? distance)}</Text>
-          <Text>Süre: {fmtDuration(selectedPrimary?.duration ?? duration)}</Text>
-
-          <View style={styles.modeContainer}>
-            {modeOptions.map(option => {
-              const primary = getPrimary(option.key);
-              const isSelected = selectedMode === option.key;
-              const isDisabled = !primary; // bu modda hiç rota yok
-
-              return (
-                <TouchableOpacity
-                  key={option.key}
-                  activeOpacity={isDisabled ? 1 : 0.7}
-                  style={[
-                    styles.modeButton,
-                    isSelected && styles.modeButtonSelected,
-                    isDisabled && styles.modeButtonDisabled,
-                  ]}
-                  onPress={() => {
-                    if (!isDisabled) {
-                      // handleSelectRoute bekliyor: primary.id
-                      onModeChange?.(primary.id);
-                    }
-                  }}
-                >
-                  <Text style={[
-                    styles.modeText,
-                    isSelected && styles.modeTextSelected,
-                    isDisabled && styles.modeTextDisabled,
-                  ]}>
-                    {option.label}
-                  </Text>
-
-                  <Text style={[
-                    styles.modeLabel,
-                    isSelected && styles.modeLabelSelected,
-                    isDisabled && styles.modeLabelDisabled,
-                  ]}>
-                    {fmtDistance(primary?.distance)} • {fmtDuration(primary?.duration)}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* 🚇 Transit mod detaylı adımları (varsa) */}
-          {selectedMode === 'transit' && Array.isArray(selectedPrimary?.steps) && selectedPrimary.steps.length > 0 && (
-            <View style={{ marginTop: 12 }}>
-              {selectedPrimary.steps.map((step, index) => {
-                const isTransit = !!step.transit_details; // Google steps'te varsa
-                if (isTransit) {
-                  const lineName = step.transit_details?.line?.short_name || step.transit_details?.line?.name || 'Hat';
-                  const vehicle = step.transit_details?.line?.vehicle?.type || '';
-                  const from = step.transit_details?.departure_stop?.name || 'Başlangıç';
-                  const to = step.transit_details?.arrival_stop?.name || 'Varış';
-                  const numStops = step.transit_details?.num_stops ?? '?';
-                  return (
-                    <View key={index} style={{ marginBottom: 8 }}>
-                      <Text style={{ fontSize: 14 }}>🚌 {lineName} ({vehicle})</Text>
-                      <Text style={{ fontSize: 13, color: '#444' }}>
-                        {from} → {to} ({numStops} durak)
-                      </Text>
-                    </View>
-                  );
-                } else {
-                  const dTxt = step.distance?.text || fmtDistance(step.distance?.value);
-                  const tTxt = step.duration?.text || fmtDuration(step.duration?.value);
-                  const instruction = step.maneuver?.instruction || '';
-                  return (
-                    <View key={index} style={{ marginBottom: 8 }}>
-                      <Text style={{ fontSize: 14 }}>🚶 {dTxt} ({tTxt})</Text>
-                      <Text style={{ fontSize: 13, color: '#444' }}>{instruction}</Text>
-                    </View>
-                  );
-                }
+                return (
+                  <TouchableOpacity
+                    key={option.key}
+                    activeOpacity={0.7}
+                    style={[
+                      styles.modeButton,
+                      isSelected && styles.modeButtonSelected,
+                      !hasData && styles.modeButtonDisabled,
+                    ]}
+                onPress={() => {
+                  if (primary) {
+                    onModeChange?.(primary.id);
+                  } else if (fromLocation?.coords && toLocation?.coords) {
+                    // bu mod için rota yoksa hesaplat
+                    onModeRequest?.(option.key);
+                  }
+                }}
+                  >
+                    <Text
+                      style={[
+                        styles.modeText,
+                        isSelected && styles.modeTextSelected,
+                        !hasData && styles.modeTextDisabled,
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.modeLabel,
+                        isSelected && styles.modeLabelSelected,
+                        !hasData && styles.modeLabelDisabled,
+                      ]}
+                    >
+                      {fmtDistance(primary?.distance)} • {fmtDuration(primary?.duration)}
+                    </Text>
+                  </TouchableOpacity>
+                );
               })}
             </View>
-          )}
 
-          <TouchableOpacity
-            style={styles.startButton}
-            onPress={handleStartNavigation}
-          >
-            <Text style={styles.buttonText}>Başlat</Text>
-          </TouchableOpacity>
-        </View>
-      </BottomSheetView>
-    </BottomSheetModal>
-  );
-});
+            <TouchableOpacity style={styles.startButton} onPress={handleStartNavigation}>
+              <Text style={styles.buttonText}>Başlat</Text>
+            </TouchableOpacity>
+          </View>
+        </BottomSheetView>
+      </BottomSheetModal>
+    );
+  }
+);
 
 export default RouteInfoSheet;
 
 const styles = StyleSheet.create({
-  sheetBackground: {
-    backgroundColor: 'white',
-  },
+  sheetBackground: { backgroundColor: 'white' },
   handleIndicator: {
     backgroundColor: '#CCC',
     width: 40,
@@ -211,17 +234,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginVertical: 8,
   },
-  container: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  infoText: {
-    fontSize: 16,
-    marginBottom: 8,
-  },
+  container: { flex: 1 },
+  content: { paddingHorizontal: 16, paddingBottom: 16 },
   modeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -234,33 +248,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 90,
   },
-  modeButtonSelected: {
-    backgroundColor: '#007AFF',
-  },
-  modeButtonDisabled: {
-    opacity: 0.45,
-  },
-  modeText: {
-    fontSize: 20,
-    color: 'black',
-  },
-  modeTextSelected: {
-    color: 'white',
-  },
-  modeTextDisabled: {
-    color: '#666',
-  },
-  modeLabel: {
-    fontSize: 12,
-    color: '#333',
-    marginTop: 4,
-  },
-  modeLabelSelected: {
-    color: 'white',
-  },
-  modeLabelDisabled: {
-    color: '#666',
-  },
+  modeButtonSelected: { backgroundColor: '#007AFF' },
+  modeButtonDisabled: { opacity: 0.45 },
+  modeText: { fontSize: 20, color: 'black' },
+  modeTextSelected: { color: 'white' },
+  modeTextDisabled: { color: '#666' },
+  modeLabel: { fontSize: 12, color: '#333', marginTop: 4 },
+  modeLabelSelected: { color: 'white' },
+  modeLabelDisabled: { color: '#666' },
   startButton: {
     backgroundColor: '#007AFF',
     padding: 12,
@@ -268,9 +263,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
   },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  buttonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
 });

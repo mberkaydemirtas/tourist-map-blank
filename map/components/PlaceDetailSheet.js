@@ -9,33 +9,52 @@ import PlaceContactButtons from './PlaceContactButtons';
 import { toCoordsObject, normalizeCoord } from '../utils/coords';
 
 const PlaceDetailSheet = forwardRef(function PlaceDetailSheet(
-  { marker, routeInfo, snapPoints, onGetDirections, onDismiss },
+  {
+    marker,
+    routeInfo,
+    snapPoints = ['30%', '60%', '75%', '90%'], // default snappoints
+    onGetDirections,
+    onDismiss,
+    // optional CTA override (start/end/lodging gibi durumlar için)
+    overrideCtaLabel,
+    overrideCtaOnPress,
+  },
   ref
 ) {
   const innerRef = useRef(null);
 
-  // Dışarıdan erişim için imperative API
+  // Imperative API
   useImperativeHandle(ref, () => ({
     present: () => innerRef.current?.expand?.(),
     close: () => innerRef.current?.close?.(),
     snapToIndex: (index) => innerRef.current?.snapToIndex?.(index),
   }));
 
-   // "Yol Tarifi Al" tıklanınca marker'ı normalize edip üst bileşene gönder
-   const handleGetDirectionsPress = () => {
-     if (!marker || !onGetDirections) return;
-     const normalized =
-       toCoordsObject(marker) ??
-       {
-         ...marker,
-         coords: normalizeCoord(
-           marker?.coords ?? marker?.coordinate ?? marker?.geometry?.location ?? marker
-         ),
-       };
-     onGetDirections(normalized);
-   };
- 
-   return (
+  // default CTA davranışı (Yol Tarifi Al)
+  const handleGetDirectionsPress = () => {
+    if (!marker || !onGetDirections) return;
+    const normalized =
+      toCoordsObject(marker) ??
+      {
+        ...marker,
+        coords: normalizeCoord(
+          marker?.coords ?? marker?.coordinate ?? marker?.geometry?.location ?? marker
+        ),
+      };
+    onGetDirections(normalized);
+  };
+
+  // primary CTA: override varsa onu kullan; yoksa default
+  const primaryCtaHandler = () => {
+    if (typeof overrideCtaOnPress === 'function') {
+      overrideCtaOnPress(marker);
+    } else {
+      handleGetDirectionsPress();
+    }
+  };
+  const primaryCtaLabel = overrideCtaLabel || 'Yol Tarifi Al';
+
+  return (
     <BottomSheet
       ref={innerRef}
       index={-1}
@@ -43,28 +62,30 @@ const PlaceDetailSheet = forwardRef(function PlaceDetailSheet(
       enablePanDownToClose
       enableContentPanningGesture={false}
       enableHandlePanningGesture
-       onChange={(idx) => {
-   // -1 kapalı; bazı versiyonlarda -1 dönmez, o yüzden idx === -1 ya da idx === 0 dışı gibi kontrol edebilirsin
-   if (idx === -1) {
-     // parent’a haber ver
-    typeof onDismiss === 'function' && onDismiss();
-   }
- }}
+      onChange={(idx) => {
+        // bazı sürümlerde kapandığında -1 dönmeyebilir; yine de güvenli olsun
+        if (idx === -1 && typeof onDismiss === 'function') onDismiss();
+      }}
+      onClose={() => { typeof onDismiss === 'function' && onDismiss(); }}
       handleComponent={() => (
         <PlaceDetailHeader
           marker={marker}
           routeInfo={routeInfo}
-          onGetDirections={handleGetDirectionsPress}
+          onGetDirections={primaryCtaHandler}
+          // Header'ın bu prop'u desteklediğinden emin ol
+          ctaLabel={primaryCtaLabel}
         />
       )}
     >
-      <BottomSheetScrollView
-        contentContainerStyle={styles.sheetScroll}
-        nestedScrollEnabled
-      >
-        <PlaceOpeningHours marker={marker} />
-        <PlacePhotoGallery marker={marker} />
-        <PlaceContactButtons marker={marker} />
+      <BottomSheetScrollView contentContainerStyle={styles.sheetScroll} nestedScrollEnabled>
+        {/* marker yokken ağır bileşenleri render etmeyelim */}
+        {marker && (
+          <>
+            <PlaceOpeningHours marker={marker} />
+            <PlacePhotoGallery marker={marker} />
+            <PlaceContactButtons marker={marker} />
+          </>
+        )}
       </BottomSheetScrollView>
     </BottomSheet>
   );

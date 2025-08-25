@@ -76,7 +76,7 @@ const getAutocompleteSessionToken = () => {
 export const resetAutocompleteSession = () => { _acSessionToken = null; };
 
 /**
- * Rota-bias'lı autocomplete
+ * Rota-bias'lı autocomplete (genel amaçlı)
  * @param {string} input
  * @param {object} opts
  *  - bounds: { sw:{lat,lng}, ne:{lat,lng} } // rota dikdörtgeni (tercih)
@@ -158,6 +158,42 @@ export async function autocomplete(input, opts = {}) {
   }
 }
 
+/**
+ * ŞEHİR autocomplete (ülkeye kısıtlı, dünya geneli)
+ * @param {{input:string, country?:string, language?:string, sessiontoken?:string}} args
+ */
+export async function autocompleteCities({ input, country, language = 'tr', sessiontoken } = {}) {
+  const q = String(input || '').trim();
+  if (!q) return [];
+  const params = new URLSearchParams({
+    input: q,
+    key: KEY,
+    language,
+    types: '(cities)',            // şehir hedefi
+  });
+  if (country) params.append('components', `country:${country}`);
+  const token = sessiontoken || getAutocompleteSessionToken();
+  if (token) params.append('sessiontoken', token);
+
+  try {
+    const res = await fetch(`${BASE}/place/autocomplete/json?${params.toString()}`);
+    const json = await res.json();
+    if (json.status !== 'OK' && json.status !== 'ZERO_RESULTS') {
+      console.warn('❌ autocompleteCities:', json.status, json?.error_message);
+      return [];
+    }
+    return (json.predictions || []).map(p => ({
+      description: p.description,
+      place_id: p.place_id,
+      main_text: p.structured_formatting?.main_text,
+      secondary_text: p.structured_formatting?.secondary_text,
+    }));
+  } catch (e) {
+    console.error('🌐 autocompleteCities error:', e?.message || e);
+    return [];
+  }
+}
+
 /* ------------------------------ Place Details ----------------------------- */
 export async function getPlaceDetails(placeId) {
   const params = new URLSearchParams({
@@ -207,6 +243,35 @@ export async function getPlaceDetails(placeId) {
     };
   } catch (err) {
     console.error('🟥 getPlaceDetails fetch hatası:', err?.message || err);
+    return null;
+  }
+}
+
+/**
+ * Sade şehir/yer koordinatı: ad + address + geometry/location
+ */
+export async function getPlaceLatLng(place_id, language = 'tr') {
+  const params = new URLSearchParams({
+    place_id,
+    key: KEY,
+    language,
+    fields: 'name,formatted_address,geometry/location',
+  });
+  try {
+    const res = await fetch(`${BASE}/place/details/json?${params.toString()}`);
+    const json = await res.json();
+    if (json.status !== 'OK') {
+      console.warn('❌ getPlaceLatLng:', json.status, json?.error_message);
+      return null;
+    }
+    const r = json.result;
+    return r ? {
+      name: r.name,
+      address: r.formatted_address,
+      location: r.geometry?.location, // {lat,lng}
+    } : null;
+  } catch (e) {
+    console.error('🌐 getPlaceLatLng error:', e?.message || e);
     return null;
   }
 }
@@ -310,6 +375,40 @@ export async function getNearbyPlaces(arg1, maybeKeyword) {
   });
 }
 
+/**
+ * Hub arayıcı (dünya geneli): type = airport | train_station | bus_station | car_rental | parking
+ */
+export async function nearbyHubs({ lat, lng, type, radius }) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || !type) return [];
+  const r = radius ?? (type === 'airport' ? 100_000 : 30_000);
+  const params = new URLSearchParams({
+    location: `${lat},${lng}`,
+    radius: r.toString(),
+    type,
+    language: 'tr',
+    key: KEY,
+  });
+  try {
+    const res = await fetch(`${BASE}/place/nearbysearch/json?${params.toString()}`);
+    const json = await res.json();
+    if (json.status !== 'OK' && json.status !== 'ZERO_RESULTS') {
+      console.warn('nearbyHubs:', json.status, json?.error_message);
+      return [];
+    }
+    return (json.results || []).map(x => ({
+      place_id: x.place_id,
+      name: x.name,
+      rating: x.rating,
+      user_ratings_total: x.user_ratings_total,
+      vicinity: x.vicinity,
+      location: x.geometry?.location, // {lat,lng}
+    }));
+  } catch (e) {
+    console.error('🌐 nearbyHubs error:', e?.message || e);
+    return [];
+  }
+}
+
 /* --------------------------- Directions / Routing ------------------------- */
 function getBoundsFromCoords(coords = []) {
   if (!coords.length) return null;
@@ -351,52 +450,109 @@ function buildDirectionsUrl(originIn, destinationIn, mode = 'driving', extra = {
     params.append('departure_time', 'now'); // canlı trafik
     avoidSet.add('ferries');
     if (extra.avoidTolls) avoidSet.add('tolls');
-    if (extra.trafficModel) params.append('traffic_model', String(extra.trafficModel)); // best_guess, pessimistic, optimistic
+    if (extra.trafficModel) params.append('traffic_model', String(extra.trafficModel));
   } else if (mode === 'transit') {
     params.append('departure_time', 'now');
   }
   if (avoidSet.size) params.append('avoid', Array.from(avoidSet).join('|'));
 
-  // Waypoints
-  if (Array.isArray(extra.waypoints) && extra.waypoints.length) {
-    const items = extra.waypoints
-      .map(w => {
-        const lt = w.lat ?? w.latitude ?? w.coords?.latitude;
-        const lg = w.lng ?? w.longitude ?? w.coords?.longitude;
-        if (!Number.isFinite(lt) || !Number.isFinite(lg)) return null;
-        return `${lt},${lg}`;
-      })
-      .filter(Boolean);
+  // --- WAYPOINT SERİALİZASYON ---
+  const serializeWaypoints = (raw, { optimize = false } = {}) => {
+    const list = Array.isArray(raw) ? raw : [];
+    const tokens = [];
 
-    if (items.length) {
-      if (extra.optimize) {
-        params.append('waypoints', `optimize:true|${items.join('|')}`);
-      } else {
-        // sabit sıra için via: kullan (yol üzerinden zorunlu geçiş)
-        const viaItems = items.map(s => `via:${s}`).join('|');
-        params.append('waypoints', viaItems);
+    for (const w of list) {
+      if (!w) continue;
+
+      // 1) String türü → aynen al, optimize:false ise via: ile başlat
+      if (typeof w === 'string') {
+        let tok = w.trim();
+        if (!tok) continue;
+        if (!optimize && !/^via:/i.test(tok)) tok = `via:${tok}`;
+        tokens.push(tok);
+        continue;
+      }
+
+      // 2) Array [lat,lng]
+      if (Array.isArray(w) && w.length >= 2 && Number.isFinite(w[0]) && Number.isFinite(w[1])) {
+        let tok = `${w[0]},${w[1]}`;
+        if (!optimize) tok = `via:${tok}`;
+        tokens.push(tok);
+        continue;
+      }
+
+      // 3) Object
+      const placeId = w.place_id || w.placeId || w.id || null;
+      const loc     = w.location || w.coords || w.coordinate || w;
+      const lt      = loc?.lat ?? loc?.latitude;
+      const lg      = loc?.lng ?? loc?.longitude;
+
+      if (placeId) {
+        let tok = `place_id:${placeId}`;
+        if (!optimize) tok = `via:${tok}`;
+        tokens.push(tok);
+        continue;
+      }
+
+      if (Number.isFinite(lt) && Number.isFinite(lg)) {
+        let tok = `${lt},${lg}`;
+        if (!optimize) tok = `via:${tok}`;
+        tokens.push(tok);
       }
     }
+
+    if (!tokens.length) return null;
+
+    // optimize:true → via: kullanmayız, "optimize:true|" prefix’i ekleriz
+    if (optimize) {
+      return `optimize:true|${tokens.map(t => t.replace(/^via:/i, '')).join('|')}`;
+    }
+    return tokens.join('|');
+  };
+
+  // waypoints kaynakları: waypoints, viaWaypoints, waypointsLL (ilk dolu olan kullanılır)
+  let wpParam = null;
+
+  if (Array.isArray(extra.waypoints) && extra.waypoints.length) {
+    wpParam = serializeWaypoints(extra.waypoints, { optimize: !!extra.optimize });
   }
+  if (!wpParam && Array.isArray(extra.viaWaypoints) && extra.viaWaypoints.length) {
+    // viaWaypoints her hâlükârda "via:" olarak gider (optimize=no)
+    wpParam = serializeWaypoints(extra.viaWaypoints, { optimize: false });
+  }
+  if (!wpParam && Array.isArray(extra.waypointsLL) && extra.waypointsLL.length) {
+    wpParam = serializeWaypoints(extra.waypointsLL, { optimize: !!extra.optimize });
+  }
+
+  if (wpParam) params.append('waypoints', wpParam);
 
   return `${BASE}/directions/json?${params.toString()}`;
 }
 
 /**
  * Google Directions – her zaman LİSTE döndürür.
- * routes[i] = {
- *   id, distance, duration, polyline, geometry, decodedCoords, steps[], mode,
- *   bounds, summary, warnings, legs
- * }
  */
 export async function getRoute(origin, destination, mode = 'driving', opts = {}) {
   try {
-    const url = buildDirectionsUrl(origin, destination, mode, {
-      alternatives: opts.alternatives !== false,
-      waypoints: opts.waypoints || [],
-      optimize: opts.optimize === true,
-      avoidTolls: opts.avoidTolls === true,
-      trafficModel: opts.trafficModel, // best_guess | pessimistic | optimistic
+    const hasWps =
+      (Array.isArray(opts.waypoints)    && opts.waypoints.length > 0) ||
+      (Array.isArray(opts.viaWaypoints) && opts.viaWaypoints.length > 0) ||
+      (Array.isArray(opts.waypointsLL)  && opts.waypointsLL.length  > 0);
+
+    // Transit modunda waypoints desteklenmez → otomatik driving'e düş
+    const effectiveMode = (mode === 'transit' && hasWps) ? 'driving' : mode;
+
+    // alternatives: waypoint varsa default false, yoksa true
+    const alternatives = (opts.alternatives != null) ? opts.alternatives : !hasWps;
+
+    const url = buildDirectionsUrl(origin, destination, effectiveMode, {
+      alternatives,
+      waypoints:    opts.waypoints    || [],
+      viaWaypoints: opts.viaWaypoints || [],
+      waypointsLL:  opts.waypointsLL  || [],
+      optimize:     opts.optimize === true,
+      avoidTolls:   opts.avoidTolls === true,
+      trafficModel: opts.trafficModel,
     });
 
     if (!url) {
@@ -418,12 +574,10 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
       const lineCoords = decoded.map(p => [p.longitude, p.latitude]); // [lng,lat]
       const legs = Array.isArray(route.legs) ? route.legs : [];
 
-      const totalDistance = legs.reduce((s, l) => s + (l.distance?.value || 0), 0); // metres
-      // varsa duration_in_traffic, yoksa duration
+      const totalDistance = legs.reduce((s, l) => s + (l.distance?.value || 0), 0);
       const totalDuration = legs.reduce((s, l) =>
-        s + (l.duration_in_traffic?.value ?? l.duration?.value ?? 0), 0); // seconds
+        s + (l.duration_in_traffic?.value ?? l.duration?.value ?? 0), 0);
 
-      // tüm leg step'lerini düzleştir
       const steps = legs.flatMap((leg, legIdx) => {
         const legSteps = Array.isArray(leg.steps) ? leg.steps : [];
         return legSteps.map(s => {
@@ -431,15 +585,13 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
           const stepDec = stepPoly ? decodePolyline(stepPoly) : [];
           const stepCoords = stepDec.length ? stepDec.map(p => [p.longitude, p.latitude]) : undefined;
 
-          // Maneuver normalize
           let type = null, modifier = null;
           if (typeof s.maneuver === 'string') {
-            const parts = s.maneuver.split('-'); // "turn-left"
+            const parts = s.maneuver.split('-');
             type = parts[0] || null;
             modifier = parts[1] || null;
           }
 
-          // bearing_after tahmini (son iki noktanın doğrultusu)
           let bearing_after = undefined;
           if (stepCoords && stepCoords.length >= 2) {
             const a = { lat: stepCoords[stepCoords.length - 2][1], lng: stepCoords[stepCoords.length - 2][0] };
@@ -447,10 +599,10 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
             bearing_after = bearingDeg(a, b);
           }
 
-          const stepObj = {
+          return {
             legIndex: legIdx,
             distance: s.distance?.value ?? null,
-            duration: (s.duration?.value ?? null),
+            duration: s.duration?.value ?? null,
             polyline: stepPoly || null,
             geometry: stepCoords ? { type: 'LineString', coordinates: stepCoords } : undefined,
             maneuver: {
@@ -459,11 +611,9 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
               location: s.end_location ? [s.end_location.lng, s.end_location.lat] : undefined,
               bearing_after,
             },
-            // Google özgün alanları da saklayalım:
             start_location: s.start_location,
             end_location: s.end_location,
           };
-          return stepObj;
         });
       });
 
@@ -473,13 +623,14 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
         duration: totalDuration,
         polyline: overviewPoly,
         geometry: { type: 'LineString', coordinates: lineCoords },
-        decodedCoords: decoded, // [{latitude,longitude,lat,lng}]
+        decodedCoords: decoded,
         steps,
-        mode,
+        mode: effectiveMode,
         bounds: getBoundsFromCoords(decoded),
         summary: route.summary,
         warnings: route.warnings || [],
         legs,
+        waypointOrder: route.waypoint_order || null,
       };
     });
 
