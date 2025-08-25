@@ -1,5 +1,5 @@
 // src/MapScreen.js
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback  } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,11 +10,11 @@ import {
 } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, Marker, Callout } from 'react-native-maps';
 import MarkerCallout from './components/MarkerCallout';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { useLocation } from './hooks/useLocation';
 import { useMapLogic } from './hooks/useMapLogic';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { InteractionManager } from 'react-native';
 import MapMarkers from './components/MapMarkers';
 import MapHeaderControls from './components/MapHeaderControls';
 import MapOverlays from './components/MapOverlays';
@@ -40,6 +40,11 @@ import {
 } from './maps';
 
 /* ------------------------- küçük yardımcılar ------------------------- */
+
+const flog = (...a) => console.log('%c[FLOW] ',  'color:#6a5acd', ...a);
+const rlog = (...a) => console.log('%c[ROUTE]', 'color:#0a84ff', ...a);
+const xlog = (...a) => console.log('%c[XRAY] ', 'color:#ff3b30', ...a);
+
 const placeForHistory = ({ lat, lng, name, address, place_id, description }) => {
   const n   = name ?? description ?? 'Seçilen yer';
   const adr = address ?? description ?? '';
@@ -191,26 +196,76 @@ export default function MapScreen() {
   const mapRef = useRef(null);
   const map = useMapLogic(mapRef);
   const { coords, available, refreshLocation } = useLocation();
-  const routeCalcSeqRef = useRef(0);
-  const routeActiveKeyRef = useRef(null);
+  const routeCalcSeqRef = useRef({});        // { driving: n, walking: n, transit: n }
+  const routeActiveKeyRef = useRef({});      // { driving: key, ... }
 
   // sheets
   const sheetRef = useRef(null);
   const sheetRefRoute = useRef(null);
 
-  const presentRouteSheet = useCallback(() => {
-    const r = sheetRefRoute.current;
-    if (!r) return;
-    r.present?.();
-    r.expand?.();
-    r.snapToIndex?.(0);
-  }, []);
-  const dismissRouteSheet = useCallback(() => {
-    const r = sheetRefRoute.current;
-    if (!r) return;
-    r.dismiss?.();
-    r.close?.();
-  }, []);
+  // dosyanın üst taraflarında:
+ const prefetchKeyRef = useRef(null);
+ const routeSheetPresentedRef = useRef(false);
+
+const getRootNav = () => {
+  let nav = navigation;
+  while (nav?.getParent?.()) nav = nav.getParent();
+  return nav || navigation;
+};
+// MapScreen component başı
+const resumeSheetAfterNavRef = useRef(false);
+
+const f = normalizeCoord(map.fromLocation?.coords);
+const t = normalizeCoord(map.toLocation?.coords);
+const wps = Array.isArray(map.waypoints)
+  ? map.waypoints
+      .map(w => ({
+        lat: w.lat ?? w.latitude,
+        lng: w.lng ?? w.longitude,
+        name: w.name,
+        place_id: w.place_id ?? null,
+      }))
+      .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+  : [];
+// MapScreen.js
+const handleModeRequest = async (mode) => {
+  // UI olarak seçili modu göster
+  map.setSelectedMode(mode);
+
+  // o mod zaten doluysa tekrar hesaplama
+  const hasData = Array.isArray(map.routeOptions?.[mode]) && map.routeOptions[mode].length > 0;
+  if (hasData) return;
+
+  const f = normalizeCoord(map.fromLocation?.coords);
+  const t = normalizeCoord(map.toLocation?.coords);
+  if (!f || !t) return;
+
+  try {
+    // ⬇️ calculateRoute yerine recalcRoute kullan
+    await recalcRoute(mode, null, f, t);
+  } catch (e) {
+    console.warn('❌ Mode request hesaplama hatası:', e);
+  }
+};
+
+const presentRouteSheet = useCallback(() => {
+  if (isNavigating) return;
+  const r = sheetRefRoute.current;
+  if (!r) return;
+  r.present?.();
+  r.expand?.();
+  r.snapToIndex?.(0);
+  routeSheetPresentedRef.current = true; // <-- görünür kabul et
+}, [isNavigating]);
+
+const dismissRouteSheet = useCallback(() => {
+  const r = sheetRefRoute.current;
+  if (!r) return;
+  r.dismiss?.();
+  r.close?.();
+  routeSheetPresentedRef.current = false; // <-- görünmez kabul et
+}, []);
+
 
   // UI
   const [mode, setMode] = useState('explore'); // 'explore' | 'route'
@@ -273,6 +328,26 @@ export default function MapScreen() {
     }
   }, [picker]);
 
+useFocusEffect(
+  React.useCallback(() => {
+    // Ekran focus olduğunda: rota modundaysak ve az önce nav için kapattıysak…
+    if (mode === 'route' && resumeSheetAfterNavRef.current) {
+      const list = map.routeOptions?.[map.selectedMode] || [];
+      const primary = (list.find(r => r.isPrimary) || list[0]);
+      const hasRoute = !!(primary && primary.decodedCoords && primary.decodedCoords.length > 0);
+
+      if (hasRoute) {
+        // animasyonlar/transition bitsin
+        InteractionManager.runAfterInteractions(() => {
+          presentRouteSheet();
+        });
+      }
+      resumeSheetAfterNavRef.current = false; // bayrağı sıfırla
+    }
+  }, [mode, map.selectedMode, map.routeOptions, presentRouteSheet])
+);
+
+
    // Wizard'dan picker.center geldiyse o şehrin merkezine zoomla
   useEffect(() => {
     const c = picker?.center ? normalizeCoord(picker.center) : null;
@@ -282,7 +357,27 @@ export default function MapScreen() {
       mapRef.current.animateToRegion(region, 500);
     }
   }, [picker?.center]);
+useEffect(() => {
+  if (mode !== 'route') return;
 
+  const f = normalizeCoord(map.fromLocation?.coords);
+  const t = normalizeCoord(map.toLocation?.coords);
+  if (!f || !t) return;
+
+  const key = `${f.latitude.toFixed(5)},${f.longitude.toFixed(5)}->${t.latitude.toFixed(5)},${t.longitude.toFixed(5)}`;
+  if (prefetchKeyRef.current === key) return;   // aynı çifti yeniden hesaplama
+  prefetchKeyRef.current = key;
+
+  (async () => {
+    const modes = ['driving','walking','transit'];
+    for (const m of modes) {
+      const hasData = Array.isArray(map.routeOptions?.[m]) && map.routeOptions[m].length > 0;
+      if (!hasData) {
+        try { await recalcRoute(m, null, f, t); } catch (e) {}
+      }
+    }
+  })();
+}, [mode, map.fromLocation, map.toLocation, recalcRoute]);
   useEffect(() => {
     const HISTORY_KEYS_OBJECT = [
       'route_stop_history',
@@ -432,8 +527,9 @@ export default function MapScreen() {
       fromOverride = null,
       toOverride = null
     ) => {
-      const mySeq = ++routeCalcSeqRef.current;
-
+      const modeKey = selMode || 'driving';
+      routeCalcSeqRef.current[modeKey] = (routeCalcSeqRef.current[modeKey] || 0) + 1;
+      const mySeq = routeCalcSeqRef.current[modeKey];
       const fromC0 = normalizeCoord(fromOverride ?? map.fromLocation?.coords);
       const toC0   = normalizeCoord(toOverride  ?? map.toLocation?.coords);
       const fromLL = toStrictLL(fromC0);
@@ -462,7 +558,7 @@ export default function MapScreen() {
           .filter(pid => !cleanLL.some(w => w.place_id === pid))
           .map(pid => ({ latitude: NaN, longitude: NaN, place_id: pid }))
       ]);
-      routeActiveKeyRef.current = reqKey;
+      routeActiveKeyRef.current[modeKey] = reqKey;
 
       const wpPlaceId      = Array.from(new Set(wpIdsRaw)).map(pid => `via:place_id:${pid}`);
       const wpViaLatLng    = cleanLL.map(w => `via:${w.lat.toFixed(6)},${w.lng.toFixed(6)}`);
@@ -470,6 +566,8 @@ export default function MapScreen() {
       const baseOpts = { optimize: false, alternatives: cleanLL.length === 0 };
 
       const attempts = [
+        // ✅ Always fetch a base route even if there are 0 waypoints
+        { ...baseOpts, __attempt: 'no-wp' },
         wpPlaceId.length      ? { ...baseOpts, waypoints: wpPlaceId,   __attempt: 'via:place_id' } : null,
         wpViaLatLng.length    ? { ...baseOpts, waypoints: wpViaLatLng, __attempt: 'via:latlng' }   : null,
         wpLLForSegment.length ? { ...baseOpts, waypointsLL: wpLLForSegment, __attempt: 'LL-array' } : null,
@@ -540,8 +638,9 @@ export default function MapScreen() {
         if (merged) { merged.isPrimary = true; routes = [merged]; }
       }
 
-      const stale = mySeq !== routeCalcSeqRef.current || reqKey !== routeActiveKeyRef.current;
-      if (!routes) {
+      const stale =
+        mySeq !== routeCalcSeqRef.current[modeKey] ||
+        reqKey !== routeActiveKeyRef.current[modeKey];      if (!routes) {
         if (stale) return;
         const hadPrev = Array.isArray(map.routeOptions?.[selMode]) && map.routeOptions[selMode].length > 0;
         if (hadPrev) return;
@@ -563,8 +662,8 @@ export default function MapScreen() {
           edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
           animated: true,
         });
-        requestAnimationFrame(presentRouteSheet);
-      }
+         rlog('MS.recalcRoute -> presentRouteSheet (requestAnimationFrame)');
+         requestAnimationFrame(presentRouteSheet);      }
     },
     [map.fromLocation, map.toLocation, map.waypoints, map.selectedMode, buildSegmentedRoute, presentRouteSheet, map, mapRef]
   );
@@ -572,6 +671,11 @@ export default function MapScreen() {
   useEffect(() => {
     if (mode !== 'route') return;
     const list = map.routeOptions?.[map.selectedMode];
+     xlog('MS.routeOptions watch', {
+       mode, selMode: map.selectedMode,
+       count: Array.isArray(list) ? list.length : 0,
+       firstPts: (list?.[0]?.decodedCoords?.length ?? 0)
+     });
     if (!Array.isArray(list) || list.length === 0) return;
 
     const primary = list.find(r => r.isPrimary) ?? list[0];
@@ -582,19 +686,27 @@ export default function MapScreen() {
         edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
         animated: true,
       });
-      requestAnimationFrame(presentRouteSheet);
+     const allReady = ['driving','walking','transit'].every(
+       m => Array.isArray(map.routeOptions?.[m]) && map.routeOptions[m].length > 0
+     );
+     if (allReady || routeSheetPresentedRef.current) {
+       requestAnimationFrame(presentRouteSheet);
+     }
     }
   }, [mode, map.selectedMode, map.routeOptions, presentRouteSheet]);
 
-  useEffect(() => {
-    const ready = mode === 'route' && Array.isArray(routeCoords) && routeCoords.length > 0;
-    if (ready) {
-      const id = setTimeout(() => presentRouteSheet(), 0);
-      return () => clearTimeout(id);
-    } else {
-      dismissRouteSheet();
-    }
-  }, [mode, routeCoords, presentRouteSheet, dismissRouteSheet]);
+useEffect(() => {
+  if (mode !== 'route') return;
+  const ready = Array.isArray(routeCoords) && routeCoords.length > 0;
+  if (!ready) return;
+  const allReady = ['driving','walking','transit'].every(
+    m => Array.isArray(map.routeOptions?.[m]) && map.routeOptions[m].length > 0
+  );
+  if (allReady || routeSheetPresentedRef.current) {
+    const id = setTimeout(() => presentRouteSheet(), 0);
+    return () => clearTimeout(id);
+  }
+}, [mode, routeCoords, map.routeOptions, presentRouteSheet]);
 
   // RoutePlannerCard -> Map geçişini karşıla
   useEffect(() => {
@@ -738,7 +850,17 @@ export default function MapScreen() {
       }
     } catch {}
 
-    await recalcRoute();
+     const fromC = normalizeCoord(fromSrc.coords);
+     const toC =
+       normalizeCoord(
+         map.toLocation?.coords ??
+         map.marker?.coordinate ??
+         map.marker?.coords ??
+         null
+       );
+     if (fromC && toC) {
+       await recalcRoute(map.selectedMode, null, fromC, toC);
+     }
   };
 
   const handleToSelected = useCallback(
@@ -782,8 +904,11 @@ export default function MapScreen() {
         }
         mapRef.current?.animateToRegion({ ...coord, latitudeDelta: 0.01, longitudeDelta: 0.01 }, 500);
 
-        setMode('route');
-        await recalcRoute();
+     setMode('route');
+     const fromC = normalizeCoord(map.fromLocation?.coords);
+     if (fromC) {
+       await recalcRoute(map.selectedMode, null, fromC, coord);
+     }
       } catch (e) {
         console.warn('handleToSelected error:', e);
       }
@@ -818,7 +943,8 @@ export default function MapScreen() {
       await pushLabelHistory('search_history_from', name);
       setMode('route');
       setIsSelectingFromOnMap(false);
-      await recalcRoute();
+    const toC = normalizeCoord(map.toLocation?.coords);
+    if (toC) await recalcRoute(map.selectedMode, null, normalizeCoord(coordinate), toC);
     } catch (e) {
       console.warn('select origin on map error:', e);
     }
@@ -841,8 +967,8 @@ export default function MapScreen() {
       await pushLabelHistory('search_history', label);
       await pushLabelHistory('search_history_to', label);
       setIsSelectingFromOnMap(false);
-      await recalcRoute();
-    } catch (e) {
+   const fromC = normalizeCoord(map.fromLocation?.coords);
+   if (fromC) await recalcRoute(map.selectedMode, null, fromC, normalizeCoord(coordinate));    } catch (e) {
       console.warn('select destination on map error:', e);
     }
   };
@@ -869,6 +995,7 @@ export default function MapScreen() {
     setRouteCoords([]);
     setRouteInfo(null);
     dismissRouteSheet();
+    routeSheetPresentedRef.current = false;
   };
 
   /* ------------------------- ROTA KORİDORU POI ------------------------- */
@@ -1486,7 +1613,13 @@ export default function MapScreen() {
           />
         )}
 
-        {/* Route Info Sheet */}
+         {/* Route Info Sheet */}
+         {xlog('MS.render RIS', {
+           hasRef: !!sheetRefRoute.current,
+           mode,
+           dist: routeInfo?.distance, dur: routeInfo?.duration,
+           routesCount: (map.routeOptions?.[map.selectedMode] || []).length
+         }) || null}
         <RouteInfoSheet
           ref={sheetRefRoute}
           distance={routeInfo?.distance}
@@ -1495,21 +1628,43 @@ export default function MapScreen() {
           toLocation={map.toLocation}
           selectedMode={map.selectedMode}
           routeOptions={map.routeOptions}
-          waypoints={map.waypoints || []}
           snapPoints={['30%']}
           onCancel={handleCancelRoute}
-          onModeChange={(m) => {
-            map.handleSelectRoute(m);
-            setTimeout(() => recalcRoute(m), 0);
-          }}
+          onModeChange={map.handleSelectRoute}   // routeId → primary seçimi
+          onModeRequest={handleModeRequest}      // YENİ → veri yokken mod hesaplat
           onStart={() => {
-            dismissRouteSheet();
-            setMode('explore');
-            setRouteInfo(null);
-            setRouteCoords([]);
-            map.setRouteOptions({});
-            map.setSelectedMode('driving');
-          }}
+             resumeSheetAfterNavRef.current = true;   // <-- geri dönünce aç
+    sheetRefRoute.current?.dismiss?.();
+ 
+    const f = normalizeCoord(map.fromLocation?.coords);
+    const t = normalizeCoord(map.toLocation?.coords);
+    if (!f || !t) return;
+ 
+    const wps = Array.isArray(map.waypoints)
+      ? map.waypoints
+          .map(w => ({
+            lat: w.lat ?? w.latitude,
+            lng: w.lng ?? w.longitude,
+            name: w.name,
+            place_id: w.place_id ?? null,
+          }))
+          .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+      : [];
+ 
+    const primary = (map.routeOptions?.[map.selectedMode] || []).find(r => r.isPrimary)
+                 || (map.routeOptions?.[map.selectedMode] || [])[0];
+ 
+    navigation.navigate('NavigationScreen', {
+      entryPoint: 'turn-by-turn',
+      from: { latitude: f.latitude, longitude: f.longitude, name: map.fromLocation?.description, place_id: map.fromLocation?.key || null },
+      to:   { latitude: t.latitude, longitude: t.longitude, name: map.toLocation?.description, place_id: map.toLocation?.key || null },
+      waypoints: wps,
+      mode: map.selectedMode,
+      // opsiyonel – varsa ilk açılışı hızlandırır:
+      polyline: primary?.polyline,
+      steps: primary?.steps,
+    });
+  }}
         >
           <View style={styles.routeSheetHeader}>
             <TouchableOpacity onPress={handleCancelRoute} style={styles.closeButton}>

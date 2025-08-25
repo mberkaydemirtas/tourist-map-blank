@@ -8,9 +8,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { PortalProvider, PortalHost } from '@gorhom/portal';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'; // ✅ sadece bu
 import Ionicons from '@expo/vector-icons/Ionicons';
+// map/App.js
+import NavigationScreen from './screens/NavigationScreen';
 
 // Ekranlar
 import HomePage from '../homePage/HomePage';
@@ -31,8 +32,13 @@ function HomeNavigator() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
       <HomeStack.Screen name="Home" component={HomePage} />
-      {/* HomePage -> navigate('Map') */}
       <HomeStack.Screen name="Map" component={MapScreen} />
+      {/* ⬇️ Bunu ekleyin */}
+      <HomeStack.Screen
+        name="NavigationScreen"      // Route adı navigate ile aynı olsun
+        component={NavigationScreen}
+        options={{ headerShown: false }}
+      />
     </HomeStack.Navigator>
   );
 }
@@ -78,47 +84,41 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {/* BottomSheetModal context'i en üstte olmalı */}
+      {/* ✅ BottomSheetModalProvider en üstte; portal çakışması yok */}
       <BottomSheetModalProvider>
-        {/* @gorhom/portal → bottom sheets / custom modallar için */}
-        <PortalProvider>
-          <SafeAreaProvider>
-            <NavigationContainer theme={navTheme}>
-              <StatusBar
-                barStyle="light-content"
-                backgroundColor={Platform.OS === 'android' ? '#000' : undefined}
-              />
+        <SafeAreaProvider>
+          <NavigationContainer theme={navTheme}>
+            <StatusBar
+              barStyle="light-content"
+              backgroundColor={Platform.OS === 'android' ? '#000' : undefined}
+            />
 
-              <Tab.Navigator
-                screenOptions={({ route }) => ({
-                  headerShown: false,
-                  tabBarStyle: {
-                    height: 56,
-                    backgroundColor: '#0D0F14',
-                    borderTopColor: '#23262F',
-                  },
-                  tabBarActiveTintColor: '#FFFFFF',
-                  tabBarInactiveTintColor: '#A8A8B3',
-                  tabBarLabelStyle: { fontSize: 12 },
-                  tabBarIcon: ({ color, size, focused }) => {
-                    let icon = 'compass-outline';
-                    if (route.name === 'Keşfet') icon = focused ? 'compass' : 'compass-outline';
-                    if (route.name === 'Gezilerim') icon = focused ? 'calendar' : 'calendar-outline';
-                    return <Ionicons name={icon} size={size} color={color} />;
-                  },
-                })}
-              >
-                {/* 1) Keşfet: Home + Map aynı stack içinde */}
-                <Tab.Screen name="Keşfet" component={HomeNavigator} />
-                {/* 2) Gezilerim: Liste + Wizard + Editor */}
-                <Tab.Screen name="Gezilerim" component={TripsNavigator} />
-              </Tab.Navigator>
-            </NavigationContainer>
-
-            {/* bottom sheets / modallar için portal hedefi */}
-            <PortalHost name="root-portal" />
-          </SafeAreaProvider>
-        </PortalProvider>
+            <Tab.Navigator
+              screenOptions={({ route }) => ({
+                headerShown: false,
+                tabBarStyle: {
+                  height: 56,
+                  backgroundColor: '#0D0F14',
+                  borderTopColor: '#23262F',
+                },
+                tabBarActiveTintColor: '#FFFFFF',
+                tabBarInactiveTintColor: '#A8A8B3',
+                tabBarLabelStyle: { fontSize: 12 },
+                tabBarIcon: ({ color, size, focused }) => {
+                  let icon = 'compass-outline';
+                  if (route.name === 'Keşfet') icon = focused ? 'compass' : 'compass-outline';
+                  if (route.name === 'Gezilerim') icon = focused ? 'calendar' : 'calendar-outline';
+                  return <Ionicons name={icon} size={size} color={color} />;
+                },
+              })}
+            >
+              {/* 1) Keşfet: Home + Map aynı stack içinde */}
+              <Tab.Screen name="Keşfet" component={HomeNavigator} />
+              {/* 2) Gezilerim: Liste + Wizard + Editor */}
+              <Tab.Screen name="Gezilerim" component={TripsNavigator} />
+            </Tab.Navigator>
+          </NavigationContainer>
+        </SafeAreaProvider>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );

@@ -1,17 +1,8 @@
 // src/components/EditStopsOverlay.js
-import React, { useMemo, useRef, useState } from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Platform,
-  FlatList,
-} from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Modal, View, Text, TouchableOpacity, StyleSheet, Platform, FlatList } from 'react-native';
 import DraggableFlatList from 'react-native-draggable-flatlist';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const USE_DRAGGABLE = true;
 
@@ -20,33 +11,22 @@ export default function EditStopsOverlay({
   stops = [],                 // [from, ...waypoints, to]
   onClose,
   onConfirm,
-  onDragEnd,                  // (fromIndex, toIndex) => void  -> GLOBAL index bekler
-  onDelete,                   // (index) => void                -> GLOBAL index
-  onInsertAt,                 // (index) => void                -> GLOBAL index (splice hedefi)
-  onReplaceAt,                // (index) => void                -> GLOBAL index
+  onDragEnd,                  // (fromIndex, toIndex) => void
+  onDelete,                   // (index) => void
+  onInsertAt,                 // (index) => void
+  onReplaceAt,                // (index) => void
 }) {
-  const insets = useSafeAreaInsets();
-
   // Stabil key üret
   const data = useMemo(() => {
     const seen = new Map();
     return (stops || []).map((s, i) => {
-      const base =
-        s?.place_id ??
-        (Number.isFinite(s?.lat) && Number.isFinite(s?.lng)
-          ? `${s.lat},${s.lng}`
-          : `idx-${i}`);
+      const base = s?.place_id ?? (Number.isFinite(s?.lat) && Number.isFinite(s?.lng) ? `${s.lat},${s.lng}` : `idx-${i}`);
       const n = (seen.get(base) || 0) + 1;
       seen.set(base, n);
       const _key = n > 1 ? `${base}#${n}` : base;
       return { ...s, _key };
     });
   }, [stops]);
-
-  const lastIdx = data.length - 1;
-  const start   = data[0];
-  const end     = data[lastIdx];
-  const mids    = lastIdx >= 1 ? data.slice(1, lastIdx) : []; // sadece orta duraklar draggable
 
   const isFirst = (i) => i === 0;
   const isLast  = (i) => i === data.length - 1;
@@ -61,169 +41,150 @@ export default function EditStopsOverlay({
   const InsertBar = ({ index }) => (
     <TouchableOpacity
       activeOpacity={0.9}
-      onPress={() => onInsertAt?.(index)} // 👉 GLOBAL index (splice target)
+      onPress={() => {
+        console.log('[Overlay] InsertBar press -> index=', index);
+        onInsertAt?.(index);
+      }}
       style={styles.insertBar}
     >
       <Text style={styles.insertText}>＋ Yeni durak buraya</Text>
     </TouchableOpacity>
   );
 
-  // 🚩/🏁 uç noktalar – draggable değil, “buton/pill” görünüm
-  const EndpointRow = ({ item, globalIndex }) => {
-    const isStart = globalIndex === 0;
-    return (
-      <View
-        style={[
-          styles.endpointRow,
-          isStart ? styles.endpointStart : styles.endpointEnd,
-        ]}
-      >
-        <Text style={styles.endpointIcon}>{isStart ? '🚩' : '🏁'}</Text>
-        <View style={styles.rowCenter}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={styles.endpointTitle} numberOfLines={1}>
-              {item?.name || (isStart ? 'Başlangıç' : 'Bitiş')}
-            </Text>
-            <Label i={globalIndex} />
-          </View>
-          <Text style={styles.endpointSub} numberOfLines={1}>
-            {item?.place_id
-              ? `#${String(item.place_id).slice(0, 6)}`
-              : `${(+item?.lat).toFixed?.(5)}, ${(+item?.lng).toFixed?.(5)}`}
-          </Text>
-        </View>
-      </View>
-    );
-  };
+  const RowCore = ({ item, drag, isActive, i }) => {
+    const canDelete   = !isFirst(i) && !isLast(i);
+    const canReplace  = !isFirst(i);
+    const dragDisabled = isFirst(i) || isLast(i);
 
-  // Orta durak: draggable + aksiyonlar, GLOBAL index = midIndex + 1
-  const WaypointRow = ({ item, drag, isActive, midIndex }) => {
-    const globalIndex = midIndex + 1;
     return (
       <View style={[styles.row, isActive && styles.rowActive]}>
         <TouchableOpacity
-          style={styles.dragHandle}
+          style={[styles.dragHandle, dragDisabled && { opacity: 0.35 }]}
           onLongPress={drag}
           delayLongPress={120}
-          disabled={!USE_DRAGGABLE}
+          disabled={!USE_DRAGGABLE || dragDisabled}
         >
           <Text style={styles.dragIcon}>≡</Text>
         </TouchableOpacity>
 
         <View style={styles.rowCenter}>
-          <Text style={styles.rowTitle} numberOfLines={1}>
-            {item?.name || `Durak ${globalIndex}`}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={styles.rowTitle} numberOfLines={1}>
+              {item.name || `Durak ${i + 1}`}
+            </Text>
+            <Label i={i} />
+          </View>
           <Text style={styles.rowSub} numberOfLines={1}>
-            {item?.place_id
+            {item.place_id
               ? `#${String(item.place_id).slice(0, 6)}`
-              : `${(+item?.lat).toFixed?.(5)}, ${(+item?.lng).toFixed?.(5)}`}
+              : `${(+item.lat).toFixed?.(5)}, ${(+item.lng).toFixed?.(5)}`}
           </Text>
         </View>
 
         <View style={styles.rowActions}>
-          <TouchableOpacity
-            style={[styles.miniBtn, styles.replaceBtn]}
-            onPress={() => onReplaceAt?.(globalIndex)}
-          >
-            <Text style={styles.miniTxt}>Değiştir</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.miniBtn, styles.delBtn]}
-            onPress={() => onDelete?.(globalIndex)}
-          >
-            <Text style={[styles.miniTxt, styles.delTxt]}>Sil</Text>
-          </TouchableOpacity>
+          {canReplace && (
+            <TouchableOpacity
+              style={[styles.miniBtn, styles.replaceBtn]}
+              onPress={() => {
+                console.log('[Overlay] Replace press -> i=', i);
+                onReplaceAt?.(i);
+              }}
+            >
+              <Text style={styles.miniTxt}>Değiştir</Text>
+            </TouchableOpacity>
+          )}
+          {canDelete && (
+            <TouchableOpacity
+              style={[styles.miniBtn, styles.delBtn]}
+              onPress={() => {
+                console.log('[Overlay] Delete press -> i=', i);
+                onDelete?.(i);
+              }}
+            >
+              <Text style={[styles.miniTxt, styles.delTxt]}>Sil</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     );
   };
 
-  const renderMidItem = ({ item, drag, isActive, index: midIndex }) => {
-    const globalIndex = midIndex + 1;
+  const getSafeIndex = (params) => {
+    if (Number.isFinite(params.index)) return params.index;
+    const k = params?.item?._key || params?.item?.key;
+    const idx = data.findIndex((d) => d._key === k || d.key === k);
+    return idx >= 0 ? idx : 0;
+  };
+
+  const renderItem = (params) => {
+    const { item, drag, isActive } = params;
+    const i = getSafeIndex(params);
     return (
       <View>
-        <WaypointRow
-          item={item}
-          drag={drag}
-          isActive={isActive}
-          midIndex={midIndex}
-        />
-        {/* Her orta durağın altına insert bar – globalIndex+1 hedefi */}
-        <InsertBar index={globalIndex + 1} />
+        <RowCore item={item} drag={drag} isActive={isActive} i={i} />
+        {/* ⛔ Bitişin altında InsertBar yok */}
+        {!isLast(i) && <InsertBar index={i + 1} />}
       </View>
     );
   };
 
-  const listRef = useRef(null);
+  // ❗ Geçersiz drop’ta revert için küçük bir nonce
   const [dragNonce, setDragNonce] = useState(0);
 
   const ListBody = USE_DRAGGABLE ? DraggableFlatList : FlatList;
 
   const listProps = USE_DRAGGABLE
     ? {
-        ref: listRef,
-        data: mids,
-        keyExtractor: (it, i) => it._key ?? `mid-${i}`,
-        renderItem: renderMidItem,
-        contentContainerStyle: styles.listInner,
+        data,
+        keyExtractor: (it) => it._key,
+        renderItem,
+        contentContainerStyle: styles.list,
         activationDistance: Platform.select({ ios: 12, android: 4 }),
         autoscrollThreshold: 40,
         autoscrollSpeed: 50,
-        extraData: dragNonce,
+        extraData: dragNonce,                     // 👈 revert tetikleyici
         onDragEnd: ({ from, to }) => {
-          if (from === to) return;
-          const fromGlobal = from + 1;
-          const toGlobal   = to + 1;
-          onDragEnd?.(fromGlobal, toGlobal);
-          setDragNonce((n) => n + 1);
+          const lastIdx = data.length - 1;
+          const midMin = 1;
+          const midMax = Math.max(1, lastIdx - 1);
+
+          // başlangıç/bitişten drag başlatılamaz (handle kapalı) ama yine de emniyet:
+          if (from < midMin || from > midMax) {
+            console.log('[Overlay] invalid drag FROM=', from, '→ revert');
+            setDragNonce((n) => n + 1);
+            return;
+          }
+
+          // hedefi orta aralığa kilitle
+          const clampedTo = Math.max(midMin, Math.min(to, midMax));
+
+          if (clampedTo !== to) {
+            console.log('[Overlay] drop to out-of-bounds: to=', to, '→ clamp', clampedTo, 'and revert visual');
+            // Görseli geri almak için nonce; sıralama parent’ta sadece geçerli aralıkta yapılır
+            setDragNonce((n) => n + 1);
+          }
+
+          if (from !== clampedTo) {
+            console.log('[Overlay] dragEnd apply', from, '→', clampedTo);
+            onDragEnd?.(from, clampedTo);
+          }
         },
         scrollEnabled: true,
         keyboardShouldPersistTaps: 'handled',
-        windowSize: 10,
-        initialNumToRender: 8,
-        maxToRenderPerBatch: 8,
-        showsVerticalScrollIndicator: false,
-        ListHeaderComponent: (
-          <View style={styles.listHeader}>
-            {start && <EndpointRow item={start} globalIndex={0} />}
-            {/* ✅ Başlangıcın hemen ALTINDA insert bar */}
-            <InsertBar index={1} />
-          </View>
-        ),
-        ListFooterComponent: (
-          <View style={[styles.listFooter, { paddingBottom: Math.max(insets.bottom, 0) } ]}>
-            {end && <EndpointRow item={end} globalIndex={lastIdx} />}
-            {/* Bitişten sonra insert bar YOK */}
-          </View>
-        ),
       }
     : {
-        data: mids,
-        keyExtractor: (it, i) => it._key ?? `mid-${i}`,
-        renderItem: renderMidItem,
-        contentContainerStyle: styles.listInner,
+        data,
+        keyExtractor: (it) => it._key,
+        renderItem,
+        contentContainerStyle: styles.list,
         scrollEnabled: true,
-        showsVerticalScrollIndicator: false,
-        ListHeaderComponent: (
-          <View style={styles.listHeader}>
-            {start && <EndpointRow item={start} globalIndex={0} />}
-            <InsertBar index={1} />
-          </View>
-        ),
-        ListFooterComponent: (
-          <View style={[styles.listFooter, { paddingBottom: Math.max(insets.bottom, 0) } ]}>
-            {end && <EndpointRow item={end} globalIndex={lastIdx} />}
-          </View>
-        ),
       };
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={styles.backdrop}>
-          <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'ios' ? 18 : 10) }]}>
+          <View style={styles.sheet}>
             <View style={styles.header}>
               <Text style={styles.title}>Durakları düzenle</Text>
               <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
@@ -248,7 +209,6 @@ export default function EditStopsOverlay({
   );
 }
 
-/* ------------------------------- Styles ------------------------------- */
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },
   sheet: {
@@ -257,15 +217,14 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 18 : 10,
   },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, marginBottom: 6 },
   title: { fontSize: 16, fontWeight: '700', color: '#111', flex: 1 },
   closeBtn: { padding: 6, paddingHorizontal: 8 },
   closeTxt: { fontSize: 16, color: '#444' },
 
-  listInner: { paddingHorizontal: 10, paddingBottom: 10 },
-  listHeader: { paddingHorizontal: 0 },
-  listFooter: { paddingHorizontal: 0 },
+  list: { paddingHorizontal: 10, paddingBottom: 10 },
 
   insertBar: {
     borderWidth: StyleSheet.hairlineWidth,
@@ -279,22 +238,6 @@ const styles = StyleSheet.create({
   },
   insertText: { fontSize: 12, fontWeight: '700', color: '#1E7E34' },
 
-  // Uç noktalar
-  endpointRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    padding: 10,
-    marginVertical: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  endpointStart: { backgroundColor: '#eef8ee', borderColor: '#cfe8cf' },
-  endpointEnd:   { backgroundColor: '#eef5ff', borderColor: '#cfe0ff' },
-  endpointIcon:  { fontSize: 18, marginRight: 10 },
-  endpointTitle: { fontSize: 14, fontWeight: '800', color: '#111' },
-  endpointSub:   { marginTop: 2, fontSize: 12, color: '#666' },
-
-  // Orta duraklar
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -315,8 +258,8 @@ const styles = StyleSheet.create({
   dragIcon: { fontSize: 18, color: '#666' },
 
   rowCenter: { flex: 1 },
-  rowTitle:  { fontSize: 14, fontWeight: '700', color: '#111' },
-  rowSub:    { marginTop: 2, fontSize: 12, color: '#666' },
+  rowTitle: { fontSize: 14, fontWeight: '700', color: '#111' },
+  rowSub: { marginTop: 2, fontSize: 12, color: '#666' },
 
   badgeWrap: { flexDirection: 'row', gap: 6 },
   badge: { fontSize: 11, fontWeight: '700', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
@@ -327,6 +270,7 @@ const styles = StyleSheet.create({
   miniBtn: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
   replaceBtn: { backgroundColor: '#eef5ff', borderColor: '#cfe0ff' },
   delBtn: { backgroundColor: '#fdecec', borderColor: '#f5c2c0' },
+
   miniTxt: { fontSize: 12, fontWeight: '700', color: '#111' },
   delTxt: { color: '#B42318' },
 

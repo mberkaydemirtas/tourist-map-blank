@@ -42,12 +42,34 @@ export function useMapLogic(mapRef) {
 
   const calculateRouteSimple = useCallback(async () => {
     if (!fromLocation?.coords || !toLocation?.coords) return;
-    const out = await getRoute(fromLocation.coords, toLocation.coords, selectedMode, { alternatives: true });
-    const first = Array.isArray(out) ? out[0] : out;
-    const decoded = first?.decodedCoords?.map(p => ({ latitude: p.latitude, longitude: p.longitude })) || [];
-    setRouteCoords(decoded);
-    setRouteInfo(first ? { distanceValue: first.distance, durationValue: first.duration } : null);
-    fitPolyline(decoded);
+     const out = await getRoute(
+       fromLocation.coords,
+       toLocation.coords,
+       selectedMode,
+       { alternatives: true }
+     );
+ 
+     const list = (Array.isArray(out) ? out : out ? [out] : [])
+       .map((r, i) => ({
+         ...r,
+         decodedCoords: r.decodedCoords || decodePolyline(r.polyline || ''),
+         id: `${selectedMode}-${i}`,
+         isPrimary: i === 0,
+         mode: selectedMode,
+       }))
+       .filter(r => (r.decodedCoords?.length ?? 0) > 1);
+ 
+     setRouteOptions(prev => ({ ...prev, [selectedMode]: list }));
+ 
+     const first = list[0];
+     if (first) {
+       setRouteCoords(first.decodedCoords);
+       setRouteInfo({ distance: first.distance, duration: first.duration });
+       fitPolyline(first.decodedCoords);
+     } else {
+       setRouteCoords([]);
+       setRouteInfo(null);
+     }
   }, [fromLocation, toLocation, selectedMode, fitPolyline]);
 
   const calculateRouteWithStops = useCallback(async ({ optimize=false } = {}) => {
@@ -64,18 +86,32 @@ export function useMapLogic(mapRef) {
         optimize: !!optimize,
       }
     );
-    const first = Array.isArray(out) ? out[0] : out;
+    const list = (Array.isArray(out) ? out : out ? [out] : [])
+      .map((r, i) => ({
+        ...r,
+        decodedCoords: r.decodedCoords || decodePolyline(r.polyline || ''),
+        id: `${mode}-${i}`,
+        isPrimary: i === 0,
+        mode,
+      }))
+      .filter(r => (r.decodedCoords?.length ?? 0) > 1);
 
     // optimize:true ise waypoint_order gelebilir -> sadece ara durakları sırala
-    if (first?.waypointOrder?.length === waypoints.length) {
-      setWaypoints(first.waypointOrder.map(i => waypoints[i]));
-      
-    }
-
-    const decoded = first?.decodedCoords?.map(p => ({ latitude: p.latitude, longitude: p.longitude })) || [];
-    setRouteCoords(decoded);
-    setRouteInfo(first ? { distanceValue: first.distance, durationValue: first.duration } : null);
-    fitPolyline(decoded);
+     const primary = list[0];
+     if (primary?.waypointOrder?.length === waypoints.length) {
+       setWaypoints(primary.waypointOrder.map(i => waypoints[i]));
+     }
+ 
+     setRouteOptions(prev => ({ ...prev, [mode]: list }));
+ 
+     if (primary) {
+       setRouteCoords(primary.decodedCoords);
+       setRouteInfo({ distance: primary.distance, duration: primary.duration });
+       fitPolyline(primary.decodedCoords);
+     } else {
+       setRouteCoords([]);
+       setRouteInfo(null);
+     }
   }, [fromLocation, toLocation, selectedMode, waypoints, fitPolyline]);
 
   useEffect(() => {

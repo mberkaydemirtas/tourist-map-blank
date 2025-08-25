@@ -32,7 +32,8 @@ const RouteInfoSheet = forwardRef(
       fromLocation,
       toLocation,
       selectedMode,
-      onModeChange,
+      onModeChange,      // beklenen: routeId (primary.id)
+      onModeRequest,     // YENİ: veri yoksa sadece 'mode' (driving/walking/transit) gönder
       onCancel,
       onStart,
       routeOptions = {},
@@ -45,7 +46,7 @@ const RouteInfoSheet = forwardRef(
   ) => {
     const modalRef = useRef(null);
     const navigation = useNavigation();
-    const presentedRef = useRef(false); // çift present'i engelle
+    const presentedRef = useRef(false);
 
     const getPrimary = (mode) => {
       const arr = routeOptions?.[mode] || [];
@@ -69,7 +70,7 @@ const RouteInfoSheet = forwardRef(
       snapToIndex: (i) => modalRef.current?.snapToIndex?.(i),
     }));
 
-    // Otomatik aç: rota hazır + metrik/çizgi geldiyse ve daha önce açılmadıysa
+    // Otomatik aç
     useEffect(() => {
       if (!openOnReady) return;
 
@@ -99,10 +100,7 @@ const RouteInfoSheet = forwardRef(
 
     const handleStartNavigation = async () => {
       if (!fromLocation?.coords || !toLocation?.coords) {
-        Alert.alert(
-          'Eksik Bilgi',
-          'Lütfen önce nereden ve nereye gideceğinizi seçin.'
-        );
+        Alert.alert('Eksik Bilgi', 'Lütfen önce nereden ve nereye gideceğinizi seçin.');
         return;
       }
       const ready = await checkLocationReady();
@@ -140,7 +138,6 @@ const RouteInfoSheet = forwardRef(
       });
 
       onStart?.();
-      // onCancel?.();  // ⬅️ Artık burada çağrılmıyor; temizlik dışarıdan yönetiliyor
     };
 
     const modeOptions = [
@@ -159,46 +156,44 @@ const RouteInfoSheet = forwardRef(
         topInset={Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0}
         onDismiss={() => {
           presentedRef.current = false;
-          // ⬅️ Sheet kapandığında artık rota iptal edilmiyor
         }}
       >
         <BottomSheetView style={styles.container}>
           {children}
 
           <View style={styles.content}>
-            <Text>
-              Mesafe:{' '}
-              {fmtDistance(selectedPrimary?.distance ?? distance)}
-            </Text>
-            <Text>
-              Süre:{' '}
-              {fmtDuration(selectedPrimary?.duration ?? duration)}
-            </Text>
+            <Text>Mesafe: {fmtDistance(selectedPrimary?.distance ?? distance)}</Text>
+            <Text>Süre: {fmtDuration(selectedPrimary?.duration ?? duration)}</Text>
 
             <View style={styles.modeContainer}>
               {modeOptions.map((option) => {
                 const primary = getPrimary(option.key);
                 const isSelected = selectedMode === option.key;
-                const isDisabled = !primary;
+                const hasData = !!primary; // sadece görsel amaçlı
 
                 return (
                   <TouchableOpacity
                     key={option.key}
-                    activeOpacity={isDisabled ? 1 : 0.7}
+                    activeOpacity={0.7}
                     style={[
                       styles.modeButton,
                       isSelected && styles.modeButtonSelected,
-                      isDisabled && styles.modeButtonDisabled,
+                      !hasData && styles.modeButtonDisabled,
                     ]}
-                    onPress={() => {
-                      if (!isDisabled) onModeChange?.(option.key);
-                    }}
+                onPress={() => {
+                  if (primary) {
+                    onModeChange?.(primary.id);
+                  } else if (fromLocation?.coords && toLocation?.coords) {
+                    // bu mod için rota yoksa hesaplat
+                    onModeRequest?.(option.key);
+                  }
+                }}
                   >
                     <Text
                       style={[
                         styles.modeText,
                         isSelected && styles.modeTextSelected,
-                        isDisabled && styles.modeTextDisabled,
+                        !hasData && styles.modeTextDisabled,
                       ]}
                     >
                       {option.label}
@@ -207,21 +202,17 @@ const RouteInfoSheet = forwardRef(
                       style={[
                         styles.modeLabel,
                         isSelected && styles.modeLabelSelected,
-                        isDisabled && styles.modeLabelDisabled,
+                        !hasData && styles.modeLabelDisabled,
                       ]}
                     >
-                      {fmtDistance(primary?.distance)} •{' '}
-                      {fmtDuration(primary?.duration)}
+                      {fmtDistance(primary?.distance)} • {fmtDuration(primary?.duration)}
                     </Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
 
-            <TouchableOpacity
-              style={styles.startButton}
-              onPress={handleStartNavigation}
-            >
+            <TouchableOpacity style={styles.startButton} onPress={handleStartNavigation}>
               <Text style={styles.buttonText}>Başlat</Text>
             </TouchableOpacity>
           </View>
@@ -274,4 +265,3 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
 });
- 

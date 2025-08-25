@@ -2058,13 +2058,13 @@ return (
 
           <TouchableOpacity
             style={[styles.actionBtn, styles.exitBtn]}
-            onPress={() => {
-              Speech.stop();
-              if (simTimerRef.current) clearInterval(simTimerRef.current);
-              setSimActive(false);
-              setSimCoord(null);
-              navigation.goBack();
-            }}
+           onPress={() => {
+             Speech.stop();
+             if (simTimerRef.current) clearInterval(simTimerRef.current);
+             setSimActive(false);
+             setSimCoord(null);
+              navigation.goBack(); // ✅ Map’teki rota state’i korunur
+           }}
           >
             <Text style={styles.exitIcon}>✕</Text>
           </TouchableOpacity>
