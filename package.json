@@ -1,12 +1,16 @@
 {
-  "name": "tourist-map-blank",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web"
+    "name":  "tourist-map-blank",
+    "version":  "1.0.0",
+    "main":  "index.js",
+    "scripts":  {
+                    "start":  "expo start",
+                    "android":  "expo run:android",
+                    "ios":  "expo run:ios",
+                    "web":  "expo start --web",
+                    "lint":  "eslint src/**/*.{js,jsx,ts,tsx}",
+                    "lint:fix":  "eslint --fix src/**/*.{js,jsx,ts,tsx}",
+                    "format":  "prettier -w src/**/*.{js,jsx,ts,tsx,json,md}",
+                    "prepare":  "husky"
   },
   "dependencies": {
     "@gorhom/bottom-sheet": "^5.1.6",
@@ -51,7 +55,19 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@react-native/eslint-config": "^0.81.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.5",
+    "prettier": "^3.6.2",
     "resolve-workspace-root": "^2.0.0"
   },
-  "private": true
+  "private": true,
+"lint-staged": {
+  "src/**/*.{js,jsx,ts,tsx}": ["npx eslint --fix", "npx prettier -w"],
+  "src/**/*.{json,md}": ["npx prettier -w"]
+}
 }
