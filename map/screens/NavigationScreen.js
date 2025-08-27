@@ -33,7 +33,6 @@ import useSafePolyline from '../navigation/useSafePolyline';
 import useTurnByTurn from '../navigation/useTurnByTurn';
 import { metersFmt, formatDurationShort, formatETA, formatAltComparison } from '../navigation/navFormatters';
 
-
 /* -------------------------- Yardımcı Fonksiyonlar -------------------------- */
 
 const clamp = (min, max, v) => Math.min(max, Math.max(min, v));
@@ -251,10 +250,8 @@ export default function NavigationScreen() {
   const [mode, setMode] = useState(initialMode);
   const [routes, setRoutes] = useState([]);
 
-  const camHeadingRef = useRef(null);
   const [navStarted, setNavStarted] = useState(false);
   const lastLocRef = useRef(null);
-  const hasFirstFixRef = useRef(false);
 
   const [dynamicRouteCoords, setDynamicRouteCoords] = useState([]);
   const [muted, setMuted] = useState(false);
@@ -329,14 +326,9 @@ export default function NavigationScreen() {
   const waypointsRef = useRef(waypoints);
   useEffect(() => { waypointsRef.current = waypoints; }, [waypoints]);
 
-  const wpConsumedAtRef = useRef(0);
-
   // Kamera
   const DEFAULT_ZOOM = 18.8;
   const DEFAULT_PITCH = 52;
-  const CAMERA_ANIM_MS = 110;
-  const HEADING_SMOOTH_ALPHA = 0.45;
-  const HEADING_SNAP_DEG = 60;
   const [camZoom, setCamZoom] = useState(DEFAULT_ZOOM);
   const [camPitch, setCamPitch] = useState(DEFAULT_PITCH);
   const camZoomRef = useRef(camZoom);
@@ -404,7 +396,6 @@ export default function NavigationScreen() {
 
   const {
   currentStepIndex,
-  setCurrentStepIndex,
   distanceToManeuver,
   liveRemain,
   speakBanner,
@@ -548,7 +539,6 @@ export default function NavigationScreen() {
     [from, to, speak]
   );
   const [isRerouting, setIsRerouting] = useState(false);
-  const rerouteGateRef = useRef(0);
 
   const onOffRoute = useCallback(async (user) => {
     setIsRerouting(true);
@@ -591,7 +581,6 @@ export default function NavigationScreen() {
   },
 });
 
-
   const beginRouteUpdate = (coords, meta = null) => {
     const id = ++routePairIdRef.current;
     setDynamicRouteCoords(coords);
@@ -603,13 +592,11 @@ export default function NavigationScreen() {
     spokenRef.current = {};
     lastSpeechAtRef.current = 0;
     speechHoldUntilRef.current = 0;
-
     lastStepIdxRef.current = -1;
     trendCountRef.current = 0;
     bearingOkCountRef.current = 0;
     minDistRef.current = null;
     setSnapCoord(null);
-
     setIsFollowing(true);
     return id;
   };
@@ -671,30 +658,6 @@ export default function NavigationScreen() {
     }, 8000);
   }, []);
   useEffect(() => () => { if (followBackTimerRef.current) clearTimeout(followBackTimerRef.current); }, []);
-
-  // ---- Simülasyon / Alternatif rota vs... (kalan kısım mevcut koddaki gibi) ----
-
-  const speedEstRef = useRef({ t: 0, lat: null, lng: null, v: null });
-  const completionThreshold = (step) => {
-    const stepLen = getStepDistanceValue(step) ?? 80;
-    const target = Math.round(Math.min(28, Math.max(12, stepLen * 0.25)));
-    return target;
-  };
-  const sayQueued = (text, { delayMs = 0, minGapMs = 1500 } = {}) => {
-    const now = Date.now();
-    const wait = Math.max(
-      delayMs,
-      lastSpeechAtRef.current + minGapMs - now,
-      speechHoldUntilRef.current - now,
-      0
-    );
-    setTimeout(() => {
-      lastSpeechAtRef.current = Date.now();
-      const dur = estimateSpeechMs(text);
-      speechHoldUntilRef.current = Date.now() + dur + 350;
-      speak(text);
-    }, wait);
-  };
 
   const mutedRefLocal = useRef(false);
   useEffect(() => { mutedRefLocal.current = muted; }, [muted]);
