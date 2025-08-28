@@ -1,7 +1,7 @@
 // components/LaneGuidanceBar.js
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import ManeuverIcon from './ManeuverIcon';
+import ManeuverIcon from '../../components/ManeuverIcon';
 
 /**
  * Props:

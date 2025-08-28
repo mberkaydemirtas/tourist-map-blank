@@ -702,6 +702,20 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { ...StyleSheet.absoluteFillObject, zIndex: 0 },
 
+  routeControls: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 50,
+    left: 12,
+    right: 12,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 12,
+    elevation: 4,
+  },
+    reverseCornerButton: {
+    position: 'absolute', top: 8, right: 8, width: 32, height: 32, borderRadius: 16,
+    backgroundColor: '#eee', justifyContent: 'center', alignItems: 'center', zIndex: 10, elevation: 3,
+  },
   label: { fontSize: 14, fontWeight: '600', marginBottom: 4, color: '#333' },
   inputButton: {
     height: 48, backgroundColor: '#f9f9f9', borderColor: '#ccc',
