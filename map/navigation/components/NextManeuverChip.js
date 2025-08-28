@@ -1,7 +1,7 @@
 // components/NextManeuverChip.js
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import ManeuverIcon from './ManeuverIcon';
+import ManeuverIcon from '../../components/ManeuverIcon';
 
 export default function NextManeuverChip({ step, distance }) {
   if (!step) return null;
