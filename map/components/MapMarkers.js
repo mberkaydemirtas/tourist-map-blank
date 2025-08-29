@@ -1,17 +1,21 @@
 import React from 'react';
 import { Marker, Callout } from 'react-native-maps';
 import { View, Text, StyleSheet, Linking } from 'react-native';
-import CategoryMarker from './categoryMarker';
+import CategoryMarker from './categoryMarker'; // <-- forwardRef'li sürüm olmalı
 import { normalizeCoord } from '../utils/coords';
+
+function getPlaceKey(item, idx, activeCategory) {
+  return item?.place_id || item?.id || `${activeCategory || 'cat'}-${idx}`;
+}
 
 export default function MapMarkers({
   mode,
   categoryMarkers,
   activeCategory,
   onMarkerPress,        // (placeId, coord, name)
-  selectedMarker,       // parent gerçekten bunu geçiriyor mu?
+  selectedMarker,       // opsiyonel: ayrı "seçilmiş" pin
+  collectRef,           // 👈 (key, ref) alıp dışarı kaydedeceğiz
 }) {
-  // Route modda kategori marker’larını gizle
   if (mode !== 'explore') return null;
 
   const markers = Array.isArray(categoryMarkers) ? categoryMarkers : [];
@@ -26,26 +30,24 @@ export default function MapMarkers({
         );
         if (!coord) return null;
 
-        const key =
-          item.place_id || item.id || `${activeCategory || 'cat'}-${idx}`;
-        const name = item.name || item.description || 'Yer';
+        const key  = getPlaceKey(item, idx, activeCategory);
+        const name = item?.name || item?.description || 'Yer';
 
         return (
           <CategoryMarker
             key={key}
+            ref={(ref) => collectRef?.(key, ref)} 
             item={{ ...item, coordinate: coord }}
             activeCategory={activeCategory}
             iconSize={24}
-            // CategoryMarker içinde onPress olduğunda ŞU sırayla çağırmalı:
-            // onSelect(placeId, coord, name)
-            onSelect={(placeId, coordinate, title) =>
-              onMarkerPress?.(placeId || key, coordinate || coord, title || name)
-            }
+            onSelect={(placeId, coordinate, title) => {
+              onMarkerPress?.(placeId || key, coordinate || coord, title || name);
+            }}
           />
         );
       })}
 
-      {/* Seçilen marker için detay Callout (opsiyonel) */}
+      {/* (Opsiyonel) Ayrı seçilmiş marker callout'ı */}
       {selectedMarker?.coordinate && (
         <Marker
           key="selected"
@@ -85,6 +87,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   title: { fontWeight: 'bold', marginBottom: 4, color: '#000' },
-  text: { color: '#000' },
-  link: { color: '#4285F4', textDecorationLine: 'underline', marginTop: 4 },
+  text:  { color: '#000' },
+  link:  { color: '#4285F4', textDecorationLine: 'underline', marginTop: 4 },
 });

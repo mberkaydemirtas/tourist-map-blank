@@ -139,7 +139,25 @@ export default function useAltRoutes({
       return next;
     });
   }, [isAddingStop, loadAlternatives]);
+ // 🔁 Rota güncellendikten sonra (süre/değer değiştiğinde) alternatifleri otomatik tazele
+   useEffect(() => {
+     // durak ekleme modunda veya panel kapalıyken fetch etme
+     if (isAddingStop || !altMode) return;
+     loadAlternatives();
+   }, [
+     altMode,
+     isAddingStop,
+     effSec,                     // recalc sonrası süre değişimi tetikler
+     from?.latitude, from?.longitude,
+     to?.latitude, to?.longitude,
+   ]);
 
+     useEffect(() => {
+     if (!isAddingStop && altMode) {
+       loadAlternatives();
+     }
+   }, [isAddingStop, altMode, loadAlternatives]);
+ 
   const applyAlternative = useCallback(async (r) => {
     // meta + mavi hattı güncelle
     const meta = { sec: r.duration ?? null, dist: r.distance ?? null };

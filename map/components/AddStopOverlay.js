@@ -5,7 +5,7 @@ import {
   StyleSheet, ActivityIndicator, SafeAreaView, KeyboardAvoidingView, Platform
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { autocomplete } from '../maps'; // services/maps.js ile uyumlu
+import { autocomplete } from '../maps';
 
 const CATEGORIES = [
   { key: 'gas_station', label: '⛽ Benzin' },
@@ -17,23 +17,30 @@ const CATEGORIES = [
 ];
 
 const BRANDS = [
-  'Shell','OPET','BP','Total','Starbucks','McDonald\'s',
+  'Shell','OPET','BP','Total','Starbucks',"McDonald's",
   'Burger King','CarrefourSA','Migros'
 ];
 
 const STORAGE_KEY = 'addstop_history_v1';
 const DEBOUNCE_MS = 250;
 
-export default function AddStopOverlay({ visible, onClose, onCategorySelect, onQuerySubmit, onPickStop, onAddStop, routeBounds }) {
+export default function AddStopOverlay({
+  visible,
+  onClose,
+  onCategorySelect,
+  onQuerySubmit,
+  onPickStop,
+  onAddStop,
+  // routeBounds // ❌ artık kullanılmıyor
+}) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sugs, setSugs] = useState([]);        // API önerileri
-  const [history, setHistory] = useState([]);  // son aramalar
+  const [sugs, setSugs] = useState([]);
+  const [history, setHistory] = useState([]);
   const timerRef = useRef(null);
 
   const showSugs = visible && query.trim().length >= 2;
 
-  // Marka kısayollarını üret
   const brandSugs = useMemo(() => {
     const t = query.trim().toLowerCase();
     if (t.length < 2) return [];
@@ -43,7 +50,6 @@ export default function AddStopOverlay({ visible, onClose, onCategorySelect, onQ
       .map(name => ({ __brand: true, description: name }));
   }, [query]);
 
-  // Modal açılınca geçmişi yükle, kapanınca state temizle
   useEffect(() => {
     if (visible) {
       (async () => {
@@ -70,14 +76,13 @@ export default function AddStopOverlay({ visible, onClose, onCategorySelect, onQ
     } catch {}
   }, [history]);
 
-  // Debounced autocomplete
   const doAutocomplete = useCallback(async (q) => {
     const t = String(q || '').trim();
     if (!visible || t.length < 2) { setSugs([]); return; }
     setLoading(true);
     try {
-      // Not: services/maps.js içinde bounds yapısı uyarlanmış olmalı.
-      const items = await autocomplete(t, { bounds: routeBounds, types: 'establishment' });
+      // ✅ bounds kaldırıldı; koridor kısıtı yok
+      const items = await autocomplete(t, { types: 'establishment' });
       const list = Array.isArray(items) ? items.slice(0, 8) : [];
       setSugs(list);
     } catch {
@@ -85,7 +90,7 @@ export default function AddStopOverlay({ visible, onClose, onCategorySelect, onQ
     } finally {
       setLoading(false);
     }
-  }, [visible, routeBounds]);
+  }, [visible]);
 
   useEffect(() => {
     if (!visible) return;
@@ -94,22 +99,40 @@ export default function AddStopOverlay({ visible, onClose, onCategorySelect, onQ
     return () => timerRef.current && clearTimeout(timerRef.current);
   }, [query, doAutocomplete, visible]);
 
-  // Kategori seçimi → overlay kapat, rota boyunca tara
   const chooseCategory = (type) => {
     onClose?.();
     onCategorySelect?.(type);
   };
 
-  // Arama gönderimi → geçmişe yaz, overlay kapat, rota boyunca tara
   const submitText = async (text) => {
     const t = String(text || '').trim();
     if (!t) return;
     await saveHistory(t);
     onClose?.();
+    // Bu yol, koridor taraması yapan dış fonksiyonu çağırır (istenirse)
     onQuerySubmit?.(t);
   };
 
-  // Öneri + marka birleşik liste (dup temizliği)
+  // ✅ Geçmiş chip tıklama: hızlı seçim (autocomplete → ilk sonuç → direkt Ekle)
+  const handleHistoryTap = async (text) => {
+    const t = String(text || '').trim();
+    if (!t) return;
+    try {
+      const preds = await autocomplete(t); // bounds yok
+      const first = preds?.[0];
+      if (first) {
+        await saveHistory(t);
+        onClose?.();
+        onAddStop?.(first); // useStopsEditor hızlı pan + ekleme yapar
+      } else {
+        // hiç sonuç yoksa eski davranışa düşelim
+        await submitText(t);
+      }
+    } catch {
+      await submitText(t);
+    }
+  };
+
   const combinedSuggestions = useMemo(() => {
     if (!showSugs) return [];
     const map = new Map();
@@ -132,17 +155,34 @@ export default function AddStopOverlay({ visible, onClose, onCategorySelect, onQ
     const sub   = isBrand ? 'Marka kısayolu' : (item?.structured_formatting?.secondary_text || '');
     const text  = item?.description || title;
     return (
-   <View style={styles.sugRow}>
-     <TouchableOpacity style={{ flex: 1 }} onPress={() => (isBrand ? submitText(text) : onPickStop?.(item))}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.sugTitle} numberOfLines={1}>{title}</Text>
-          {!!sub && <Text style={styles.sugSub} numberOfLines={1}>{sub}</Text>}
-        </View>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => (isBrand ? submitText(text) : onAddStop?.(item))}>
-        <Text style={styles.sugCta}>Seç</Text>
-      </TouchableOpacity>
-    </View>
+      <View style={styles.sugRow}>
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          onPress={async () => {
+            await saveHistory(text);
+            if (isBrand) {
+              submitText(text);
+            } else {
+              onPickStop?.(item); // aday olarak seç (harita pan’ı hook’ta)
+              onClose?.();
+            }
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.sugTitle} numberOfLines={1}>{title}</Text>
+            {!!sub && <Text style={styles.sugSub} numberOfLines={1}>{sub}</Text>}
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={async () => {
+            await saveHistory(text);
+            onAddStop?.(item);  // doğrudan ekle (hızlı pan + recalc hook’ta)
+            onClose?.();
+          }}
+        >
+          <Text style={styles.sugCta}>Seç</Text>
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -182,7 +222,7 @@ export default function AddStopOverlay({ visible, onClose, onCategorySelect, onQ
             </View>
           </View>
 
-          {/* Büyük kategori çipleri */}
+          {/* Kategori çipleri */}
           <View style={styles.categories}>
             <FlatList
               data={CATEGORIES}
@@ -192,7 +232,6 @@ export default function AddStopOverlay({ visible, onClose, onCategorySelect, onQ
               columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: 12 }}
               contentContainerStyle={{ paddingBottom: 8 }}
             />
-            {/* Markerları kapat/temizle */}
             <TouchableOpacity style={styles.clearBtn} onPress={() => chooseCategory(null)}>
               <Text style={styles.clearBtnText}>Kategori filtrelerini temizle</Text>
             </TouchableOpacity>
@@ -220,7 +259,7 @@ export default function AddStopOverlay({ visible, onClose, onCategorySelect, onQ
               ) : (
                 <View style={styles.historyChips}>
                   {history.map((h) => (
-                    <TouchableOpacity key={h} style={styles.histChip} onPress={() => submitText(h)}>
+                    <TouchableOpacity key={h} style={styles.histChip} onPress={() => handleHistoryTap(h)}>
                       <Text style={styles.histChipText}>{h}</Text>
                     </TouchableOpacity>
                   ))}
@@ -236,7 +275,6 @@ export default function AddStopOverlay({ visible, onClose, onCategorySelect, onQ
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#fff' },
-
   header: { height: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 },
   closeBtn: { width: 60, paddingVertical: 6 },
   closeTxt: { fontSize: 16, color: '#007AFF' },
@@ -245,42 +283,26 @@ const styles = StyleSheet.create({
   searchBox: { paddingHorizontal: 12, paddingBottom: 8 },
   inputWrap: { position: 'relative' },
   input: {
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#d9d9d9',
-    paddingHorizontal: 14,
-    paddingRight: 70,
-    fontSize: 16,
-    backgroundColor: '#fff',
-    color: '#111',
+    height: 48, borderRadius: 12, borderWidth: 1, borderColor: '#d9d9d9',
+    paddingHorizontal: 14, paddingRight: 70, fontSize: 16, backgroundColor: '#fff', color: '#111',
   },
   inputRight: { position: 'absolute', right: 12, top: 0, bottom: 0, justifyContent: 'center' },
 
-  // Öneri satırları
   sugRow: { paddingVertical: 10, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' },
   sugTitle: { fontSize: 15, fontWeight: '600', color: '#111' },
   sugSub: { fontSize: 12, color: '#666', marginTop: 2 },
   sugCta: { fontSize: 13, fontWeight: '700', color: '#007AFF', marginLeft: 8 },
   sep: { height: 1, backgroundColor: '#f3f3f3', marginLeft: 12 },
 
-  // Kategori 3 sütun
   categories: { paddingHorizontal: 12, paddingTop: 12 },
   bigChip: {
-    flex: 1,
-    height: 56,
-    marginHorizontal: 4,
-    borderRadius: 14,
-    backgroundColor: '#0B84FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 2,
+    flex: 1, height: 56, marginHorizontal: 4, borderRadius: 14,
+    backgroundColor: '#0B84FF', alignItems: 'center', justifyContent: 'center', elevation: 2,
   },
   bigChipText: { fontSize: 16, fontWeight: '700', color: '#fff' },
   clearBtn: { marginTop: 6, alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 8 },
   clearBtnText: { color: '#007AFF', fontWeight: '600', fontSize: 13 },
 
-  // Geçmiş
   historyWrap: { paddingHorizontal: 12, paddingTop: 8 },
   sectionTitle: { fontSize: 14, fontWeight: '700', color: '#333', marginBottom: 6 },
   emptyText: { fontSize: 12, color: '#777' },

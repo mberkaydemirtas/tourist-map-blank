@@ -6,15 +6,14 @@ const toLL = (p) => ({ lat: p.lat ?? p.latitude, lng: p.lng ?? p.longitude });
 
 export function useStopsEditor({
   map,
+  mapRef,            // 👈 eklendi
   recalcRoute,
   setMode,
 
-  // POI aday durak & temizlik
   candidateStop,
   setCandidateStop,
   setPoiMarkers,
 
-  // history & places
   History,
   HISTORY_KEYS,
   getPlaceDetails,
@@ -22,8 +21,8 @@ export function useStopsEditor({
 }) {
   const [addStopOpen, setAddStopOpen] = useState(false);
   const [editStopsOpen, setEditStopsOpen] = useState(false);
-  const [draftStops, setDraftStops] = useState([]); // [from, ...wps, to]
-  const [pendingEditOp, setPendingEditOp] = useState(null); // { type: 'insert'|'replace', index }
+  const [draftStops, setDraftStops] = useState([]);
+  const [pendingEditOp, setPendingEditOp] = useState(null);
 
   const confirmEditStops = useCallback(() => {
     if (!draftStops || draftStops.length < 2) return;
@@ -118,19 +117,31 @@ export function useStopsEditor({
     setPoiMarkers([]);
   }, [pendingEditOp, setCandidateStop, setPoiMarkers]);
 
+  const animateTo = useCallback((lat, lng) => {
+    try {
+      mapRef?.current?.animateToRegion({
+        latitude: lat, longitude: lng, latitudeDelta: 0.01, longitudeDelta: 0.01,
+      }, 450);
+    } catch {}
+  }, [mapRef]);
+
   const insertOrAppendStop = useCallback(
     ({ lat, lng, name, place_id, address }) => {
       const payload = { lat, lng, name, place_id, address };
       const cur = Array.isArray(map.waypoints) ? map.waypoints : [];
       const wps = [...cur, payload];
       map.setWaypoints(wps);
+
+      // ✅ haritayı hemen yeni durağa götür
+      animateTo(lat, lng);
+
       setCandidateStop(null);
       setAddStopOpen(false);
       setPoiMarkers([]);
       setMode('route');
       recalcRoute(map.selectedMode, wps);
     },
-    [map, recalcRoute, setMode, setCandidateStop, setPoiMarkers]
+    [map, recalcRoute, setMode, setCandidateStop, setPoiMarkers, animateTo]
   );
 
   const handleAddStopFlexible = useCallback(
@@ -142,6 +153,7 @@ export function useStopsEditor({
         applyPendingEditStop(payload);
       } else {
         insertOrAppendStop(payload);
+        // History utils: kalmaya devam (ayrıca AddStopOverlay kendi local geçmişini tutuyor)
         await History.savePlaceToMany([HISTORY_KEYS.PLACE.ROUTE_STOP], payload);
       }
     },
@@ -157,10 +169,12 @@ export function useStopsEditor({
           applyPendingEditStop(payload);
         } else {
           setCandidateStop(payload);
+          // ✅ aday durak seçildiğinde de anında pan
+          animateTo(payload.lat, payload.lng);
         }
       } catch {}
     },
-    [normalizePlaceToStop, pendingEditOp, applyPendingEditStop, setCandidateStop]
+    [normalizePlaceToStop, pendingEditOp, applyPendingEditStop, setCandidateStop, animateTo]
   );
 
   const openEditStops = useCallback(() => {
@@ -190,7 +204,6 @@ export function useStopsEditor({
     setEditStopsOpen(true);
   }, [map]);
 
-  // Overlay -> EditStopsOverlay için yardımcılar
   const onDragEnd = useCallback((from, to) => {
     setDraftStops(prev => {
       if (from === to) return prev;
@@ -204,13 +217,13 @@ export function useStopsEditor({
   const onDelete = useCallback((i) => {
     setDraftStops(prev => {
       const last = (prev?.length ?? 0) - 1;
-      if (i <= 0 || i >= last) return prev; // Başlangıç/Bitiş silinmez
+      if (i <= 0 || i >= last) return prev;
       return prev.filter((_, idx) => idx !== i);
     });
   }, []);
 
   const onInsertAt = useCallback((i) => {
-    const last = (draftStops?.length ?? 0) - 1;   // Bitiş indeksi
+    const last = (draftStops?.length ?? 0) - 1;
     const target = clamp(1, last, i - 1);
     setPendingEditOp({ type: 'insert', index: target });
     setAddStopOpen(true);
@@ -226,19 +239,16 @@ export function useStopsEditor({
   }, [draftStops]);
 
   return {
-    // durumlar
     addStopOpen, setAddStopOpen,
     editStopsOpen, setEditStopsOpen,
     draftStops, setDraftStops,
     pendingEditOp, setPendingEditOp,
 
-    // eylemler
     openEditStops,
     handleAddStopFlexible,
     handlePickStop,
     confirmEditStops,
 
-    // EditStopsOverlay callbacks
     onDragEnd,
     onDelete,
     onInsertAt,

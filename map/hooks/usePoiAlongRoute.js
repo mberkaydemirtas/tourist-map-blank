@@ -79,8 +79,22 @@ export function usePoiAlongRoute(routeCoords, mapRef) {
           }
         } catch {}
       }
-      const list = Array.from(seen.values()).slice(0, 40);
-      setPoiMarkers(list);
+       let list = Array.from(seen.values());
+ 
+       // 🔢 skorla: rota polylinelarına en yakın olan önce
+       const scored = list.map(it => {
+         const lat = it?.geometry?.location?.lat;
+         const lng = it?.geometry?.location?.lng;
+         const d = Number.isFinite(lat) && Number.isFinite(lng)
+           ? distanceToRoute({ lat, lng }, coordsLL)
+           : Infinity;
+         return { it, d };
+       });
+       scored.sort((a,b) => a.d - b.d);
+       list = scored.map(s => s.it).slice(0, 40);
+ 
+       setPoiMarkers(list);
+
 
       if (list.length > 0) {
         let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
@@ -142,9 +156,9 @@ export function usePoiAlongRoute(routeCoords, mapRef) {
 
   const stablePoiList = useMemo(() => {
     const arr = Array.isArray(poiMarkers) ? poiMarkers : [];
-    return arr
-      .map(p => ({ ...p, __id: idOf(p) }))
-      .sort((a, b) => (a.__id > b.__id ? 1 : -1));
+    // Sıralama fetch’de yapıldı; burada dizilişi koru:
+    return arr.map(p => ({ ...p, __id: idOf(p) }));
+
   }, [poiMarkers]);
 
   return {
