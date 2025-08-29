@@ -48,7 +48,10 @@ export default function useTurnByTurn({
   const trendCountRef = useRef(0);
   const bearingOkCountRef = useRef(0);
   const lastStepIdxRef = useRef(-1);
-
+   // step-bazlı konuşma kilitleri
+   const preSpokenRef = useRef(new Set());
+   const finalSpokenRef = useRef(new Set());
+   const arrivedRef = useRef(false);
   // speech gate
   const lastSpeechAtRef = useRef(0);
   const speechHoldUntilRef = useRef(0);
@@ -70,6 +73,9 @@ export default function useTurnByTurn({
     lastStepIdxRef.current = -1;
     lastSpeechAtRef.current = 0;
     speechHoldUntilRef.current = 0;
+    preSpokenRef.current = new Set();
+    finalSpokenRef.current = new Set();
+    arrivedRef.current = false;
   }, [steps]);
 
   const sayQueued = useCallback((text, { delayMs = 0, minGapMs = SPEECH_MIN_GAP_MS } = {}) => {
@@ -88,6 +94,28 @@ export default function useTurnByTurn({
       try { speak?.(text); } catch {}
     }, wait);
   }, [speak]);
+
+   // heading güvenilir mi? (hız + hedef yönle uyum)
+   const relativeOk = useCallback((hEff, step, speed) => {
+     if (!Number.isFinite(hEff)) return false;
+     const sp = Number.isFinite(speed) ? speed : 0;
+     // çok yavaşken pusula/sensör dalgalı olur → relative verme
+     if (sp < 1.5) return false;
+     const m = step?.maneuver || {};
+     const bearingAfter = typeof m.bearing_after === 'number' ? m.bearing_after : null;
+     if (!Number.isFinite(bearingAfter)) return false;
+     // kullanıcı bakış yönü ile manevra sonrası yön yakınsa relative güvenli
+     const diff = Math.abs(normalizeDeg180(bearingAfter - hEff));
+     return diff <= 60; // 60° tolerans (ilk saniyelerdeki jitter'ı tolere eder)
+   }, []);
+ 
+   const pickDirective = useCallback((hEff, step, speed) => {
+     const useRelative = relativeOk(hEff, step, speed);
+     if (useRelative) {
+       return formatInstructionRelativeTR?.(hEff, step) ?? formatInstructionTR?.(step);
+     }
+     return formatInstructionTR?.(step);
+   }, [formatInstructionRelativeTR, formatInstructionTR, relativeOk]);
 
   const speakBanner = useCallback(() => {
     const s = stepsRef.current?.[idxRef.current];
@@ -137,19 +165,21 @@ export default function useTurnByTurn({
         const { pre, final } = getTwoStageThresholds?.(step, speed) || { pre: 100, final: 20 };
         const hEff = Number.isFinite(sensorHeading) ? sensorHeading : heading;
 
-        // pre anons
-        if (dist <= pre && dist > final + 8) {
-          const directive = Number.isFinite(speed) && speed > 1
-            ? (formatInstructionRelativeTR?.(hEff, step) ?? formatInstructionTR?.(step))
-            : (formatInstructionTR?.(step));
+        // pre anons (tek atım, güvenli relative)
+        if (dist <= pre && dist > final + 8 && !preSpokenRef.current.has(idx)) {
+          const directive = pickDirective(hEff, step, speed);
           sayQueued(`Yaklaşık ${formatMeters(pre)} sonra ${directive}.`, { minGapMs: 1200 });
+          preSpokenRef.current.add(idx);
         }
 
-        // final anons + haptik
-        if (dist <= final && dist > Math.max(6, final - 12)) {
+         // final anons + haptik (yalnızca 1 kez)
+         if (dist <= final && dist > Math.max(6, final - 12) && !finalSpokenRef.current.has(idx)){
           try { buzz?.(); } catch {}
-          const directiveShort = shortDirectiveTR?.(hEff, step) ?? formatInstructionTR?.(step);
-          sayQueued(`Şimdi ${directiveShort}.`, { delayMs: 700, minGapMs: 1500 });
+           const rel = relativeOk(hEff, step, speed);
+           const directiveShort = rel
+             ? (shortDirectiveTR?.(hEff, step) ?? formatInstructionTR?.(step))
+             : (formatInstructionTR?.(step));          sayQueued(`Şimdi ${directiveShort}.`, { delayMs: 700, minGapMs: 1500 });
+          finalSpokenRef.current.add(idx);
         }
 
         // geçiş kapıları
@@ -170,12 +200,13 @@ export default function useTurnByTurn({
 
         if (closeEnough || trendCountRef.current >= 2 || bearingOkCountRef.current >= 2) {
           // son adımdaysa varış
-          if (idx >= (curSteps?.length || 1) - 1) {
-            try {
-              onArrive?.();
-            } catch {}
-            return;
-          }
+           if (idx >= (curSteps?.length || 1) - 1) {
+             if (!arrivedRef.current) {
+               arrivedRef.current = true;
+               try { onArrive?.(); } catch {}
+             }
+             return;
+           }
 
           // bir sonraki adıma geç
           const nextIndex = idx + 1;
@@ -190,7 +221,7 @@ export default function useTurnByTurn({
           // “bir sonraki” direktifi
           const next = curSteps?.[nextIndex];
           const h2 = Number.isFinite(heading) ? heading : hEff;
-          const msg = formatInstructionRelativeTR?.(h2, next) ?? formatInstructionTR?.(next);
+          const msg = pickDirective(h2, next, speed);
           sayQueued(msg, { delayMs: 800, minGapMs: 2000 });
 
           // yeni hedefe göre ilk distance tahmini
