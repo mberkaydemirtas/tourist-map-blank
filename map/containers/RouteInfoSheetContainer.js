@@ -1,24 +1,30 @@
-// src/containers/RouteInfoSheetContainer.js
-import React, { forwardRef, useRef, useImperativeHandle } from 'react';
+// src/map/containers/RouteInfoSheetContainer.js
+import React, { forwardRef, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import RouteInfoSheet from '../components/RouteInfoSheet';
 
 const RouteInfoSheetContainer = forwardRef(function RouteInfoSheetContainer(
-  { distance, duration, map, snapPoints = ['30%'], onCancel, onModeChange, onModeRequest, onStart },
+  {
+    distance,
+    duration,
+    map,
+    snapPoints = ['30%'],
+    onCancel,       // MapScreen'den: route'ı tamamen iptal + temizle
+    onModeChange,   // routeId -> primary seçimi
+    onModeRequest,  // veri yoksa hesaplat
+    onStart,        // turn-by-turn'e geçiş
+  },
   ref
 ) {
-  const innerRef = useRef(null);
-
-  useImperativeHandle(ref, () => ({
-    snapToIndex: (i) => innerRef.current?.snapToIndex?.(i),
-    expand: () => innerRef.current?.expand?.(),
-    close: () => innerRef.current?.close?.(),
-    collapse: () => innerRef.current?.collapse?.(),
-  }));
+  // X’e basınca: önce sheet’i kapat, sonra onCancel ile route’u temizle
+  const handleClosePress = useCallback(() => {
+    try { ref?.current?.close?.(); } catch {}
+    onCancel?.();
+  }, [ref, onCancel]);
 
   return (
     <RouteInfoSheet
-      ref={innerRef}
+      ref={ref}
       distance={distance}
       duration={duration}
       fromLocation={map.fromLocation}
@@ -30,9 +36,12 @@ const RouteInfoSheetContainer = forwardRef(function RouteInfoSheetContainer(
       onModeChange={onModeChange}
       onModeRequest={onModeRequest}
       onStart={onStart}
+      // 👇 sheet swipe-down veya programatik kapanışta da aynı temizlik çalışsın
+      onClose={onCancel}
+      enablePanDownToClose
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={onCancel} style={styles.closeButton}>
+        <TouchableOpacity onPress={handleClosePress} style={styles.closeButton}>
           <Text style={styles.closeText}>✕</Text>
         </TouchableOpacity>
       </View>

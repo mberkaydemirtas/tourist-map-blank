@@ -89,8 +89,7 @@ export function useMapLogic(mapRef) {
       // fromLocation varsa seçilen yere rota oluştur
       const fromCoord = normalizeCoord(route.fromLocation?.coords);
       if (fromCoord) {
-        const out = await route.fetchAllRoutes(fromCoord, coord);
-        // fetchAllRoutes zaten routeOptions’ı set ediyor; burada primary’yi route effect’i çizer
+        await route.fetchAllRoutes(fromCoord, coord);
       }
     } catch (err) {
       console.warn('handleSelectPlace hata:', err);
@@ -265,6 +264,11 @@ export function useMapLogic(mapRef) {
   const handleSelectFrom  = route.handleSelectFrom;
   const handleSelectRoute = route.handleSelectRoute;
 
+  // 🧷 setQuery referansını sabitle (gereksiz rerender/resetleri önler)
+  const setQuery = useCallback((q) => {
+    places.setQuery(q);
+  }, [places]);
+
   return {
     // places
     fetchAndSetMarker: places.fetchAndSetMarker,
@@ -289,7 +293,7 @@ export function useMapLogic(mapRef) {
     routeDrawn: route.routeDrawn,
 
     query: places.query,
-    setQuery: places.setQuery,
+    setQuery, // 👈 sabit referans
 
     activeCategory: category.activeCategory,
     mapMoved: category.mapMoved,
@@ -306,7 +310,7 @@ export function useMapLogic(mapRef) {
     toLocation: route.toLocation,
 
     handleSelectFrom,
-    handleSelectTo,         // sarmalanmış versiyon — kategori temizliği yapar
+    handleSelectTo,
     handleSelectPlace,
     handleCategorySelect,
     handleSearchThisArea,
@@ -321,6 +325,6 @@ export function useMapLogic(mapRef) {
     selectedMode: route.selectedMode,
     setSelectedMode: route.setSelectedMode,
 
-    fetchAllRoutes,        // sarmalanmış (kategori temizliği ile)
+    fetchAllRoutes,
   };
 }

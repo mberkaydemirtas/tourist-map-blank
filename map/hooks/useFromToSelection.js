@@ -22,6 +22,9 @@ export function useFromToSelection({
   History,
   HISTORY_KEYS,
   pushLabelHistory,
+
+  // 👇 MapScreen'den gelen auto-open kontrol ref'i
+  routeSheetAutoOpenRef,
 }) {
   const setToFromMarkerIfMissing = useCallback(() => {
     if (map.toLocation) return;
@@ -48,6 +51,9 @@ export function useFromToSelection({
   }, [map, recalcRoute]);
 
   const onGetDirectionsPress = useCallback(() => {
+    // ✅ auto-open tetikle (ops. chaining KULLANMA)
+    if (routeSheetAutoOpenRef) routeSheetAutoOpenRef.current = true;
+
     if (!map.toLocation && (map.marker?.coords || map.marker?.coordinate)) {
       const c = normalizeCoord(map.marker?.coords ?? map.marker?.coordinate);
       map.setToLocation({
@@ -58,9 +64,12 @@ export function useFromToSelection({
     }
     sheetRef.current?.close?.();
     setShowFromOverlay(true);
-  }, [map, normalizeCoord, setShowFromOverlay, sheetRef]);
+  }, [map, normalizeCoord, setShowFromOverlay, sheetRef, routeSheetAutoOpenRef]);
 
   const handleFromSelected = useCallback(async (src) => {
+    // ✅ auto-open tetikle
+    if (routeSheetAutoOpenRef) routeSheetAutoOpenRef.current = true;
+
     // “Haritadan seç” modu
     if (src.key === 'map') {
       setIsSelectingFromOnMap(true);
@@ -111,10 +120,14 @@ export function useFromToSelection({
     }
   }, [
     map, setMode, setToFromMarkerIfMissing, normalizeCoord,
-    reverseGeocode, toCoordsObject, recalcRoute, History, HISTORY_KEYS
+    reverseGeocode, toCoordsObject, recalcRoute, History, HISTORY_KEYS,
+    setIsSelectingFromOnMap, setShowSelectionHint, routeSheetAutoOpenRef
   ]);
 
   const handleToSelected = useCallback(async (place) => {
+    // ✅ auto-open tetikle
+    if (routeSheetAutoOpenRef) routeSheetAutoOpenRef.current = true;
+
     try {
       const pid = place?.place_id || place?.id;
       let lat =
@@ -162,7 +175,7 @@ export function useFromToSelection({
     } catch (e) {
       console.warn('handleToSelected error:', e);
     }
-  }, [map, mapRef, normalizeCoord, recalcRoute, getPlaceDetails, pushLabelHistory]);
+  }, [map, mapRef, normalizeCoord, recalcRoute, getPlaceDetails, pushLabelHistory, routeSheetAutoOpenRef]);
 
   // Haritadan tek dokunuşla from/to seçimi
   const handleSelectOriginOnMap = useCallback(async (coordinate) => {
@@ -217,7 +230,6 @@ export function useFromToSelection({
   const handleMapPress = useCallback((e) => {
     const { coordinate } = e.nativeEvent;
     if (map && overlayContext) {
-      // FROM/TO seçim modu açıksa
       if (overlayContext === 'from') {
         handleSelectOriginOnMap(coordinate);
         return;

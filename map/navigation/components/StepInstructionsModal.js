@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Modal,
   View,
@@ -9,24 +9,112 @@ import {
   SafeAreaView,
 } from 'react-native';
 
-export default function StepInstructionsModal({ visible, onClose, steps }) {
+/**
+ * Props:
+ *  - visible: boolean
+ *  - onClose: ()=>void
+ *  - steps: Array<Step>
+ *  - currentIndex?: number
+ *  - onSpeakStep?: (i:number)=>void
+ *  - onJumpToIndex?: (i:number)=>void
+ *  - onSpeakAll?: (startIndex?:number)=>void
+ */
+export default function StepInstructionsModal({
+  visible,
+  onClose,
+  steps = [],
+  currentIndex = 0,
+  onSpeakStep,
+  onJumpToIndex,
+  onSpeakAll,
+}) {
+  const listRef = useRef(null);
+
+  // Açıldığında aktif adıma kaydır
+  useEffect(() => {
+    if (!visible) return;
+    // kısa gecikme: modal mount olsun
+    const t = setTimeout(() => {
+      if (Number.isFinite(currentIndex) && currentIndex >= 0 && currentIndex < steps.length) {
+        try {
+          listRef.current?.scrollToIndex?.({ index: currentIndex, animated: true, viewPosition: 0.3 });
+        } catch {}
+      }
+    }, 150);
+    return () => clearTimeout(t);
+  }, [visible, currentIndex, steps.length]);
+
+  const data = useMemo(() => Array.isArray(steps) ? steps : [], [steps]);
+
+  const getTitle = (s) =>
+    s?.maneuver?.instruction ||
+    s?.instruction ||
+    'Devam edin';
+
   return (
-    <Modal visible={visible} animationType="slide" transparent={true}>
+    <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.overlay}>
         <SafeAreaView style={styles.modalContainer}>
-          <Text style={styles.title}>🧭 Adım Adım Yol Tarifi</Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>🧭 Adım Adım Yol Tarifi</Text>
+            <TouchableOpacity onPress={onClose} style={styles.headerBtn}>
+              <Text style={styles.headerBtnText}>Kapat</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.actionsRow}>
+            <TouchableOpacity
+              style={styles.primaryBtn}
+              onPress={() => onSpeakAll?.(currentIndex)}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.primaryBtnText}>Tümünü sırayla oku</Text>
+            </TouchableOpacity>
+          </View>
+
           <FlatList
-            data={steps}
+            ref={listRef}
+            data={data}
             keyExtractor={(_, index) => index.toString()}
-            renderItem={({ item, index }) => (
-              <Text style={styles.step}>
-                {index + 1}. {item.maneuver.instruction} ({Math.round(item.distance)} m)
-              </Text>
-            )}
+            initialNumToRender={20}
+            renderItem={({ item, index }) => {
+              const active = index === currentIndex;
+              const dist = Number.isFinite(item?.distance) ? Math.round(item.distance) : null;
+
+              return (
+                <View style={[styles.stepRow, active && styles.stepRowActive]}>
+                  <View style={styles.stepMain}>
+                    <Text style={[styles.stepIndex, active && styles.stepIndexActive]}>
+                      {index + 1}.
+                    </Text>
+                    <Text style={[styles.stepText, active && styles.stepTextActive]} numberOfLines={3}>
+                      {getTitle(item)}{dist != null ? ` (${dist} m)` : ''}
+                    </Text>
+                  </View>
+
+                  <View style={styles.stepActions}>
+                    <TouchableOpacity
+                      onPress={() => onSpeakStep?.(index)}
+                      style={styles.iconBtn}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    >
+                      <Text style={styles.iconBtnText}>🔊</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => onJumpToIndex?.(index)}
+                      style={[styles.iconBtn, { marginLeft: 4 }]}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    >
+                      <Text style={styles.iconBtnText}>➡️</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            }}
+            contentContainerStyle={{ paddingBottom: 16 }}
+            getItemLayout={(_, i) => ({ length: 56, offset: 56 * i, index: i })}
           />
-          <TouchableOpacity onPress={onClose} style={styles.button}>
-            <Text style={styles.buttonText}>Kapat</Text>
-          </TouchableOpacity>
         </SafeAreaView>
       </View>
     </Modal>
@@ -43,31 +131,68 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 30,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 18,
     maxHeight: '80%',
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
   title: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 16,
-    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '700',
   },
-  step: {
-    fontSize: 15,
-    marginVertical: 6,
-    lineHeight: 22,
+  headerBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
   },
-  button: {
-    marginTop: 20,
+  headerBtnText: { fontWeight: '700', color: '#111' },
+
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginBottom: 8,
+  },
+  primaryBtn: {
     backgroundColor: '#007AFF',
-    padding: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderRadius: 10,
   },
-  buttonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: 'bold',
+  primaryBtnText: { color: '#fff', fontWeight: '700' },
+
+  stepRow: {
+    minHeight: 56,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
   },
+  stepRowActive: {
+    backgroundColor: '#F0F7FF',
+  },
+  stepMain: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingRight: 6 },
+  stepIndex: { width: 22, textAlign: 'right', marginRight: 8, fontWeight: '700', color: '#666' },
+  stepIndexActive: { color: '#1565C0' },
+  stepText: { flex: 1, fontSize: 14.5, color: '#222' },
+  stepTextActive: { color: '#0D47A1', fontWeight: '700' },
+
+  stepActions: { flexDirection: 'row', alignItems: 'center', paddingLeft: 4 },
+  iconBtn: {
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  iconBtnText: { fontSize: 16 },
 });

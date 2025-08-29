@@ -16,7 +16,6 @@ import {
   StatusBar,
 } from 'react-native';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
-import { useNavigation } from '@react-navigation/native';
 import { checkLocationReady } from '../utils/locationUtils';
 
 const fmtDistance = (m) =>
@@ -33,9 +32,9 @@ const RouteInfoSheet = forwardRef(
       toLocation,
       selectedMode,
       onModeChange,      // beklenen: routeId (primary.id)
-      onModeRequest,     // YENİ: veri yoksa sadece 'mode' (driving/walking/transit) gönder
+      onModeRequest,     // veri yoksa sadece 'mode' (driving/walking/transit) gönder
       onCancel,
-      onStart,
+      onStart,           // payload'lı çağıracağız (from,to,waypoints,mode,polyline,steps)
       routeOptions = {},
       waypoints = [],
       snapPoints = ['30%'],
@@ -45,7 +44,6 @@ const RouteInfoSheet = forwardRef(
     ref
   ) => {
     const modalRef = useRef(null);
-    const navigation = useNavigation();
     const presentedRef = useRef(false);
 
     const getPrimary = (mode) => {
@@ -125,19 +123,15 @@ const RouteInfoSheet = forwardRef(
       const steps = selectedPrimary?.steps || [];
       const mode = selectedMode;
 
+      // 1) Önce sheet'i kapat
       modalRef.current?.dismiss();
       presentedRef.current = false;
 
-      navigation.navigate('NavigationScreen', {
-        from,
-        to,
-        polyline,
-        steps,
-        mode,
-        waypoints,
-      });
+      // 2) Bir frame bekle (yarışları kırar)
+      await new Promise(requestAnimationFrame);
 
-      onStart?.();
+      // 3) Navigasyonu parent yönetsin (tek kaynak)
+      onStart?.({ from, to, waypoints, mode, polyline, steps });
     };
 
     const modeOptions = [
@@ -169,7 +163,7 @@ const RouteInfoSheet = forwardRef(
               {modeOptions.map((option) => {
                 const primary = getPrimary(option.key);
                 const isSelected = selectedMode === option.key;
-                const hasData = !!primary; // sadece görsel amaçlı
+                const hasData = !!primary;
 
                 return (
                   <TouchableOpacity
@@ -180,14 +174,13 @@ const RouteInfoSheet = forwardRef(
                       isSelected && styles.modeButtonSelected,
                       !hasData && styles.modeButtonDisabled,
                     ]}
-                onPress={() => {
-                  if (primary) {
-                    onModeChange?.(primary.id);
-                  } else if (fromLocation?.coords && toLocation?.coords) {
-                    // bu mod için rota yoksa hesaplat
-                    onModeRequest?.(option.key);
-                  }
-                }}
+                    onPress={() => {
+                      if (primary) {
+                        onModeChange?.(primary.id);
+                      } else if (fromLocation?.coords && toLocation?.coords) {
+                        onModeRequest?.(option.key);
+                      }
+                    }}
                   >
                     <Text
                       style={[

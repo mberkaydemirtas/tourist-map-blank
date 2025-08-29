@@ -12,7 +12,7 @@ import {
   getRoute,
   getNearbyPlaces,
   getPlaceDetails,
-} from '../maps';
+} from '../maps'; // ✅ düzeltildi
 
 import StepInstructionsModal from '../navigation/components/StepInstructionsModal';
 import LaneGuidanceBar from '../navigation/components/LaneGuidanceBar';
@@ -84,6 +84,7 @@ export default function NavigationScreen() {
   const route = useRoute();
   const navigation = useNavigation();
   const [mapReady, setMapReady] = useState(false);
+  const mapRef = useRef(null);
 
   // ---- Parametreler ----
   const {
@@ -94,6 +95,14 @@ export default function NavigationScreen() {
     mode: initialMode = 'driving',
     waypoints: initialWaypoints = [],
   } = route.params ?? {};
+  // Sadece bir kez logla (veya değer değişirse)
+  const loggedRef = useRef(false);
+  useEffect(() => {
+    if (__DEV__ && !loggedRef.current) {
+      console.log('[Nav] initialWaypoints', initialWaypoints);
+      loggedRef.current = true;
+    }
+  }, [initialWaypoints]);
 
   // ---- Refs / Flags ----
   const followBackSuppressedRef = useRef(false);
@@ -164,7 +173,6 @@ export default function NavigationScreen() {
   const stepIndexRef = useRef(0);
 
   // Kamera adapter
-  const mapRef = useRef(null);
   const cameraRef = useRef(null);
   useEffect(() => {
     const regionFromBounds = (ne, sw) => {
@@ -310,7 +318,7 @@ export default function NavigationScreen() {
     selectedMode: mode,
     offRouteThresholdM: 50,
     onOffRoute: onOffRouteCb,  // sabit callback (FIX)
-    voice: !muted,
+    voice: false,
     externalFeed: true,
   });
 
@@ -318,12 +326,12 @@ export default function NavigationScreen() {
   useEffect(() => { if (nav?.location) lastLocRef.current = nav.location; }, [nav?.location]);
 
   // Turn-by-turn
-  const {
-    currentStepIndex,
-    distanceToManeuver,
-    liveRemain,
-    speakBanner,
-  } = useTurnByTurn({
+   const {
+     currentStepIndex,
+     distanceToManeuver,
+     liveRemain,
+     speakBanner,
+   } = useTurnByTurn({
     steps,
     heading,
     location: nav?.location ?? null,
@@ -347,6 +355,14 @@ export default function NavigationScreen() {
     }, [speak]),
   });
 
+   const shownStep = steps?.[currentStepIndex];
+   const nextStep  = steps?.[currentStepIndex + 1] || null;
+   const next2Step = steps?.[currentStepIndex + 2] || null;
+ 
+   // 🔧 Banner: canlı kalan mesafe (distanceToManeuver) → azalır
+   const distForBanner = Number.isFinite(distanceToManeuver) ? distanceToManeuver : null;
+   // 🔧 Chip: bir SONRAKİ adımın tahmini uzunluğu (sabit kalabilir)
+   const distForChip   = next2Step ? getStepDistanceValue(next2Step) : null;
   // Kamera + follow
   const {
     camZoom, camPitch,
@@ -355,10 +371,19 @@ export default function NavigationScreen() {
     onMapPress, onPanDrag, scheduleFollowBack, goFollowNow,
     pauseFollowing, followHoldUntilRef,
   } = useNavCamera({
-    nav,
+    mapRef,
+    location: nav?.location,
     distanceToManeuver,
     followBackSuppressedRef,
+    manualReenter: true, // ✅ sadece hizala ile geri dön
   });
+
+  useEffect(() => {
+    if (simActive) {
+      setIsFollowing(false);     // otomatik takip OFF
+      setIsMapTouched(true);     // 📍 Hizala butonu görünsün
+    }
+  }, [simActive, setIsFollowing, setIsMapTouched]);
 
   // proxy'yi gerçek fonksiyonla bağla + reset sonrası follow aç
   useEffect(() => { pauseFollowingRef.current = pauseFollowing; }, [pauseFollowing]);
@@ -587,6 +612,29 @@ export default function NavigationScreen() {
     return Math.max(0, Math.min(100, Math.round(pct)));
   }, [nav?.totalM, nav?.remainingM, effDist, primaryRoute?.distance]);
 
+  // 👇 Sadece burada değişiklik: sim açıkken gerçek mavi dot'ı gizliyoruz
+  const showOSUser = !!locationPermission && !simActive;
+
+  /* --- Step konuşma yardımcıları --- */
+  const speakStepMessage = useCallback((i) => {
+    if (!Array.isArray(steps) || i < 0 || i >= steps.length) return;
+    const st = steps[i];
+    const msg = formatInstructionRelativeTR(heading, st) || formatInstructionTR(st) || 'Devam edin';
+    speak(msg);
+  }, [steps, heading, speak]);
+
+  const speakAllFrom = useCallback((start = 0) => {
+    if (!Array.isArray(steps) || steps.length === 0) return;
+    const baseDelay = 2200;
+    const maxCount = Math.min(steps.length - start, 20);
+    for (let k = 0; k < maxCount; k++) {
+      const idx = start + k;
+      const st = steps[idx];
+      const msg = formatInstructionRelativeTR(heading, st) || formatInstructionTR(st) || 'Devam edin';
+      setTimeout(() => speak(msg), k * baseDelay);
+    }
+  }, [steps, heading, speak]);
+
   return (
     <View style={styles.container}>
       <MapView
@@ -602,9 +650,10 @@ export default function NavigationScreen() {
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         }}
-        showsUserLocation={!!locationPermission}
+        /* 🔧 ÖNEMLİ: Simülasyon açıkken OS mavi noktasını tamamen kapat. */
+        showsUserLocation={showOSUser}
         onUserLocationChange={(e) => {
-          if (simActive) return;
+          if (simActive) return; // simdeyken gerçek akışı yeme
           const c = e?.nativeEvent?.coordinate;
           if (c) nav.ingestExternalLocation?.({
             latitude: c.latitude,
@@ -626,10 +675,16 @@ export default function NavigationScreen() {
             <View style={styles.candidateDotOuter}><View style={styles.candidateDotInner} /></View>
           </Marker>
         )}
-
+        
         {/* Waypoints */}
-        <WaypointMarkers waypoints={waypoints} />
-
+        <WaypointMarkers
+          waypoints={(waypoints || []).map(w => ({
+            latitude:  w.latitude ?? w.lat,
+            longitude: w.longitude ?? w.lng,
+            name: w.name,
+            place_id: w.place_id
+          }))}
+        />
         {/* POI’ler */}
         <PoiMarkers
           stablePoiList={stablePoiList}
@@ -655,7 +710,7 @@ export default function NavigationScreen() {
           applyAlternative={applyAlternative}
         />
 
-        {/* Simülasyon kullanıcı noktası */}
+        {/* Simülasyon kullanıcı noktası — sim açıkken TEK konum bu */}
         {simActive && simCoord && (
           <Marker coordinate={{ latitude: simCoord.lat, longitude: simCoord.lng }}>
             <View style={styles.simUserDotOuter}><View style={styles.simUserDotInner} /></View>
@@ -673,41 +728,55 @@ export default function NavigationScreen() {
       {isRerouting && (
         <View style={styles.rerouteBadge}><Text style={styles.rerouteText}>Rota güncelleniyor…</Text></View>
       )}
-
+ 
       {/* Harita üstü kontroller */}
       <View style={styles.topControls} pointerEvents="box-none">
-        <TouchableOpacity
-          style={[
-            styles.topBtn,
-            altMode && !isAddingStop && styles.topBtnActive,
-            isAddingStop && styles.topBtnDisabled,
-          ]}
-          onPress={toggleAlternatives}
-          disabled={isAddingStop}
-        >
-          <Text style={styles.topBtnIcon}>
-            {waypoints.length > 0 ? '⛔' : altMode ? (altFetching ? '⏳' : '✖️') : '🛣️'}
-          </Text>
+        {(() => {
+          const altBtnDisabled = isAddingStop; // sadece ekleme akışında kilit
+          const altIcon = altBtnDisabled
+            ? '⛔'
+            : altMode
+              ? (altFetching ? '⏳' : '✖️')
+              : '🛣️';
+          return (
+            <TouchableOpacity
+              style={[
+                styles.topBtn,
+                altMode && !altBtnDisabled && styles.topBtnActive,
+                altBtnDisabled && styles.topBtnDisabled,
+              ]}
+              onPress={toggleAlternatives}
+              disabled={altBtnDisabled}
+            >
+              <Text style={styles.topBtnIcon}>{altIcon}</Text>
+            </TouchableOpacity>
+          );
+        })()}
+
+        {/* Ses aç/kapa */}
+        <TouchableOpacity style={styles.topBtn} onPress={() => { Speech.stop(); setMuted((m) => !m); }}>
+          <Text style={styles.topBtnIcon}>{muted ? '🔇' : '🔊'}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionBtn} onPress={() => { Speech.stop(); setMuted((m) => !m); }}>
-          <Text style={styles.actionIcon}>{muted ? '🔇' : '🔊'}</Text>
+        {/* 📜 Steps */}
+        <TouchableOpacity style={styles.topBtn} onPress={() => setShowSteps(true)}>
+          <Text style={styles.topBtnIcon}>📜</Text>
         </TouchableOpacity>
       </View>
 
       {/* Üst banner */}
       <TouchableOpacity activeOpacity={0.8} style={styles.banner} onPress={speakBanner}>
         <View style={styles.bannerStack}>
-          <LaneGuidanceBar step={steps?.[currentStepIndex]} iconsOnly style={{ marginBottom: 6 }} />
+          <LaneGuidanceBar step={shownStep} iconsOnly style={{ marginBottom: 6 }} />
           <Text style={styles.bannerTitle}>
-            {formatInstructionRelativeTR(heading, steps?.[currentStepIndex])}
-            {Number.isFinite(distanceToManeuver) ? ` • ${metersFmt(distanceToManeuver)}` : ''}
+              {formatInstructionRelativeTR(heading, shownStep)}
+              {Number.isFinite(distForBanner) ? ` • ${metersFmt(distForBanner)}` : ''}
           </Text>
         </View>
-        {!!steps?.[currentStepIndex + 1] && (
+        {!!nextStep && (
           <NextManeuverChip
-            step={steps[currentStepIndex + 1]}
-            distance={getStepDistanceValue(steps[currentStepIndex + 1])}
+             step={nextStep}
+             distance={distForChip}
           />
         )}
       </TouchableOpacity>
@@ -763,7 +832,13 @@ export default function NavigationScreen() {
 
       {/* Haritayı hizala butonu */}
       {isMapTouched && (
-        <TouchableOpacity style={styles.alignButton} onPress={goFollowNow}>
+        <TouchableOpacity
+          style={styles.alignButton}
+          onPress={() => {
+            goFollowNow();
+            nav.alignNow({ distToManeuver: distanceToManeuver }); // ✅ stabil parametrelerle çağır
+          }}
+        >
           <Text style={styles.alignText}>📍 Hizala</Text>
         </TouchableOpacity>
       )}
@@ -875,7 +950,20 @@ export default function NavigationScreen() {
         }}
       />
 
-      <StepInstructionsModal visible={showSteps} steps={steps} onClose={() => setShowSteps(false)} />
+      {/* 📜 Step listesi modalı (gelişmiş) */}
+      <StepInstructionsModal
+        visible={showSteps}
+        onClose={() => setShowSteps(false)}
+        steps={steps}
+        currentIndex={currentStepIndex}
+        onSpeakStep={speakStepMessage}
+        onJumpToIndex={(i) => {
+          setCurrentStepIndex?.(i);
+          setShowSteps(false);
+          setTimeout(() => speakStepMessage(i), 150);
+        }}
+        onSpeakAll={speakAllFrom}
+      />
     </View>
   );
 }
