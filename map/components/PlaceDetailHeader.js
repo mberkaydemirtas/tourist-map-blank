@@ -1,17 +1,30 @@
 // PlaceDetailHeader.js
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { formatDistance, formatDuration } from '../utils/formatters'; // 👈 eklendi
 
 export default function PlaceDetailHeader({
   marker,
   routeInfo,
   onGetDirections,
-  ctaLabel = 'Yol Tarifi Al', // ← dışarıdan override edilebilir
+  ctaLabel = 'Yol Tarifi Al',
 }) {
   if (!marker) return null;
 
   const hasRating = typeof marker.rating === 'number';
-  const ratingText = hasRating ? `${'⭐'.repeat(Math.max(0, Math.round(marker.rating)))} ${marker.rating.toFixed(1)}` : null;
+  const ratingText = hasRating
+    ? `${'⭐'.repeat(Math.max(0, Math.round(marker.rating)))} ${marker.rating.toFixed(1)}`
+    : null;
+
+  // 👇 Burada hem sayı hem string olasılığını düzgün ele alıyoruz
+  const rawDist = routeInfo?.distance;
+  const rawDur  = routeInfo?.duration;
+
+  const distanceText =
+    typeof rawDist === 'number' ? formatDistance(rawDist) : (rawDist || '');
+
+  const durationText =
+    typeof rawDur === 'number' ? formatDuration(rawDur) : (rawDur || '');
 
   return (
     <View style={styles.handleContainer}>
@@ -32,9 +45,9 @@ export default function PlaceDetailHeader({
             <Text style={styles.type}>{String(marker.types[0]).replace(/_/g, ' ')}</Text>
           )}
 
-          {routeInfo && (routeInfo.duration || routeInfo.distance) && (
+          {(durationText || distanceText) && (
             <Text style={styles.driveTime}>
-              🚗 {routeInfo.duration ?? ''}{routeInfo.duration && routeInfo.distance ? ' · ' : ''}{routeInfo.distance ?? ''}
+              🚗 {durationText}{durationText && distanceText ? ' · ' : ''}{distanceText}
             </Text>
           )}
         </View>

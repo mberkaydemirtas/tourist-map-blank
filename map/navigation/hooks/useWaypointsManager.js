@@ -24,6 +24,18 @@ export default function useWaypointsManager({ initialWaypoints = [], getPlaceDet
     Array.isArray(initialWaypoints) ? initialWaypoints.map(normalizeWp).filter(Boolean) : []
   );
 
+  // 🔁 initialWaypoints değişirse yeniden yükle
+  const prevInitRef = useRef(initialWaypoints);
+  useEffect(() => {
+    if (prevInitRef.current !== initialWaypoints) {
+      prevInitRef.current = initialWaypoints;
+      const next = Array.isArray(initialWaypoints)
+        ? initialWaypoints.map(normalizeWp).filter(Boolean)
+        : [];
+      setWaypoints(next);
+    }
+  }, [initialWaypoints, normalizeWp]);
+
   const waypointsRef = useRef(waypoints);
   useEffect(() => { waypointsRef.current = waypoints; }, [waypoints]);
 

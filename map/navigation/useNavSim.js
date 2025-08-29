@@ -1,4 +1,3 @@
-// src/navigation/useNavSim.js
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 /**
@@ -19,7 +18,7 @@ export default function useNavSim({
   const stateRef = useRef({ i: 0, t: 0 }); // segment index + [0..1]
   const onTickRef = useRef(onTick);
 
-  // 🔧 onTick’i ref’te güncel tut, fakat effect bağımlılığı yapma
+  // 🔧 onTick’i ref’te güncel tut
   useEffect(() => { onTickRef.current = onTick; }, [onTick]);
 
   // Rota → {lat,lng} normalizasyonu (stable)
@@ -28,7 +27,9 @@ export default function useNavSim({
     const src = Array.isArray(routeCoordinates) ? routeCoordinates : [];
     for (const c of src) {
       if (Array.isArray(c) && c.length >= 2) {
-        const lat = Number(c[1]), lng = Number(c[0]);
+        // Not: [lng,lat] ya da [lat,lng] belirsizliği için projendeki düzene uy.
+        // Aşağıda Google polyline decode → [lat,lng] kabul ediyoruz:
+        const lat = Number(c[0]), lng = Number(c[1]);
         if (Number.isFinite(lat) && Number.isFinite(lng)) out.push({ lat, lng });
       } else if (c && typeof c === 'object') {
         const lat = Number(c.latitude ?? c.lat);
@@ -38,6 +39,24 @@ export default function useNavSim({
     }
     return out;
   }, [routeCoordinates]);
+
+  // Eğer metersBetween gelmediyse fallback (haversine ~metre)
+  const metersBetweenSafe = useMemo(() => {
+    if (typeof metersBetween === 'function') return metersBetween;
+    const R = 6371000;
+    return (A, B) => {
+      if (!A || !B) return 0;
+      const toRad = (x) => (x * Math.PI) / 180;
+      const dLat = toRad(B.lat - A.lat);
+      const dLng = toRad(B.lng - A.lng);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(A.lat)) *
+          Math.cos(toRad(B.lat)) *
+          Math.sin(dLng / 2) ** 2;
+      return 2 * R * Math.asin(Math.sqrt(a));
+    };
+  }, [metersBetween]);
 
   const bearingDeg = (A, B) => {
     const toRad = (x) => (x * Math.PI) / 180;
@@ -66,7 +85,7 @@ export default function useNavSim({
 
       while (advance > 0 && s.i < path.length - 1) {
         const A = path[s.i], B = path[s.i + 1];
-        const L = Math.max(1, metersBetween(A, B));
+        const L = Math.max(1, metersBetweenSafe(A, B));
         const remain = L * (1 - s.t);
         if (advance < remain) {
           s = { ...s, t: s.t + advance / L };
@@ -87,11 +106,18 @@ export default function useNavSim({
       stateRef.current = s;
       setSimCoord({ lat, lng });
 
-      // ❗️ her render’da değişse bile ref sabit → effect reset olmaz
-      try { onTickRef.current?.({ lat, lng, heading: hdg, speed: v }); } catch {}
+      try {
+        onTickRef.current?.({
+          lat, lng,
+          heading: hdg,
+          speed: v,
+          mocked: true,
+          timestamp: Date.now(),
+        });
+      } catch {}
     };
 
-    // İlk frame’i hemen atmak istersen bu satırı açık bırak:
+    // İlk frame’i hemen at
     stepOnce();
     timerRef.current = setInterval(stepOnce, tickMs);
 
@@ -99,7 +125,7 @@ export default function useNavSim({
       if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     };
   // ❗️ onTick dependency YOK; sadece stabil değerler
-  }, [simActive, simSpeedKmh, path, metersBetween, tickMs]);
+  }, [simActive, simSpeedKmh, path, metersBetweenSafe, tickMs]);
 
   // Unmount temizliği
   useEffect(() => () => {

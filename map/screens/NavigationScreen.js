@@ -81,6 +81,7 @@ const buzz = async () => {
 
 /* --------------------------------- Ekran --------------------------------- */
 export default function NavigationScreen() {
+  console.log('[Nav] initialWaypoints', initialWaypoints);
   const route = useRoute();
   const navigation = useNavigation();
   const [mapReady, setMapReady] = useState(false);
@@ -626,10 +627,16 @@ export default function NavigationScreen() {
             <View style={styles.candidateDotOuter}><View style={styles.candidateDotInner} /></View>
           </Marker>
         )}
-
+        
         {/* Waypoints */}
-        <WaypointMarkers waypoints={waypoints} />
-
+        <WaypointMarkers
+          waypoints={(waypoints || []).map(w => ({
+            latitude:  w.latitude ?? w.lat,
+            longitude: w.longitude ?? w.lng,
+            name: w.name,
+            place_id: w.place_id
+          }))}
+        />
         {/* POI’ler */}
         <PoiMarkers
           stablePoiList={stablePoiList}
@@ -673,22 +680,30 @@ export default function NavigationScreen() {
       {isRerouting && (
         <View style={styles.rerouteBadge}><Text style={styles.rerouteText}>Rota güncelleniyor…</Text></View>
       )}
-
+ 
       {/* Harita üstü kontroller */}
       <View style={styles.topControls} pointerEvents="box-none">
-        <TouchableOpacity
-          style={[
-            styles.topBtn,
-            altMode && !isAddingStop && styles.topBtnActive,
-            isAddingStop && styles.topBtnDisabled,
-          ]}
-          onPress={toggleAlternatives}
-          disabled={isAddingStop}
-        >
-          <Text style={styles.topBtnIcon}>
-            {waypoints.length > 0 ? '⛔' : altMode ? (altFetching ? '⏳' : '✖️') : '🛣️'}
-          </Text>
-        </TouchableOpacity>
+         {(() => {
+           const altBtnDisabled = isAddingStop; // sadece ekleme akışında kilit
+           const altIcon = altBtnDisabled
+             ? '⛔'
+             : altMode
+               ? (altFetching ? '⏳' : '✖️')
+               : '🛣️';
+           return (
+             <TouchableOpacity
+               style={[
+                 styles.topBtn,
+                 altMode && !altBtnDisabled && styles.topBtnActive,
+                 altBtnDisabled && styles.topBtnDisabled,
+               ]}
+               onPress={toggleAlternatives}
+               disabled={altBtnDisabled}
+             >
+               <Text style={styles.topBtnIcon}>{altIcon}</Text>
+             </TouchableOpacity>
+           );
+         })()}
 
         <TouchableOpacity style={styles.actionBtn} onPress={() => { Speech.stop(); setMuted((m) => !m); }}>
           <Text style={styles.actionIcon}>{muted ? '🔇' : '🔊'}</Text>

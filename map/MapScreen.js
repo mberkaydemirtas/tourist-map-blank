@@ -23,12 +23,12 @@ import AddStopOverlay from './components/AddStopOverlay';
 import EditStopsOverlay from './components/EditStopsOverlay2';
 
 import { normalizeCoord, toCoordsObject } from './utils/coords';
-import { reverseGeocode, getPlaceDetails, getNearbyPlaces, autocomplete } from './maps';
+import { reverseGeocode, getPlaceDetails, autocomplete } from './maps';
 
 import { useRouteSheetController } from './hooks/useRouteSheetController';
 import { useHistoryMigration } from './hooks/useHistoryMigration';
 import { useRouteCompute } from './hooks/useRouteCompute';
-import { History, HISTORY_KEYS, migrateLegacy, pushLabelHistoryCompat as pushLabelHistory } from './utils/history';
+import { History, HISTORY_KEYS, pushLabelHistoryCompat as pushLabelHistory } from './utils/history';
 
 import PlaceDetailSheetContainer from './containers/PlaceDetailSheetContainer';
 import RouteInfoSheetContainer from './containers/RouteInfoSheetContainer';
@@ -41,11 +41,11 @@ import RouteFormPanel from './components/RouteFormPanel';
 import RouteFabControls from './components/RouteFabControls';
 import { useBackBehavior } from './hooks/useBackBehavior';
 
-// ✅ Yeni hooklar (4 ve 5)
+// Yeni hooklar
 import { useRoutePrefetch } from './hooks/useRoutePrefetch';
 import { usePoiAlongRoute } from './hooks/usePoiAlongRoute';
 
-// ✅ Ayrıştırdığımız yeni hooklar
+// Ayrıştırılan hooklar
 import { useFromToSelection } from './hooks/useFromToSelection';
 import { useStopsEditor } from './hooks/useStopsEditor';
 import { useRouteCancel } from './hooks/useRouteCancel';
@@ -62,9 +62,15 @@ export default function MapScreen() {
   const { coords, available, refreshLocation } = useLocation();
   const isPlaceSheetOpenRef = useRef(false);
 
+  // ilk merkezleme / takip
+  const hasCenteredOnceRef = useRef(false);
+  const isFollowingRef = useRef(true);
+  const prevAvailableRef = useRef(available);
+
   // sheets
   const sheetRef = useRef(null);
   const sheetRefRoute = useRef(null);
+  const routeSheetAutoOpenRef = useRef(true); // 👈 auto-open kontrolü
   const {
     present: presentRouteSheet,
     dismiss: dismissRouteSheet,
@@ -103,7 +109,7 @@ export default function MapScreen() {
 
   useHistoryMigration();
 
-  // ✅ 5. adım: POI koridoru hook'u
+  // POI koridoru
   const {
     candidateStop, setCandidateStop,
     poiMarkers, setPoiMarkers,
@@ -155,7 +161,7 @@ export default function MapScreen() {
     }, [mode, map.selectedMode, map.routeOptions, presentRouteSheet])
   );
 
-  // Wizard'dan picker.center geldiyse o şehrin merkezine zoomla
+  // Wizard center
   useEffect(() => {
     const c = picker?.center ? normalizeCoord(picker.center) : null;
     if (c && mapRef.current) {
@@ -170,7 +176,7 @@ export default function MapScreen() {
     map, mapRef, normalizeCoord, presentRouteSheet,
   });
 
-  // ✅ FROM/TO seçimi ve haritadan seçim hook'u
+  // FROM/TO seçimi
   const {
     onGetDirectionsPress,
     handleFromSelected,
@@ -196,9 +202,10 @@ export default function MapScreen() {
     History,
     HISTORY_KEYS,
     pushLabelHistory,
+    routeSheetAutoOpenRef, // 👈 ref'i hook'a ilet
   });
 
-  // ✅ Çoklu durak düzenleme hook'u
+  // Çoklu durak düzenleme
   const {
     addStopOpen, setAddStopOpen,
     editStopsOpen, setEditStopsOpen,
@@ -214,6 +221,7 @@ export default function MapScreen() {
     onReplaceAt,
   } = useStopsEditor({
     map,
+    mapRef,                // 👈 EKLENDİ: hızlı pan için
     recalcRoute,
     setMode,
     candidateStop,
@@ -225,7 +233,8 @@ export default function MapScreen() {
     autocomplete,
   });
 
-  // ✅ Rota iptal/temizlik hook'u
+
+  // Rota iptal
   const { handleCancelRoute } = useRouteCancel({
     setMode,
     map,
@@ -237,7 +246,7 @@ export default function MapScreen() {
     routeSheetPresentedRef,
   });
 
-  // ✅ Eksik modları prefetch eden hook
+  // Eksik modları prefetch
   useRoutePrefetch({ mode, map, normalizeCoord, prefetchMissingModes });
 
   /* -------------------------- KAMERA / UI -------------------------- */
@@ -268,7 +277,7 @@ export default function MapScreen() {
     }
   }, [map.categoryMarkers]);
 
-  // Explore sheet davranışları (mevcut)
+  // Explore sheet davranışları
   useEffect(() => {
     if (mode !== 'explore') return;
     if (map.fromLocation) return;
@@ -289,17 +298,29 @@ export default function MapScreen() {
     sheetRef.current?.close?.();
   }, [mode, map.fromLocation, map.marker]);
 
-  const lastAvailable = useRef(false);
+  // ilk merkezleme & GPS yeniden açılınca tek sefer
   useEffect(() => {
-    if (!lastAvailable.current && available && coords && mapRef.current) {
+    if (prevAvailableRef.current === false && available === true) {
+      hasCenteredOnceRef.current = false;
+      isFollowingRef.current = true;
+    }
+    prevAvailableRef.current = available;
+
+    if (!available || !coords || !mapRef.current) return;
+
+    if (!hasCenteredOnceRef.current && isFollowingRef.current) {
       const region = { ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 };
       requestAnimationFrame(() => {
         map.setRegion(region);
-        mapRef.current.animateToRegion(region, 500);
+        try {
+          mapRef.current.animateToRegion(region, 600);
+        } catch {
+          map.setRegion(region);
+        }
       });
+      hasCenteredOnceRef.current = true;
     }
-    lastAvailable.current = available;
-  }, [available, coords]);
+  }, [available, coords, map]);
 
   useEffect(() => {
     setCanShowScan(false);
@@ -315,6 +336,15 @@ export default function MapScreen() {
     if (canShowScan) setMapMovedAfterDelay(true);
   };
 
+  // Kullanıcı jest algılama
+  const handleUserGesture = useCallback(() => {
+    if (isFollowingRef.current) {
+      isFollowingRef.current = false;
+    }
+    if (showSelectionHint) setShowSelectionHint(false);
+  }, [showSelectionHint]);
+
+  // Rota hazır olduğunda auto-open (guard'lı)
   useEffect(() => {
     if (mode !== 'route') return;
     const list = map.routeOptions?.[map.selectedMode];
@@ -336,7 +366,7 @@ export default function MapScreen() {
       const allReady = ['driving','walking','transit'].every(
         m => Array.isArray(map.routeOptions?.[m]) && map.routeOptions[m].length > 0
       );
-      if (allReady || routeSheetPresentedRef.current) {
+      if (routeSheetAutoOpenRef.current && (allReady || routeSheetPresentedRef.current)) {
         requestAnimationFrame(presentRouteSheet);
       }
     }
@@ -349,13 +379,13 @@ export default function MapScreen() {
     const allReady = ['driving','walking','transit'].every(
       m => Array.isArray(map.routeOptions?.[m]) && map.routeOptions[m].length > 0
     );
-    if (allReady || routeSheetPresentedRef.current) {
+    if (routeSheetAutoOpenRef.current && (allReady || routeSheetPresentedRef.current)) {
       const id = setTimeout(() => presentRouteSheet(), 0);
       return () => clearTimeout(id);
     }
   }, [mode, routeCoords, map.routeOptions, presentRouteSheet]);
 
-  // RoutePlannerCard -> Map geçişini karşıla
+  // RoutePlannerCard -> Map geçişi
   useEffect(() => {
     const req = route?.params?.routeRequest;
     if (!req || !req.from || !req.to) return;
@@ -365,6 +395,7 @@ export default function MapScreen() {
     if (!fromC || !toC) return;
 
     setMode('route');
+    routeSheetAutoOpenRef.current = true; // yeni rota akışında auto-open aktif
     map.setFromLocation({
       coords: fromC,
       description: req.from.name || 'Başlangıç',
@@ -417,14 +448,15 @@ export default function MapScreen() {
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         initialRegion={map.region}
-        onPress={handleMapPress}
-        onPanDrag={() => { if (showSelectionHint) setShowSelectionHint(false); }}
+        onPress={(e) => { handleUserGesture(); handleMapPress(e); }}
+        onPanDrag={handleUserGesture}
         onRegionChangeComplete={onRegionChangeComplete}
         scrollEnabled
         zoomEnabled
         rotateEnabled
         pitchEnabled
         onPoiClick={(e) => {
+          handleUserGesture();
           if (mode === 'route' && isSelectingFromOnMap && overlayContext === 'from') {
             handleSelectOriginOnMap(e.nativeEvent.coordinate);
             return;
@@ -442,7 +474,7 @@ export default function MapScreen() {
         showsUserLocation={available}
       >
         {/* Layers */}
-        <ExploreLayer active={mode === 'explore'} map={map} />
+        <ExploreLayer active={mode === 'explore'} map={map} setMarkerRef={setMarkerRef} />
         <RouteLayer
           active={mode === 'route'}
           map={map}
@@ -453,7 +485,7 @@ export default function MapScreen() {
               .map(r => ({ ...r, isPrimary: r.id === selected.id }));
             map.setRouteOptions(prev => ({ ...prev, [map.selectedMode]: updated }));
             setRouteCoords(selected.decodedCoords);
-            setRouteInfo({ distance: selected.distance, duration: selected.duration });
+            setRouteInfo({ distance: selected.distance, duration: selected.duration }); // 👈 primary fix
             mapRef.current?.fitToCoordinates(selected.decodedCoords, {
               edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
               animated: true,
@@ -497,12 +529,18 @@ export default function MapScreen() {
             />
 
             {map.activeCategory && map.categoryMarkers.length > 0 && (
-              <CategoryList
-                data={map.categoryMarkers}
-                activePlaceId={map.marker?.place_id}
-                onSelect={map.handleSelectPlace}
-                userCoords={coords}
-              />
+            <CategoryList
+              data={map.categoryMarkers}
+              activePlaceId={map.marker?.place_id}
+              userCoords={coords}
+              onSelect={(placeId, description) => {
+                map.handleSelectPlace(placeId, description);
+                setTimeout(() => {
+                  const ref = markerRefs.current.get(placeId);
+                  ref?.showCallout?.();
+                }, 360);
+              }}
+            />
             )}
           </>
         )}
@@ -525,10 +563,13 @@ export default function MapScreen() {
             userCoords={coords}
             available={available}
             refreshLocation={refreshLocation}
-            historyKey="search_history"
-            favoritesKey="favorite_places"
+            historyKey="search_history_from"         
+            favoritesKey="favorite_places_from"      
             onCancel={() => setShowFromOverlay(false)}
-            onFromSelected={handleFromSelected}
+            onFromSelected={(place) => {
+              handleFromSelected(place);
+              setShowFromOverlay(false);
+            }}
             onMapSelect={() => {
               setShowFromOverlay(false);
               setMode('route');
@@ -577,7 +618,9 @@ export default function MapScreen() {
             }
             onMapSelect={() => {
               setShowOverlay(false);
-              setIsSelectingFromOnMap(true);
+              setMode('route');              // 👈 netleştir
+              setIsSelectingFromOnMap(true); // 👈 seçim modu
+              setShowSelectionHint(true);    // 👈 ipucu
             }}
           />
         )}
@@ -595,7 +638,10 @@ export default function MapScreen() {
           duration={routeInfo?.duration}
           map={map}
           snapPoints={['30%']}
-          onCancel={handleCancelRoute}
+          onCancel={() => {
+            routeSheetAutoOpenRef.current = false; // 👈 kullanıcı kapattı → auto-open kapat
+            handleCancelRoute();
+          }}
           onModeChange={map.handleSelectRoute}
           onModeRequest={handleModeRequest}
           onStart={() => {
@@ -607,14 +653,13 @@ export default function MapScreen() {
             if (!f || !t) return;
 
             const wps = Array.isArray(map.waypoints)
-              ? map.waypoints
-                  .map(w => ({
-                    lat: w.lat ?? w.latitude,
-                    lng: w.lng ?? w.longitude,
-                    name: w.name,
-                    place_id: w.place_id ?? null,
-                  }))
-                  .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+              ? map.waypoints.map(w => ({
+                  lat: w.lat ?? w.latitude,
+                  lng: w.lng ?? w.longitude,
+                  name: w.name ?? w.description ?? null,
+                  address: w.address ?? null,
+                  place_id: w.place_id ?? w.key ?? null,
+                })).filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng))
               : [];
 
             const primary = (map.routeOptions?.[map.selectedMode] || []).find(r => r.isPrimary)
@@ -689,6 +734,8 @@ export default function MapScreen() {
         coords={coords}
         onRetry={refreshLocation}
         onRecenter={(region) => {
+          isFollowingRef.current = true;
+          hasCenteredOnceRef.current = false;
           map.setRegion(region);
           mapRef.current?.animateToRegion(region, 500);
         }}
@@ -712,7 +759,7 @@ const styles = StyleSheet.create({
     padding: 12,
     elevation: 4,
   },
-    reverseCornerButton: {
+  reverseCornerButton: {
     position: 'absolute', top: 8, right: 8, width: 32, height: 32, borderRadius: 16,
     backgroundColor: '#eee', justifyContent: 'center', alignItems: 'center', zIndex: 10, elevation: 3,
   },

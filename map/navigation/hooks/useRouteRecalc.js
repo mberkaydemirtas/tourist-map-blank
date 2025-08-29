@@ -107,10 +107,13 @@ export default function useRouteRecalc({
   const fetchRoute = useCallback(async () => {
     if (!from || !to) return;
 
-    const wp = waypointsRef?.current ?? [];
+    const wp = Array.isArray(waypointsRef?.current) ? waypointsRef.current : [];
+    // 🔧 VIA ile tek tip: sağlayıcı waypoints'i "via" olarak yorumlasın
+    const wpForApi = wp.map((w) => ({ lat: w.lat, lng: w.lng, via: true }));
+
     const res = await getRoute(toLL(from), toLL(to), mode, {
-      waypoints: wp,
-      optimize: wp.length ? false : true,
+      waypoints: wpForApi,
+      optimize: wpForApi.length ? false : true,
       alternatives: true,
     });
 
