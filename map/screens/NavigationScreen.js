@@ -326,13 +326,12 @@ export default function NavigationScreen() {
   useEffect(() => { if (nav?.location) lastLocRef.current = nav.location; }, [nav?.location]);
 
   // Turn-by-turn
-  const {
-    currentStepIndex,
-    setCurrentStepIndex, // ✅ eklendi
-    distanceToManeuver,
-    liveRemain,
-    speakBanner,
-  } = useTurnByTurn({
+   const {
+     currentStepIndex,
+     distanceToManeuver,
+     liveRemain,
+     speakBanner,
+   } = useTurnByTurn({
     steps,
     heading,
     location: nav?.location ?? null,
@@ -356,6 +355,14 @@ export default function NavigationScreen() {
     }, [speak]),
   });
 
+   const shownStep = steps?.[currentStepIndex];
+   const nextStep  = steps?.[currentStepIndex + 1] || null;
+   const next2Step = steps?.[currentStepIndex + 2] || null;
+ 
+   // 🔧 Banner: canlı kalan mesafe (distanceToManeuver) → azalır
+   const distForBanner = Number.isFinite(distanceToManeuver) ? distanceToManeuver : null;
+   // 🔧 Chip: bir SONRAKİ adımın tahmini uzunluğu (sabit kalabilir)
+   const distForChip   = next2Step ? getStepDistanceValue(next2Step) : null;
   // Kamera + follow
   const {
     camZoom, camPitch,
@@ -760,16 +767,16 @@ export default function NavigationScreen() {
       {/* Üst banner */}
       <TouchableOpacity activeOpacity={0.8} style={styles.banner} onPress={speakBanner}>
         <View style={styles.bannerStack}>
-          <LaneGuidanceBar step={steps?.[currentStepIndex]} iconsOnly style={{ marginBottom: 6 }} />
+          <LaneGuidanceBar step={shownStep} iconsOnly style={{ marginBottom: 6 }} />
           <Text style={styles.bannerTitle}>
-            {formatInstructionRelativeTR(heading, steps?.[currentStepIndex])}
-            {Number.isFinite(distanceToManeuver) ? ` • ${metersFmt(distanceToManeuver)}` : ''}
+              {formatInstructionRelativeTR(heading, shownStep)}
+              {Number.isFinite(distForBanner) ? ` • ${metersFmt(distForBanner)}` : ''}
           </Text>
         </View>
-        {!!steps?.[currentStepIndex + 1] && (
+        {!!nextStep && (
           <NextManeuverChip
-            step={steps[currentStepIndex + 1]}
-            distance={getStepDistanceValue(steps[currentStepIndex + 1])}
+             step={nextStep}
+             distance={distForChip}
           />
         )}
       </TouchableOpacity>

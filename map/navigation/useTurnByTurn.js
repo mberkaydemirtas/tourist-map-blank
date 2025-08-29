@@ -40,6 +40,7 @@ export default function useTurnByTurn({
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [distanceToManeuver, setDistanceToManeuver] = useState(null);
   const [liveRemain, setLiveRemain] = useState({ dist: null, sec: null });
+  const [bannerStep, setBannerStep] = useState(null); // geçici banner step (ilk adım için)
 
   // --- Refs ---
   const stepsRef = useRef(steps);
@@ -55,10 +56,44 @@ export default function useTurnByTurn({
   // speech gate
   const lastSpeechAtRef = useRef(0);
   const speechHoldUntilRef = useRef(0);
+  const kickstartedRef = useRef(false); // 🆕 step-1 okundu mu
 
   // constants
   const SPEECH_MIN_GAP_MS = 1200;
   const TAIL_SILENCE_MS = 500;
+
+
+useEffect(() => {
+  if (!location?.latitude) return;
+
+  // henüz kickstart yapılmadıysa
+  if (!kickstartedRef.current) {
+    const s0 = stepsRef.current?.[0];
+    if (s0) {
+      // sadece yönlendirme oku
+      const msg0 = formatInstructionTR?.(s0) ?? 'Başlayın';
+      speak?.(msg0);
+
+      kickstartedRef.current = true;
+    }
+  }
+
+  // eğer step-0 ise ve kullanıcı hareket ettiyse step-1’e geç
+  if (idxRef.current === 0 && kickstartedRef.current) {
+    const dist0 = getStepDistanceValue?.(stepsRef.current[0]) ?? null;
+    if (Number.isFinite(dist0) && dist0 > 0) {
+      const remaining = getDistanceMeters?.(location, getManeuverTarget(stepsRef.current[0]));
+      // ilerleme tespit: mesafe azaldı veya hız > 0
+      if ((remaining !== null && remaining < dist0 - 5) || (location.speed ?? 0) > 0.5) {
+        setCurrentStepIndex(1);
+        idxRef.current = 1;
+        minDistRef.current = null;
+        trendCountRef.current = 0;
+        bearingOkCountRef.current = 0;
+      }
+    }
+  }
+}, [location]);
 
   // adımlar değişince resetle
   useEffect(() => {
@@ -76,7 +111,20 @@ export default function useTurnByTurn({
     preSpokenRef.current = new Set();
     finalSpokenRef.current = new Set();
     arrivedRef.current = false;
+          kickstartedRef.current = false;
   }, [steps]);
+
+   // sınıflayıcılar
+   const isDepartish = (step) => {
+     const t = (step?.maneuver?.type || '').toLowerCase();
+     return t === 'depart' || t === 'continue' || t === 'straight';
+   };
+   const isRealManeuver = (step) => {
+     const t = (step?.maneuver?.type || '').toLowerCase();
+     return [
+       'turn','fork','merge','roundabout','rotary','on_ramp','off_ramp','end_of_road','uturn'
+     ].includes(t);
+   };
 
   const sayQueued = useCallback((text, { delayMs = 0, minGapMs = SPEECH_MIN_GAP_MS } = {}) => {
     const now = Date.now();
@@ -95,6 +143,7 @@ export default function useTurnByTurn({
     }, wait);
   }, [speak]);
 
+    // küçük yardımcılar
    // heading güvenilir mi? (hız + hedef yönle uyum)
    const relativeOk = useCallback((hEff, step, speed) => {
      if (!Number.isFinite(hEff)) return false;
@@ -129,7 +178,34 @@ export default function useTurnByTurn({
   useEffect(() => {
     const loc = location;
     if (!loc?.latitude || !loc?.longitude) return;
-
+  
+     // 🟦 KICKSTART: ilk konum geldiğinde step-1'i oku, gerekiyorsa hemen step-2'ye geç
+     if (!kickstartedRef.current) {
+       kickstartedRef.current = true;
+       const s0 = stepsRef.current?.[0];
+       if (s0) {
+         // 1) Banner’da kısa süre step-1 görünsün
+         setBannerStep(s0);
+         if (bannerHoldTimerRef.current) clearTimeout(bannerHoldTimerRef.current);
+         bannerHoldTimerRef.current = setTimeout(() => setBannerStep(null), 1600);
+ 
+         // 2) Step-1 cümlesini düz metinle (relative değil) hemen oku
+         const msg0 = formatInstructionTR?.(s0) ?? 'Başla';
+         try { speak?.(msg0); } catch {}
+ 
+         // 3) Eğer step-1 bir ilerleme adımıysa ve kısa ise index=1'e atla
+         const len0 = Number(getStepDistanceValue?.(s0) ?? 0);
+         if (isDepartish(s0) && Number.isFinite(len0) && len0 > 0 && len0 <= 150) {
+           setCurrentStepIndex(1);
+           idxRef.current = 1;
+           // min/trend reset
+           minDistRef.current = null;
+           trendCountRef.current = 0;
+           bearingOkCountRef.current = 0;
+         }
+       }
+     }
+ 
     const curSteps = stepsRef.current;
     const idx = Math.max(0, Math.min(idxRef.current, (curSteps?.length || 1) - 1));
     if (idx !== lastStepIdxRef.current) {
@@ -139,8 +215,28 @@ export default function useTurnByTurn({
       minDistRef.current = null;
     }
 
-    // adım hedefi
-    const step = curSteps?.[idx];
+     // --- aktif adım: Banner = currentStepIndex ---
+     let step = curSteps?.[idx];
+     // Eğer bu adım "depart/continue" ise ve ileriye yakın bir GERÇEK manevra varsa,
+     // kullanıcıyı bekletmeyelim; hemen o manevraya atla (banner ve ses ona kilitlensin).
+     const next = curSteps?.[idx + 1];
+     if (step && isDepartish(step) && next && isRealManeuver(next)) {
+       // kullanıcı hareket ettiyse veya manevra yakınsa (pre eşiği kadar)
+       const user = { lat: loc.latitude, lng: loc.longitude };
+       const targetNext = getManeuverTarget?.(next);
+       const dToNext = targetNext ? getDistanceMeters?.(user, targetNext) : null;
+       const speed = Number.isFinite(loc.speed) ? loc.speed : 0;
+       const { pre } = getTwoStageThresholds?.(next, speed) || { pre: 120 };
+       if ((Number.isFinite(dToNext) && dToNext <= pre + 30) || speed > 0.5) {
+         const newIdx = idx + 1;
+         setCurrentStepIndex(newIdx);
+         idxRef.current = newIdx;
+         minDistRef.current = null;
+         trendCountRef.current = 0;
+         bearingOkCountRef.current = 0;
+         step = curSteps?.[newIdx];
+       }
+     }
     const target = step ? getManeuverTarget?.(step) : null;
 
     const user = { lat: loc.latitude, lng: loc.longitude };
@@ -173,7 +269,7 @@ export default function useTurnByTurn({
         }
 
          // final anons + haptik (yalnızca 1 kez)
-         if (dist <= final && dist > Math.max(6, final - 12) && !finalSpokenRef.current.has(idx)){
+         if (dist <= final && dist > Math.max(6, final - 12) && !finalSpokenRef.current.has(idx)) {
           try { buzz?.(); } catch {}
            const rel = relativeOk(hEff, step, speed);
            const directiveShort = rel
@@ -263,6 +359,7 @@ export default function useTurnByTurn({
     distanceToManeuver,
     liveRemain,
     speakBanner,
+    bannerStep,
   };
 }
 
