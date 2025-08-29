@@ -81,10 +81,10 @@ const buzz = async () => {
 
 /* --------------------------------- Ekran --------------------------------- */
 export default function NavigationScreen() {
-  console.log('[Nav] initialWaypoints', initialWaypoints);
   const route = useRoute();
   const navigation = useNavigation();
   const [mapReady, setMapReady] = useState(false);
+  const mapRef = useRef(null);
 
   // ---- Parametreler ----
   const {
@@ -95,6 +95,14 @@ export default function NavigationScreen() {
     mode: initialMode = 'driving',
     waypoints: initialWaypoints = [],
   } = route.params ?? {};
+  // Sadece bir kez logla (veya değer değişirse)
+   const loggedRef = useRef(false);
+   useEffect(() => {
+     if (__DEV__ && !loggedRef.current) {
+       console.log('[Nav] initialWaypoints', initialWaypoints);
+       loggedRef.current = true;
+     }
+   }, [initialWaypoints]);
 
   // ---- Refs / Flags ----
   const followBackSuppressedRef = useRef(false);
@@ -165,7 +173,6 @@ export default function NavigationScreen() {
   const stepIndexRef = useRef(0);
 
   // Kamera adapter
-  const mapRef = useRef(null);
   const cameraRef = useRef(null);
   useEffect(() => {
     const regionFromBounds = (ne, sw) => {
@@ -357,6 +364,8 @@ export default function NavigationScreen() {
     pauseFollowing, followHoldUntilRef,
   } = useNavCamera({
     nav,
+    mapRef,
+    location: nav?.location,
     distanceToManeuver,
     followBackSuppressedRef,
   });
@@ -588,6 +597,9 @@ export default function NavigationScreen() {
     return Math.max(0, Math.min(100, Math.round(pct)));
   }, [nav?.totalM, nav?.remainingM, effDist, primaryRoute?.distance]);
 
+  // 👇 Sadece burada değişiklik: sim açıkken gerçek mavi dot'ı gizliyoruz
+  const showOSUser = !!locationPermission && !simActive;
+
   return (
     <View style={styles.container}>
       <MapView
@@ -603,9 +615,10 @@ export default function NavigationScreen() {
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         }}
-        showsUserLocation={!!locationPermission}
+        /* 🔧 ÖNEMLİ: Simülasyon açıkken OS mavi noktasını tamamen kapat. */
+        showsUserLocation={showOSUser}
         onUserLocationChange={(e) => {
-          if (simActive) return;
+          if (simActive) return; // simdeyken gerçek akışı yeme
           const c = e?.nativeEvent?.coordinate;
           if (c) nav.ingestExternalLocation?.({
             latitude: c.latitude,
@@ -662,7 +675,7 @@ export default function NavigationScreen() {
           applyAlternative={applyAlternative}
         />
 
-        {/* Simülasyon kullanıcı noktası */}
+        {/* Simülasyon kullanıcı noktası — sim açıkken TEK konum bu */}
         {simActive && simCoord && (
           <Marker coordinate={{ latitude: simCoord.lat, longitude: simCoord.lng }}>
             <View style={styles.simUserDotOuter}><View style={styles.simUserDotInner} /></View>
@@ -778,7 +791,10 @@ export default function NavigationScreen() {
 
       {/* Haritayı hizala butonu */}
       {isMapTouched && (
-        <TouchableOpacity style={styles.alignButton} onPress={goFollowNow}>
+         <TouchableOpacity
+   style={styles.alignButton}
+   onPress={() => { goFollowNow(); nav.alignNow({ distToManeuver: distanceToManeuver }); }}
+    >
           <Text style={styles.alignText}>📍 Hizala</Text>
         </TouchableOpacity>
       )}
