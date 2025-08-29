@@ -21,6 +21,7 @@ export function useNavigationLogic({
   onOffRoute,
   voice = false,
   externalFeed = false,
+  internalFollow = false,
 }) {
   // --- State ---
   const [isActive, setIsActive] = useState(false);
@@ -63,6 +64,8 @@ export function useNavigationLogic({
   const routeCoordsRef = useRef(routeCoords);
   useEffect(() => { routeCoordsRef.current = routeCoords; }, [routeCoords]);
 
+   const internalFollowRef = useRef(internalFollow);
+   useEffect(() => { internalFollowRef.current = internalFollow; }, [internalFollow]);
   // --- Toplam mesafe ---
   const totalM = useMemo(() => pathLength(routeCoords), [routeCoords]);
 
@@ -257,7 +260,7 @@ export function useNavigationLogic({
     setEta(Number.isFinite(remainS) ? new Date(Date.now() + remainS * 1000) : null);
 
     // 5) Kamera takibi (ref’ler üzerinden)
-    if (isActiveRef.current && followRef.current && !isUserInteractingRef.current) {
+    if (internalFollowRef.current && isActiveRef.current && followRef.current && !isUserInteractingRef.current) {
       const now = Date.now();
       if (now - (camThrottleRef.current || 0) > 140) { // ~7fps
         camThrottleRef.current = now;
@@ -298,7 +301,7 @@ export function useNavigationLogic({
 
     if (externalFeed) {
       setIsActive(true);
-      setFollow(true);
+      setFollow(false);
       return;
     }
 
@@ -360,7 +363,7 @@ export function useNavigationLogic({
   }, []);
 
   // --- HIZALA / GO FOLLOW NOW ---
-  const alignNow = useCallback(({ distToManeuver, heading } = {}) => {
+  const alignNow = useCallback(({ distToManeuver, heading, pitch } = {}) => {
     const cur = lastLocRef.current?.coords;
     if (!cur) return;
 
@@ -382,8 +385,15 @@ export function useNavigationLogic({
       if (distToManeuver <= 50) targetZoom = 19.2;
       else if (distToManeuver <= 160) targetZoom = 18.9;
     }
+      // pitch yoksa manevra mesafesine göre mantıklı bir açı seç
+   let targetPitch = Number.isFinite(pitch) ? pitch : 52;
+   if (!Number.isFinite(pitch) && Number.isFinite(distToManeuver)) {
+     if (distToManeuver <= 50)      targetPitch = 60;
+     else if (distToManeuver <= 160) targetPitch = 55;
+     else                            targetPitch = 52;
+   }
 
-    animateFollowRef.current?.({ latitude: ahead.lat, longitude: ahead.lng }, hdg, targetZoom);
+   animateFollowRef.current?.({ latitude: ahead.lat, longitude: ahead.lng }, hdg, targetZoom, targetPitch);
   }, [computeLookAhead, destinationPoint]);
 
   // --- Harici besleme ---

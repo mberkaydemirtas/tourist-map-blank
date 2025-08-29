@@ -7,6 +7,7 @@ import MapMarkers from '../components/MapMarkers';
 export default function ExploreLayer({
   active,            // mode === 'explore'
   map,
+  setMarkerRef,      // 👈 eklendi: marker ref'lerini toplayacağız
 }) {
   if (!active) return null;
 
@@ -17,6 +18,7 @@ export default function ExploreLayer({
         mode="explore"
         categoryMarkers={map.categoryMarkers}
         activeCategory={map.activeCategory}
+        collectRef={setMarkerRef} // 👈 ref'leri topla
         onMarkerPress={(placeId, coordinate, name) => {
           map.handleMarkerSelect(placeId, coordinate, name);
         }}

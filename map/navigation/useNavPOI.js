@@ -50,9 +50,10 @@ export default function useNavPOI({
   // Listeyi id’ye göre stabilize et (render performansı + sıralama)
   const stablePoiList = useMemo(() => {
     const arr = Array.isArray(poiMarkers) ? poiMarkers : [];
-    return arr
-      .map(p => ({ ...p, __id: p?.place_id || p?.id || `${p?.geometry?.location?.lng}_${p?.geometry?.location?.lat}` }))
-      .sort((a, b) => (a.__id > b.__id ? 1 : -1));
+     return arr.map(p => ({
+       ...p,
+       __id: p?.place_id || p?.id || `${p?.geometry?.location?.lng}_${p?.geometry?.location?.lat}`,
+     }));
   }, [poiMarkers]);
 
   // POI sonuçlarını kadraja al
@@ -145,8 +146,21 @@ export default function useNavPOI({
       } catch {}
     }
 
-    const list = Array.from(seen.values()).slice(0, 40);
-    setPoiMarkers(list);
+      let list = Array.from(seen.values());
+  
+      // 🔢 skorla: rotaya olan en kısa mesafe
+      const scored = list.map(it => {
+        const lat = it?.geometry?.location?.lat ?? it?.lat ?? it?.coords?.latitude;
+        const lng = it?.geometry?.location?.lng ?? it?.lng ?? it?.coords?.longitude;
+        const d = (Number.isFinite(lat) && Number.isFinite(lng))
+          ? distanceToPolylineMeters({ lat, lng }, coords)
+          : Infinity;
+        return { it, d };
+      });
+      scored.sort((a,b) => a.d - b.d);
+      list = scored.map(s => s.it).slice(0, 40);
+  
+      setPoiMarkers(list);
     flyToItemsBounds(list);
   }, [
     routeCoordsRef, metersBetween, getNearbyPlaces,

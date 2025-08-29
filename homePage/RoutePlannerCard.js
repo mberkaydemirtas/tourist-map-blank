@@ -31,28 +31,6 @@ try {
 }
 
 /* -------------------- yardımcılar -------------------- */
-const toLatLng = (any) => {
-  if (!any) return null;
-  if (typeof any.latitude === 'number' && typeof any.longitude === 'number') {
-    return { latitude: any.latitude, longitude: any.longitude };
-  }
-  if (typeof any.lat === 'number' && typeof any.lng === 'number') {
-    return { latitude: any.lat, longitude: any.lng };
-  }
-  if (Array.isArray(any) && any.length >= 2 && typeof any[0] === 'number' && typeof any[1] === 'number') {
-    return { latitude: any[0], longitude: any[1] };
-  }
-  // Google LatLng objesi: lat(), lng()
-  if (typeof any.lat === 'function' && typeof any.lng === 'function') {
-    try {
-      const lat = Number(any.lat());
-      const lng = Number(any.lng());
-      if (!Number.isNaN(lat) && !Number.isNaN(lng)) return { latitude: lat, longitude: lng };
-    } catch {}
-  }
-  return null;
-};
-
 // eksik koordinatları çözen yardımcılar
 const ensureLatLngFromDetails = async (item) => {
   if (!item) return item;
@@ -89,33 +67,26 @@ const resolveAllStops = async ({ from, waypoints, to }) => {
   return { fromR, wpsR, toR };
 };
 
-// küçük geo yardımcıları (MapScreen ile uyumlu)
-const meters = (a, b) => {
-  const toRad = (v) => (v * Math.PI) / 180;
-  const R = 6371e3;
-  const dφ = toRad(b.latitude - a.latitude);
-  const dλ = toRad(b.longitude - a.longitude);
-  const φ1 = toRad(a.latitude), φ2 = toRad(b.latitude);
-  const s = Math.sin(dφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(dλ / 2) ** 2;
-  return 2 * R * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
-};
-const nearlySameLL = (a, b, tolM = 5) => {
-  if (!a || !b) return false;
-  try { return meters(a, b) <= tolM; } catch { return false; }
-};
-
-// from/to ile aynı olan veya kendi aralarında çok yakın olan wps’leri at
-const dedupWaypointsForRequest = (wps, fromLL, toLL) => {
-  const out = [];
-  for (const w of wps) {
-    const ll = toLatLng(w);
-    if (!ll) continue;
-    if (fromLL && nearlySameLL(ll, fromLL)) continue;
-    if (toLL && nearlySameLL(ll, toLL)) continue;
-    if (out.some(prev => nearlySameLL(prev, ll))) continue;
-    out.push({ ...w, latitude: ll.latitude, longitude: ll.longitude });
+const toLatLng = (any) => {
+  if (!any) return null;
+  if (typeof any.latitude === 'number' && typeof any.longitude === 'number') {
+    return { latitude: any.latitude, longitude: any.longitude };
   }
-  return out;
+  if (typeof any.lat === 'number' && typeof any.lng === 'number') {
+    return { latitude: any.lat, longitude: any.lng };
+  }
+  if (Array.isArray(any) && any.length >= 2 && typeof any[0] === 'number' && typeof any[1] === 'number') {
+    return { latitude: any[0], longitude: any[1] };
+  }
+  // Google LatLng objesi: lat(), lng()
+  if (typeof any.lat === 'function' && typeof any.lng === 'function') {
+    try {
+      const lat = Number(any.lat());
+      const lng = Number(any.lng());
+      if (!Number.isNaN(lat) && !Number.isNaN(lng)) return { latitude: lat, longitude: lng };
+    } catch {}
+  }
+  return null;
 };
 
 const makeStop = (patch = {}) => ({
@@ -133,19 +104,38 @@ const HISTORY_KEY = 'route_planner_place_history_v1';
 const saveToHistory = async (item) => {
   try {
     const raw = (await AsyncStorage.getItem(HISTORY_KEY)) || '[]';
-    const list = JSON.parse(raw);
-    const exists = list.find((x) => x.place_id === item.place_id);
-    const next = [
-      {
-        name: item.name,
-        place_id: item.place_id,
-        coords: item.coords,
-        address: item.address ?? null,
-        rating: item.rating ?? null,
-        user_ratings_total: item.user_ratings_total ?? null,
-      },
-      ...(!exists ? list : list.filter((x) => x.place_id !== item.place_id)),
-    ].slice(0, 10);
+    const list = Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [];
+    const idx = list.findIndex((x) => x.place_id === item.place_id);
+    const base = {
+      name: item.name ?? null,
+      place_id: item.place_id ?? null,
+      coords: item.coords ?? null,
+      address: item.address ?? null,
+      rating: item.rating ?? null,
+      user_ratings_total: item.user_ratings_total ?? null,
+    };
+    let next;
+    if (idx === -1) {
+      // yeni kayıt başa
+      next = [base, ...list];
+    } else {
+      // var olanı bilgileri kaybetmeden güncelle
+      next = [...list];
+      next[idx] = {
+        ...next[idx],
+        ...base,
+        // coords ve rating gibi alanlarda "daha dolu olan" kazansın
+        coords: base.coords ?? next[idx].coords ?? null,
+        rating: base.rating ?? next[idx].rating ?? null,
+        user_ratings_total: base.user_ratings_total ?? next[idx].user_ratings_total ?? null,
+        address: base.address ?? next[idx].address ?? null,
+        name: base.name ?? next[idx].name ?? null,
+      };
+      // güncelleneni başa al (MRU)
+      const updated = next.splice(idx, 1)[0];
+      next = [updated, ...next];
+    }
+    next = next.slice(0, 10);
     await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(next));
     dlog('saveToHistory ok', { place_id: item.place_id, name: item.name });
   } catch (e) {
@@ -413,11 +403,11 @@ export default function RoutePlannerCard() {
         user_ratings_total: base.user_ratings_total ?? det?.user_ratings_total ?? null,
       };
 
-      if (isLast(idx)) {
-        setTo((prev) => ({ ...(prev || { id: 'to' }), ...patch }));
-        if (patch.coords) await saveToHistory({ ...(base || {}), ...patch });
-        return;
-      }
+       if (isLast(idx)) {
+         setTo((prev) => ({ ...(prev || { id: 'to' }), ...patch }));
+         await saveToHistory({ ...(base || {}), ...patch }); // coords olmasa da upsert
+         return;
+       }
 
       const wpIndex = idx - 1;
       setWaypoints((prev) => {
@@ -426,7 +416,7 @@ export default function RoutePlannerCard() {
         arr[wpIndex] = { ...arr[wpIndex], ...patch };
         return arr;
       });
-      if (patch.coords) await saveToHistory({ ...(base || {}), ...patch });
+      await saveToHistory({ ...(base || {}), ...patch });
     } catch (e) {
       dlog('getPlaceDetails error', e?.message);
     }
@@ -453,6 +443,10 @@ export default function RoutePlannerCard() {
 
     // 1) Optimistic yaz
     fillRowOptimistic(idx, base);
+    // 1.b) HEMEN geçmişe yaz (coords olmasa da)
+   if (base.place_id) {
+     saveToHistory(base);
+   }
     // 2) Koordinat eksikse detaydan tamamla
     resolveCoordsLater(idx, base);
 
@@ -460,16 +454,12 @@ export default function RoutePlannerCard() {
   };
 
   /* --------- ekleme/silme/yer değiştir --------- */
-  const insertAt = (index) => {
-    const wpIndex = Math.max(0, Math.min(index - 1, waypoints.length));
-    dlog('insertAt', { index, wpIndex });
-    setWaypoints((prev) => {
-      const cp = [...prev];
-      cp.splice(wpIndex, 0, makeStop());
-      return cp;
-    });
-    openPickerForIndex(index);
-  };
+   const insertAt = (index) => {
+     // Hiçbir şey ekleme; sadece picker’ı aç.
+     // Kullanıcı bir yer seçerse applyPickedPlace içinde eklenecek.
+     dlog('insertAt (deferred)', { index });
+     openPickerForIndex(index);
+   };
 
   const deleteAt = (index) => {
     if (isFirst(index) || isLast(index)) return;
@@ -506,66 +496,57 @@ export default function RoutePlannerCard() {
   };
 
   const createRoute = async () => {
-    dlog('createRoute click', {
-      fromHas: !!from.coords,
-      toHas: !!to?.coords,
-      wps: waypoints.map((w, i) => ({ i, has: !!w?.coords, name: w?.name })),
-    });
+  dlog('createRoute click', {
+    fromHas: !!from.coords,
+    toHas: !!to?.coords,
+    wps: waypoints.map((w, i) => ({ i, has: !!w?.coords, name: w?.name })),
+  });
 
-    if (!from.coords || !(to?.coords || to?.place_id)) {
-      console.warn('Lütfen başlangıç (otomatik) ve bitiş seçin.');
-      return;
-    }
+  if (!from.coords || !(to?.coords || to?.place_id)) {
+    console.warn('Lütfen başlangıç (otomatik) ve bitiş seçin.');
+    return;
+  }
 
-    // ⤵️ Tüm eksik koordinatları senkron çöz
-    const { fromR, wpsR, toR } = await resolveAllStops({
-      from,
-      waypoints,
-      to,
-    });
+  // ⤵️ Tüm eksik koordinatları senkron çöz
+  const { fromR, wpsR, toR } = await resolveAllStops({
+    from,
+    waypoints,
+    to,
+  });
 
-    if (!fromR?.coords || !toR?.coords) {
-      console.warn('Konum ayrıntıları alınamadı. Lütfen tekrar deneyin.');
-      return;
-    }
+  if (!fromR?.coords || !toR?.coords) {
+    console.warn('Konum ayrıntıları alınamadı. Lütfen tekrar deneyin.');
+    return;
+  }
 
-    // ham wps → {lat,lng,name,place_id,address}
-    const rawWps = wpsR
-      .filter(w => w && w.coords)
-      .map(w => ({
-        lat: w.coords.latitude,
-        lng: w.coords.longitude,
-        name: w.name,
-        place_id: w.place_id || null,
-        address: w.address,
-      }));
+  const cleanWps = wpsR
+    .filter(w => w && w.coords) // coords’u çözülebilmiş olanları al
+    .map(w => ({
+      lat: w.coords.latitude,
+      lng: w.coords.longitude,
+      name: w.name,
+      place_id: w.place_id || null,
+      address: w.address,
+    }));
 
-    // from/to ile çakışan ya da birbirine çok yakın waypoint’leri at
-    const fromLL = { latitude: fromR.coords.latitude, longitude: fromR.coords.longitude };
-    const toLL   = { latitude: toR.coords.latitude,   longitude: toR.coords.longitude   };
-    const cleanWps = dedupWaypointsForRequest(
-      rawWps.map(w => ({ latitude: w.lat, longitude: w.lng, place_id: w.place_id, name: w.name, address: w.address })),
-      fromLL,
-      toLL
-    ).map(w => ({ lat: w.latitude, lng: w.longitude, place_id: w.place_id || null, name: w.name, address: w.address }));
+  dlog('createRoute → resolved', {
+    from: fromR.coords,
+    to: toR.coords,
+    wpCount: cleanWps.length,
+  });
 
-    dlog('createRoute → resolved', {
-      from: fromR.coords,
-      to: toR.coords,
-      wpCount: cleanWps.length,
-    });
+  navigation.navigate('Map', {
+    entryPoint: 'route-planner',
+    routeRequest: {
+      from: { lat: fromR.coords.latitude, lng: fromR.coords.longitude, place_id: fromR.place_id || null, name: fromR.name || 'Başlangıç' },
+      to:   { lat: toR.coords.latitude,   lng: toR.coords.longitude,   place_id: toR.place_id   || null, name: toR.name   || 'Bitiş' },
+      waypoints: cleanWps,
+      mode: 'driving',
+      autoDraw: true,
+    },
+  });
+};
 
-    navigation.navigate('Map', {
-      entryPoint: 'route-planner',
-      routeRequest: {
-        from: { lat: fromR.coords.latitude, lng: fromR.coords.longitude, place_id: fromR.place_id || null, name: fromR.name || 'Başlangıç' },
-        to:   { lat: toR.coords.latitude,   lng: toR.coords.longitude,   place_id: toR.place_id   || null, name: toR.name   || 'Bitiş' },
-        waypoints: cleanWps,
-        mode: 'driving',
-        autoDraw: true,
-      },
-    });
-  };
 
   /* --------- debug watchers --------- */
   useEffect(() => {
