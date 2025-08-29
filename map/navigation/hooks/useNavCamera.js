@@ -5,20 +5,27 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
  * - "Hizala" aktifken kullanıcı haritayı kaydırana kadar kamerayı takipte tutar
  * - Follow modunda merkez: konumun lookahead (ileri bakış) noktası
  * - Manevraya yaklaşınca zoom/pitch ayarı
- * - Kullanıcı kaydırırsa follow kapatılır; scheduleFollowBack ile belirli süre sonra geri açılabilir
+ * - Kullanıcı kaydırırsa follow kapatılır.
+ *   - manualReenter=true iken: follow **kendiliğinden geri GELMEZ**, sadece hizala ile açılır.
+ *   - manualReenter=false iken: scheduleFollowBack ile belirli süre sonra otomatik geri açılır.
  *
  * Gerekli props:
  * - mapRef: React ref to MapView
  * - location: {latitude, longitude, heading?}
  * - distanceToManeuver: metre (zoom/pitch için)
  * - followBackSuppressedRef: { current: boolean } (bazı animasyonlarda geri dönmeyi engellemek için)
+ *
+ * Opsiyonlar:
+ * - manualReenter: boolean (default: true) — follow yalnızca hizala ile geri gelsin
+ * - defaultZoom, defaultPitch, lookaheadMeters, animateMs, throttleMs
  */
 export default function useNavCamera({
   mapRef,
   location,                      // { latitude, longitude, heading? }
   distanceToManeuver,            // metre
   followBackSuppressedRef,       // { current: boolean }
-  // Opsiyonlar:
+  // Opsiyonlar
+  manualReenter = true,
   defaultZoom = 18.8,
   defaultPitch = 52,
   lookaheadMeters = 100,
@@ -35,9 +42,10 @@ export default function useNavCamera({
   const [isFollowing, setIsFollowing] = useState(true);
   const [isMapTouched, setIsMapTouched] = useState(false);
 
-  // “birazdan follow’a dön” zamanlayıcısı
+  // “birazdan follow’a dön” zamanlayıcısı (yalnız manualReenter=false iken kullanılır)
   const followBackTimerRef = useRef(null);
   const scheduleFollowBack = useCallback(() => {
+    if (manualReenter) return;                        // ❗ manuel modda devre dışı
     if (followBackSuppressedRef?.current) return;
     if (followBackTimerRef.current) clearTimeout(followBackTimerRef.current);
     followBackTimerRef.current = setTimeout(() => {
@@ -45,7 +53,7 @@ export default function useNavCamera({
       setIsFollowing(true);
       setIsMapTouched(false);
     }, 8000);
-  }, [followBackSuppressedRef]);
+  }, [manualReenter, followBackSuppressedRef]);
   useEffect(() => () => { if (followBackTimerRef.current) clearTimeout(followBackTimerRef.current); }, []);
 
   // Follow’u kısa süre bloke et (örn. fitBounds sırasında)
@@ -58,14 +66,14 @@ export default function useNavCamera({
   const onMapPress = useCallback(() => {
     setIsMapTouched(true);
     setIsFollowing(false);
-    if (!followBackSuppressedRef?.current) scheduleFollowBack();
-  }, [scheduleFollowBack, followBackSuppressedRef]);
+    if (!manualReenter && !followBackSuppressedRef?.current) scheduleFollowBack();
+  }, [scheduleFollowBack, followBackSuppressedRef, manualReenter]);
 
   const onPanDrag = useCallback(() => {
     setIsMapTouched(true);
     setIsFollowing(false);
-    if (!followBackSuppressedRef?.current) scheduleFollowBack();
-  }, [scheduleFollowBack, followBackSuppressedRef]);
+    if (!manualReenter && !followBackSuppressedRef?.current) scheduleFollowBack();
+  }, [scheduleFollowBack, followBackSuppressedRef, manualReenter]);
 
   const goFollowNow = useCallback(() => {
     // Kullanıcı “Hizala”ya basınca

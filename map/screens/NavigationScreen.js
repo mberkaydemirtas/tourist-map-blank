@@ -363,12 +363,19 @@ export default function NavigationScreen() {
     onMapPress, onPanDrag, scheduleFollowBack, goFollowNow,
     pauseFollowing, followHoldUntilRef,
   } = useNavCamera({
-    nav,
     mapRef,
     location: nav?.location,
     distanceToManeuver,
     followBackSuppressedRef,
+    manualReenter: true, // ✅ sadece hizala ile geri dön
   });
+
+  useEffect(() => {
+  if (simActive) {
+    setIsFollowing(false);     // otomatik takip OFF
+    setIsMapTouched(true);     // 📍 Hizala butonu görünsün
+  }
+}, [simActive, setIsFollowing, setIsMapTouched]);
 
   // proxy'yi gerçek fonksiyonla bağla + reset sonrası follow aç
   useEffect(() => { pauseFollowingRef.current = pauseFollowing; }, [pauseFollowing]);
@@ -793,8 +800,14 @@ export default function NavigationScreen() {
       {isMapTouched && (
          <TouchableOpacity
    style={styles.alignButton}
-   onPress={() => { goFollowNow(); nav.alignNow({ distToManeuver: distanceToManeuver }); }}
-    >
+  onPress={() => {
+    goFollowNow();
+    nav.alignNow({
+      distToManeuver: distanceToManeuver,
+      heading: nav?.location?.heading,
+      pitch: camPitch,   // useNavCamera’dan gelen anlık eğim
+    });
+ }}    >
           <Text style={styles.alignText}>📍 Hizala</Text>
         </TouchableOpacity>
       )}
