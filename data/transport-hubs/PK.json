@@ -1,0 +1,179 @@
+{
+  "code": "PK",
+  "name": "Pakistan",
+  "cities": {
+    "Sindh": {
+      "plane": [
+        {
+          "code": "LHE",
+          "name": "Allama Iqbal International Airport",
+          "lat": 31.521601,
+          "lng": 74.403603
+        },
+        {
+          "code": "CJL",
+          "name": "Chitral Airport",
+          "lat": 35.886213,
+          "lng": 71.799922
+        },
+        {
+          "code": "DBA",
+          "name": "Dalbandin Airport",
+          "lat": 28.878299713100002,
+          "lng": 64.3998031616
+        },
+        {
+          "code": "GIL",
+          "name": "Gilgit Airport",
+          "lat": 35.918800354003906,
+          "lng": 74.33360290527344
+        },
+        {
+          "code": "ISB",
+          "name": "Islamabad International Airport",
+          "lat": 33.549,
+          "lng": 72.82566
+        },
+        {
+          "code": "KHI",
+          "name": "Jinnah International Airport",
+          "lat": 24.9065,
+          "lng": 67.160797
+        },
+        {
+          "code": "SKT",
+          "name": "Sialkot International Airport",
+          "lat": 32.535557,
+          "lng": 74.363892
+        },
+        {
+          "code": "KDU",
+          "name": "Skardu Airport",
+          "lat": 35.33549880981445,
+          "lng": 75.53600311279297
+        },
+        {
+          "code": "PZH",
+          "name": "Zhob Airport",
+          "lat": 31.358400344848633,
+          "lng": 69.4636001586914
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Punjab": {
+      "plane": [
+        {
+          "code": "KDD",
+          "name": "Khuzdar Airport",
+          "lat": 27.790599823,
+          "lng": 66.6473007202
+        },
+        {
+          "code": "GWD",
+          "name": "New Gwadar International Airport",
+          "lat": 25.296733,
+          "lng": 62.498822
+        },
+        {
+          "code": "PEW",
+          "name": "Peshawar International Airport",
+          "lat": 33.993900299072266,
+          "lng": 71.51460266113281
+        },
+        {
+          "code": "UET",
+          "name": "Quetta International Airport",
+          "lat": 30.251399993896484,
+          "lng": 66.93779754638672
+        },
+        {
+          "code": "SKZ",
+          "name": "Sukkur Airport",
+          "lat": 27.722000122070312,
+          "lng": 68.79170227050781
+        },
+        {
+          "code": "TUK",
+          "name": "Turbat International Airport",
+          "lat": 25.986400604248047,
+          "lng": 63.03020095825195
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Khyber Pakhtunkhwa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Islamabad": {
+      "plane": [
+        {
+          "code": "BHV",
+          "name": "Bahawalpur Airport",
+          "lat": 29.348100662231445,
+          "lng": 71.71800231933594
+        },
+        {
+          "code": "LYP",
+          "name": "Faisalabad International Airport",
+          "lat": 31.364999771118164,
+          "lng": 72.99479675292969
+        },
+        {
+          "code": "HDD",
+          "name": "Hyderabad Airport",
+          "lat": 25.3181,
+          "lng": 68.366096
+        },
+        {
+          "code": "WNS",
+          "name": "Shaheed Benazirabad Airport",
+          "lat": 26.2194,
+          "lng": 68.390099
+        },
+        {
+          "code": "RYK",
+          "name": "Shaikh Zaid Airport",
+          "lat": 28.383899688720703,
+          "lng": 70.27960205078125
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Balochistan": {
+      "plane": [
+        {
+          "code": "DEA",
+          "name": "Dera Ghazi Khan Airport",
+          "lat": 29.961000442504883,
+          "lng": 70.48590087890625
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Gilgit-Baltistan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Azad Kashmir": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:16:14.271Z"
+  }
+}

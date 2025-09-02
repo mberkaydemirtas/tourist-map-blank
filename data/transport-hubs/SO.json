@@ -1,0 +1,157 @@
+{
+  "code": "SO",
+  "name": "Somalia",
+  "cities": {
+    "Banaadir": {
+      "plane": [
+        {
+          "code": "GLK",
+          "name": "Galcaio Airport",
+          "lat": 6.78082990646,
+          "lng": 47.45470047
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Woqooyi Galbeed": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bay": {
+      "plane": [
+        {
+          "code": "BLW",
+          "name": "Beledweyne Airport",
+          "lat": 4.766976,
+          "lng": 45.2388
+        },
+        {
+          "code": "BSA",
+          "name": "Bosaso / Bender Qassim International Airport",
+          "lat": 11.275235,
+          "lng": 49.139231
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Gedo": {
+      "plane": [
+        {
+          "code": "GGR",
+          "name": "Garowe Airport",
+          "lat": 8.457942,
+          "lng": 48.567407
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Mudug": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bari": {
+      "plane": [
+        {
+          "code": "BBO",
+          "name": "Berbera Airport",
+          "lat": 10.385035,
+          "lng": 44.936723
+        },
+        {
+          "code": "HGA",
+          "name": "Egal International Airport",
+          "lat": 9.513207,
+          "lng": 44.082389
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Galguduud": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nugaal": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Togdheer": {
+      "plane": [
+        {
+          "code": "MGQ",
+          "name": "Aden Adde International Airport",
+          "lat": 2.0144400596618652,
+          "lng": 45.3046989440918
+        },
+        {
+          "code": "SO-0001",
+          "name": "K50 International Airport",
+          "lat": 2.00528,
+          "lng": 44.986599
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Shabeellaha Dhexe": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Shabeellaha Hoose": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Jubbada Hoose": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Jubbada Dhexe": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bakool": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sanaag": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hiiraan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Awdal": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sool": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:32:43.072Z"
+  }
+}

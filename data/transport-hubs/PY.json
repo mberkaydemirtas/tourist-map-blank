@@ -1,0 +1,124 @@
+{
+  "code": "PY",
+  "name": "Paraguay",
+  "cities": {
+    "Asunción": {
+      "plane": [
+        {
+          "code": "ASU",
+          "name": "Aeropuerto Internacional Silvio Pettirossi",
+          "lat": -25.240156,
+          "lng": -57.519227
+        },
+        {
+          "code": "ENO",
+          "name": "Aeropuerto Internacional Tte. Amín Ayub González",
+          "lat": -27.227537,
+          "lng": -55.837584
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Alto Paraná": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Central": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Amambay": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Itapúa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Misiones": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Canindeyú": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Concepción": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Presidente Hayes": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Cordillera": {
+      "plane": [
+        {
+          "code": "AGT",
+          "name": "Aeropuerto Internacional Guaraní",
+          "lat": -25.457186,
+          "lng": -54.839544
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Guairá": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "San Pedro": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Caaguazú": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Paraguarí": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ñeembucú": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Caazapá": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Boquerón": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Alto Paraguay": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:44:31.457Z"
+  }
+}

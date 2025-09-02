@@ -1,0 +1,248 @@
+{
+  "code": "PF",
+  "name": "French Polynesia",
+  "cities": {
+    "Îles du Vent": {
+      "plane": [
+        {
+          "code": "AHE",
+          "name": "Ahe Airport",
+          "lat": -14.428099632263184,
+          "lng": -146.2570037841797
+        },
+        {
+          "code": "AAA",
+          "name": "Anaa Airport",
+          "lat": -17.3526,
+          "lng": -145.509995
+        },
+        {
+          "code": "APK",
+          "name": "Apataki Airport",
+          "lat": -15.5736,
+          "lng": -146.414993
+        },
+        {
+          "code": "AXR",
+          "name": "Arutua Airport",
+          "lat": -15.248299598693848,
+          "lng": -146.61700439453125
+        },
+        {
+          "code": "BOB",
+          "name": "Bora Bora Airport",
+          "lat": -16.444400787353516,
+          "lng": -151.75100708007812
+        },
+        {
+          "code": "PPT",
+          "name": "Faa'a International Airport",
+          "lat": -17.553699,
+          "lng": -149.606995
+        },
+        {
+          "code": "FHZ",
+          "name": "Fakahina Airport",
+          "lat": -15.992259,
+          "lng": -140.164246
+        },
+        {
+          "code": "FAV",
+          "name": "Fakarava Airport",
+          "lat": -16.054100036621094,
+          "lng": -145.65699768066406
+        },
+        {
+          "code": "FGU",
+          "name": "Fangatau Airport",
+          "lat": -15.820044,
+          "lng": -140.888071
+        },
+        {
+          "code": "HOI",
+          "name": "Hao Airport",
+          "lat": -18.0748,
+          "lng": -140.945999
+        },
+        {
+          "code": "HHZ",
+          "name": "Hikueru Airport",
+          "lat": -17.548297,
+          "lng": -142.612037
+        },
+        {
+          "code": "AUQ",
+          "name": "Hiva Oa-Atuona Airport",
+          "lat": -9.76879024506,
+          "lng": -139.011001587
+        },
+        {
+          "code": "HUH",
+          "name": "Huahine-Fare Airport",
+          "lat": -16.687084,
+          "lng": -151.021593
+        },
+        {
+          "code": "KHZ",
+          "name": "Kauehi Airport",
+          "lat": -15.780622,
+          "lng": -145.128443
+        },
+        {
+          "code": "KKR",
+          "name": "Kaukura Airport",
+          "lat": -15.6633,
+          "lng": -146.884995
+        },
+        {
+          "code": "MKP",
+          "name": "Makemo Airport",
+          "lat": -16.5839,
+          "lng": -143.658005
+        },
+        {
+          "code": "XMH",
+          "name": "Manihi Airport",
+          "lat": -14.436800003051758,
+          "lng": -146.07000732421875
+        },
+        {
+          "code": "MVT",
+          "name": "Mataiva Airport",
+          "lat": -14.8681001663208,
+          "lng": -148.7169952392578
+        },
+        {
+          "code": "MAU",
+          "name": "Maupiti Airport",
+          "lat": -16.42650032043457,
+          "lng": -152.24400329589844
+        },
+        {
+          "code": "MOZ",
+          "name": "Moorea Temae Airport",
+          "lat": -17.48979,
+          "lng": -149.761777
+        },
+        {
+          "code": "NIU",
+          "name": "Naiu Airport",
+          "lat": -16.119296,
+          "lng": -146.368768
+        },
+        {
+          "code": "NAU",
+          "name": "Napuka Island Airport",
+          "lat": -14.177397,
+          "lng": -141.266112
+        },
+        {
+          "code": "NHV",
+          "name": "Nuku Hiva Airport",
+          "lat": -8.7956,
+          "lng": -140.229004
+        },
+        {
+          "code": "PKP",
+          "name": "Puka Puka Airport",
+          "lat": -14.80955,
+          "lng": -138.812621
+        },
+        {
+          "code": "RFP",
+          "name": "Raiatea Airport",
+          "lat": -16.7229,
+          "lng": -151.466003
+        },
+        {
+          "code": "RVV",
+          "name": "Raivavae Airport",
+          "lat": -23.885201,
+          "lng": -147.662003
+        },
+        {
+          "code": "RGI",
+          "name": "Rangiroa Airport",
+          "lat": -14.954299926757812,
+          "lng": -147.66099548339844
+        },
+        {
+          "code": "RRR",
+          "name": "Raroia Airport",
+          "lat": -16.050485,
+          "lng": -142.476568
+        },
+        {
+          "code": "RMT",
+          "name": "Rimatara Airport",
+          "lat": -22.63725,
+          "lng": -152.8059
+        },
+        {
+          "code": "RUR",
+          "name": "Rurutu Airport",
+          "lat": -22.434099197387695,
+          "lng": -151.36099243164062
+        },
+        {
+          "code": "TKP",
+          "name": "Takapoto Airport",
+          "lat": -14.709500312805176,
+          "lng": -145.24600219726562
+        },
+        {
+          "code": "TKX",
+          "name": "Takaroa Airport",
+          "lat": -14.45580005645752,
+          "lng": -145.02499389648438
+        },
+        {
+          "code": "TKV",
+          "name": "Tatakoto Airport",
+          "lat": -17.355226,
+          "lng": -138.44734
+        },
+        {
+          "code": "TIH",
+          "name": "Tikehau Airport",
+          "lat": -15.1196,
+          "lng": -148.231003
+        },
+        {
+          "code": "GMR",
+          "name": "Totegegie Airport",
+          "lat": -23.07990074157715,
+          "lng": -134.88999938964844
+        },
+        {
+          "code": "TUB",
+          "name": "Tubuai Airport",
+          "lat": -23.365400314331055,
+          "lng": -149.5240020751953
+        },
+        {
+          "code": "UAH",
+          "name": "Ua Huka Airport",
+          "lat": -8.936228,
+          "lng": -139.554062
+        },
+        {
+          "code": "UAP",
+          "name": "Ua Pou Airport",
+          "lat": -9.35167,
+          "lng": -140.078003
+        }
+      ],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:48:13.134Z"
+  }
+}

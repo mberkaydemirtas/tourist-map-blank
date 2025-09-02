@@ -1,0 +1,33 @@
+// AUTO-GENERATED admins for IE
+const ADMINS = [
+  "Carlow",
+  "Cavan",
+  "Clare",
+  "Cork",
+  "Donegal",
+  "Dublin",
+  "Dun Laoghaire-Rathdown",
+  "Fingal",
+  "Galway",
+  "Kerry",
+  "Kildare",
+  "Kilkenny",
+  "Laois",
+  "Leitrim",
+  "Limerick",
+  "Longford",
+  "Louth",
+  "Mayo",
+  "Meath",
+  "Monaghan",
+  "Offaly",
+  "Roscommon",
+  "Sligo",
+  "South Dublin",
+  "Tipperary",
+  "Waterford",
+  "Westmeath",
+  "Wexford",
+  "Wicklow"
+];
+export default ADMINS;

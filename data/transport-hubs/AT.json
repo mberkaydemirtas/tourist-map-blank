@@ -1,0 +1,86 @@
+{
+  "code": "AT",
+  "name": "Austria",
+  "cities": {
+    "Wien": {
+      "plane": [
+        {
+          "code": "VIE",
+          "name": "Vienna International Airport",
+          "lat": 48.110298,
+          "lng": 16.5697
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Steiermark": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Oberösterreich": {
+      "plane": [
+        {
+          "code": "KLU",
+          "name": "Klagenfurt Airport",
+          "lat": 46.642502,
+          "lng": 14.3377
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Vorarlberg": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Salzburg": {
+      "plane": [
+        {
+          "code": "INN",
+          "name": "Innsbruck Airport",
+          "lat": 47.260201,
+          "lng": 11.344
+        },
+        {
+          "code": "SZG",
+          "name": "Salzburg Airport",
+          "lat": 47.793301,
+          "lng": 13.0043
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Tirol": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kärnten": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Niederösterreich": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Burgenland": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:32:32.928Z"
+  }
+}

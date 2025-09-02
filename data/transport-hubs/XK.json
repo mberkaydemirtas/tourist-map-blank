@@ -1,0 +1,194 @@
+{
+  "code": "XK",
+  "name": "Kosovo",
+  "cities": {
+    "Prizren": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Prishtinë": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ferizaj": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Pejë": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gjakovë": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gjilan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Podujevë": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lipjan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vushtrri": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Suharekë": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gllogovc": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Rahovec": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Skenderaj": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Viti": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Fushë Kosovë": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Istog": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Klinë": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kamenicë": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dragash": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kaçanik": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Shtime": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Leposaviq": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Zveçan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Zubin Potok": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Shtërpcë": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Graçanicë": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hani i Elezit": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Novobërdë": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Obiliq": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Junik": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ranillug": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mamushë": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Deçan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Malishevë": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kllokot": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Partesh": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:47:14.967Z"
+  }
+}

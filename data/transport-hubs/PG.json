@@ -1,0 +1,357 @@
+{
+  "code": "PG",
+  "name": "Papua New Guinea",
+  "cities": {
+    "National Capital": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Morobe": {
+      "plane": [
+        {
+          "code": "BOT",
+          "name": "Bosset Airport",
+          "lat": -7.237257,
+          "lng": 141.1063222
+        },
+        {
+          "code": "PNP",
+          "name": "Girua Airport",
+          "lat": -8.80453968048,
+          "lng": 148.309005737
+        },
+        {
+          "code": "GKA",
+          "name": "Goroka Airport",
+          "lat": -6.081689834590001,
+          "lng": 145.391998291
+        },
+        {
+          "code": "KRI",
+          "name": "Kikori Airport",
+          "lat": -7.42438,
+          "lng": 144.250076
+        },
+        {
+          "code": "LNV",
+          "name": "Londolovit Airport",
+          "lat": -3.04361009598,
+          "lng": 152.628997803
+        },
+        {
+          "code": "LSA",
+          "name": "Losuia Airport",
+          "lat": -8.505820274353027,
+          "lng": 151.08099365234375
+        },
+        {
+          "code": "MXH",
+          "name": "Moro Airport",
+          "lat": -6.36332988739,
+          "lng": 143.238006592
+        },
+        {
+          "code": "OBX",
+          "name": "Obo Airport",
+          "lat": -7.590622421369999,
+          "lng": 141.324262619
+        },
+        {
+          "code": "POM",
+          "name": "Port Moresby Jacksons International Airport",
+          "lat": -9.443380355834961,
+          "lng": 147.22000122070312
+        },
+        {
+          "code": "TDS",
+          "name": "Sasereme Airport",
+          "lat": -7.6217,
+          "lng": 142.868
+        },
+        {
+          "code": "RAB",
+          "name": "Tokua Airport",
+          "lat": -4.34046,
+          "lng": 152.380005
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Northern": {
+      "plane": [
+        {
+          "code": "HGU",
+          "name": "Mount Hagen Kagamuga Airport",
+          "lat": -5.828212,
+          "lng": 144.299412
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Southern Highlands": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bougainville": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Western Highlands": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Madang": {
+      "plane": [
+        {
+          "code": "OPU",
+          "name": "Balimo Airport",
+          "lat": -8.05000019073,
+          "lng": 142.932998657
+        },
+        {
+          "code": "CMU",
+          "name": "Chimbu Airport",
+          "lat": -6.024290084838867,
+          "lng": 144.9709930419922
+        },
+        {
+          "code": "KVG",
+          "name": "Kavieng Airport",
+          "lat": -2.57940006256,
+          "lng": 150.807998657
+        },
+        {
+          "code": "MAG",
+          "name": "Madang Airport",
+          "lat": -5.20707988739,
+          "lng": 145.789001465
+        },
+        {
+          "code": "TPI",
+          "name": "Tapini Airport",
+          "lat": -8.35666666667,
+          "lng": 146.989166667
+        },
+        {
+          "code": "WBM",
+          "name": "Wapenamanda Airport",
+          "lat": -5.635293,
+          "lng": 143.892231
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "West New Britain": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "East Sepik": {
+      "plane": [
+        {
+          "code": "GMI",
+          "name": "Gasmata Island Airport",
+          "lat": -6.27111005783,
+          "lng": 150.330993652
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Eastern Highlands": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "East New Britain": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "New Ireland": {
+      "plane": [
+        {
+          "code": "BUA",
+          "name": "Buka Airport",
+          "lat": -5.4223198890686035,
+          "lng": 154.67300415039062
+        },
+        {
+          "code": "MIS",
+          "name": "Misima Island Airport",
+          "lat": -10.689200401299999,
+          "lng": 152.837997437
+        },
+        {
+          "code": "MAS",
+          "name": "Momote Airport",
+          "lat": -2.06189,
+          "lng": 147.423996
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Milne Bay": {
+      "plane": [
+        {
+          "code": "LMY",
+          "name": "Lake Murray Airport",
+          "lat": -7.00992012024,
+          "lng": 141.494003296
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Hela": {
+      "plane": [
+        {
+          "code": "KIE",
+          "name": "Aropa Airport",
+          "lat": -6.305417,
+          "lng": 155.728139
+        },
+        {
+          "code": "KMA",
+          "name": "Kerema Airport",
+          "lat": -7.96361017227,
+          "lng": 145.770996094
+        },
+        {
+          "code": "LAE",
+          "name": "Nadzab Airport",
+          "lat": -6.569803,
+          "lng": 146.725977
+        },
+        {
+          "code": "TIZ",
+          "name": "Tari Airport",
+          "lat": -5.845,
+          "lng": 142.947998
+        },
+        {
+          "code": "WWK",
+          "name": "Wewak International Airport",
+          "lat": -3.58383011818,
+          "lng": 143.669006348
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Western": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "West Sepik": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Chimbu": {
+      "plane": [
+        {
+          "code": "VMU",
+          "name": "Baimuru Airport",
+          "lat": -7.49686002731,
+          "lng": 144.819900513
+        },
+        {
+          "code": "HKN",
+          "name": "Hoskins Airport",
+          "lat": -5.463846,
+          "lng": 150.407327
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Gulf": {
+      "plane": [
+        {
+          "code": "GUR",
+          "name": "Gurney Airport",
+          "lat": -10.3114995956,
+          "lng": 150.333999634
+        },
+        {
+          "code": "TFI",
+          "name": "Tufi Airport",
+          "lat": -9.07595443726,
+          "lng": 149.319839478
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Manus": {
+      "plane": [
+        {
+          "code": "DAU",
+          "name": "Daru Airport",
+          "lat": -9.08676,
+          "lng": 143.207993
+        },
+        {
+          "code": "MDU",
+          "name": "Mendi Airport",
+          "lat": -6.14774,
+          "lng": 143.656998
+        },
+        {
+          "code": "TBG",
+          "name": "Tabubil Airport",
+          "lat": -5.280471,
+          "lng": 141.227576
+        },
+        {
+          "code": "VAI",
+          "name": "Vanimo Airport",
+          "lat": -2.6926,
+          "lng": 141.3028
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Enga": {
+      "plane": [
+        {
+          "code": "UNG",
+          "name": "Kiunga Airport",
+          "lat": -6.1257100105285645,
+          "lng": 141.28199768066406
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Central": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Jiwaka": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:45:32.438Z"
+  }
+}

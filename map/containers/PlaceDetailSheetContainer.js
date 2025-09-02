@@ -1,4 +1,3 @@
-// src/containers/PlaceDetailSheetContainer.js
 import React, { forwardRef, useRef, useImperativeHandle, useCallback } from 'react';
 import PlaceDetailSheet from '../components/PlaceDetailSheet';
 
@@ -11,6 +10,7 @@ const PlaceDetailSheetContainer = forwardRef(function PlaceDetailSheetContainer(
     snapPoints = ['30%', '60%', '75%', '90%'],
     onOpen,
     onClose,
+    onPickerCompleteReset,
   },
   ref
 ) {
@@ -49,7 +49,7 @@ const PlaceDetailSheetContainer = forwardRef(function PlaceDetailSheetContainer(
     [safeOpen, safeClose]
   );
 
-  // onChange guard: açıldıktan kısa süre içinde gelen -1'i yok say
+  // Sheet state guard: açıldıktan çok kısa süre içinde gelen -1 (bounce) kapanışlarını yok say
   const handleChange = useCallback(
     (index) => {
       if (typeof index !== 'number') return;
@@ -66,16 +66,16 @@ const PlaceDetailSheetContainer = forwardRef(function PlaceDetailSheetContainer(
     [safeOpen, safeClose]
   );
 
-  // DİKKAT: Artık dismiss'te de bounce guard var.
+  // Dismiss’te de guard uygula ve auto-open döngüsünü kırmak için marker’ı temizle
   const handleDismiss = useCallback(() => {
     const justOpened = Date.now() - lastOpenAtRef.current < 300;
-    if (justOpened) return; // ani kapanışları görmezden gel
-    // kullanıcı gerçekten kapattıysa marker'ı temizleyelim ki tekrar auto-open olmasın
+    if (justOpened) return;
     map.setMarker(null);
     map.setQuery('');
     safeClose();
   }, [map, safeClose]);
 
+  // Wizard/picker modunda CTA metni
   const overrideCtaLabel = picker
     ? picker.which === 'start'
       ? 'Başlangıç ekle'
@@ -84,8 +84,17 @@ const PlaceDetailSheetContainer = forwardRef(function PlaceDetailSheetContainer(
       : 'Konaklama ekle'
     : undefined;
 
+  // CTA aksiyonu: önce sheet’i kapat, sonra wizard’a dön
   const overrideCtaOnPress = picker
     ? () => {
+        // sheet’i kesin kapat
+        innerRef.current?.close?.();
+        safeClose();
+      
+         // 👈 önce MapScreen’e "resetle" sinyali gönder (region + state geri al)
+         try { onPickerCompleteReset?.(); } catch {}
+
+
         const p = map.marker || {};
         const loc =
           p.location ||
@@ -106,17 +115,24 @@ const PlaceDetailSheetContainer = forwardRef(function PlaceDetailSheetContainer(
       }
     : undefined;
 
+  // “Yol Tarifi Al” tıklandığında da önce sheet’i kapat, sonra dış callback’i çalıştır
+  const wrappedOnGetDirections = useCallback(() => {
+    innerRef.current?.close?.();
+    safeClose();
+    onGetDirections?.();
+  }, [onGetDirections, safeClose]);
+
   return (
     <PlaceDetailSheet
       ref={innerRef}
       marker={map.marker}
       routeInfo={map.routeInfo}
       snapPoints={snapPoints}
-      onGetDirections={onGetDirections}
+      onGetDirections={wrappedOnGetDirections}
       overrideCtaLabel={overrideCtaLabel}
       overrideCtaOnPress={overrideCtaOnPress}
       onDismiss={handleDismiss}
-      onChange={handleChange}   // <-- önemli: guard burada devrede
+      onChange={handleChange}
     />
   );
 });

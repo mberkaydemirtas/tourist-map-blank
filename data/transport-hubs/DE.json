@@ -1,0 +1,330 @@
+{
+  "code": "DE",
+  "name": "Germany",
+  "cities": {
+    "Berlin": {
+      "plane": [
+        {
+          "code": "BER",
+          "name": "Berlin Brandenburg Airport",
+          "lat": 52.362247,
+          "lng": 13.500672
+        },
+        {
+          "code": "BMK",
+          "name": "Borkum Airport",
+          "lat": 53.59639,
+          "lng": 6.709167
+        },
+        {
+          "code": "ERF",
+          "name": "Erfurt-Weimar Airport",
+          "lat": 50.979801,
+          "lng": 10.9581
+        },
+        {
+          "code": "HEI",
+          "name": "Heide-Büsum Airport",
+          "lat": 54.153332,
+          "lng": 8.901667
+        },
+        {
+          "code": "HDF",
+          "name": "Heringsdorf Airport",
+          "lat": 53.8787,
+          "lng": 14.1523
+        },
+        {
+          "code": "LEJ",
+          "name": "Leipzig/Halle Airport",
+          "lat": 51.420657,
+          "lng": 12.232705
+        },
+        {
+          "code": "LBC",
+          "name": "Lübeck Blankensee Airport",
+          "lat": 53.805401,
+          "lng": 10.7192
+        },
+        {
+          "code": "FMM",
+          "name": "Memmingen Allgau Airport",
+          "lat": 47.988800048799995,
+          "lng": 10.2395000458
+        },
+        {
+          "code": "MUC",
+          "name": "Munich Airport",
+          "lat": 48.353802,
+          "lng": 11.7861
+        },
+        {
+          "code": "NOD",
+          "name": "Norden-Norddeich Airport",
+          "lat": 53.633057,
+          "lng": 7.190278
+        },
+        {
+          "code": "PAD",
+          "name": "Paderborn Lippstadt Airport",
+          "lat": 51.614101,
+          "lng": 8.61632
+        },
+        {
+          "code": "GWT",
+          "name": "Westerland Sylt Airport",
+          "lat": 54.9132,
+          "lng": 8.34047
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Baden-Württemberg": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bavaria": {
+      "plane": [
+        {
+          "code": "BMR",
+          "name": "Baltrum Airport",
+          "lat": 53.72485,
+          "lng": 7.373257
+        },
+        {
+          "code": "MHG",
+          "name": "Mannheim-City Airport",
+          "lat": 49.473057,
+          "lng": 8.514167
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Hamburg": {
+      "plane": [
+        {
+          "code": "HAM",
+          "name": "Hamburg Helmut Schmidt Airport",
+          "lat": 53.630402,
+          "lng": 9.98823
+        },
+        {
+          "code": "HAJ",
+          "name": "Hannover Airport",
+          "lat": 52.461102,
+          "lng": 9.68508
+        },
+        {
+          "code": "NUE",
+          "name": "Nuremberg Airport",
+          "lat": 49.498699,
+          "lng": 11.078056
+        },
+        {
+          "code": "AGE",
+          "name": "Wangerooge Airport",
+          "lat": 53.782544,
+          "lng": 7.919584
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "North Rhine-Westphalia": {
+      "plane": [
+        {
+          "code": "HHN",
+          "name": "Frankfurt-Hahn Airport",
+          "lat": 49.9487,
+          "lng": 7.26389
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Hesse": {
+      "plane": [
+        {
+          "code": "DUS",
+          "name": "Düsseldorf Airport",
+          "lat": 51.289501,
+          "lng": 6.76678
+        },
+        {
+          "code": "EDXP",
+          "name": "Harlesiel Airfield",
+          "lat": 53.706669,
+          "lng": 7.820278
+        },
+        {
+          "code": "JUI",
+          "name": "Juist Airport",
+          "lat": 53.681421,
+          "lng": 7.056398
+        },
+        {
+          "code": "FKB",
+          "name": "Karlsruhe Baden-Baden Airport",
+          "lat": 48.7794,
+          "lng": 8.0805
+        },
+        {
+          "code": "RLG",
+          "name": "Rostock-Laage Airport",
+          "lat": 53.918201,
+          "lng": 12.2783
+        },
+        {
+          "code": "EDHE",
+          "name": "Uetersen-Heist Airfield",
+          "lat": 53.645477,
+          "lng": 9.703503
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Saxony": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bremen": {
+      "plane": [
+        {
+          "code": "DE-0921",
+          "name": "Altstetten Ultralight Field",
+          "lat": 48.30629,
+          "lng": 11.28652
+        },
+        {
+          "code": "BRE",
+          "name": "Bremen Airport",
+          "lat": 53.046786,
+          "lng": 8.78932
+        },
+        {
+          "code": "DTM",
+          "name": "Dortmund Airport",
+          "lat": 51.518299,
+          "lng": 7.61224
+        },
+        {
+          "code": "DRS",
+          "name": "Dresden Airport",
+          "lat": 51.134123,
+          "lng": 13.767831
+        },
+        {
+          "code": "EME",
+          "name": "Emden Airport",
+          "lat": 53.391109,
+          "lng": 7.2275
+        },
+        {
+          "code": "FDH",
+          "name": "Friedrichshafen Airport",
+          "lat": 47.671299,
+          "lng": 9.51149
+        },
+        {
+          "code": "KSF",
+          "name": "Kassel Airport",
+          "lat": 51.420699,
+          "lng": 9.392152
+        },
+        {
+          "code": "FMO",
+          "name": "Münster Osnabrück Airport",
+          "lat": 52.134602,
+          "lng": 7.68483
+        },
+        {
+          "code": "NRD",
+          "name": "Norderney Airport",
+          "lat": 53.706944,
+          "lng": 7.23
+        },
+        {
+          "code": "SCN",
+          "name": "Saarbrücken Airport",
+          "lat": 49.214599609400004,
+          "lng": 7.10950994492
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Lower Saxony": {
+      "plane": [
+        {
+          "code": "CGN",
+          "name": "Cologne Bonn Airport",
+          "lat": 50.865898,
+          "lng": 7.14274
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Schleswig-Holstein": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Saxony-Anhalt": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Rhineland-Palatinate": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mecklenburg-Western Pomerania": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Brandenburg": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Saarland": {
+      "plane": [
+        {
+          "code": "HGL",
+          "name": "Helgoland-Düne Airport",
+          "lat": 54.185279846200004,
+          "lng": 7.91583299637
+        },
+        {
+          "code": "STR",
+          "name": "Stuttgart Airport",
+          "lat": 48.689899,
+          "lng": 9.22196
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Thuringia": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:27:35.185Z"
+  }
+}

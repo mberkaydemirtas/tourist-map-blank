@@ -1,0 +1,174 @@
+{
+  "code": "NP",
+  "name": "Nepal",
+  "cities": {
+    "Gaṇḍakī": {
+      "plane": [
+        {
+          "code": "DOP",
+          "name": "Dolpa Airport",
+          "lat": 28.985659,
+          "lng": 82.818703
+        },
+        {
+          "code": "JKR",
+          "name": "Janakpur Airport",
+          "lat": 26.708799,
+          "lng": 85.922401
+        },
+        {
+          "code": "KEP",
+          "name": "Nepalgunj Airport",
+          "lat": 28.1036,
+          "lng": 81.667
+        },
+        {
+          "code": "PKR",
+          "name": "Pokhara Airport",
+          "lat": 28.200621,
+          "lng": 83.981203
+        },
+        {
+          "code": "PHH",
+          "name": "Pokhara International Airport",
+          "lat": 28.1838,
+          "lng": 84.0147
+        },
+        {
+          "code": "SIH",
+          "name": "Silgadi Doti Airport",
+          "lat": 29.262226,
+          "lng": 80.935968
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Province Number One": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lumbinī": {
+      "plane": [
+        {
+          "code": "JMO",
+          "name": "Jomsom Airport",
+          "lat": 28.780426,
+          "lng": 83.723
+        },
+        {
+          "code": "JUM",
+          "name": "Jumla Airport",
+          "lat": 29.2742,
+          "lng": 82.193298
+        },
+        {
+          "code": "LUA",
+          "name": "Lukla Airport",
+          "lat": 27.686768,
+          "lng": 86.729479
+        },
+        {
+          "code": "VNSL",
+          "name": "Rukum Salle Airport",
+          "lat": 28.636161,
+          "lng": 82.45018
+        },
+        {
+          "code": "IMK",
+          "name": "Simikot Airport",
+          "lat": 29.9711,
+          "lng": 81.818901
+        },
+        {
+          "code": "SKH",
+          "name": "Surkhet Airport",
+          "lat": 28.586,
+          "lng": 81.636002
+        },
+        {
+          "code": "TMI",
+          "name": "Tumling Tar Airport",
+          "lat": 27.315001,
+          "lng": 87.193298
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Madhesh": {
+      "plane": [
+        {
+          "code": "TPJ",
+          "name": "Taplejung Airport",
+          "lat": 27.3509,
+          "lng": 87.69525
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Bāgmatī": {
+      "plane": [
+        {
+          "code": "BDP",
+          "name": "Bhadrapur Airport",
+          "lat": 26.5708007812,
+          "lng": 88.07959747310001
+        },
+        {
+          "code": "BHR",
+          "name": "Bharatpur Airport",
+          "lat": 27.678101,
+          "lng": 84.429398
+        },
+        {
+          "code": "BIR",
+          "name": "Biratnagar Airport",
+          "lat": 26.48150062561035,
+          "lng": 87.26399993896484
+        },
+        {
+          "code": "SIF",
+          "name": "Simara Airport",
+          "lat": 27.159803,
+          "lng": 84.980021
+        },
+        {
+          "code": "KTM",
+          "name": "Tribhuvan International Airport",
+          "lat": 27.6966,
+          "lng": 85.3591
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Sudūrpashchim": {
+      "plane": [
+        {
+          "code": "BWA",
+          "name": "Gautam Buddha International Airport",
+          "lat": 27.505328,
+          "lng": 83.412594
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Karṇālī": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:45:16.105Z"
+  }
+}

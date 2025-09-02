@@ -1,0 +1,81 @@
+{
+  "code": "LB",
+  "name": "Lebanon",
+  "cities": {
+    "Beyrouth": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Liban-Nord": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:1443132463",
+          "name": "Lebanon",
+          "lat": 36.2120571,
+          "lng": -86.297149
+        },
+        {
+          "code": "OSM:7009873761",
+          "name": "Lebanon",
+          "lat": 40.6368709,
+          "lng": -74.8360668
+        }
+      ],
+      "bus": []
+    },
+    "Liban-Sud": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mont-Liban": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:772794190",
+          "name": "Dartmouth Coach - Lebanon",
+          "lat": 43.6535134,
+          "lng": -72.2416971
+        }
+      ]
+    },
+    "Béqaa": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:1443132691",
+          "name": "Martha",
+          "lat": 36.228866,
+          "lng": -86.4257716
+        }
+      ],
+      "bus": []
+    },
+    "Baalbek-Hermel": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nabatîyé": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Aakkâr": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:31:34.402Z"
+  }
+}

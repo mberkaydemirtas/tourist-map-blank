@@ -1,0 +1,109 @@
+{
+  "code": "MR",
+  "name": "Mauritania",
+  "cities": {
+    "Nouakchott Ouest": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nouakchott Sud": {
+      "plane": [
+        {
+          "code": "NDB",
+          "name": "Nouadhibou International Airport",
+          "lat": 20.9330997467041,
+          "lng": -17.030000686645508
+        },
+        {
+          "code": "NKC",
+          "name": "Nouakchott–Oumtounsy International Airport",
+          "lat": 18.31,
+          "lng": -15.969722
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nouakchott Nord": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dakhlet Nouadhibou": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Assaba": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tiris Zemmour": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Trarza": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gorgol": {
+      "plane": [
+        {
+          "code": "OUZ",
+          "name": "Tazadit Airport",
+          "lat": 22.757345,
+          "lng": -12.482228
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Guidimaka": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hodh el Gharbi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Adrar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hodh ech Chargui": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tagant": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Brakna": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Inchiri": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:39:18.338Z"
+  }
+}

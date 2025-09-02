@@ -1,0 +1,74 @@
+{
+  "code": "BY",
+  "name": "Belarus",
+  "cities": {
+    "Minsk": {
+      "plane": [
+        {
+          "code": "BQT",
+          "name": "Brest Airport",
+          "lat": 52.108299,
+          "lng": 23.8981
+        },
+        {
+          "code": "GME",
+          "name": "Gomel Airport",
+          "lat": 52.527000427246094,
+          "lng": 31.016700744628906
+        },
+        {
+          "code": "MSQ",
+          "name": "Minsk National Airport",
+          "lat": 53.888071,
+          "lng": 28.039964
+        },
+        {
+          "code": "MVQ",
+          "name": "Mogilev Airport",
+          "lat": 53.954898834228516,
+          "lng": 30.09510040283203
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Homyel’skaya Voblasts’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hrodzyenskaya Voblasts’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vitsyebskaya Voblasts’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mahilyowskaya Voblasts’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Brestskaya Voblasts’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Minskaya Voblasts’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:33:03.119Z"
+  }
+}

@@ -1,0 +1,216 @@
+{
+  "code": "MV",
+  "name": "Maldives",
+  "cities": {
+    "Maale": {
+      "plane": [
+        {
+          "code": "DRV",
+          "name": "Dharavandhoo Airport",
+          "lat": 5.1561,
+          "lng": 73.1302
+        },
+        {
+          "code": "GAN",
+          "name": "Gan International Airport",
+          "lat": -0.692694,
+          "lng": 73.151557
+        },
+        {
+          "code": "RUL",
+          "name": "Maavaarulaa Airport",
+          "lat": 0.338085,
+          "lng": 73.512869
+        },
+        {
+          "code": "MLE",
+          "name": "Malé International Airport",
+          "lat": 4.191830158233643,
+          "lng": 73.52909851074219
+        },
+        {
+          "code": "TMF",
+          "name": "Thimarafushi Airport",
+          "lat": 2.211,
+          "lng": 73.1533
+        },
+        {
+          "code": "VAM",
+          "name": "Villa International Airport Maamigili",
+          "lat": 3.470556,
+          "lng": 72.835833
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Addu": {
+      "plane": [
+        {
+          "code": "FND",
+          "name": "Funadhoo Airport",
+          "lat": 6.162443,
+          "lng": 73.28752
+        },
+        {
+          "code": "KDO",
+          "name": "Kadhdhoo Airport",
+          "lat": 1.8591699600219727,
+          "lng": 73.52189636230469
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Thiladhunmathee Dhekunuburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Fuvammulah": {
+      "plane": [
+        {
+          "code": "KDM",
+          "name": "Kaadedhdhoo Airport",
+          "lat": 0.488131,
+          "lng": 72.996902
+        },
+        {
+          "code": "GKK",
+          "name": "Kooddoo Airport",
+          "lat": 0.7324,
+          "lng": 73.4336
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Huvadhuatholhu Uthuruburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Huvadhuatholhu Dhekunuburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Faadhippolhu": {
+      "plane": [
+        {
+          "code": "HRF",
+          "name": "Hoarafushi Airport",
+          "lat": 6.96967,
+          "lng": 72.896287
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nilandheatholhu Dhekunuburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ariatholhu Dhekunuburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Maalhosmadulu Dhekunuburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Miladhunmadulu Uthuruburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Miladhunmadulu Dhekunuburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Maalhosmadulu Uthuruburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kolhumadulu": {
+      "plane": [
+        {
+          "code": "NMF",
+          "name": "Maafaru International Airport",
+          "lat": 5.818394,
+          "lng": 73.469181
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Felidheatholhu": {
+      "plane": [
+        {
+          "code": "FMT",
+          "name": "Faresmaathoda Airport",
+          "lat": 0.192647,
+          "lng": 73.196755
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ariatholhu Uthuruburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Thiladhunmathee Uthuruburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mulakatholhu": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hahdhunmathi": {
+      "plane": [
+        {
+          "code": "HAQ",
+          "name": "Hanimaadhoo Airport",
+          "lat": 6.744229793548584,
+          "lng": 73.17050170898438
+        },
+        {
+          "code": "HDK",
+          "name": "Kulhudhuffushi Airport",
+          "lat": 6.630762,
+          "lng": 73.067815
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nilandheatholhu Uthuruburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Maaleatholhu": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:47:40.422Z"
+  }
+}

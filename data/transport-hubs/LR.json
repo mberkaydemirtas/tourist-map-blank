@@ -1,0 +1,217 @@
+{
+  "code": "LR",
+  "name": "Liberia",
+  "cities": {
+    "Montserrado": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:6400261685",
+          "name": "Monrovia parking",
+          "lat": 8.4196787,
+          "lng": -9.7538838
+        },
+        {
+          "code": "OSM:380005785",
+          "name": "Swiss Travel",
+          "lat": 10.5750231,
+          "lng": -85.5825236
+        }
+      ]
+    },
+    "River Gee": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Grand Bassa": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:7935475585",
+          "name": "Bus a Aguas Claras",
+          "lat": 10.6294784,
+          "lng": -85.4428648
+        },
+        {
+          "code": "OSM:1712287252",
+          "name": "Parada de Buses",
+          "lat": 10.6203921,
+          "lng": -85.4579325
+        },
+        {
+          "code": "OSM:1712292481",
+          "name": "Parada de buses ",
+          "lat": 10.6237454,
+          "lng": -85.451345
+        },
+        {
+          "code": "OSM:1712287949",
+          "name": "Parada de buses del INA",
+          "lat": 10.6202392,
+          "lng": -85.4575141
+        },
+        {
+          "code": "OSM:1712291685",
+          "name": "Parada de buses frente a UTN",
+          "lat": 10.6232709,
+          "lng": -85.4513825
+        },
+        {
+          "code": "OSM:1712285406",
+          "name": "Parada de Buses Urbanos",
+          "lat": 10.6189738,
+          "lng": -85.4614086
+        },
+        {
+          "code": "OSM:427091877",
+          "name": "Plantel de Buses",
+          "lat": 10.6301541,
+          "lng": -85.4431585
+        },
+        {
+          "code": "OSM:106943625",
+          "name": "Terminal de Buses de Liberia",
+          "lat": 10.6306379,
+          "lng": -85.4442433
+        },
+        {
+          "code": "OSM:379968390",
+          "name": "Terminal Pulmitan de Liberia",
+          "lat": 10.6293758,
+          "lng": -85.4429535
+        }
+      ]
+    },
+    "Nimba": {
+      "plane": [
+        {
+          "code": "ROB",
+          "name": "Roberts International Airport",
+          "lat": 6.23379,
+          "lng": -10.3623
+        },
+        {
+          "code": "MLW",
+          "name": "Spriggs Payne Airport",
+          "lat": 6.28906,
+          "lng": -10.7587
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Bong": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Margibi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lofa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Grand Gedeh": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:6362215186",
+          "name": "bus to Red light",
+          "lat": 6.3124886,
+          "lng": -10.8005335
+        }
+      ]
+    },
+    "Maryland": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sinoe": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:7935452484",
+          "name": "Bus a San José",
+          "lat": 10.6296626,
+          "lng": -85.4429461
+        }
+      ]
+    },
+    "Bomi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Grand Cape Mount": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5267172193",
+          "name": "Nacascolo - Puerto Culebra",
+          "lat": 10.6268525,
+          "lng": -85.6770337
+        },
+        {
+          "code": "OSM:6968532985",
+          "name": "Red Light Motorpark",
+          "lat": 6.2918081,
+          "lng": -10.6903484
+        },
+        {
+          "code": "OSM:4537714890",
+          "name": "Shared Taxi Station (long distance)",
+          "lat": 6.3755718,
+          "lng": -10.7860241
+        }
+      ]
+    },
+    "Gbarpolu": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:9532907717",
+          "name": "Bus a Upala",
+          "lat": 10.629368,
+          "lng": -85.442822
+        }
+      ]
+    },
+    "Grand Kru": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "River Cess": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5267177963",
+          "name": "Puerto Culebra - Nacascolo",
+          "lat": 10.6492544,
+          "lng": -85.6507953
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:39:46.779Z"
+  }
+}

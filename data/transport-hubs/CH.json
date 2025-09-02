@@ -1,0 +1,179 @@
+{
+  "code": "CH",
+  "name": "Switzerland",
+  "cities": {
+    "Zürich": {
+      "plane": [
+        {
+          "code": "ZRH",
+          "name": "Zürich Airport",
+          "lat": 47.458056,
+          "lng": 8.548056
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Genève": {
+      "plane": [
+        {
+          "code": "GVA",
+          "name": "Geneva Cointrin International Airport",
+          "lat": 46.238098,
+          "lng": 6.10895
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Basel-Stadt": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vaud": {
+      "plane": [
+        {
+          "code": "LUG",
+          "name": "Lugano Airport",
+          "lat": 46.004299,
+          "lng": 8.91058
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Bern": {
+      "plane": [
+        {
+          "code": "BRN",
+          "name": "Bern Airport",
+          "lat": 46.912868,
+          "lng": 7.498512
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Luzern": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sankt Gallen": {
+      "plane": [
+        {
+          "code": "ACH",
+          "name": "Sankt Gallen Altenrhein Airport",
+          "lat": 47.485001,
+          "lng": 9.56077
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ticino": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Neuchâtel": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Fribourg": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Schaffhausen": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Graubünden": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Valais": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Zug": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Aargau": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Thurgau": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Basel-Landschaft": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Solothurn": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Schwyz": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Appenzell Ausserrhoden": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Jura": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Obwalden": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Uri": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nidwalden": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Glarus": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Appenzell Innerrhoden": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:44:54.272Z"
+  }
+}

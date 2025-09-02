@@ -1,0 +1,26 @@
+{
+  "code": "TV",
+  "name": "Tuvalu",
+  "cities": {
+    "Funafuti": {
+      "plane": [
+        {
+          "code": "FUN",
+          "name": "Funafuti International Airport",
+          "lat": -8.525,
+          "lng": 179.195999
+        }
+      ],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:51:47.714Z"
+  }
+}

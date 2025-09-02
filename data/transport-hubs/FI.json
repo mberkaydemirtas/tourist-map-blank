@@ -1,0 +1,241 @@
+{
+  "code": "FI",
+  "name": "Finland",
+  "cities": {
+    "Uusimaa": {
+      "plane": [
+        {
+          "code": "KTT",
+          "name": "Kittilä Airport",
+          "lat": 67.700996398926,
+          "lng": 24.846799850464
+        },
+        {
+          "code": "KAO",
+          "name": "Kuusamo Airport",
+          "lat": 65.987602,
+          "lng": 29.239401
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Pirkanmaa": {
+      "plane": [
+        {
+          "code": "HEL",
+          "name": "Helsinki Vantaa Airport",
+          "lat": 60.318363,
+          "lng": 24.963341
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Pohjois-Pohjanmaa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Varsinais-Suomi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Keski-Suomi": {
+      "plane": [
+        {
+          "code": "KEM",
+          "name": "Kemi-Tornio Airport",
+          "lat": 65.778701782227,
+          "lng": 24.582099914551
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Pohjois-Savo": {
+      "plane": [
+        {
+          "code": "KUO",
+          "name": "Kuopio Airport",
+          "lat": 63.007099,
+          "lng": 27.7978
+        },
+        {
+          "code": "OUL",
+          "name": "Oulu Airport",
+          "lat": 64.930099,
+          "lng": 25.354601
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Päijät-Häme": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Satakunta": {
+      "plane": [
+        {
+          "code": "JYV",
+          "name": "Jyväskylä Airport",
+          "lat": 62.399502,
+          "lng": 25.678301
+        },
+        {
+          "code": "KOK",
+          "name": "Kokkola-Pietarsaari Airport",
+          "lat": 63.721199,
+          "lng": 23.143101
+        },
+        {
+          "code": "LPP",
+          "name": "Lappeenranta Airport",
+          "lat": 61.044601,
+          "lng": 28.144743
+        },
+        {
+          "code": "SVL",
+          "name": "Savonlinna Airport",
+          "lat": 61.9431,
+          "lng": 28.945101
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kymenlaakso": {
+      "plane": [
+        {
+          "code": "ENF",
+          "name": "Enontekio Airport",
+          "lat": 68.362602233887,
+          "lng": 23.424299240112
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Pohjois-Karjala": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Etelä-Karjala": {
+      "plane": [
+        {
+          "code": "TMP",
+          "name": "Tampere-Pirkkala Airport",
+          "lat": 61.414101,
+          "lng": 23.604401
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Pohjanmaa": {
+      "plane": [
+        {
+          "code": "RVN",
+          "name": "Rovaniemi Airport",
+          "lat": 66.564796447754,
+          "lng": 25.830400466919
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kanta-Häme": {
+      "plane": [
+        {
+          "code": "MHQ",
+          "name": "Mariehamn Airport",
+          "lat": 60.1222,
+          "lng": 19.898199
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Etelä-Pohjanmaa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lappi": {
+      "plane": [
+        {
+          "code": "POR",
+          "name": "Pori Airport",
+          "lat": 61.4617,
+          "lng": 21.799999
+        },
+        {
+          "code": "TKU",
+          "name": "Turku Airport",
+          "lat": 60.514099,
+          "lng": 22.2628
+        },
+        {
+          "code": "VAA",
+          "name": "Vaasa Airport",
+          "lat": 63.050701,
+          "lng": 21.762199
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Etelä-Savo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Keski-Pohjanmaa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kainuu": {
+      "plane": [
+        {
+          "code": "JOE",
+          "name": "Joensuu Airport",
+          "lat": 62.658815,
+          "lng": 29.619398
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Åland": {
+      "plane": [
+        {
+          "code": "IVL",
+          "name": "Ivalo Airport",
+          "lat": 68.607299804688,
+          "lng": 27.405300140381
+        },
+        {
+          "code": "KAJ",
+          "name": "Kajaani Airport",
+          "lat": 64.2855,
+          "lng": 27.6924
+        }
+      ],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:37:22.691Z"
+  }
+}

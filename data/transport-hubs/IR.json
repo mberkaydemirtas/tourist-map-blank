@@ -1,0 +1,451 @@
+{
+  "code": "IR",
+  "name": "Iran",
+  "cities": {
+    "Tehrān": {
+      "plane": [
+        {
+          "code": "ZBR",
+          "name": "Chabahar Konarak International Airport",
+          "lat": 25.44319,
+          "lng": 60.382167
+        },
+        {
+          "code": "GCH",
+          "name": "Gachsaran Airport",
+          "lat": 30.333869,
+          "lng": 50.833796
+        },
+        {
+          "code": "IKA",
+          "name": "Imam Khomeini International Airport",
+          "lat": 35.416099548339844,
+          "lng": 51.152198791503906
+        },
+        {
+          "code": "AWZ",
+          "name": "Lieutenant General Qasem Soleimani International Airport",
+          "lat": 31.3374,
+          "lng": 48.762001
+        },
+        {
+          "code": "MHD",
+          "name": "Mashhad International Airport",
+          "lat": 36.235198974609375,
+          "lng": 59.64099884033203
+        },
+        {
+          "code": "THR",
+          "name": "Mehrabad International Airport",
+          "lat": 35.68920135498047,
+          "lng": 51.31340026855469
+        },
+        {
+          "code": "SYZ",
+          "name": "Shiraz Shahid Dastghaib International Airport",
+          "lat": 29.5392,
+          "lng": 52.589802
+        },
+        {
+          "code": "TBZ",
+          "name": "Tabriz International Airport",
+          "lat": 38.1339,
+          "lng": 46.235001
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Khorāsān-e Raẕavī": {
+      "plane": [
+        {
+          "code": "KHD",
+          "name": "Khoram Abad Airport",
+          "lat": 33.43539810180664,
+          "lng": 48.282901763916016
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Eşfahān": {
+      "plane": [
+        {
+          "code": "IFN",
+          "name": "Isfahan Shahid Beheshti International Airport",
+          "lat": 32.750755,
+          "lng": 51.861483
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Alborz": {
+      "plane": [
+        {
+          "code": "BJB",
+          "name": "Bojnord Airport",
+          "lat": 37.49300003051758,
+          "lng": 57.30820083618164
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Fārs": {
+      "plane": [
+        {
+          "code": "KHK",
+          "name": "Khark Airport",
+          "lat": 29.260503,
+          "lng": 50.322193
+        },
+        {
+          "code": "LFM",
+          "name": "Lamerd Airport",
+          "lat": 27.3727,
+          "lng": 53.188801
+        },
+        {
+          "code": "LRR",
+          "name": "Lar Airport",
+          "lat": 27.6747,
+          "lng": 54.383301
+        },
+        {
+          "code": "PYK",
+          "name": "Payam Karaj International Airport",
+          "lat": 35.7761,
+          "lng": 50.826698
+        },
+        {
+          "code": "PGU",
+          "name": "Persian Gulf International Airport",
+          "lat": 27.379601,
+          "lng": 52.737701
+        },
+        {
+          "code": "RZR",
+          "name": "Ramsar Airport",
+          "lat": 36.90701,
+          "lng": 50.687316
+        },
+        {
+          "code": "RAS",
+          "name": "Sardar-e-Jangal Airport",
+          "lat": 37.323333,
+          "lng": 49.617778
+        },
+        {
+          "code": "SRY",
+          "name": "Sari Dasht-e Naz International Airport",
+          "lat": 36.644408,
+          "lng": 53.188761
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Āz̄arbāyjān-e Sharqī": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Khūzestān": {
+      "plane": [
+        {
+          "code": "KIH",
+          "name": "Kish International Airport",
+          "lat": 26.5261993408,
+          "lng": 53.980201721200004
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Qom": {
+      "plane": [
+        {
+          "code": "BXR",
+          "name": "Bam Airport",
+          "lat": 29.0842,
+          "lng": 58.450001
+        },
+        {
+          "code": "OMH",
+          "name": "Urmia Airport",
+          "lat": 37.6680984497,
+          "lng": 45.0686988831
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kermānshāh": {
+      "plane": [
+        {
+          "code": "KSH",
+          "name": "Shahid Ashrafi Esfahani Airport",
+          "lat": 34.3459014893,
+          "lng": 47.1581001282
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kermān": {
+      "plane": [
+        {
+          "code": "KER",
+          "name": "Ayatollah Hashemi Rafsanjani International Airport",
+          "lat": 30.271276,
+          "lng": 56.949692
+        },
+        {
+          "code": "XBJ",
+          "name": "Birjand International Airport",
+          "lat": 32.896525,
+          "lng": 59.281258
+        },
+        {
+          "code": "KKS",
+          "name": "Kashan Airport",
+          "lat": 33.895302,
+          "lng": 51.577
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Āz̄arbāyjān-e Gharbī": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gīlān": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hamadān": {
+      "plane": [
+        {
+          "code": "ABD",
+          "name": "Abadan Airport",
+          "lat": 30.367887,
+          "lng": 48.230075
+        },
+        {
+          "code": "HDM",
+          "name": "Hamadan Airport",
+          "lat": 34.869202,
+          "lng": 48.552502
+        },
+        {
+          "code": "ZAH",
+          "name": "Zahedan International Airport",
+          "lat": 29.47570037841797,
+          "lng": 60.90620040893555
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Sīstān va Balūchestān": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Yazd": {
+      "plane": [
+        {
+          "code": "AZD",
+          "name": "Shahid Sadooghi Airport",
+          "lat": 31.9048995972,
+          "lng": 54.2765007019
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ardabīl": {
+      "plane": [
+        {
+          "code": "ADU",
+          "name": "Ardabil Airport",
+          "lat": 38.3256988525,
+          "lng": 48.4244003296
+        },
+        {
+          "code": "BND",
+          "name": "Bandar Abbas International Airport",
+          "lat": 27.218299865722656,
+          "lng": 56.37779998779297
+        },
+        {
+          "code": "BDH",
+          "name": "Bandar Lengeh International Airport",
+          "lat": 26.532283,
+          "lng": 54.82484
+        },
+        {
+          "code": "PFQ",
+          "name": "Parsabad-Moghan Airport",
+          "lat": 39.6036,
+          "lng": 47.8815
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Hormozgān": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Markazī": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kordestān": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Qazvīn": {
+      "plane": [
+        {
+          "code": "AFZ",
+          "name": "Sabzevar National Airport",
+          "lat": 36.16809844970703,
+          "lng": 57.59519958496094
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Zanjān": {
+      "plane": [
+        {
+          "code": "JSK",
+          "name": "Jask Airport",
+          "lat": 25.654757,
+          "lng": 57.801718
+        },
+        {
+          "code": "RJN",
+          "name": "Rafsanjan Airport",
+          "lat": 30.298345,
+          "lng": 56.048979
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Golestān": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Māzandarān": {
+      "plane": [
+        {
+          "code": "SDG",
+          "name": "Sanandaj Airport",
+          "lat": 35.24589920043945,
+          "lng": 47.00920104980469
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Lorestān": {
+      "plane": [
+        {
+          "code": "GSM",
+          "name": "Qeshm Dayrestan International Airport",
+          "lat": 26.754639,
+          "lng": 55.902353
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Khorāsān-e Shomālī": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Būshehr": {
+      "plane": [
+        {
+          "code": "AEU",
+          "name": "Abu Musa Island Airport",
+          "lat": 25.8757,
+          "lng": 55.033001
+        },
+        {
+          "code": "BUZ",
+          "name": "Bushehr Airport",
+          "lat": 28.9447994232,
+          "lng": 50.8345985413
+        },
+        {
+          "code": "MRX",
+          "name": "Mahshahr Airport",
+          "lat": 30.5562,
+          "lng": 49.151901
+        },
+        {
+          "code": "NSH",
+          "name": "Nowshahr Airport",
+          "lat": 36.664286,
+          "lng": 51.46273
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Khorāsān-e Jonūbī": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Chahār Maḩāl va Bakhtīārī": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Semnān": {
+      "plane": [
+        {
+          "code": "SNX",
+          "name": "Semnan Municipal Airport",
+          "lat": 35.591099,
+          "lng": 53.495098
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kohgīlūyeh va Bowyer Aḩmad": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Īlām": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:19:14.038Z"
+  }
+}

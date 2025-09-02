@@ -1,0 +1,130 @@
+{
+  "code": "SZ",
+  "name": "Eswatini",
+  "cities": {
+    "Manzini": {
+      "plane": [
+        {
+          "code": "SHO",
+          "name": "King Mswati III International Airport",
+          "lat": -26.358611,
+          "lng": 31.716944
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:599506673",
+          "name": "Mlawula",
+          "lat": -26.190999,
+          "lng": 32.0074175
+        },
+        {
+          "code": "OSM:2736228902",
+          "name": "Mpaka",
+          "lat": -26.4166822,
+          "lng": 31.7815108
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:2280006360",
+          "name": "Main Bus Rank",
+          "lat": -26.4952897,
+          "lng": 31.3776609
+        },
+        {
+          "code": "OSM:162185426",
+          "name": "Mbabane Bus Rank",
+          "lat": -26.3258925,
+          "lng": 31.1418529
+        },
+        {
+          "code": "OSM:1362605929",
+          "name": "Nhlangano Bus Rank",
+          "lat": -27.1090329,
+          "lng": 31.1982724
+        }
+      ]
+    },
+    "Hhohho": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:2738237281",
+          "name": "Hlane",
+          "lat": -26.2625561,
+          "lng": 31.7687278
+        },
+        {
+          "code": "OSM:431545325",
+          "name": "Nsoko",
+          "lat": -27.0365497,
+          "lng": 31.93304
+        },
+        {
+          "code": "OSM:11133533211",
+          "name": "Phuzamoya",
+          "lat": -26.6909314,
+          "lng": 31.7390239
+        }
+      ],
+      "bus": []
+    },
+    "Lubombo": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5279939921",
+          "name": "Bus station",
+          "lat": -25.959735,
+          "lng": 31.2486498
+        },
+        {
+          "code": "OSM:2276767733",
+          "name": "Bus Station",
+          "lat": -27.1090783,
+          "lng": 31.1983068
+        },
+        {
+          "code": "OSM:2276767784",
+          "name": "Bus Station",
+          "lat": -27.1132517,
+          "lng": 31.1968799
+        },
+        {
+          "code": "OSM:9211858218",
+          "name": "Luve bus station and complex",
+          "lat": -26.3211084,
+          "lng": 31.4758284
+        }
+      ]
+    },
+    "Shiselweni": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:7533760239",
+          "name": "Satillite Busrank",
+          "lat": -26.5012772,
+          "lng": 31.3735972
+        },
+        {
+          "code": "OSM:3394179407",
+          "name": "Siteki Bus Rank",
+          "lat": -26.4556361,
+          "lng": 31.9488002
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:48:19.848Z"
+  }
+}

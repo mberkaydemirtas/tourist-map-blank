@@ -1,0 +1,58 @@
+{
+  "code": "KN",
+  "name": "Saint Kitts and Nevis",
+  "cities": {
+    "Saint George Basseterre": {
+      "plane": [
+        {
+          "code": "SKB",
+          "name": "Robert L. Bradshaw International Airport",
+          "lat": 17.311199188232422,
+          "lng": -62.71870040893555
+        },
+        {
+          "code": "NEV",
+          "name": "Vance W. Amory International Airport",
+          "lat": 17.205699920654297,
+          "lng": -62.589900970458984
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:11886174464",
+          "name": "Needsmust",
+          "lat": 17.3126399,
+          "lng": -62.7115974
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5625511423",
+          "name": "Eastbound Bus Terminal",
+          "lat": 17.2992891,
+          "lng": -62.7196281
+        },
+        {
+          "code": "OSM:860560953",
+          "name": "Penny's Party Bus",
+          "lat": 17.3488765,
+          "lng": -62.7285391
+        },
+        {
+          "code": "OSM:557085954",
+          "name": "Westline Bus Terminal",
+          "lat": 17.2941715,
+          "lng": -62.7258939
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:51:33.694Z"
+  }
+}

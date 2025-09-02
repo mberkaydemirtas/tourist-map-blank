@@ -1,0 +1,320 @@
+{
+  "code": "GR",
+  "name": "Greece",
+  "cities": {
+    "Attikí": {
+      "plane": [
+        {
+          "code": "ATH",
+          "name": "Athens Eleftherios Venizelos International Airport",
+          "lat": 37.936401,
+          "lng": 23.9445
+        },
+        {
+          "code": "RHO",
+          "name": "Diagoras Airport",
+          "lat": 36.405399,
+          "lng": 28.086201
+        },
+        {
+          "code": "KSO",
+          "name": "Kastoria National Airport Aristotle",
+          "lat": 40.446301,
+          "lng": 21.2822
+        },
+        {
+          "code": "MJT",
+          "name": "Mytilene International Airport",
+          "lat": 39.057272,
+          "lng": 26.598887
+        },
+        {
+          "code": "ZTH",
+          "name": "Zakynthos International Airport Dionysios Solomos",
+          "lat": 37.7509,
+          "lng": 20.8843
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kentrikí Makedonía": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Thessalía": {
+      "plane": [
+        {
+          "code": "JKH",
+          "name": "Chios Island National Airport",
+          "lat": 38.34320068359375,
+          "lng": 26.140600204467773
+        },
+        {
+          "code": "HER",
+          "name": "Heraklion International Nikos Kazantzakis Airport",
+          "lat": 35.339699,
+          "lng": 25.1803
+        },
+        {
+          "code": "AOK",
+          "name": "Karpathos Airport",
+          "lat": 35.421398,
+          "lng": 27.146
+        },
+        {
+          "code": "SKG",
+          "name": "Thessaloniki Macedonia International Airport",
+          "lat": 40.51928,
+          "lng": 22.970009
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kríti": {
+      "plane": [
+        {
+          "code": "PVK",
+          "name": "Aktion National Airport",
+          "lat": 38.925499,
+          "lng": 20.765301
+        },
+        {
+          "code": "CHQ",
+          "name": "Chania International Airport",
+          "lat": 35.5317,
+          "lng": 24.1497
+        },
+        {
+          "code": "KLX",
+          "name": "Kalamata Airport",
+          "lat": 37.06829833984375,
+          "lng": 22.02549934387207
+        },
+        {
+          "code": "KVA",
+          "name": "Kavala Alexander the Great International Airport",
+          "lat": 40.9133,
+          "lng": 24.6192
+        },
+        {
+          "code": "KGS",
+          "name": "Kos Airport",
+          "lat": 36.794523,
+          "lng": 27.09115
+        },
+        {
+          "code": "KZI",
+          "name": "Kozani National Airport Filippos",
+          "lat": 40.286098,
+          "lng": 21.840799
+        },
+        {
+          "code": "JNX",
+          "name": "Naxos Island National Airport",
+          "lat": 37.0811,
+          "lng": 25.368099
+        },
+        {
+          "code": "JSI",
+          "name": "Skiathos Island National Airport",
+          "lat": 39.177101,
+          "lng": 23.5037
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Dytikí Elláda": {
+      "plane": [
+        {
+          "code": "JKL",
+          "name": "Kalymnos Airport",
+          "lat": 36.9632987976,
+          "lng": 26.9405994415
+        },
+        {
+          "code": "JTR",
+          "name": "Santorini Airport",
+          "lat": 36.399200439453125,
+          "lng": 25.479299545288086
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Anatolikí Makedonía kai Thráki": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ípeiros": {
+      "plane": [
+        {
+          "code": "AXD",
+          "name": "Alexandroupoli Democritus Airport",
+          "lat": 40.8559,
+          "lng": 25.956301
+        },
+        {
+          "code": "JMK",
+          "name": "Mykonos Island National Airport",
+          "lat": 37.435101,
+          "lng": 25.348101
+        },
+        {
+          "code": "PAS",
+          "name": "Paros National Airport",
+          "lat": 37.020495,
+          "lng": 25.113195
+        },
+        {
+          "code": "GPA",
+          "name": "Patras Araxos Agamemnon Airport",
+          "lat": 38.1511,
+          "lng": 21.4256
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Stereá Elláda": {
+      "plane": [
+        {
+          "code": "JTY",
+          "name": "Astypalaia Airport",
+          "lat": 36.5798988342,
+          "lng": 26.3757991791
+        },
+        {
+          "code": "CFU",
+          "name": "Corfu Ioannis Kapodistrias International Airport",
+          "lat": 39.602024,
+          "lng": 19.912038
+        },
+        {
+          "code": "KZS",
+          "name": "Kastelorizo Airport",
+          "lat": 36.141701,
+          "lng": 29.576401
+        },
+        {
+          "code": "LRS",
+          "name": "Leros Airport",
+          "lat": 37.184898,
+          "lng": 26.800301
+        },
+        {
+          "code": "SMI",
+          "name": "Samos Airport",
+          "lat": 37.689999,
+          "lng": 26.911699
+        },
+        {
+          "code": "JSH",
+          "name": "Sitia Airport",
+          "lat": 35.21609878540039,
+          "lng": 26.101299285888672
+        },
+        {
+          "code": "SKU",
+          "name": "Skiros Airport",
+          "lat": 38.9676017761,
+          "lng": 24.4871997833
+        },
+        {
+          "code": "JSY",
+          "name": "Syros Airport",
+          "lat": 37.4227981567,
+          "lng": 24.950899124099998
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nótio Aigaío": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ionía Nísia": {
+      "plane": [
+        {
+          "code": "JIK",
+          "name": "Ikaria Airport",
+          "lat": 37.6827011108,
+          "lng": 26.3470993042
+        },
+        {
+          "code": "IOA",
+          "name": "Ioannina King Pyrrhus National Airport",
+          "lat": 39.6964,
+          "lng": 20.8225
+        },
+        {
+          "code": "KSJ",
+          "name": "Kasos Airport",
+          "lat": 35.4213981628,
+          "lng": 26.909999847399998
+        },
+        {
+          "code": "EFL",
+          "name": "Kefallinia Airport",
+          "lat": 38.12009811401367,
+          "lng": 20.500499725341797
+        },
+        {
+          "code": "KIT",
+          "name": "Kithira Airport",
+          "lat": 36.2742996216,
+          "lng": 23.0170001984
+        },
+        {
+          "code": "LXS",
+          "name": "Limnos Airport",
+          "lat": 39.917098999,
+          "lng": 25.236299514799995
+        },
+        {
+          "code": "MLO",
+          "name": "Milos Airport",
+          "lat": 36.696899,
+          "lng": 24.4769
+        },
+        {
+          "code": "VOL",
+          "name": "Nea Anchialos National Airport",
+          "lat": 39.219601,
+          "lng": 22.7943
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Pelopónnisos": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dytikí Makedonía": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vóreio Aigaío": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:29:39.191Z"
+  }
+}

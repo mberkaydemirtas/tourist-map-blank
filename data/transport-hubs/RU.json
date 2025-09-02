@@ -1,0 +1,1517 @@
+{
+  "code": "RU",
+  "name": "Russia",
+  "cities": {
+    "Moskva": {
+      "plane": [
+        {
+          "code": "AMV",
+          "name": "Amderma Airport",
+          "lat": 69.76329803466797,
+          "lng": 61.556400299072266
+        },
+        {
+          "code": "BWO",
+          "name": "Balakovo Airport",
+          "lat": 51.858299,
+          "lng": 47.745602
+        },
+        {
+          "code": "BVJ",
+          "name": "Bovanenkovo Airport",
+          "lat": 70.315278,
+          "lng": 68.333611
+        },
+        {
+          "code": "UUA",
+          "name": "Bugulma Airport",
+          "lat": 54.641184,
+          "lng": 52.800229
+        },
+        {
+          "code": "DME",
+          "name": "Domodedovo International Airport",
+          "lat": 55.408798,
+          "lng": 37.9063
+        },
+        {
+          "code": "UHKD",
+          "name": "Dzemgi Airport",
+          "lat": 50.605598,
+          "lng": 137.080994
+        },
+        {
+          "code": "IAA",
+          "name": "Igarka Airport",
+          "lat": 67.437202,
+          "lng": 86.621902
+        },
+        {
+          "code": "IWA",
+          "name": "Ivanovo South Airport",
+          "lat": 56.93939971923828,
+          "lng": 40.940799713134766
+        },
+        {
+          "code": "IJK",
+          "name": "Izhevsk Airport",
+          "lat": 56.82809829711914,
+          "lng": 53.45750045776367
+        },
+        {
+          "code": "KEJ",
+          "name": "Kemerovo Airport",
+          "lat": 55.27009963989258,
+          "lng": 86.1072006225586
+        },
+        {
+          "code": "KXK",
+          "name": "Komsomolsk-on-Amur Airport",
+          "lat": 50.409000396728516,
+          "lng": 136.9340057373047
+        },
+        {
+          "code": "RU-0189",
+          "name": "Kostomuksha Airfield",
+          "lat": 64.617996,
+          "lng": 30.687
+        },
+        {
+          "code": "KMW",
+          "name": "Kostroma Sokerkino Airport",
+          "lat": 57.796902,
+          "lng": 41.019402
+        },
+        {
+          "code": "KRR",
+          "name": "Krasnodar Pashkovsky International Airport",
+          "lat": 45.034698,
+          "lng": 39.170502
+        },
+        {
+          "code": "KUF",
+          "name": "Kurumoch International Airport",
+          "lat": 53.504902,
+          "lng": 50.164299
+        },
+        {
+          "code": "ULK",
+          "name": "Lensk Airport",
+          "lat": 60.7206001282,
+          "lng": 114.825996399
+        },
+        {
+          "code": "USHL",
+          "name": "Lugovoy Airport",
+          "lat": 59.7239990234375,
+          "lng": 65.83300018310547
+        },
+        {
+          "code": "IGT",
+          "name": "Magas Airport",
+          "lat": 43.323268,
+          "lng": 45.012568
+        },
+        {
+          "code": "KVM",
+          "name": "Markovo Airport",
+          "lat": 64.665446,
+          "lng": 170.417626
+        },
+        {
+          "code": "MJY",
+          "name": "Motygino Airport",
+          "lat": 58.180921,
+          "lng": 94.745272
+        },
+        {
+          "code": "OVB",
+          "name": "Novosibirsk Tolmachevo Airport",
+          "lat": 55.019756,
+          "lng": 82.618675
+        },
+        {
+          "code": "NOJ",
+          "name": "Noyabrsk Airport",
+          "lat": 63.18330001831055,
+          "lng": 75.2699966430664
+        },
+        {
+          "code": "UHMN",
+          "name": "Omolon Airport",
+          "lat": 65.239998,
+          "lng": 160.539993
+        },
+        {
+          "code": "UHMF",
+          "name": "Omsukchan Airport",
+          "lat": 62.457001,
+          "lng": 155.744995
+        },
+        {
+          "code": "OSW",
+          "name": "Orsk Airport",
+          "lat": 51.072498,
+          "lng": 58.5956
+        },
+        {
+          "code": "PES",
+          "name": "Petrozavodsk Airport",
+          "lat": 61.88520050048828,
+          "lng": 34.154701232910156
+        },
+        {
+          "code": "ROV",
+          "name": "Platov International Airport",
+          "lat": 47.493888,
+          "lng": 39.924722
+        },
+        {
+          "code": "PKV",
+          "name": "Pskov Airport",
+          "lat": 57.78390121459961,
+          "lng": 28.395599365234375
+        },
+        {
+          "code": "RMZ",
+          "name": "Remezov Airport",
+          "lat": 58.058427,
+          "lng": 68.348801
+        },
+        {
+          "code": "SYS",
+          "name": "Saskylakh Airport",
+          "lat": 71.927902,
+          "lng": 114.080002
+        },
+        {
+          "code": "SVO",
+          "name": "Sheremetyevo International Airport",
+          "lat": 55.972599,
+          "lng": 37.4146
+        },
+        {
+          "code": "OVS",
+          "name": "Sovetskiy Airport",
+          "lat": 61.326622009277344,
+          "lng": 63.60191345214844
+        },
+        {
+          "code": "SGC",
+          "name": "Surgut Airport",
+          "lat": 61.34370040893555,
+          "lng": 73.40180206298828
+        },
+        {
+          "code": "UHMH",
+          "name": "Susuman Airport",
+          "lat": 62.764995,
+          "lng": 148.147014
+        },
+        {
+          "code": "USDO",
+          "name": "Tolka Airport",
+          "lat": 63.987808,
+          "lng": 82.050889
+        },
+        {
+          "code": "THX",
+          "name": "Turukhansk Airport",
+          "lat": 65.797203,
+          "lng": 87.935303
+        },
+        {
+          "code": "RU-0294",
+          "name": "Udskoye Airport",
+          "lat": 54.5217291038,
+          "lng": 134.423046112
+        },
+        {
+          "code": "USK",
+          "name": "Usinsk Airport",
+          "lat": 66.0047,
+          "lng": 57.367199
+        },
+        {
+          "code": "UKX",
+          "name": "Ust-Kut Airport",
+          "lat": 56.856701,
+          "lng": 105.730003
+        },
+        {
+          "code": "VAQ",
+          "name": "Vanavara Airport",
+          "lat": 60.356229,
+          "lng": 102.309641
+        },
+        {
+          "code": "VKO",
+          "name": "Vnukovo International Airport",
+          "lat": 55.591499,
+          "lng": 37.261501
+        },
+        {
+          "code": "VOG",
+          "name": "Volgograd International Airport",
+          "lat": 48.782501220703125,
+          "lng": 44.34550094604492
+        },
+        {
+          "code": "VKT",
+          "name": "Vorkuta Airport",
+          "lat": 67.488602,
+          "lng": 63.993099
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Sankt-Peterburg": {
+      "plane": [
+        {
+          "code": "SVX",
+          "name": "Koltsovo Airport",
+          "lat": 56.743099212646,
+          "lng": 60.802700042725
+        },
+        {
+          "code": "LED",
+          "name": "Pulkovo Airport",
+          "lat": 59.800301,
+          "lng": 30.262501
+        },
+        {
+          "code": "UWOS",
+          "name": "Svetlyy Airport",
+          "lat": 50.800721,
+          "lng": 60.902367
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Novosibirskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sverdlovskaya Oblast’": {
+      "plane": [
+        {
+          "code": "PKC",
+          "name": "Yelizovo Airport",
+          "lat": 53.16764,
+          "lng": 158.451863
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Tatarstan": {
+      "plane": [
+        {
+          "code": "ASF",
+          "name": "Astrakhan Narimanovo Boris M. Kustodiev International Airport",
+          "lat": 46.282843,
+          "lng": 48.010511
+        },
+        {
+          "code": "UEKU",
+          "name": "Kutana Airport",
+          "lat": 59.028719,
+          "lng": 131.788731
+        },
+        {
+          "code": "NFG",
+          "name": "Nefteyugansk Airport",
+          "lat": 61.108299,
+          "lng": 72.650002
+        },
+        {
+          "code": "TLY",
+          "name": "Plastun Airport",
+          "lat": 44.814999,
+          "lng": 136.292007
+        },
+        {
+          "code": "SUK",
+          "name": "Sakkyryr Airport",
+          "lat": 67.792,
+          "lng": 130.394
+        },
+        {
+          "code": "SKX",
+          "name": "Saransk Airport",
+          "lat": 54.12512969970703,
+          "lng": 45.212257385253906
+        },
+        {
+          "code": "UNAU",
+          "name": "Shushenskoye Airport",
+          "lat": 53.385176,
+          "lng": 92.044718
+        },
+        {
+          "code": "STW",
+          "name": "Stavropol Shpakovskoye Airport",
+          "lat": 45.10919952392578,
+          "lng": 42.11280059814453
+        },
+        {
+          "code": "TGK",
+          "name": "Taganrog Yuzhny Airport",
+          "lat": 47.1983333,
+          "lng": 38.8491667
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nizhegorodskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Chelyabinskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Samarskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Krasnodarskiy Kray": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Rostovskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bashkortostan": {
+      "plane": [
+        {
+          "code": "RU-0527",
+          "name": "Byas-Kyuyol Airport",
+          "lat": 59.498603,
+          "lng": 119.309163
+        },
+        {
+          "code": "UIIH",
+          "name": "Khuzhir Airport",
+          "lat": 53.217869,
+          "lng": 107.410469
+        },
+        {
+          "code": "NJC",
+          "name": "Nizhnevartovsk Airport",
+          "lat": 60.949299,
+          "lng": 76.483597
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Omskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Krasnoyarskiy Kray": {
+      "plane": [
+        {
+          "code": "AAQ",
+          "name": "Anapa Vityazevo Airport",
+          "lat": 45.002102,
+          "lng": 37.347301
+        },
+        {
+          "code": "EYK",
+          "name": "Beloyarskiy Airport",
+          "lat": 63.686901,
+          "lng": 66.698601
+        },
+        {
+          "code": "KCY",
+          "name": "Krasnoyarsk Cheremshanka Airport",
+          "lat": 56.177584,
+          "lng": 92.545881
+        },
+        {
+          "code": "KJA",
+          "name": "Krasnoyarsk International Airport",
+          "lat": 56.173077,
+          "lng": 92.492437
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Voronezhskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Permskiy Kray": {
+      "plane": [
+        {
+          "code": "MRV",
+          "name": "Mineralnyye Vody Airport",
+          "lat": 44.225101470947266,
+          "lng": 43.08190155029297
+        },
+        {
+          "code": "VUS",
+          "name": "Velikiy Ustyug Airport",
+          "lat": 60.7883,
+          "lng": 46.259998
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Volgogradskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tyumenskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Saratovskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dagestan": {
+      "plane": [
+        {
+          "code": "DLR",
+          "name": "Dalnerechensk Airport",
+          "lat": 45.877949,
+          "lng": 133.735822
+        },
+        {
+          "code": "GDZ",
+          "name": "Gelendzhik Airport",
+          "lat": 44.5820926295,
+          "lng": 38.0124807358
+        },
+        {
+          "code": "BQS",
+          "name": "Ignatyevo Airport",
+          "lat": 50.42539978027344,
+          "lng": 127.41200256347656
+        },
+        {
+          "code": "LPK",
+          "name": "Lipetsk Airport",
+          "lat": 52.70280075073242,
+          "lng": 39.53779983520508
+        },
+        {
+          "code": "MQF",
+          "name": "Magnitogorsk International Airport",
+          "lat": 53.39310073852539,
+          "lng": 58.755699157714844
+        },
+        {
+          "code": "SBT",
+          "name": "Sabetta International Airport",
+          "lat": 71.219167,
+          "lng": 72.052222
+        },
+        {
+          "code": "SLY",
+          "name": "Salekhard Airport",
+          "lat": 66.5907974243164,
+          "lng": 66.61100006103516
+        },
+        {
+          "code": "GDX",
+          "name": "Sokol Airport",
+          "lat": 59.9109992980957,
+          "lng": 150.72000122070312
+        },
+        {
+          "code": "OGZ",
+          "name": "Vladikavkaz Beslan International Airport",
+          "lat": 43.205101,
+          "lng": 44.606602
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Irkutskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Altayskiy Kray": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Udmurtiya": {
+      "plane": [
+        {
+          "code": "NUX",
+          "name": "Novy Urengoy Airport",
+          "lat": 66.06939697265625,
+          "lng": 76.52030181884766
+        },
+        {
+          "code": "PYJ",
+          "name": "Polyarny Airport",
+          "lat": 66.400398,
+          "lng": 112.029999
+        },
+        {
+          "code": "DEE",
+          "name": "Yuzhno-Kurilsk Mendeleyevo Airport",
+          "lat": 43.961066,
+          "lng": 145.684977
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Khabarovskiy Kray": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ul’yanovskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Primorskiy Kray": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Yaroslavskaya Oblast’": {
+      "plane": [
+        {
+          "code": "NLI",
+          "name": "Nikolayevsk-na-Amure Airport",
+          "lat": 53.154999,
+          "lng": 140.649994
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Tomskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kemerovskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Orenburgskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Moskovskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ryazanskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lipetskaya Oblast’": {
+      "plane": [
+        {
+          "code": "CSH",
+          "name": "Solovki Airport",
+          "lat": 65.029999,
+          "lng": 35.733334
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Chuvashiya": {
+      "plane": [
+        {
+          "code": "CYX",
+          "name": "Cherskiy Airport",
+          "lat": 68.7406005859375,
+          "lng": 161.33799743652344
+        },
+        {
+          "code": "DPT",
+          "name": "Deputatskiy Airport",
+          "lat": 69.392503,
+          "lng": 139.890012
+        },
+        {
+          "code": "LDG",
+          "name": "Leshukonskoye Airport",
+          "lat": 64.8960037231,
+          "lng": 45.7229995728
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kaliningradskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Penzenskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kirovskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tul’skaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Astrakhanskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Stavropol’skiy Kray": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Buryatiya": {
+      "plane": [
+        {
+          "code": "BTK",
+          "name": "Bratsk Airport",
+          "lat": 56.370601654052734,
+          "lng": 101.697998046875
+        },
+        {
+          "code": "BZK",
+          "name": "Bryansk Airport",
+          "lat": 53.214199,
+          "lng": 34.176399
+        },
+        {
+          "code": "NER",
+          "name": "Chulman Airport",
+          "lat": 56.913898468018,
+          "lng": 124.91400146484
+        },
+        {
+          "code": "MMK",
+          "name": "Murmansk Airport",
+          "lat": 68.78170013427734,
+          "lng": 32.75080108642578
+        },
+        {
+          "code": "NNM",
+          "name": "Naryan Mar Airport",
+          "lat": 67.639999,
+          "lng": 53.121899
+        },
+        {
+          "code": "VEO",
+          "name": "Severo-Yeniseysk Airport",
+          "lat": 60.373299,
+          "lng": 93.011703
+        },
+        {
+          "code": "UUBQ",
+          "name": "Sharya Airport",
+          "lat": 58.391989,
+          "lng": 45.554466
+        },
+        {
+          "code": "ULV",
+          "name": "Ulyanovsk Baratayevka Airport",
+          "lat": 54.268299,
+          "lng": 48.2267
+        },
+        {
+          "code": "ZKP",
+          "name": "Zyryanka Airport",
+          "lat": 65.7485,
+          "lng": 150.8889
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kurskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tverskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Khanty-Mansiyskiy Avtonomnyy Okrug-Yugra": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bryanskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ivanovskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vladimirskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Arkhangel’skaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Zabaykal’skiy Kray": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kaluzhskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Belgorodskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Smolenskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vologodskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sakha (Yakutiya)": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kurganskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mordoviya": {
+      "plane": [
+        {
+          "code": "BQG",
+          "name": "Bogorodskoye Airport",
+          "lat": 52.381041,
+          "lng": 140.449378
+        },
+        {
+          "code": "CEE",
+          "name": "Cherepovets Airport",
+          "lat": 59.273601532,
+          "lng": 38.015800476100004
+        },
+        {
+          "code": "REN",
+          "name": "Orenburg Central Airport",
+          "lat": 51.795799255371094,
+          "lng": 55.45669937133789
+        },
+        {
+          "code": "VHV",
+          "name": "Verkhnevilyuisk Airport",
+          "lat": 63.458057403564,
+          "lng": 120.26916503906
+        },
+        {
+          "code": "VOZ",
+          "name": "Voronezh International Airport",
+          "lat": 51.81420135498047,
+          "lng": 39.22959899902344
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Orlovskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "North Ossetia": {
+      "plane": [
+        {
+          "code": "GOJ",
+          "name": "Nizhny Novgorod / Strigino International Airport",
+          "lat": 56.228254,
+          "lng": 43.785197
+        },
+        {
+          "code": "NOZ",
+          "name": "Spichenkovo Airport",
+          "lat": 53.811401,
+          "lng": 86.877197
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Chechnya": {
+      "plane": [
+        {
+          "code": "NBC",
+          "name": "Begishevo Airport",
+          "lat": 55.564701,
+          "lng": 52.092499
+        },
+        {
+          "code": "RU-0493",
+          "name": "Bichevaya Airport",
+          "lat": 47.75029,
+          "lng": 135.64066
+        },
+        {
+          "code": "UHMG",
+          "name": "Chaybukha Airport",
+          "lat": 61.834999,
+          "lng": 160.548004
+        },
+        {
+          "code": "CSY",
+          "name": "Cheboksary Airport",
+          "lat": 56.090302,
+          "lng": 47.347301
+        },
+        {
+          "code": "CEK",
+          "name": "Chelyabinsk Balandino Airport",
+          "lat": 55.305801,
+          "lng": 61.5033
+        },
+        {
+          "code": "CKH",
+          "name": "Chokurdakh Airport",
+          "lat": 70.6231,
+          "lng": 147.901993
+        },
+        {
+          "code": "MCX",
+          "name": "Makhachkala Uytash International Airport",
+          "lat": 42.816799,
+          "lng": 47.652302
+        },
+        {
+          "code": "NZG",
+          "name": "Nizhneangarsk International Airport",
+          "lat": 55.8008,
+          "lng": 109.595001
+        },
+        {
+          "code": "PEX",
+          "name": "Pechora Airport",
+          "lat": 65.121101,
+          "lng": 57.130798
+        },
+        {
+          "code": "EKS",
+          "name": "Shakhtyorsk Airport",
+          "lat": 49.1903,
+          "lng": 142.082993
+        },
+        {
+          "code": "ULY",
+          "name": "Ulyanovsk East Airport",
+          "lat": 54.401001,
+          "lng": 48.8027
+        },
+        {
+          "code": "ZIX",
+          "name": "Zhigansk Airport",
+          "lat": 66.7965011597,
+          "lng": 123.361000061
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Tambovskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kareliya": {
+      "plane": [
+        {
+          "code": "ITU",
+          "name": "Iturup Airport",
+          "lat": 45.256389,
+          "lng": 147.95549
+        },
+        {
+          "code": "KPW",
+          "name": "Keperveem Airport",
+          "lat": 67.845001,
+          "lng": 166.139999
+        },
+        {
+          "code": "KGD",
+          "name": "Khrabrovo Airport",
+          "lat": 54.88999938964844,
+          "lng": 20.592599868774414
+        },
+        {
+          "code": "KGP",
+          "name": "Kogalym International Airport",
+          "lat": 62.190399169921875,
+          "lng": 74.53379821777344
+        },
+        {
+          "code": "UWOH",
+          "name": "Kvarkeno Airport",
+          "lat": 52.077797,
+          "lng": 59.686542
+        },
+        {
+          "code": "PWE",
+          "name": "Pevek Airport",
+          "lat": 69.783302,
+          "lng": 170.597
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Mariy-El": {
+      "plane": [
+        {
+          "code": "UUD",
+          "name": "Baikal International Airport",
+          "lat": 51.808614,
+          "lng": 107.439652
+        },
+        {
+          "code": "BAX",
+          "name": "Barnaul Airport",
+          "lat": 53.363800048828125,
+          "lng": 83.53849792480469
+        },
+        {
+          "code": "ARH",
+          "name": "Talagi Airport",
+          "lat": 64.60030364990234,
+          "lng": 40.71670150756836
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kostromskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Murmanskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kabardino-Balkariya": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Komi": {
+      "plane": [
+        {
+          "code": "EGO",
+          "name": "Belgorod International Airport",
+          "lat": 50.643798828125,
+          "lng": 36.5900993347168
+        },
+        {
+          "code": "TOF",
+          "name": "Bogashevo Airport",
+          "lat": 56.380298614502,
+          "lng": 85.208297729492
+        },
+        {
+          "code": "GRV",
+          "name": "Grozny Airport",
+          "lat": 43.388106,
+          "lng": 45.699772
+        },
+        {
+          "code": "IKT",
+          "name": "Irkutsk International Airport",
+          "lat": 52.268002,
+          "lng": 104.389
+        },
+        {
+          "code": "KZN",
+          "name": "Kazan International Airport",
+          "lat": 55.606201,
+          "lng": 49.278702
+        },
+        {
+          "code": "KSZ",
+          "name": "Kotlas Airport",
+          "lat": 61.235801696777344,
+          "lng": 46.6974983215332
+        },
+        {
+          "code": "KRO",
+          "name": "Kurgan Airport",
+          "lat": 55.4753,
+          "lng": 65.415604
+        },
+        {
+          "code": "URS",
+          "name": "Kursk East Airport",
+          "lat": 51.7505989074707,
+          "lng": 36.29560089111328
+        },
+        {
+          "code": "KYZ",
+          "name": "Kyzyl Airport",
+          "lat": 51.669399,
+          "lng": 94.400597
+        },
+        {
+          "code": "MQJ",
+          "name": "Moma Airport",
+          "lat": 66.450861,
+          "lng": 143.261551
+        },
+        {
+          "code": "NYM",
+          "name": "Nadym Airport",
+          "lat": 65.48090362548828,
+          "lng": 72.69889831542969
+        },
+        {
+          "code": "NGK",
+          "name": "Nogliki Airport",
+          "lat": 51.783955,
+          "lng": 143.141785
+        },
+        {
+          "code": "NSK",
+          "name": "Norilsk-Alykel Airport",
+          "lat": 69.31109619140625,
+          "lng": 87.33219909667969
+        },
+        {
+          "code": "OHO",
+          "name": "Okhotsk Airport",
+          "lat": 59.410065,
+          "lng": 143.056503
+        },
+        {
+          "code": "OLZ",
+          "name": "Olyokminsk Airport",
+          "lat": 60.401833,
+          "lng": 120.476094
+        },
+        {
+          "code": "OMS",
+          "name": "Omsk Central Airport",
+          "lat": 54.96699905395508,
+          "lng": 73.31050109863281
+        },
+        {
+          "code": "PEE",
+          "name": "Perm International Airport",
+          "lat": 57.914501,
+          "lng": 56.021198
+        },
+        {
+          "code": "KVX",
+          "name": "Pobedilovo Airport",
+          "lat": 58.503883,
+          "lng": 49.347831
+        },
+        {
+          "code": "RU-10065",
+          "name": "Pudozh",
+          "lat": 61.825001,
+          "lng": 36.580002
+        },
+        {
+          "code": "AER",
+          "name": "Sochi International Airport",
+          "lat": 43.449902,
+          "lng": 39.9566
+        },
+        {
+          "code": "SEK",
+          "name": "Srednekolymsk Airport",
+          "lat": 67.4805,
+          "lng": 153.7364
+        },
+        {
+          "code": "RYB",
+          "name": "Staroselye Airport",
+          "lat": 58.104198,
+          "lng": 38.929401
+        },
+        {
+          "code": "TKM",
+          "name": "Taksimo Airport",
+          "lat": 56.361668,
+          "lng": 114.93
+        },
+        {
+          "code": "IKS",
+          "name": "Tiksi Airport",
+          "lat": 71.697700500488,
+          "lng": 128.90299987793
+        },
+        {
+          "code": "UCT",
+          "name": "Ukhta Airport",
+          "lat": 63.566898,
+          "lng": 53.804699
+        },
+        {
+          "code": "RU-0050",
+          "name": "Yamburg Airport",
+          "lat": 67.986664,
+          "lng": 75.099998
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Amurskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Novgorodskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Pskovskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Khakasiya": {
+      "plane": [
+        {
+          "code": "KHV",
+          "name": "Khabarovsk Novy Airport",
+          "lat": 48.528338,
+          "lng": 135.188588
+        },
+        {
+          "code": "HMA",
+          "name": "Khanty Mansiysk Airport",
+          "lat": 61.0285,
+          "lng": 69.086098
+        },
+        {
+          "code": "HTG",
+          "name": "Khatanga Airport",
+          "lat": 71.97810363769531,
+          "lng": 102.49099731445312
+        },
+        {
+          "code": "UUS",
+          "name": "Yuzhno-Sakhalinsk Airport",
+          "lat": 46.885461,
+          "lng": 142.717466
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Sakhalinskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kamchatskiy Kray": {
+      "plane": [
+        {
+          "code": "ULWK",
+          "name": "Kichmengskiy Gorodok Airport",
+          "lat": 59.97700119018555,
+          "lng": 45.82500076293945
+        },
+        {
+          "code": "UHPK",
+          "name": "Ust'-Kamchatsk Airport",
+          "lat": 56.238854,
+          "lng": 162.689989
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Adygeya": {
+      "plane": [
+        {
+          "code": "USR",
+          "name": "Ust-Nera Airport",
+          "lat": 64.550003,
+          "lng": 143.115005
+        },
+        {
+          "code": "EIE",
+          "name": "Yeniseysk Airport",
+          "lat": 58.474201,
+          "lng": 92.112503
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ingushetiya": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Karachayevo-Cherkesiya": {
+      "plane": [
+        {
+          "code": "RU-0717",
+          "name": "Utrenniy Airport",
+          "lat": 71.011405,
+          "lng": 74.259759
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Tyva": {
+      "plane": [
+        {
+          "code": "HTA",
+          "name": "Chita-Kadala International Airport",
+          "lat": 52.026299,
+          "lng": 113.306
+        },
+        {
+          "code": "NYA",
+          "name": "Nyagan Airport",
+          "lat": 62.110001,
+          "lng": 65.614998
+        },
+        {
+          "code": "PEZ",
+          "name": "Penza Airport",
+          "lat": 53.110599517822266,
+          "lng": 45.02109909057617
+        },
+        {
+          "code": "TJM",
+          "name": "Roshchino International Airport",
+          "lat": 57.16833,
+          "lng": 65.31611
+        },
+        {
+          "code": "SCW",
+          "name": "Syktyvkar Airport",
+          "lat": 61.64699935913086,
+          "lng": 50.84510040283203
+        },
+        {
+          "code": "GOY",
+          "name": "Tura Mountain Airport",
+          "lat": 64.333511,
+          "lng": 100.432892
+        },
+        {
+          "code": "UFA",
+          "name": "Ufa International Airport",
+          "lat": 54.557498931885,
+          "lng": 55.874401092529
+        },
+        {
+          "code": "UKG",
+          "name": "Ust-Kuyga Airport",
+          "lat": 70.011002,
+          "lng": 135.645004
+        },
+        {
+          "code": "VVO",
+          "name": "Vladivostok International Airport",
+          "lat": 43.396256,
+          "lng": 132.148155
+        },
+        {
+          "code": "EIK",
+          "name": "Yeysk Airport",
+          "lat": 46.68,
+          "lng": 38.21
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Yamalo-Nenetskiy Avtonomnyy Okrug": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kalmykiya": {
+      "plane": [
+        {
+          "code": "VYI",
+          "name": "Vilyuisk Airport",
+          "lat": 63.756668,
+          "lng": 121.693336
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Leningradskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Magadanskaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Yevreyskaya Avtonomnaya Oblast’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Altay": {
+      "plane": [
+        {
+          "code": "ABA",
+          "name": "Abakan International Airport",
+          "lat": 53.740002,
+          "lng": 91.385002
+        },
+        {
+          "code": "BQJ",
+          "name": "Batagay Airport",
+          "lat": 67.648003,
+          "lng": 134.695007
+        },
+        {
+          "code": "ODO",
+          "name": "Bodaybo Airport",
+          "lat": 57.866100311299995,
+          "lng": 114.242996216
+        },
+        {
+          "code": "ESL",
+          "name": "Elista Airport",
+          "lat": 46.3739013671875,
+          "lng": 44.33089828491211
+        },
+        {
+          "code": "GSV",
+          "name": "Gagarin International Airport",
+          "lat": 51.712778,
+          "lng": 46.171111
+        },
+        {
+          "code": "MJZ",
+          "name": "Mirny Airport",
+          "lat": 62.534698486328125,
+          "lng": 114.03900146484375
+        },
+        {
+          "code": "NAL",
+          "name": "Nalchik Airport",
+          "lat": 43.512901306152344,
+          "lng": 43.636600494384766
+        },
+        {
+          "code": "SUY",
+          "name": "Suntar Airport",
+          "lat": 62.185001373291,
+          "lng": 117.63500213623
+        },
+        {
+          "code": "DYR",
+          "name": "Ugolny Yuri Ryktheu Airport",
+          "lat": 64.734902,
+          "lng": 177.740997
+        },
+        {
+          "code": "URJ",
+          "name": "Uray Airport",
+          "lat": 60.103298,
+          "lng": 64.826698
+        },
+        {
+          "code": "UMS",
+          "name": "Ust-Maya Airport",
+          "lat": 60.356998443604,
+          "lng": 134.43499755859
+        },
+        {
+          "code": "YKS",
+          "name": "Yakutsk Airport",
+          "lat": 62.093299865722656,
+          "lng": 129.77099609375
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nenetskiy Avtonomnyy Okrug": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Chukotskiy Avtonomnyy Okrug": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:17:47.791Z"
+  }
+}

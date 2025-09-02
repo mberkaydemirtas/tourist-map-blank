@@ -1,0 +1,167 @@
+{
+  "code": "KH",
+  "name": "Cambodia",
+  "cities": {
+    "Phnom Penh": {
+      "plane": [
+        {
+          "code": "PNH",
+          "name": "Phnom Penh International Airport",
+          "lat": 11.5466,
+          "lng": 104.844002
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Siem Reap": {
+      "plane": [
+        {
+          "code": "SAI",
+          "name": "Siem Reap-Angkor International Airport",
+          "lat": 13.369167,
+          "lng": 104.223056
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Battambang": {
+      "plane": [
+        {
+          "code": "BBM",
+          "name": "Battambang Airport",
+          "lat": 13.0956,
+          "lng": 103.223999
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kampong Cham": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Banteay Meanchey": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kampot": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Preah Sihanouk": {
+      "plane": [
+        {
+          "code": "KOS",
+          "name": "Sihanoukville International Airport",
+          "lat": 10.571969,
+          "lng": 103.632689
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Oddar Meanchey": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kratie": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Pursat": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Takeo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kampong Speu": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kampong Chhnang": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Svay Rieng": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Prey Veng": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kep": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tbong Khmum": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Koh Kong": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kampong Thom": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ratanakiri": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Stung Treng": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Preah Vihear": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mondolkiri": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Pailin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kandal": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:32:35.203Z"
+  }
+}

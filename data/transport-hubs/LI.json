@@ -1,0 +1,83 @@
+{
+  "code": "LI",
+  "name": "Liechtenstein",
+  "cities": {
+    "Schaan": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:3990462",
+          "name": "Schaan Bahnhof",
+          "lat": 47.1682962,
+          "lng": 9.5086018
+        }
+      ]
+    },
+    "Vaduz": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Triesen": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Balzers": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Eschen": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:1353606655",
+          "name": "Nendeln",
+          "lat": 47.200335,
+          "lng": 9.5417183
+        }
+      ],
+      "bus": []
+    },
+    "Mauren": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Triesenberg": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ruggell": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gamprin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Schellenberg": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Planken": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:51:52.368Z"
+  }
+}

@@ -1,0 +1,505 @@
+{
+  "code": "CO",
+  "name": "Colombia",
+  "cities": {
+    "Bogotá": {
+      "plane": [
+        {
+          "code": "BOG",
+          "name": "El Dorado International Airport",
+          "lat": 4.70159,
+          "lng": -74.1469
+        },
+        {
+          "code": "IBE",
+          "name": "Perales Airport",
+          "lat": 4.42161,
+          "lng": -75.1333
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Valle del Cauca": {
+      "plane": [
+        {
+          "code": "SVI",
+          "name": "Eduardo Falla Solano Airport",
+          "lat": 2.15217,
+          "lng": -74.7663
+        },
+        {
+          "code": "SJE",
+          "name": "Jorge E. Gonzalez Torres Airport",
+          "lat": 2.57969,
+          "lng": -72.6394
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Antioquia": {
+      "plane": [
+        {
+          "code": "BAQ",
+          "name": "Ernesto Cortissoz International Airport",
+          "lat": 10.8896,
+          "lng": -74.7808
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Atlántico": {
+      "plane": [
+        {
+          "code": "VVC",
+          "name": "Vanguardia Airport",
+          "lat": 4.16787,
+          "lng": -73.6138
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Bolívar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Santander": {
+      "plane": [
+        {
+          "code": "TLU",
+          "name": "Golfo de Morrosquillo Airport",
+          "lat": 9.50945,
+          "lng": -75.5854
+        },
+        {
+          "code": "ADZ",
+          "name": "Gustavo Rojas Pinilla International Airport",
+          "lat": 12.5836,
+          "lng": -81.7112
+        },
+        {
+          "code": "SMR",
+          "name": "Simón Bolívar International Airport",
+          "lat": 11.1196,
+          "lng": -74.2306
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Norte de Santander": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Huila": {
+      "plane": [
+        {
+          "code": "NVA",
+          "name": "Benito Salas Airport",
+          "lat": 2.95015,
+          "lng": -75.294
+        },
+        {
+          "code": "PEI",
+          "name": "Matecaña International Airport",
+          "lat": 4.81267,
+          "lng": -75.7395
+        },
+        {
+          "code": "NQU",
+          "name": "Reyes Murillo Airport",
+          "lat": 5.710348,
+          "lng": -77.261868
+        },
+        {
+          "code": "IPI",
+          "name": "San Luis Airport",
+          "lat": 0.861946,
+          "lng": -77.671783
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Meta": {
+      "plane": [
+        {
+          "code": "LET",
+          "name": "Alfredo Vásquez Cobo International Airport",
+          "lat": -4.19355,
+          "lng": -69.9432
+        },
+        {
+          "code": "EYP",
+          "name": "El Alcaravan - Yopal Airport",
+          "lat": 5.31911,
+          "lng": -72.384
+        },
+        {
+          "code": "AXM",
+          "name": "El Eden Airport",
+          "lat": 4.45278,
+          "lng": -75.7664
+        },
+        {
+          "code": "EOH",
+          "name": "Enrique Olaya Herrera Airport",
+          "lat": 6.219686,
+          "lng": -75.590597
+        },
+        {
+          "code": "MVP",
+          "name": "Fabio Alberto Leon Bentley Airport",
+          "lat": 1.25366,
+          "lng": -70.2339
+        },
+        {
+          "code": "TME",
+          "name": "Gustavo Vargas Airport",
+          "lat": 6.45108,
+          "lng": -71.7603
+        },
+        {
+          "code": "MDE",
+          "name": "Jose Maria Córdova International Airport",
+          "lat": 6.16454,
+          "lng": -75.4231
+        },
+        {
+          "code": "MTR",
+          "name": "Los Garzones Airport",
+          "lat": 8.82374,
+          "lng": -75.8258
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Risaralda": {
+      "plane": [
+        {
+          "code": "BGA",
+          "name": "Palonegro Airport",
+          "lat": 7.1265,
+          "lng": -73.1848
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Tolima": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Cesar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Cundinamarca": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Magdalena": {
+      "plane": [
+        {
+          "code": "BUN",
+          "name": "Gerardo Tobar López Airport",
+          "lat": 3.81963,
+          "lng": -76.9898
+        },
+        {
+          "code": "BSC",
+          "name": "José Celestino Mutis Airport",
+          "lat": 6.20292,
+          "lng": -77.3947
+        },
+        {
+          "code": "LMC",
+          "name": "La Macarena Airport",
+          "lat": 2.17565,
+          "lng": -73.78674
+        },
+        {
+          "code": "MZL",
+          "name": "La Nubia Airport",
+          "lat": 5.0296,
+          "lng": -75.4647
+        },
+        {
+          "code": "RVE",
+          "name": "Los Colonizadores Airport",
+          "lat": 6.951868,
+          "lng": -71.857179
+        },
+        {
+          "code": "CTG",
+          "name": "Rafael Nuñez International Airport",
+          "lat": 10.4424,
+          "lng": -75.513
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Caldas": {
+      "plane": [
+        {
+          "code": "CLO",
+          "name": "Alfonso Bonilla Aragon International Airport",
+          "lat": 3.54322,
+          "lng": -76.3816
+        },
+        {
+          "code": "VUP",
+          "name": "Alfonso López Pumarejo Airport",
+          "lat": 10.435,
+          "lng": -73.2495
+        },
+        {
+          "code": "PSO",
+          "name": "Antonio Nariño Airport",
+          "lat": 1.39625,
+          "lng": -77.2915
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nariño": {
+      "plane": [
+        {
+          "code": "SKGZ",
+          "name": "La Jagua Airport",
+          "lat": 2.1464,
+          "lng": -75.6944
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Córdoba": {
+      "plane": [
+        {
+          "code": "FLA",
+          "name": "Gustavo Artunduaga Paredes Airport",
+          "lat": 1.58919,
+          "lng": -75.5644
+        },
+        {
+          "code": "CZU",
+          "name": "Las Brujas Airport",
+          "lat": 9.33274,
+          "lng": -75.2856
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Quindío": {
+      "plane": [
+        {
+          "code": "UIB",
+          "name": "El Caraño Airport",
+          "lat": 5.69076,
+          "lng": -76.6412
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Cauca": {
+      "plane": [
+        {
+          "code": "APO",
+          "name": "Antonio Roldán Betancur Airport",
+          "lat": 7.81196,
+          "lng": -76.7164
+        },
+        {
+          "code": "CUC",
+          "name": "Camilo Daza International Airport",
+          "lat": 7.92757,
+          "lng": -72.5115
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Sucre": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "La Guajira": {
+      "plane": [
+        {
+          "code": "LPD",
+          "name": "La Pedrera Airport",
+          "lat": -1.324882,
+          "lng": -69.581294
+        },
+        {
+          "code": "LCR",
+          "name": "Virgilio Barco Vargas (La Chorrera) Airport",
+          "lat": -1.456361,
+          "lng": -72.801086
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Caquetá": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Boyacá": {
+      "plane": [
+        {
+          "code": "RCH",
+          "name": "Almirante Padilla Airport",
+          "lat": 11.5262,
+          "lng": -72.926
+        },
+        {
+          "code": "PPN",
+          "name": "Guillermo León Valencia Airport",
+          "lat": 2.4544,
+          "lng": -76.6093
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Chocó": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Casanare": {
+      "plane": [
+        {
+          "code": "EJA",
+          "name": "Yariguíes Airport",
+          "lat": 7.02433,
+          "lng": -73.8068
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Arauca": {
+      "plane": [
+        {
+          "code": "AUC",
+          "name": "Santiago Perez Airport",
+          "lat": 7.06888,
+          "lng": -70.7369
+        },
+        {
+          "code": "TCD",
+          "name": "Tarapacá Airport",
+          "lat": -2.895802,
+          "lng": -69.749762
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "San Andrés y Providencia": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Guaviare": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Putumayo": {
+      "plane": [
+        {
+          "code": "LQM",
+          "name": "Caucaya Airport",
+          "lat": -0.182278,
+          "lng": -74.7708
+        },
+        {
+          "code": "PCR",
+          "name": "German Olano Airport",
+          "lat": 6.18472,
+          "lng": -67.4932
+        },
+        {
+          "code": "TCO",
+          "name": "La Florida Airport",
+          "lat": 1.81442,
+          "lng": -78.7492
+        },
+        {
+          "code": "PUU",
+          "name": "Tres De Mayo Airport",
+          "lat": 0.505228,
+          "lng": -76.5008
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Vichada": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Amazonas": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vaupés": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Guainía": {
+      "plane": [
+        {
+          "code": "PVA",
+          "name": "El Embrujo Airport",
+          "lat": 13.357461,
+          "lng": -81.357977
+        },
+        {
+          "code": "GPI",
+          "name": "Juan Casiano Airport",
+          "lat": 2.57013,
+          "lng": -77.897969
+        },
+        {
+          "code": "PDA",
+          "name": "Obando Cesar Gaviria Trujillo Airport",
+          "lat": 3.85353,
+          "lng": -67.9062
+        }
+      ],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:23:48.056Z"
+  }
+}

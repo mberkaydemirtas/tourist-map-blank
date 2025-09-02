@@ -1,0 +1,102 @@
+{
+  "code": "AE",
+  "name": "United Arab Emirates",
+  "cities": {
+    "Dubayy": {
+      "plane": [
+        {
+          "code": "DWC",
+          "name": "Al Maktoum International Airport",
+          "lat": 24.896356,
+          "lng": 55.161389
+        },
+        {
+          "code": "DXB",
+          "name": "Dubai International Airport",
+          "lat": 25.2527999878,
+          "lng": 55.3643989563
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Abū Z̧aby": {
+      "plane": [
+        {
+          "code": "AUH",
+          "name": "Zayed International Airport",
+          "lat": 24.443764,
+          "lng": 54.651718
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ash Shāriqah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "‘Ajmān": {
+      "plane": [
+        {
+          "code": "AAN",
+          "name": "Al Ain International Airport",
+          "lat": 24.261699676513672,
+          "lng": 55.60919952392578
+        },
+        {
+          "code": "ZDY",
+          "name": "Delma Airport",
+          "lat": 24.51,
+          "lng": 52.3352
+        },
+        {
+          "code": "SHJ",
+          "name": "Sharjah International Airport",
+          "lat": 25.3286,
+          "lng": 55.5172
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ra’s al Khaymah": {
+      "plane": [
+        {
+          "code": "RKT",
+          "name": "Ras Al Khaimah International Airport",
+          "lat": 25.613500595092773,
+          "lng": 55.93880081176758
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Al Fujayrah": {
+      "plane": [
+        {
+          "code": "FJR",
+          "name": "Fujairah International Airport",
+          "lat": 25.1122,
+          "lng": 56.324001
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Umm al Qaywayn": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:28:24.054Z"
+  }
+}

@@ -1,0 +1,159 @@
+{
+  "code": "FO",
+  "name": "Faroe Islands",
+  "cities": {
+    "Tórshavn": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Klaksvík": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hvalba": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Skopun": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hvannasund": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Porkeri": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Fámjin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sandur": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Fuglafjarður": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hov": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vágur": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Runavík": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kvívík": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sumba": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Viðareiði": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Eystur": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nes": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Fugloy": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Eiði": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vágar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Skúvoy": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Skálavík": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sørvágur": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vestmanna": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sjóvar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tvøroyri": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Húsavík": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kunoy": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sunda": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:51:31.314Z"
+  }
+}

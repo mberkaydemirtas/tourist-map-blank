@@ -1,0 +1,56 @@
+{
+  "code": "TO",
+  "name": "Tonga",
+  "cities": {
+    "Tongatapu": {
+      "plane": [
+        {
+          "code": "TBU",
+          "name": "Fua'amotu International Airport",
+          "lat": -21.241199493408203,
+          "lng": -175.14999389648438
+        },
+        {
+          "code": "NTT",
+          "name": "Kuini Lavenia Airport",
+          "lat": -15.977297,
+          "lng": -173.791089
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Vava‘u": {
+      "plane": [
+        {
+          "code": "EUA",
+          "name": "Kaufana Airport",
+          "lat": -21.378299713100002,
+          "lng": -174.957992554
+        },
+        {
+          "code": "HPA",
+          "name": "Lifuka Island Airport",
+          "lat": -19.777000427246094,
+          "lng": -174.34100341796875
+        },
+        {
+          "code": "VAV",
+          "name": "Vava'u International Airport",
+          "lat": -18.58530044555664,
+          "lng": -173.96200561523438
+        }
+      ],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:50:38.064Z"
+  }
+}

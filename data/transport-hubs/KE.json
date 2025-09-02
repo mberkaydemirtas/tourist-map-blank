@@ -1,0 +1,2970 @@
+{
+  "code": "KE",
+  "name": "Kenya",
+  "cities": {
+    "Nairobi City": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:980721608",
+          "name": "Dagoretti Station",
+          "lat": -1.2920022,
+          "lng": 36.6966592
+        },
+        {
+          "code": "OSM:1217178186",
+          "name": "Jomo Kenyatta International Airport",
+          "lat": -1.3311881,
+          "lng": 36.925939
+        },
+        {
+          "code": "OSM:12133987509",
+          "name": "Kariobangi South",
+          "lat": -1.2693753,
+          "lng": 36.8873792
+        },
+        {
+          "code": "OSM:7899431806",
+          "name": "Leseru/Kitale Junction",
+          "lat": 0.5845726,
+          "lng": 35.1778429
+        },
+        {
+          "code": "OSM:315860746",
+          "name": "Londiani Railway Station",
+          "lat": -0.1667666,
+          "lng": 35.5934641
+        },
+        {
+          "code": "OSM:499873616",
+          "name": "Nairobi Central Railway Station",
+          "lat": -1.2916496,
+          "lng": 36.8285594
+        },
+        {
+          "code": "OSM:1995196455",
+          "name": "Naivasha Railway Station",
+          "lat": -0.7167558,
+          "lng": 36.43075
+        },
+        {
+          "code": "OSM:9852755744",
+          "name": "New NDI Station",
+          "lat": -3.3171188,
+          "lng": 38.5229273
+        },
+        {
+          "code": "OSM:735444225",
+          "name": "Ongata Rongai Train Station",
+          "lat": -1.4132444,
+          "lng": 36.7433156
+        },
+        {
+          "code": "OSM:980698322",
+          "name": "Pipeline Railway Station",
+          "lat": -1.3151634,
+          "lng": 36.8942194
+        },
+        {
+          "code": "OSM:980728857",
+          "name": "Ruiru Railway Station",
+          "lat": -1.1500322,
+          "lng": 36.9607633
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:129212096",
+          "name": "Acacia Booking Office",
+          "lat": 0.1800577,
+          "lng": 34.2974629
+        },
+        {
+          "code": "OSM:6208217648",
+          "name": "Airport Junction",
+          "lat": -1.3465226,
+          "lng": 36.9022718
+        },
+        {
+          "code": "OSM:1152598231",
+          "name": "bypass bus station",
+          "lat": -1.2644854,
+          "lng": 36.983024
+        },
+        {
+          "code": "OSM:6034423589",
+          "name": "Dundori Center",
+          "lat": -0.2542902,
+          "lng": 36.2340154
+        },
+        {
+          "code": "OSM:666885782",
+          "name": "Ingotse-Navakholo Bus Park",
+          "lat": 0.2878827,
+          "lng": 34.755706
+        },
+        {
+          "code": "OSM:6241778486",
+          "name": "Kaheho Bus Station",
+          "lat": -0.0577149,
+          "lng": 36.5255643
+        },
+        {
+          "code": "OSM:244668540",
+          "name": "Karatina Main Bus Station",
+          "lat": -0.4823638,
+          "lng": 37.1231296
+        },
+        {
+          "code": "OSM:5636724262",
+          "name": "Kayole Junction Ez",
+          "lat": -1.2572358,
+          "lng": 36.9227925
+        },
+        {
+          "code": "OSM:6216321645",
+          "name": "Kcb Community",
+          "lat": -1.3296847,
+          "lng": 36.6871753
+        },
+        {
+          "code": "OSM:833388695",
+          "name": "KINANGO BUS STATION",
+          "lat": -4.1378661,
+          "lng": 39.3169424
+        },
+        {
+          "code": "OSM:10008292218",
+          "name": "Legend Garissa Booking Station",
+          "lat": 1.7437792,
+          "lng": 40.0567283
+        },
+        {
+          "code": "OSM:4406623089",
+          "name": "Modern Coast Booking Nairobi Cross Lane",
+          "lat": -1.2817825,
+          "lng": 36.8279004
+        },
+        {
+          "code": "OSM:6031552844",
+          "name": "Modern Coast Bus Service",
+          "lat": -4.0404714,
+          "lng": 39.6815286
+        },
+        {
+          "code": "OSM:3431554322",
+          "name": "Mwingi Bus Station",
+          "lat": -0.932961,
+          "lng": 38.0579244
+        },
+        {
+          "code": "OSM:10772600705",
+          "name": "Naeka Sacco Bus to Oloitoktok 800ksh 2023",
+          "lat": -1.2847314,
+          "lng": 36.8306079
+        },
+        {
+          "code": "OSM:643861436",
+          "name": "Naivasha-Nairobi",
+          "lat": -0.7182351,
+          "lng": 36.4350644
+        },
+        {
+          "code": "OSM:4504394390",
+          "name": "Nakuru Bus Terminus",
+          "lat": -0.2837729,
+          "lng": 36.07579
+        },
+        {
+          "code": "OSM:4860921649",
+          "name": "Nakuru Bus Terminus",
+          "lat": -0.2849301,
+          "lng": 36.0755816
+        },
+        {
+          "code": "OSM:6210275899",
+          "name": "Namanga Junction",
+          "lat": -1.4356559,
+          "lng": 36.9726134
+        },
+        {
+          "code": "OSM:241570344",
+          "name": "Ngara Bus Terminus",
+          "lat": -1.2745564,
+          "lng": 36.8237201
+        },
+        {
+          "code": "OSM:5030997983",
+          "name": "Nyeri bus station",
+          "lat": -0.4211162,
+          "lng": 36.9515495
+        },
+        {
+          "code": "OSM:129307041",
+          "name": "Siaya bound and Nairobi Bound Bus Stage",
+          "lat": 0.1809588,
+          "lng": 34.2967493
+        },
+        {
+          "code": "OSM:5820858254",
+          "name": "Tahmeed Booking Office",
+          "lat": -1.2821787,
+          "lng": 36.8270832
+        },
+        {
+          "code": "OSM:5552396278",
+          "name": "Tripple (S) Services Kiambu/Kirigiti",
+          "lat": -1.2836045,
+          "lng": 36.825217
+        }
+      ]
+    },
+    "Mombasa": {
+      "plane": [
+        {
+          "code": "MBA",
+          "name": "Moi International Airport",
+          "lat": -4.03483,
+          "lng": 39.5942
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:2140649722",
+          "name": "Lumbwa",
+          "lat": -0.185521,
+          "lng": 35.5119097
+        },
+        {
+          "code": "OSM:1549363476",
+          "name": "Malaba",
+          "lat": 0.6332567,
+          "lng": 34.2727049
+        },
+        {
+          "code": "OSM:12603738815",
+          "name": "Membley/ Gitambaya",
+          "lat": -1.1576291,
+          "lng": 36.9552802
+        },
+        {
+          "code": "OSM:9815479964",
+          "name": "Mombasa SGR Terminus",
+          "lat": -4.0214386,
+          "lng": 39.5793699
+        },
+        {
+          "code": "OSM:2036915230",
+          "name": "Morendat",
+          "lat": -0.6710875,
+          "lng": 36.3863902
+        },
+        {
+          "code": "OSM:9303679790",
+          "name": "Morendat",
+          "lat": -0.6710164,
+          "lng": 36.3864557
+        },
+        {
+          "code": "OSM:1555338174",
+          "name": "Timboroa",
+          "lat": 0.0637006,
+          "lng": 35.5414611
+        },
+        {
+          "code": "OSM:12133955373",
+          "name": "Umoja/ Mutindwa",
+          "lat": -1.286093,
+          "lng": 36.8838886
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:10008230420",
+          "name": "ambasa coach",
+          "lat": 1.7498479,
+          "lng": 40.0588977
+        },
+        {
+          "code": "OSM:207693609",
+          "name": "Bus & Matatu Stage",
+          "lat": 0.0161072,
+          "lng": 37.077342
+        },
+        {
+          "code": "OSM:8050437502",
+          "name": "Coast Stage",
+          "lat": -1.290005,
+          "lng": 36.7468583
+        },
+        {
+          "code": "OSM:5552396290",
+          "name": "Embassava SACCO",
+          "lat": -1.2841561,
+          "lng": 36.8262243
+        },
+        {
+          "code": "OSM:174774496",
+          "name": "Kajamba Bus Stage",
+          "lat": 0.1534797,
+          "lng": 34.3345304
+        },
+        {
+          "code": "OSM:174344537",
+          "name": "Kakoth bus stage",
+          "lat": 0.1575002,
+          "lng": 34.353451
+        },
+        {
+          "code": "OSM:235799543",
+          "name": "Kendu Bay Bus Park",
+          "lat": -0.3683071,
+          "lng": 34.6508353
+        },
+        {
+          "code": "OSM:4701567991",
+          "name": "Likoni Matatu Stage",
+          "lat": -4.0825542,
+          "lng": 39.662863
+        },
+        {
+          "code": "OSM:6218304916",
+          "name": "Matasia",
+          "lat": -1.390897,
+          "lng": 36.6818094
+        },
+        {
+          "code": "OSM:5985310688",
+          "name": "Modern Coast",
+          "lat": -4.044045,
+          "lng": 39.6578549
+        },
+        {
+          "code": "OSM:7229869120",
+          "name": "Modern Coast",
+          "lat": -0.1012535,
+          "lng": 34.7612166
+        },
+        {
+          "code": "OSM:8050437486",
+          "name": "Msalaba",
+          "lat": -1.287575,
+          "lng": 36.748675
+        },
+        {
+          "code": "OSM:8050437507",
+          "name": "Msalaba Bus Stage",
+          "lat": -1.2874717,
+          "lng": 36.7487267
+        },
+        {
+          "code": "OSM:6213154924",
+          "name": "Mukuyu Bus Station",
+          "lat": -0.732309,
+          "lng": 37.1495406
+        },
+        {
+          "code": "OSM:2978942857",
+          "name": "Munyu Bus Station",
+          "lat": -1.0382624,
+          "lng": 37.0802042
+        },
+        {
+          "code": "OSM:5525515329",
+          "name": "Ngumba Bus Terminal",
+          "lat": -1.2337507,
+          "lng": 36.8844095
+        },
+        {
+          "code": "OSM:5555074078",
+          "name": "ROG SACCO",
+          "lat": -1.2867396,
+          "lng": 36.8271666
+        },
+        {
+          "code": "OSM:5636724236",
+          "name": "Sabasaba",
+          "lat": -1.2729997,
+          "lng": 36.9181408
+        },
+        {
+          "code": "OSM:9487237406",
+          "name": "Siakago Matatu Stage",
+          "lat": -0.5772015,
+          "lng": 37.6395282
+        },
+        {
+          "code": "OSM:5552396287",
+          "name": "Sony Classic",
+          "lat": -1.2837215,
+          "lng": 36.8253507
+        }
+      ]
+    },
+    "Kisumu": {
+      "plane": [
+        {
+          "code": "KIS",
+          "name": "Kisumu Airport",
+          "lat": -0.0861390009522438,
+          "lng": 34.72890090942383
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:12848569569",
+          "name": "Gitaru",
+          "lat": -1.2373738,
+          "lng": 36.6751103
+        },
+        {
+          "code": "OSM:2033248337",
+          "name": "Kedowa",
+          "lat": -0.2194462,
+          "lng": 35.543271
+        },
+        {
+          "code": "OSM:2134284487",
+          "name": "Kiboko",
+          "lat": -2.2070419,
+          "lng": 37.7272658
+        },
+        {
+          "code": "OSM:2137887278",
+          "name": "Kikumbulyu",
+          "lat": -2.435114,
+          "lng": 38.02407
+        },
+        {
+          "code": "OSM:3163683428",
+          "name": "Kima",
+          "lat": -1.9597141,
+          "lng": 37.2590349
+        },
+        {
+          "code": "OSM:8004830577",
+          "name": "Kima",
+          "lat": -1.9588548,
+          "lng": 37.2339378
+        },
+        {
+          "code": "OSM:1083330025",
+          "name": "Kisumu Railway Station",
+          "lat": -0.0861615,
+          "lng": 34.7579992
+        },
+        {
+          "code": "OSM:11136360059",
+          "name": "Kyulu",
+          "lat": -2.8904561,
+          "lng": 38.3580076
+        },
+        {
+          "code": "OSM:850149301",
+          "name": "Kyulu",
+          "lat": -2.890541,
+          "lng": 38.3578614
+        },
+        {
+          "code": "OSM:1199163089",
+          "name": "Kyulu",
+          "lat": -2.8283786,
+          "lng": 38.3183408
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:3264455328",
+          "name": "Easycoach Kisumu",
+          "lat": -0.0986073,
+          "lng": 34.7627536
+        },
+        {
+          "code": "OSM:4324883798",
+          "name": "Kikuyu Bus Station",
+          "lat": -1.2426167,
+          "lng": 36.6647886
+        },
+        {
+          "code": "OSM:5552396275",
+          "name": "Kinoo/Kikuyu",
+          "lat": -1.2836672,
+          "lng": 36.8250603
+        },
+        {
+          "code": "OSM:5333186922",
+          "name": "Kitale shuttles Co.",
+          "lat": -1.288245,
+          "lng": 36.8288228
+        },
+        {
+          "code": "OSM:9909405428",
+          "name": "Mololine shuttle bus",
+          "lat": -0.2814558,
+          "lng": 36.0774661
+        }
+      ]
+    },
+    "Kiambu": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:1537316967",
+          "name": "Kijabe",
+          "lat": -0.9476507,
+          "lng": 36.6021765
+        },
+        {
+          "code": "OSM:1545153968",
+          "name": "Kipkabus",
+          "lat": 0.2976423,
+          "lng": 35.5003485
+        },
+        {
+          "code": "OSM:2093930744",
+          "name": "Kipkarren",
+          "lat": 0.6108868,
+          "lng": 34.9718968
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5552396289",
+          "name": "City Bus",
+          "lat": -1.2839576,
+          "lng": 36.8256224
+        },
+        {
+          "code": "OSM:5308432168",
+          "name": "Coast Bus",
+          "lat": -4.0568136,
+          "lng": 39.6686965
+        },
+        {
+          "code": "OSM:10943820685",
+          "name": "Coast Bus",
+          "lat": -0.1009176,
+          "lng": 34.7598347
+        },
+        {
+          "code": "OSM:7234655285",
+          "name": "Dreamline bus",
+          "lat": -1.2817976,
+          "lng": 36.8273937
+        },
+        {
+          "code": "OSM:7232354885",
+          "name": "Dreamline Bus",
+          "lat": -4.0549648,
+          "lng": 39.6675657
+        },
+        {
+          "code": "OSM:6285338003",
+          "name": "kangaroo mini-bus",
+          "lat": 0.519661,
+          "lng": 35.2705533
+        },
+        {
+          "code": "OSM:7035559885",
+          "name": "KIAMOKAMA",
+          "lat": -0.8282467,
+          "lng": 34.8835142
+        },
+        {
+          "code": "OSM:551697193",
+          "name": "Kiambu Bus Stage",
+          "lat": -1.1688635,
+          "lng": 36.8262962
+        },
+        {
+          "code": "OSM:2978942856",
+          "name": "Kilimambogo Bus Station",
+          "lat": -1.0383863,
+          "lng": 37.0811017
+        },
+        {
+          "code": "OSM:353675252",
+          "name": "Kitengela Bus Stage",
+          "lat": -1.4705826,
+          "lng": 36.9599623
+        }
+      ]
+    },
+    "Nakuru": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:2134288782",
+          "name": "Makindu",
+          "lat": -2.2830843,
+          "lng": 37.8279324
+        },
+        {
+          "code": "OSM:1201121442",
+          "name": "Makindu",
+          "lat": -2.2602082,
+          "lng": 37.8021588
+        },
+        {
+          "code": "OSM:3708848126",
+          "name": "Maktau",
+          "lat": -3.4100513,
+          "lng": 38.1364752
+        },
+        {
+          "code": "OSM:12901751826",
+          "name": "Makuyu",
+          "lat": -0.8861919,
+          "lng": 37.1766597
+        },
+        {
+          "code": "OSM:830102885",
+          "name": "Maungu",
+          "lat": -3.5564558,
+          "lng": 38.7514918
+        },
+        {
+          "code": "OSM:4884988297",
+          "name": "Maungu",
+          "lat": -3.5491284,
+          "lng": 38.7400542
+        },
+        {
+          "code": "OSM:1083332906",
+          "name": "Mukuru",
+          "lat": -1.3176822,
+          "lng": 36.8767564
+        },
+        {
+          "code": "OSM:964767963",
+          "name": "Nakuru",
+          "lat": -0.283451,
+          "lng": 36.0775405
+        },
+        {
+          "code": "OSM:939984732",
+          "name": "Nano Moru",
+          "lat": -0.1714762,
+          "lng": 37.0196035
+        },
+        {
+          "code": "OSM:2185507792",
+          "name": "Nyahururu",
+          "lat": 0.0392471,
+          "lng": 36.3669975
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:7160660888",
+          "name": "Iten Matatu",
+          "lat": 0.5200811,
+          "lng": 35.2768532
+        },
+        {
+          "code": "OSM:8050437498",
+          "name": "Matatu",
+          "lat": -1.289265,
+          "lng": 36.7528
+        },
+        {
+          "code": "OSM:5950688785",
+          "name": "Modern Coast Express Nakuru branch",
+          "lat": -0.2832861,
+          "lng": 36.0701739
+        },
+        {
+          "code": "OSM:671167383",
+          "name": "Ngong matatu terminus",
+          "lat": -1.3604037,
+          "lng": 36.6564436
+        }
+      ]
+    },
+    "Uasin Gishu": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:980698338",
+          "name": "Embakasi Village Railway Station",
+          "lat": -1.3145801,
+          "lng": 36.9192912
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:7041958586",
+          "name": "Baraka mwisho",
+          "lat": -0.2621095,
+          "lng": 36.1544643
+        },
+        {
+          "code": "OSM:129225731",
+          "name": "Busia-Bound Bus Stage",
+          "lat": 0.1823114,
+          "lng": 34.2953591
+        },
+        {
+          "code": "OSM:10926187050",
+          "name": "Mololine Prestige Shuttle",
+          "lat": -0.1010056,
+          "lng": 34.7590763
+        },
+        {
+          "code": "OSM:5950738186",
+          "name": "Mololine shuttle",
+          "lat": -1.2820189,
+          "lng": 36.8257614
+        },
+        {
+          "code": "OSM:13009141047",
+          "name": "Royal swift Sacco",
+          "lat": -1.28427,
+          "lng": 36.8263005
+        },
+        {
+          "code": "OSM:129213836",
+          "name": "Ukwala-Bound Bus Stage",
+          "lat": 0.1807917,
+          "lng": 34.2952164
+        },
+        {
+          "code": "OSM:5552492024",
+          "name": "Zuri Genesis",
+          "lat": -1.2829702,
+          "lng": 36.8236761
+        }
+      ]
+    },
+    "Turkana": {
+      "plane": [
+        {
+          "code": "JJM",
+          "name": "Mulika Lodge Airport",
+          "lat": 0.165083,
+          "lng": 38.195141
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:1715853385",
+          "name": "Darajani",
+          "lat": -2.5873665,
+          "lng": 38.1180052
+        },
+        {
+          "code": "OSM:2602103439",
+          "name": "Fort Ternan",
+          "lat": -0.2052379,
+          "lng": 35.3446934
+        },
+        {
+          "code": "OSM:12565644084",
+          "name": "Lukenya",
+          "lat": -1.5235122,
+          "lng": 36.9654745
+        },
+        {
+          "code": "OSM:2377362266",
+          "name": "Mariakani",
+          "lat": -3.8657693,
+          "lng": 39.4712222
+        },
+        {
+          "code": "OSM:2131314840",
+          "name": "Sultan Hamud",
+          "lat": -2.0186792,
+          "lng": 37.3709884
+        },
+        {
+          "code": "OSM:2260730605",
+          "name": "Tumeiyo",
+          "lat": 0.2309881,
+          "lng": 35.5277043
+        },
+        {
+          "code": "OSM:2093931040",
+          "name": "Turbo",
+          "lat": 0.6314334,
+          "lng": 35.0532924
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:10297711909",
+          "name": "Guardian",
+          "lat": -0.6717966,
+          "lng": 34.7737507
+        },
+        {
+          "code": "OSM:7160639988",
+          "name": "iten main stage",
+          "lat": 0.669952,
+          "lng": 35.5062385
+        },
+        {
+          "code": "OSM:1175088178",
+          "name": "Matatu Main Place",
+          "lat": -1.0883441,
+          "lng": 35.8705015
+        },
+        {
+          "code": "OSM:9909405429",
+          "name": "Matatu stand",
+          "lat": -0.2816265,
+          "lng": 36.0764376
+        },
+        {
+          "code": "OSM:5731877437",
+          "name": "Matatu Stand",
+          "lat": 0.3456858,
+          "lng": 37.5802763
+        },
+        {
+          "code": "OSM:8050414675",
+          "name": "St Francis",
+          "lat": -1.2871233,
+          "lng": 36.753375
+        },
+        {
+          "code": "OSM:3291256562",
+          "name": "The Guardian Angel",
+          "lat": -0.1030142,
+          "lng": 34.7514754
+        },
+        {
+          "code": "OSM:4740212821",
+          "name": "Tushauriane",
+          "lat": -1.2665151,
+          "lng": 36.9160582
+        }
+      ]
+    },
+    "Kwale": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:11915747670",
+          "name": "Kitale",
+          "lat": 1.0179197,
+          "lng": 35.0036084
+        },
+        {
+          "code": "OSM:1715868850",
+          "name": "Konza",
+          "lat": -1.741275,
+          "lng": 37.1296369
+        },
+        {
+          "code": "OSM:3708848129",
+          "name": "Mwatate",
+          "lat": -3.5133278,
+          "lng": 38.3972682
+        },
+        {
+          "code": "OSM:6249434335",
+          "name": "Mwiki",
+          "lat": -1.2350815,
+          "lng": 36.9370912
+        },
+        {
+          "code": "OSM:1715853177",
+          "name": "Ngwata",
+          "lat": -2.5193731,
+          "lng": 38.0511083
+        },
+        {
+          "code": "OSM:5765265039",
+          "name": "Ngwata",
+          "lat": -2.5235832,
+          "lng": 38.0538561
+        },
+        {
+          "code": "OSM:11136464359",
+          "name": "Ngwata",
+          "lat": -2.5093149,
+          "lng": 38.0409789
+        },
+        {
+          "code": "OSM:1199052215",
+          "name": "Ngwata",
+          "lat": -2.5093546,
+          "lng": 38.0409013
+        },
+        {
+          "code": "OSM:5781920596",
+          "name": "Tsavo",
+          "lat": -3.0075713,
+          "lng": 38.4716245
+        },
+        {
+          "code": "OSM:1198891439",
+          "name": "Tsavo",
+          "lat": -3.0076028,
+          "lng": 38.4716252
+        },
+        {
+          "code": "OSM:1864848641",
+          "name": "Yala",
+          "lat": 0.0984534,
+          "lng": 34.536488
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:8050414671",
+          "name": "46 Stage",
+          "lat": -1.2837583,
+          "lng": 36.7424767
+        },
+        {
+          "code": "OSM:8050437508",
+          "name": "56 Stage",
+          "lat": -1.2782667,
+          "lng": 36.7506917
+        },
+        {
+          "code": "OSM:12759268963",
+          "name": "dreamline",
+          "lat": -4.0274633,
+          "lng": 39.6278412
+        },
+        {
+          "code": "OSM:10926187052",
+          "name": "Dreamline",
+          "lat": -0.1007792,
+          "lng": 34.759678
+        },
+        {
+          "code": "OSM:8050437492",
+          "name": "Fae",
+          "lat": -1.2771547,
+          "lng": 36.7508165
+        },
+        {
+          "code": "OSM:4740212822",
+          "name": "Kayole 1",
+          "lat": -1.262027,
+          "lng": 36.9195656
+        },
+        {
+          "code": "OSM:5636724234",
+          "name": "Kwa Chief",
+          "lat": -1.2715306,
+          "lng": 36.9188478
+        },
+        {
+          "code": "OSM:5636724258",
+          "name": "Kwa D.O",
+          "lat": -1.2746767,
+          "lng": 36.9105309
+        },
+        {
+          "code": "OSM:10008205618",
+          "name": "Orahey",
+          "lat": 1.7523133,
+          "lng": 40.0569458
+        },
+        {
+          "code": "OSM:10008205718",
+          "name": "Orahey",
+          "lat": 1.7523191,
+          "lng": 40.0584717
+        },
+        {
+          "code": "OSM:8050437488",
+          "name": "Prime",
+          "lat": -1.2764627,
+          "lng": 36.7592644
+        },
+        {
+          "code": "OSM:8050437494",
+          "name": "Stage",
+          "lat": -1.2756068,
+          "lng": 36.7567872
+        },
+        {
+          "code": "OSM:8050414676",
+          "name": "Stage 2",
+          "lat": -1.2823267,
+          "lng": 36.7523333
+        },
+        {
+          "code": "OSM:8050437490",
+          "name": "Stage 2",
+          "lat": -1.2764343,
+          "lng": 36.7593167
+        },
+        {
+          "code": "OSM:1038219189",
+          "name": "Stage 24",
+          "lat": -1.2505269,
+          "lng": 36.8740267
+        },
+        {
+          "code": "OSM:1038219188",
+          "name": "Stage 30",
+          "lat": -1.2548113,
+          "lng": 36.8667171
+        },
+        {
+          "code": "OSM:8050414663",
+          "name": "Stage Two",
+          "lat": -1.284965,
+          "lng": 36.7544333
+        }
+      ]
+    },
+    "Wajir": {
+      "plane": [
+        {
+          "code": "WJR",
+          "name": "Wajir Airport",
+          "lat": 1.73324,
+          "lng": 40.091599
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:1545092724",
+          "name": "Maji Mazuri",
+          "lat": -0.0140896,
+          "lng": 35.6948023
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5803349154",
+          "name": "Captain",
+          "lat": -0.3421952,
+          "lng": 36.3713863
+        },
+        {
+          "code": "OSM:8050414677",
+          "name": "Kabiro",
+          "lat": -1.2844435,
+          "lng": 36.7462581
+        },
+        {
+          "code": "OSM:8050414680",
+          "name": "Kabiro",
+          "lat": -1.287524,
+          "lng": 36.7486793
+        },
+        {
+          "code": "OSM:8050437489",
+          "name": "Salim",
+          "lat": -1.2765174,
+          "lng": 36.7593126
+        },
+        {
+          "code": "OSM:8050437491",
+          "name": "Salim rd",
+          "lat": -1.2814137,
+          "lng": 36.7541831
+        }
+      ]
+    },
+    "Kajiado": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:12133974300",
+          "name": "Aviation",
+          "lat": -1.3197544,
+          "lng": 36.9060491
+        },
+        {
+          "code": "OSM:8705042166",
+          "name": "Chaka Railway Station",
+          "lat": -0.3606237,
+          "lng": 37.0006713
+        },
+        {
+          "code": "OSM:2337577770",
+          "name": "Kajiado Railway Station",
+          "lat": -1.8406098,
+          "lng": 36.7943821
+        },
+        {
+          "code": "OSM:2260733618",
+          "name": "Kaptagat",
+          "lat": 0.3728728,
+          "lng": 35.470642
+        },
+        {
+          "code": "OSM:735627470",
+          "name": "Kibwezi Station",
+          "lat": -2.4067889,
+          "lng": 37.9370153
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:368887037",
+          "name": "Easycoach",
+          "lat": 0.3355001,
+          "lng": 34.4898685
+        },
+        {
+          "code": "OSM:368887866",
+          "name": "Easycoach",
+          "lat": 0.3592636,
+          "lng": 34.5005053
+        },
+        {
+          "code": "OSM:4487469611",
+          "name": "Kabuagi",
+          "lat": -1.3160133,
+          "lng": 36.7182437
+        },
+        {
+          "code": "OSM:9858646031",
+          "name": "Kajiado Bus Stage",
+          "lat": -1.8416924,
+          "lng": 36.7891439
+        },
+        {
+          "code": "OSM:4740212824",
+          "name": "Kanisani",
+          "lat": -1.270687,
+          "lng": 36.9130754
+        },
+        {
+          "code": "OSM:5555074090",
+          "name": "Karen/Hardy",
+          "lat": -1.2860984,
+          "lng": 36.8257626
+        },
+        {
+          "code": "OSM:9800929009",
+          "name": "Taj Mall",
+          "lat": -1.3236703,
+          "lng": 36.8991616
+        }
+      ]
+    },
+    "Mandera": {
+      "plane": [
+        {
+          "code": "MRE",
+          "name": "Mara Serena Lodge Airstrip",
+          "lat": -1.406111,
+          "lng": 35.008057
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:242166302",
+          "name": "Imara Daima",
+          "lat": -1.3283403,
+          "lng": 36.8742201
+        },
+        {
+          "code": "OSM:2050452292",
+          "name": "Matathia",
+          "lat": -0.976552,
+          "lng": 36.6209609
+        },
+        {
+          "code": "OSM:889275789",
+          "name": "Mazeras",
+          "lat": -3.9658038,
+          "lng": 39.5483394
+        },
+        {
+          "code": "OSM:2601979244",
+          "name": "Menengai",
+          "lat": -0.2045957,
+          "lng": 35.9659668
+        },
+        {
+          "code": "OSM:1715853566",
+          "name": "Mtito Andei",
+          "lat": -2.6887351,
+          "lng": 38.1710476
+        },
+        {
+          "code": "OSM:735627474",
+          "name": "Mtito Andei Station",
+          "lat": -2.6903431,
+          "lng": 38.1707662
+        },
+        {
+          "code": "OSM:2148387801",
+          "name": "Wangala",
+          "lat": -3.6052368,
+          "lng": 38.8333928
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:972859420",
+          "name": "Gatundu Bus Terminal",
+          "lat": -1.0117548,
+          "lng": 36.9005913
+        },
+        {
+          "code": "OSM:10008306417",
+          "name": "Golden Coach",
+          "lat": 1.7504716,
+          "lng": 40.0590546
+        },
+        {
+          "code": "OSM:5552396280",
+          "name": "Hannover Trans",
+          "lat": -1.2830404,
+          "lng": 36.8243037
+        },
+        {
+          "code": "OSM:644858100",
+          "name": "Limuru Town Terminal",
+          "lat": -1.1080716,
+          "lng": 36.6429792
+        },
+        {
+          "code": "OSM:4740212721",
+          "name": "Masimba",
+          "lat": -1.2781146,
+          "lng": 36.9080607
+        },
+        {
+          "code": "OSM:5552396281",
+          "name": "MSL Operators",
+          "lat": -1.2829151,
+          "lng": 36.8241428
+        },
+        {
+          "code": "OSM:5301974427",
+          "name": "Riamasagara",
+          "lat": -0.6753835,
+          "lng": 34.7189099
+        },
+        {
+          "code": "OSM:10926187053",
+          "name": "Tahmeed",
+          "lat": -0.1008662,
+          "lng": 34.7597553
+        },
+        {
+          "code": "OSM:10742546399",
+          "name": "Usueni/Meru stage",
+          "lat": -0.3067838,
+          "lng": 38.2192217
+        },
+        {
+          "code": "OSM:5552492023",
+          "name": "Westlands/Graffins",
+          "lat": -1.2816655,
+          "lng": 36.8224442
+        }
+      ]
+    },
+    "Kilifi": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:985072852",
+          "name": "Gilgil",
+          "lat": -0.4976968,
+          "lng": 36.325549
+        },
+        {
+          "code": "OSM:985072811",
+          "name": "Ilkek",
+          "lat": -0.5972762,
+          "lng": 36.3709751
+        },
+        {
+          "code": "OSM:2137899304",
+          "name": "Kibwezi",
+          "lat": -2.4108534,
+          "lng": 37.9612948
+        },
+        {
+          "code": "OSM:1540041708",
+          "name": "Kipkelion",
+          "lat": -0.1983704,
+          "lng": 35.4710917
+        },
+        {
+          "code": "OSM:1847315544",
+          "name": "Kipkelion",
+          "lat": -0.2140642,
+          "lng": 35.4254728
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:440148222",
+          "name": "Kilifi Stage",
+          "lat": -3.6328569,
+          "lng": 39.8521237
+        }
+      ]
+    },
+    "Vihiga": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:1624301487",
+          "name": "Muguga",
+          "lat": -1.1787125,
+          "lng": 36.6489392
+        },
+        {
+          "code": "OSM:2912829683",
+          "name": "Thika",
+          "lat": -1.0506083,
+          "lng": 37.0905534
+        },
+        {
+          "code": "OSM:735627469",
+          "name": "Voi Station",
+          "lat": -3.4028548,
+          "lng": 38.5753893
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:6241342213",
+          "name": "Gilgil Highway Stage",
+          "lat": -0.4975013,
+          "lng": 36.3117699
+        },
+        {
+          "code": "OSM:5388609221",
+          "name": "Subuiga",
+          "lat": 0.1402468,
+          "lng": 37.4725213
+        }
+      ]
+    },
+    "Machakos": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:2260728035",
+          "name": "Ainabkoi",
+          "lat": 0.1625349,
+          "lng": 35.5212801
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:6018946685",
+          "name": "Acacia to Busia",
+          "lat": -0.1031613,
+          "lng": 34.7562016
+        },
+        {
+          "code": "OSM:10008292618",
+          "name": "Golden Coach Station",
+          "lat": 1.7446998,
+          "lng": 40.0570477
+        }
+      ]
+    },
+    "Kakamega": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:1217178196",
+          "name": "Embakasi (former station)",
+          "lat": -1.3505949,
+          "lng": 36.8941437
+        },
+        {
+          "code": "OSM:1715869391",
+          "name": "Kalembwani",
+          "lat": -1.936262,
+          "lng": 37.189428
+        },
+        {
+          "code": "OSM:2910314001",
+          "name": "Karatina",
+          "lat": -0.4770912,
+          "lng": 37.1272647
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5552492022",
+          "name": "Eastleigh",
+          "lat": -1.2819825,
+          "lng": 36.8230012
+        },
+        {
+          "code": "OSM:9070752888",
+          "name": "Harambee stage",
+          "lat": -0.3152028,
+          "lng": 34.8966835
+        },
+        {
+          "code": "OSM:6046232197",
+          "name": "Kaptega",
+          "lat": 1.1889031,
+          "lng": 34.907094
+        },
+        {
+          "code": "OSM:1896054133",
+          "name": "Kona ya Musa",
+          "lat": -4.3046609,
+          "lng": 39.5556552
+        },
+        {
+          "code": "OSM:1717357041",
+          "name": "Kwa Kairu Stage",
+          "lat": -1.1420837,
+          "lng": 36.9670955
+        },
+        {
+          "code": "OSM:10742603312",
+          "name": "Kwa Kiinga",
+          "lat": -0.2959414,
+          "lng": 38.2512173
+        },
+        {
+          "code": "OSM:8050414667",
+          "name": "Raila Estate",
+          "lat": -1.28103,
+          "lng": 36.7408783
+        },
+        {
+          "code": "OSM:8050414672",
+          "name": "Soko Mjinga",
+          "lat": -1.282955,
+          "lng": 36.7471417
+        }
+      ]
+    },
+    "Nyeri": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:1864848434",
+          "name": "Butere",
+          "lat": 0.2193121,
+          "lng": 34.5028408
+        },
+        {
+          "code": "OSM:3255998951",
+          "name": "Chemelil",
+          "lat": -0.1057112,
+          "lng": 35.1121618
+        },
+        {
+          "code": "OSM:1004368396",
+          "name": "Esageri",
+          "lat": -0.064205,
+          "lng": 35.7838035
+        },
+        {
+          "code": "OSM:713073845",
+          "name": "Ngong",
+          "lat": -1.3506074,
+          "lng": 36.6811952
+        },
+        {
+          "code": "OSM:1004323453",
+          "name": "Njoro",
+          "lat": -0.3303517,
+          "lng": 35.9412999
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:858959636",
+          "name": "Olympic Terminus",
+          "lat": -1.3127527,
+          "lng": 36.7776822
+        },
+        {
+          "code": "OSM:4740212823",
+          "name": "Step 1",
+          "lat": -1.264978,
+          "lng": 36.9166598
+        }
+      ]
+    },
+    "Homa Bay": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:980698330",
+          "name": "Donholm Railway Station",
+          "lat": -1.3016935,
+          "lng": 36.8870581
+        },
+        {
+          "code": "OSM:369097636",
+          "name": "Syokimau Railway Station",
+          "lat": -1.3600926,
+          "lng": 36.906797
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5552396279",
+          "name": "Bahimia SACCO",
+          "lat": -1.2836714,
+          "lng": 36.8252985
+        },
+        {
+          "code": "OSM:5776763653",
+          "name": "Chiromo Bus Stage",
+          "lat": -1.270893,
+          "lng": 36.8070935
+        },
+        {
+          "code": "OSM:1456767017",
+          "name": "Corner ya Beach",
+          "lat": -4.2817447,
+          "lng": 39.5671161
+        },
+        {
+          "code": "OSM:1414162898",
+          "name": "Country Bus",
+          "lat": -1.2861636,
+          "lng": 36.835329
+        },
+        {
+          "code": "OSM:10008232717",
+          "name": "golden bus",
+          "lat": 1.7505781,
+          "lng": 40.0591375
+        },
+        {
+          "code": "OSM:8932284917",
+          "name": "jomoko mangu",
+          "lat": -1.0417837,
+          "lng": 37.0576708
+        },
+        {
+          "code": "OSM:3731530327",
+          "name": "Juja Stage",
+          "lat": -1.1066294,
+          "lng": 37.01523
+        },
+        {
+          "code": "OSM:260982233",
+          "name": "Local Matatu",
+          "lat": 0.5136063,
+          "lng": 35.2768628
+        },
+        {
+          "code": "OSM:2324284695",
+          "name": "Route 44/45",
+          "lat": -1.2277971,
+          "lng": 36.8815778
+        },
+        {
+          "code": "OSM:174344185",
+          "name": "Simenya bus stage",
+          "lat": 0.1568489,
+          "lng": 34.365012
+        }
+      ]
+    },
+    "Nandi": {
+      "plane": [
+        {
+          "code": "MYD",
+          "name": "Malindi Airport",
+          "lat": -3.2293100357055664,
+          "lng": 40.10169982910156
+        },
+        {
+          "code": "NYK",
+          "name": "Nanyuki Airport",
+          "lat": -0.062399,
+          "lng": 37.041008
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:11136494907",
+          "name": "Kanga",
+          "lat": -2.6047317,
+          "lng": 38.1169387
+        },
+        {
+          "code": "OSM:850516096",
+          "name": "Kanga",
+          "lat": -2.7468085,
+          "lng": 38.2426921
+        },
+        {
+          "code": "OSM:1199052216",
+          "name": "Kanga",
+          "lat": -2.6048339,
+          "lng": 38.116794
+        },
+        {
+          "code": "OSM:5781983838",
+          "name": "Kenani",
+          "lat": -2.8603277,
+          "lng": 38.337343
+        },
+        {
+          "code": "OSM:2030957042",
+          "name": "Londiani",
+          "lat": -0.1667701,
+          "lng": 35.594016
+        },
+        {
+          "code": "OSM:1864872277",
+          "name": "Luanda",
+          "lat": 0.0345389,
+          "lng": 34.5755276
+        },
+        {
+          "code": "OSM:1864848854",
+          "name": "Namasoli",
+          "lat": 0.125034,
+          "lng": 34.5391327
+        },
+        {
+          "code": "OSM:657638008",
+          "name": "Nanyuki",
+          "lat": 0.0074473,
+          "lng": 37.0703886
+        },
+        {
+          "code": "OSM:9852755770",
+          "name": "Ngadini",
+          "lat": -3.4613641,
+          "lng": 38.6564984
+        },
+        {
+          "code": "OSM:1074143316",
+          "name": "Ngadini",
+          "lat": -3.461467,
+          "lng": 38.6563427
+        },
+        {
+          "code": "OSM:960216933",
+          "name": "Rongai",
+          "lat": -0.1758015,
+          "lng": 35.8617495
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:8050414682",
+          "name": "Congo",
+          "lat": -1.288979,
+          "lng": 36.7531288
+        },
+        {
+          "code": "OSM:8050414683",
+          "name": "Congo",
+          "lat": -1.2890214,
+          "lng": 36.7531656
+        },
+        {
+          "code": "OSM:8050414684",
+          "name": "Congo",
+          "lat": -1.28922,
+          "lng": 36.7529233
+        },
+        {
+          "code": "OSM:11389722473",
+          "name": "kagundu-ini",
+          "lat": -0.4470127,
+          "lng": 36.9000916
+        },
+        {
+          "code": "OSM:5636724259",
+          "name": "Nyando",
+          "lat": -1.2773394,
+          "lng": 36.9158548
+        }
+      ]
+    },
+    "Garissa": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:6216196498",
+          "name": "Kephis Stage",
+          "lat": -1.3275666,
+          "lng": 36.691001
+        },
+        {
+          "code": "OSM:10008200518",
+          "name": "legend bus station",
+          "lat": 1.7497508,
+          "lng": 40.058666
+        },
+        {
+          "code": "OSM:2849748486",
+          "name": "Mariakani Bus Station",
+          "lat": -4.0564482,
+          "lng": 39.6684757
+        },
+        {
+          "code": "OSM:8050414666",
+          "name": "Mayas Stage",
+          "lat": -1.2856697,
+          "lng": 36.7412011
+        },
+        {
+          "code": "OSM:5552492026",
+          "name": "Star Bus Sacco",
+          "lat": -1.2821166,
+          "lng": 36.8253104
+        }
+      ]
+    },
+    "Narok": {
+      "plane": [
+        {
+          "code": "NBO",
+          "name": "Jomo Kenyatta International Airport",
+          "lat": -1.31923997402,
+          "lng": 36.9277992249
+        },
+        {
+          "code": "WIL",
+          "name": "Nairobi Wilson Airport",
+          "lat": -1.321720004081726,
+          "lng": 36.81480026245117
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:1074143294",
+          "name": "NDI Station",
+          "lat": -3.3171929,
+          "lng": 38.5227625
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:10978530358",
+          "name": "Ena Coach",
+          "lat": -0.1029204,
+          "lng": 34.7515945
+        },
+        {
+          "code": "OSM:12817662801",
+          "name": "ENA Coach",
+          "lat": -1.2881566,
+          "lng": 36.8309408
+        },
+        {
+          "code": "OSM:8050414674",
+          "name": "Kawangware Sokoni",
+          "lat": -1.2864744,
+          "lng": 36.7458261
+        },
+        {
+          "code": "OSM:5178217727",
+          "name": "Narokline",
+          "lat": -1.2823691,
+          "lng": 36.8309855
+        }
+      ]
+    },
+    "Trans Nzoia": {
+      "plane": [
+        {
+          "code": "ASV",
+          "name": "Amboseli Airport",
+          "lat": -2.645050048828125,
+          "lng": 37.25310134887695
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:2050433736",
+          "name": "Uplands (Lari)",
+          "lat": -1.038967,
+          "lng": 36.6433458
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:1456853157",
+          "name": "Akamba Bus Booking Station",
+          "lat": -4.2849026,
+          "lng": 39.5662653
+        },
+        {
+          "code": "OSM:10894994743",
+          "name": "charcoal seller point",
+          "lat": -0.7995384,
+          "lng": 38.4943797
+        },
+        {
+          "code": "OSM:5997702188",
+          "name": "Coast Bus Changamwe Head Office",
+          "lat": -4.0279379,
+          "lng": 39.6286792
+        },
+        {
+          "code": "OSM:125301881",
+          "name": "Muthurwa Bus Station",
+          "lat": -1.2879146,
+          "lng": 36.8338978
+        },
+        {
+          "code": "OSM:2982238061",
+          "name": "Transline Booking Office. Narok",
+          "lat": -1.0928855,
+          "lng": 35.8690978
+        }
+      ]
+    },
+    "Taita/Taveta": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:980728870",
+          "name": "Dandora Train Station",
+          "lat": -1.2589265,
+          "lng": 36.8961776
+        },
+        {
+          "code": "OSM:980728859",
+          "name": "Githurai Railway Station",
+          "lat": -1.2095016,
+          "lng": 36.9234404
+        },
+        {
+          "code": "OSM:980728858",
+          "name": "Kahawa West Railway Station",
+          "lat": -1.1868447,
+          "lng": 36.911712
+        },
+        {
+          "code": "OSM:294304720",
+          "name": "Thika Railway station",
+          "lat": -1.0503943,
+          "lng": 37.0905889
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:1617902152",
+          "name": "Githunguri Matatu Stage",
+          "lat": -1.0564418,
+          "lng": 36.7788707
+        },
+        {
+          "code": "OSM:6199038657",
+          "name": "Kenyatta Road Stage",
+          "lat": -1.1241509,
+          "lng": 37.0034096
+        },
+        {
+          "code": "OSM:6251534645",
+          "name": "Kenyatta University Stage Bus Bay",
+          "lat": -1.1796728,
+          "lng": 36.9392592
+        },
+        {
+          "code": "OSM:1719355502",
+          "name": "Lopha Travels",
+          "lat": -1.282815,
+          "lng": 36.8250001
+        },
+        {
+          "code": "OSM:5178217728",
+          "name": "Lopha Travels",
+          "lat": -1.2821372,
+          "lng": 36.8254291
+        },
+        {
+          "code": "OSM:5552396284",
+          "name": "Lopha Travels",
+          "lat": -1.2819728,
+          "lng": 36.8236788
+        },
+        {
+          "code": "OSM:321471841",
+          "name": "Main Bus and Matatu Stage",
+          "lat": -0.4219095,
+          "lng": 34.2075889
+        },
+        {
+          "code": "OSM:285409882",
+          "name": "Matatu stage",
+          "lat": -0.4816676,
+          "lng": 37.1254276
+        },
+        {
+          "code": "OSM:9278385178",
+          "name": "Matatu Stage Isinya",
+          "lat": -1.6875063,
+          "lng": 36.8465617
+        },
+        {
+          "code": "OSM:1157272311",
+          "name": "Matatu/Bus Stage",
+          "lat": 0.3352427,
+          "lng": 34.4892493
+        },
+        {
+          "code": "OSM:643848747",
+          "name": "Naivasha Matatu Stage",
+          "lat": -0.7153357,
+          "lng": 36.4328924
+        },
+        {
+          "code": "OSM:6213154954",
+          "name": "SAGANA MATATU STAGE",
+          "lat": -0.7236726,
+          "lng": 37.1617732
+        },
+        {
+          "code": "OSM:10926187054",
+          "name": "Samper Travel & Tours",
+          "lat": -0.1009644,
+          "lng": 34.7610565
+        },
+        {
+          "code": "OSM:291162638",
+          "name": "Thika Main stage",
+          "lat": -1.035185,
+          "lng": 37.076885
+        }
+      ]
+    },
+    "Isiolo": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:2134287272",
+          "name": "Ikoyo",
+          "lat": -2.2394364,
+          "lng": 37.7850998
+        },
+        {
+          "code": "OSM:11136278681",
+          "name": "Mbololo",
+          "lat": -3.1994286,
+          "lng": 38.5001956
+        },
+        {
+          "code": "OSM:1201095172",
+          "name": "Mbololo",
+          "lat": -3.1994381,
+          "lng": 38.5000105
+        },
+        {
+          "code": "OSM:1540015237",
+          "name": "Molo",
+          "lat": -0.2454714,
+          "lng": 35.7322087
+        },
+        {
+          "code": "OSM:12848641901",
+          "name": "Thogoto",
+          "lat": -1.2663887,
+          "lng": 36.6771667
+        }
+      ],
+      "bus": []
+    },
+    "Makueni": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:2030986487",
+          "name": "Makutano",
+          "lat": -0.0614267,
+          "lng": 35.6541852
+        },
+        {
+          "code": "OSM:2137941113",
+          "name": "Manyani",
+          "lat": -3.091833,
+          "lng": 38.4937383
+        },
+        {
+          "code": "OSM:1715843541",
+          "name": "Masongaleni",
+          "lat": -2.489502,
+          "lng": 38.050297
+        },
+        {
+          "code": "OSM:5781772759",
+          "name": "Mgalani",
+          "lat": -3.7717745,
+          "lng": 39.1877104
+        },
+        {
+          "code": "OSM:12848638695",
+          "name": "Mutuini",
+          "lat": -1.2963818,
+          "lng": 36.7064086
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:8050437506",
+          "name": "Mkokoteni",
+          "lat": -1.28891,
+          "lng": 36.7501983
+        }
+      ]
+    },
+    "Bungoma": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:2148387797",
+          "name": "Bachuma",
+          "lat": -3.6415923,
+          "lng": 38.8948822
+        },
+        {
+          "code": "OSM:4005905098",
+          "name": "Bungoma",
+          "lat": 0.57163,
+          "lng": 34.5608359
+        },
+        {
+          "code": "OSM:1217224506",
+          "name": "Changamwe",
+          "lat": -4.0143449,
+          "lng": 39.632133
+        },
+        {
+          "code": "OSM:1539995264",
+          "name": "Elburgon",
+          "lat": -0.3030535,
+          "lng": 35.8094262
+        },
+        {
+          "code": "OSM:1995160548",
+          "name": "Longonot town",
+          "lat": -0.8868095,
+          "lng": 36.4952772
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:397805203",
+          "name": "Bungoma Bus Station",
+          "lat": 0.5606394,
+          "lng": 34.5611136
+        },
+        {
+          "code": "OSM:8050414681",
+          "name": "Congo Kumi",
+          "lat": -1.2890004,
+          "lng": 36.7531121
+        },
+        {
+          "code": "OSM:8050437499",
+          "name": "Congo Stage",
+          "lat": -1.2893667,
+          "lng": 36.7528933
+        },
+        {
+          "code": "OSM:8050437501",
+          "name": "Congo Stage",
+          "lat": -1.2893167,
+          "lng": 36.7540233
+        },
+        {
+          "code": "OSM:8050437503",
+          "name": "County Government",
+          "lat": -1.2885417,
+          "lng": 36.7506733
+        },
+        {
+          "code": "OSM:1537502919",
+          "name": "Kencom",
+          "lat": -1.2856398,
+          "lng": 36.8249899
+        }
+      ]
+    },
+    "Meru": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:1819894051",
+          "name": "Koru",
+          "lat": -0.1796853,
+          "lng": 35.2641382
+        },
+        {
+          "code": "OSM:1864891854",
+          "name": "Lela",
+          "lat": -0.0290891,
+          "lng": 34.605608
+        },
+        {
+          "code": "OSM:1995196399",
+          "name": "Munyu",
+          "lat": -0.7895253,
+          "lng": 36.4484202
+        },
+        {
+          "code": "OSM:1645631466",
+          "name": "Ruiru",
+          "lat": -1.150303,
+          "lng": 36.9605273
+        },
+        {
+          "code": "OSM:1715869018",
+          "name": "Ulu",
+          "lat": -1.8128619,
+          "lng": 37.1438715
+        },
+        {
+          "code": "OSM:2491593555",
+          "name": "Webuye",
+          "lat": 0.6032228,
+          "lng": 34.771553
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5552396296",
+          "name": "Supermetro",
+          "lat": -1.2840914,
+          "lng": 36.8253424
+        },
+        {
+          "code": "OSM:5552396297",
+          "name": "Supermetro",
+          "lat": -1.2842559,
+          "lng": 36.8252374
+        }
+      ]
+    },
+    "Elgeyo/Marakwet": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:12848630937",
+          "name": "Dagoretti Market",
+          "lat": -1.28442,
+          "lng": 36.6828532
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5552396282",
+          "name": "Eastleigh Commuter Services",
+          "lat": -1.2825348,
+          "lng": 36.8239066
+        },
+        {
+          "code": "OSM:5552396276",
+          "name": "Eastleigh/Ngara/Mlango",
+          "lat": -1.2838156,
+          "lng": 36.8252379
+        },
+        {
+          "code": "OSM:5440156983",
+          "name": "Westlands/Ngara/Town Stage",
+          "lat": -1.2614964,
+          "lng": 36.8036087
+        }
+      ]
+    },
+    "Embu": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kisii": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:2060581637",
+          "name": "Kibos",
+          "lat": -0.0700753,
+          "lng": 34.8118372
+        },
+        {
+          "code": "OSM:1864892189",
+          "name": "Kisian",
+          "lat": -0.0711964,
+          "lng": 34.6771243
+        },
+        {
+          "code": "OSM:960216931",
+          "name": "Visoi",
+          "lat": -0.1089237,
+          "lng": 35.798752
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:1794068641",
+          "name": "Kisii Bus Sation",
+          "lat": -0.6734819,
+          "lng": 34.7730431
+        }
+      ]
+    },
+    "Laikipia": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5552396277",
+          "name": "Unified Poa",
+          "lat": -1.2832786,
+          "lng": 36.8245566
+        }
+      ]
+    },
+    "Samburu": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:1905972613",
+          "name": "Samburu",
+          "lat": -3.7790572,
+          "lng": 39.274202
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5552396291",
+          "name": "Buruburu SACCO",
+          "lat": -1.2844528,
+          "lng": 36.8261762
+        }
+      ]
+    },
+    "Busia": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:510671707",
+          "name": "Bura Station",
+          "lat": -3.5016311,
+          "lng": 38.3165292
+        },
+        {
+          "code": "OSM:2606292017",
+          "name": "Sabatia",
+          "lat": -0.0295066,
+          "lng": 35.745668
+        },
+        {
+          "code": "OSM:1806536534",
+          "name": "Sosian",
+          "lat": 0.4918197,
+          "lng": 35.3142452
+        },
+        {
+          "code": "OSM:1734478391",
+          "name": "Suswa",
+          "lat": -0.8317946,
+          "lng": 36.4559869
+        },
+        {
+          "code": "OSM:735444209",
+          "name": "Suswa",
+          "lat": -1.0447784,
+          "lng": 36.3204756
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5013388221",
+          "name": "46 Bus station",
+          "lat": -1.2857103,
+          "lng": 36.8248346
+        },
+        {
+          "code": "OSM:6048525797",
+          "name": "Bus Depot",
+          "lat": -4.0598857,
+          "lng": 39.6526386
+        },
+        {
+          "code": "OSM:12215837501",
+          "name": "Bus station",
+          "lat": -1.241265,
+          "lng": 34.4750274
+        },
+        {
+          "code": "OSM:6103394049",
+          "name": "Bus Station",
+          "lat": 0.3376482,
+          "lng": 37.9375292
+        },
+        {
+          "code": "OSM:12282590101",
+          "name": "Bus Station",
+          "lat": -1.1855653,
+          "lng": 36.9071288
+        },
+        {
+          "code": "OSM:12759268965",
+          "name": "buscar",
+          "lat": -4.0274532,
+          "lng": 39.6279086
+        },
+        {
+          "code": "OSM:10833489105",
+          "name": "Fyhj bus st",
+          "lat": 1.7606805,
+          "lng": 40.0637413
+        },
+        {
+          "code": "OSM:8050414670",
+          "name": "Muslim Stage",
+          "lat": -1.2800883,
+          "lng": 36.7439917
+        }
+      ]
+    },
+    "Kericho": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5552396286",
+          "name": "Killeton Sacco",
+          "lat": -1.282562,
+          "lng": 36.8251438
+        }
+      ]
+    },
+    "Kitui": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:1715869200",
+          "name": "Kiu",
+          "lat": -1.9001346,
+          "lng": 37.1612205
+        },
+        {
+          "code": "OSM:12901749586",
+          "name": "Mitubiri",
+          "lat": -0.995718,
+          "lng": 37.1361825
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:264239693",
+          "name": "Kitui Bus Station",
+          "lat": -1.3674591,
+          "lng": 38.0086268
+        },
+        {
+          "code": "OSM:6207691322",
+          "name": "Witethie",
+          "lat": -1.0678127,
+          "lng": 37.0503858
+        }
+      ]
+    },
+    "Lamu": {
+      "plane": [
+        {
+          "code": "LAU",
+          "name": "Manda Airport",
+          "lat": -2.252431,
+          "lng": 40.912892
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:2039569229",
+          "name": "Ol Kalou",
+          "lat": -0.2717578,
+          "lng": 36.376778
+        },
+        {
+          "code": "OSM:9284703954",
+          "name": "Ol Kalou",
+          "lat": -0.2708355,
+          "lng": 36.3768134
+        },
+        {
+          "code": "OSM:9284703997",
+          "name": "Ol Kalou",
+          "lat": -0.2716774,
+          "lng": 36.3766524
+        },
+        {
+          "code": "OSM:1825558955",
+          "name": "Plateau",
+          "lat": 0.4372596,
+          "lng": 35.3637179
+        }
+      ],
+      "bus": []
+    },
+    "Marsabit": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:503307704",
+          "name": "Emali Station",
+          "lat": -2.0843027,
+          "lng": 37.4726799
+        },
+        {
+          "code": "OSM:735452477",
+          "name": "Maai Mahiu",
+          "lat": -1.0601742,
+          "lng": 36.5365295
+        },
+        {
+          "code": "OSM:881457066",
+          "name": "Makadara Railway Station",
+          "lat": -1.2979567,
+          "lng": 36.8710868
+        },
+        {
+          "code": "OSM:735627473",
+          "name": "Mariakani Station",
+          "lat": -3.8601883,
+          "lng": 39.4606116
+        },
+        {
+          "code": "OSM:2033140561",
+          "name": "Mau summit",
+          "lat": -0.1716249,
+          "lng": 35.6797709
+        },
+        {
+          "code": "OSM:2093984740",
+          "name": "Moi's Bridge",
+          "lat": 0.8785854,
+          "lng": 35.116736
+        },
+        {
+          "code": "OSM:7068668931",
+          "name": "Satellite",
+          "lat": -1.2985823,
+          "lng": 36.7453812
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:1507544234",
+          "name": "Ambassador Bus Stage",
+          "lat": -1.2854623,
+          "lng": 36.8258768
+        },
+        {
+          "code": "OSM:5336131021",
+          "name": "Arusha shuttle",
+          "lat": -1.2810246,
+          "lng": 36.8187987
+        },
+        {
+          "code": "OSM:8050414678",
+          "name": "Bada Kabiro",
+          "lat": -1.2857447,
+          "lng": 36.745186
+        },
+        {
+          "code": "OSM:7987341021",
+          "name": "Corner Station",
+          "lat": -1.1853029,
+          "lng": 36.9947192
+        },
+        {
+          "code": "OSM:415582753",
+          "name": "Maai Mahiu",
+          "lat": -0.7189421,
+          "lng": 36.4343459
+        },
+        {
+          "code": "OSM:285466226",
+          "name": "Matatu station",
+          "lat": -0.537732,
+          "lng": 37.4542628
+        },
+        {
+          "code": "OSM:486435335",
+          "name": "Matatu station",
+          "lat": -3.4051175,
+          "lng": 38.3663045
+        },
+        {
+          "code": "OSM:913644028",
+          "name": "Matatu station",
+          "lat": -0.5384296,
+          "lng": 37.4547812
+        },
+        {
+          "code": "OSM:913644029",
+          "name": "Matatu station",
+          "lat": -0.5397338,
+          "lng": 37.4543886
+        },
+        {
+          "code": "OSM:170313973",
+          "name": "Maua Bus Station",
+          "lat": 0.234879,
+          "lng": 37.9403785
+        },
+        {
+          "code": "OSM:170313974",
+          "name": "Meru Bus Station",
+          "lat": 0.0463493,
+          "lng": 37.6567072
+        },
+        {
+          "code": "OSM:5448172338",
+          "name": "Moyale Star Bus Station",
+          "lat": 2.3315978,
+          "lng": 37.9893928
+        },
+        {
+          "code": "OSM:5448172428",
+          "name": "Moyale Star Bus Station",
+          "lat": 3.5651248,
+          "lng": 38.6455373
+        },
+        {
+          "code": "OSM:5448172431",
+          "name": "Moyale Star Bus Station",
+          "lat": 1.5899826,
+          "lng": 37.8025794
+        }
+      ]
+    },
+    "Baringo": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:980721606",
+          "name": "Kibera Train station",
+          "lat": -1.3055533,
+          "lng": 36.7697324
+        },
+        {
+          "code": "OSM:12565684133",
+          "name": "Mlolongo",
+          "lat": -1.3990488,
+          "lng": 36.9345142
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5803306154",
+          "name": "Karunga",
+          "lat": -0.4077277,
+          "lng": 36.3610319
+        },
+        {
+          "code": "OSM:4548730892",
+          "name": "Simba Booking Office",
+          "lat": -1.2833024,
+          "lng": 36.8286172
+        }
+      ]
+    },
+    "Kirinyaga": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:980721614",
+          "name": "Kikuyu Train Station",
+          "lat": -1.2463976,
+          "lng": 36.6615251
+        },
+        {
+          "code": "OSM:9071589956",
+          "name": "Kitengela",
+          "lat": -1.4895283,
+          "lng": 36.9730016
+        },
+        {
+          "code": "OSM:10561755460",
+          "name": "Miritini MGR Station",
+          "lat": -4.0046981,
+          "lng": 39.5763442
+        },
+        {
+          "code": "OSM:980728862",
+          "name": "Mwiki Railway Station",
+          "lat": -1.234818,
+          "lng": 36.9370294
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:332128885",
+          "name": "Kitengela",
+          "lat": -1.4773209,
+          "lng": 36.9578262
+        },
+        {
+          "code": "OSM:10742548223",
+          "name": "Mwingi stage",
+          "lat": -0.3084208,
+          "lng": 38.2194147
+        },
+        {
+          "code": "OSM:8050414664",
+          "name": "Riruta Stage",
+          "lat": -1.2866867,
+          "lng": 36.7525567
+        },
+        {
+          "code": "OSM:8050414665",
+          "name": "Riruta Stage",
+          "lat": -1.2859133,
+          "lng": 36.73959
+        }
+      ]
+    },
+    "Murang’a": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:1627178986",
+          "name": "Limuru Train Station",
+          "lat": -1.1149984,
+          "lng": 36.6428002
+        },
+        {
+          "code": "OSM:1293536340",
+          "name": "Limuru Train Station",
+          "lat": -1.1152445,
+          "lng": 36.6429388
+        },
+        {
+          "code": "OSM:2929680022",
+          "name": "Maragua",
+          "lat": -0.8002424,
+          "lng": 37.129907
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5534129324",
+          "name": "Mihango stage",
+          "lat": -1.2653,
+          "lng": 36.9232
+        }
+      ]
+    },
+    "Bomet": {
+      "plane": [
+        {
+          "code": "EDL",
+          "name": "Eldoret International Airport",
+          "lat": 0.4044579863548279,
+          "lng": 35.23889923095703
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:1806556401",
+          "name": "Eldoret",
+          "lat": 0.5235099,
+          "lng": 35.2734974
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:308855094",
+          "name": "Bomet",
+          "lat": -0.7812615,
+          "lng": 35.3429836
+        },
+        {
+          "code": "OSM:8050414679",
+          "name": "Coast",
+          "lat": -1.2871722,
+          "lng": 36.747486
+        },
+        {
+          "code": "OSM:8050437485",
+          "name": "Coast",
+          "lat": -1.2879967,
+          "lng": 36.7498617
+        },
+        {
+          "code": "OSM:8050437504",
+          "name": "Coast",
+          "lat": -1.2895267,
+          "lng": 36.7500917
+        },
+        {
+          "code": "OSM:2306253587",
+          "name": "ROUTE 46",
+          "lat": -1.2554157,
+          "lng": 36.8784714
+        },
+        {
+          "code": "OSM:5636724257",
+          "name": "Soweto",
+          "lat": -1.2814702,
+          "lng": 36.9148156
+        }
+      ]
+    },
+    "Tana River": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:369099643",
+          "name": "Athi River",
+          "lat": -1.4490116,
+          "lng": 36.9754995
+        },
+        {
+          "code": "OSM:3729213446",
+          "name": "Athi River (MGR)",
+          "lat": -1.449094,
+          "lng": 36.9754339
+        },
+        {
+          "code": "OSM:4893896401",
+          "name": "Athi River (SGR)",
+          "lat": -1.467976,
+          "lng": 36.9909186
+        },
+        {
+          "code": "OSM:593813501",
+          "name": "Athi River Station",
+          "lat": -1.467962,
+          "lng": 36.9905774
+        },
+        {
+          "code": "OSM:1293537315",
+          "name": "Kenyatta University",
+          "lat": -1.1792556,
+          "lng": 36.9264826
+        },
+        {
+          "code": "OSM:8121553060",
+          "name": "Tawa Stage",
+          "lat": -1.4602348,
+          "lng": 37.4397466
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:10844129451",
+          "name": "Banana Terminus",
+          "lat": -1.173875,
+          "lng": 36.758608
+        },
+        {
+          "code": "OSM:422390837",
+          "name": "Banana Terminus",
+          "lat": -1.173921,
+          "lng": 36.7586242
+        },
+        {
+          "code": "OSM:5552396285",
+          "name": "Githurai Zimmerman",
+          "lat": -1.2828524,
+          "lng": 36.8246945
+        },
+        {
+          "code": "OSM:11609602709",
+          "name": "Iten Matatu Drop Off",
+          "lat": 0.5217861,
+          "lng": 35.274887
+        },
+        {
+          "code": "OSM:5552396288",
+          "name": "Kaka Travellers Sacco",
+          "lat": -1.2837738,
+          "lng": 36.8254218
+        },
+        {
+          "code": "OSM:5552492025",
+          "name": "Latema Sacco;Nawas Hotel",
+          "lat": -1.2819906,
+          "lng": 36.8252616
+        },
+        {
+          "code": "OSM:5552396283",
+          "name": "Manchester Travellers",
+          "lat": -1.2825766,
+          "lng": 36.8239463
+        },
+        {
+          "code": "OSM:8074575635",
+          "name": "Mtwapa Weigh Bridge",
+          "lat": -3.9396186,
+          "lng": 39.7456186
+        },
+        {
+          "code": "OSM:1038219160",
+          "name": "Stage 29/30",
+          "lat": -1.2523304,
+          "lng": 36.8671321
+        }
+      ]
+    },
+    "Nyamira": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:12704039848",
+          "name": "nyamira express",
+          "lat": -4.0248521,
+          "lng": 39.6241306
+        }
+      ]
+    },
+    "Migori": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:3256017359",
+          "name": "Kibigori",
+          "lat": -0.0742341,
+          "lng": 35.0498757
+        },
+        {
+          "code": "OSM:3256041361",
+          "name": "Miwani",
+          "lat": -0.0733313,
+          "lng": 34.9845115
+        },
+        {
+          "code": "OSM:1819220226",
+          "name": "Muhoroni",
+          "lat": -0.1545296,
+          "lng": 35.2015314
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:8050437487",
+          "name": "Legomaria",
+          "lat": -1.2796728,
+          "lng": 36.7569723
+        },
+        {
+          "code": "OSM:667211926",
+          "name": "Migori Bus Park",
+          "lat": -1.0692994,
+          "lng": 34.4692178
+        },
+        {
+          "code": "OSM:8050414669",
+          "name": "Mtimoja",
+          "lat": -1.2838456,
+          "lng": 36.7529631
+        }
+      ]
+    },
+    "Siaya": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:3077874343",
+          "name": "Sagana",
+          "lat": -0.6674899,
+          "lng": 37.2042302
+        },
+        {
+          "code": "OSM:1715779190",
+          "name": "Simba",
+          "lat": -2.1560533,
+          "lng": 37.596014
+        },
+        {
+          "code": "OSM:11136453955",
+          "name": "Simba",
+          "lat": -2.1665895,
+          "lng": 37.6327757
+        },
+        {
+          "code": "OSM:1198959229",
+          "name": "Simba",
+          "lat": -2.1667733,
+          "lng": 37.6326995
+        },
+        {
+          "code": "OSM:2093984888",
+          "name": "Soy",
+          "lat": 0.679647,
+          "lng": 35.178012
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:8050414668",
+          "name": "Mayas",
+          "lat": -1.2866497,
+          "lng": 36.7422111
+        }
+      ]
+    },
+    "Nyandarua": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:2667331722",
+          "name": "Bus and Matatu Stand‎",
+          "lat": 0.5180451,
+          "lng": 35.2729577
+        }
+      ]
+    },
+    "West Pokot": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:8050437497",
+          "name": "Check Point",
+          "lat": -1.2745934,
+          "lng": 36.7587543
+        },
+        {
+          "code": "OSM:8050437493",
+          "name": "Checkpoint",
+          "lat": -1.2764191,
+          "lng": 36.7552591
+        },
+        {
+          "code": "OSM:5832891486",
+          "name": "Modern Coast Booking Office",
+          "lat": -1.281325,
+          "lng": 36.8237941
+        },
+        {
+          "code": "OSM:4431091691",
+          "name": "Modern Coast Express",
+          "lat": -4.0557492,
+          "lng": 39.6681408
+        },
+        {
+          "code": "OSM:5654059640",
+          "name": "Prestige Shuttle",
+          "lat": -1.2827624,
+          "lng": 36.8255895
+        },
+        {
+          "code": "OSM:10926187051",
+          "name": "Western Express Shuttle",
+          "lat": -0.1011674,
+          "lng": 34.7592393
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:26:47.788Z"
+  }
+}

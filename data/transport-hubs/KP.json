@@ -1,0 +1,106 @@
+{
+  "code": "KP",
+  "name": "Korea, North",
+  "cities": {
+    "P’yŏngyang": {
+      "plane": [
+        {
+          "code": "FNJ",
+          "name": "Pyongyang Sunan International Airport",
+          "lat": 39.224098,
+          "lng": 125.669998
+        },
+        {
+          "code": "DSO",
+          "name": "Sondok Airport",
+          "lat": 39.745201,
+          "lng": 127.473999
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Hamnam": {
+      "plane": [
+        {
+          "code": "RGO",
+          "name": "Orang (Chongjin) Airport",
+          "lat": 41.428538,
+          "lng": 129.647555
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Namp’o": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hambuk": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "P’yŏngnam": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kangwŏn": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "P’yŏngbuk": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hwangbuk": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Chagang": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hwangnam": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Rasŏn": {
+      "plane": [
+        {
+          "code": "WOS",
+          "name": "Wonsan Kalma International Airport",
+          "lat": 39.166801,
+          "lng": 127.486
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ryanggang": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kaesŏng": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:30:44.018Z"
+  }
+}

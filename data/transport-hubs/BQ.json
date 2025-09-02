@@ -1,0 +1,48 @@
+{
+  "code": "BQ",
+  "name": "Bonaire, Sint Eustatius, and Saba",
+  "cities": {
+    "Bonaire": {
+      "plane": [
+        {
+          "code": "EUX",
+          "name": "F. D. Roosevelt Airport",
+          "lat": 17.4965,
+          "lng": -62.979401
+        },
+        {
+          "code": "BON",
+          "name": "Flamingo International Airport",
+          "lat": 12.131,
+          "lng": -68.268501
+        },
+        {
+          "code": "SAB",
+          "name": "Juancho E. Yrausquin Airport",
+          "lat": 17.645351,
+          "lng": -63.220571
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Sint Eustatius": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Saba": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:51:39.117Z"
+  }
+}

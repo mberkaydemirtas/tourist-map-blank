@@ -1,0 +1,626 @@
+{
+  "code": "TH",
+  "name": "Thailand",
+  "cities": {
+    "Krung Thep Maha Nakhon": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Chiang Mai": {
+      "plane": [
+        {
+          "code": "CNX",
+          "name": "Chiang Mai International Airport",
+          "lat": 18.766799926799997,
+          "lng": 98.962600708
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nakhon Ratchasima": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Khon Kaen": {
+      "plane": [
+        {
+          "code": "KKC",
+          "name": "Khon Kaen Airport",
+          "lat": 16.466600418099997,
+          "lng": 102.783996582
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Songkhla": {
+      "plane": [
+        {
+          "code": "BKK",
+          "name": "Suvarnabhumi Airport",
+          "lat": 13.681099891662598,
+          "lng": 100.74700164794922
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Chon Buri": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Phitsanulok": {
+      "plane": [
+        {
+          "code": "PHS",
+          "name": "Phitsanulok Airport",
+          "lat": 16.7829,
+          "lng": 100.278999
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nonthaburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mukdahan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Surat Thani": {
+      "plane": [
+        {
+          "code": "URT",
+          "name": "Surat Thani Airport",
+          "lat": 9.13259983063,
+          "lng": 99.135597229
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Udon Thani": {
+      "plane": [
+        {
+          "code": "UTH",
+          "name": "Udon Thani Airport",
+          "lat": 17.386400222800003,
+          "lng": 102.788002014
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nakhon Pathom": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Samut Prakan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nakhon Si Thammarat": {
+      "plane": [
+        {
+          "code": "NST",
+          "name": "Nakhon Si Thammarat Airport",
+          "lat": 8.539620399475098,
+          "lng": 99.9447021484375
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nakhon Sawan": {
+      "plane": [
+        {
+          "code": "USM",
+          "name": "Samui Airport",
+          "lat": 9.54779,
+          "lng": 100.061996
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Rayong": {
+      "plane": [
+        {
+          "code": "UTP",
+          "name": "U-Tapao International Airport",
+          "lat": 12.679900169372559,
+          "lng": 101.00499725341797
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Pathum Thani": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Phuket": {
+      "plane": [
+        {
+          "code": "HKT",
+          "name": "Phuket International Airport",
+          "lat": 8.1132,
+          "lng": 98.316902
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Sakon Nakhon": {
+      "plane": [
+        {
+          "code": "SNO",
+          "name": "Sakon Nakhon Airport",
+          "lat": 17.195100784301758,
+          "lng": 104.11900329589844
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Chiang Rai": {
+      "plane": [
+        {
+          "code": "CEI",
+          "name": "Mae Fah Luang - Chiang Rai International Airport",
+          "lat": 19.952299,
+          "lng": 99.882896
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ubon Ratchathani": {
+      "plane": [
+        {
+          "code": "UBP",
+          "name": "Ubon Ratchathani Airport",
+          "lat": 15.2512998581,
+          "lng": 104.870002747
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Prachuap Khiri Khan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Chachoengsao": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Saraburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Yala": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Samut Sakhon": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Trang": {
+      "plane": [
+        {
+          "code": "TST",
+          "name": "Trang Airport",
+          "lat": 7.50874,
+          "lng": 99.6166
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Chaiyaphum": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lampang": {
+      "plane": [
+        {
+          "code": "LPT",
+          "name": "Lampang Airport",
+          "lat": 18.27090072631836,
+          "lng": 99.50420379638672
+        },
+        {
+          "code": "TDX",
+          "name": "Trat Airport",
+          "lat": 12.2746,
+          "lng": 102.319
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Lop Buri": {
+      "plane": [
+        {
+          "code": "LOE",
+          "name": "Loei Airport",
+          "lat": 17.43910026550293,
+          "lng": 101.72200012207031
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Tak": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Phra Nakhon Si Ayutthaya": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nong Khai": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Pattani": {
+      "plane": [
+        {
+          "code": "HDY",
+          "name": "Hat Yai International Airport",
+          "lat": 6.93320989609,
+          "lng": 100.392997742
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ratchaburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Narathiwat": {
+      "plane": [
+        {
+          "code": "NNT",
+          "name": "Nan Airport",
+          "lat": 18.807899475097656,
+          "lng": 100.78299713134766
+        },
+        {
+          "code": "NAW",
+          "name": "Narathiwat Airport",
+          "lat": 6.5199198722839355,
+          "lng": 101.74299621582031
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Maha Sarakham": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Si Sa Ket": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Surin": {
+      "plane": [
+        {
+          "code": "HHQ",
+          "name": "Hua Hin Airport",
+          "lat": 12.6361999512,
+          "lng": 99.951499939
+        },
+        {
+          "code": "PXR",
+          "name": "Surin Airport",
+          "lat": 14.868300437927,
+          "lng": 103.49800109863
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Phatthalung": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sukhothai": {
+      "plane": [
+        {
+          "code": "THS",
+          "name": "Sukhothai Airport",
+          "lat": 17.238000869750977,
+          "lng": 99.81819915771484
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Phetchaburi": {
+      "plane": [
+        {
+          "code": "PHY",
+          "name": "Phetchabun Airport",
+          "lat": 16.6760005951,
+          "lng": 101.194999695
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kalasin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Roi Et": {
+      "plane": [
+        {
+          "code": "ROI",
+          "name": "Roi Et Airport",
+          "lat": 16.1168,
+          "lng": 103.774002
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Chumphon": {
+      "plane": [
+        {
+          "code": "CJM",
+          "name": "Chumphon Airport",
+          "lat": 10.7112,
+          "lng": 99.361702
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Uttaradit": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Krabi": {
+      "plane": [
+        {
+          "code": "KBV",
+          "name": "Krabi Airport",
+          "lat": 8.09912014008,
+          "lng": 98.9861984253
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kamphaeng Phet": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nakhon Phanom": {
+      "plane": [
+        {
+          "code": "KOP",
+          "name": "Nakhon Phanom Airport",
+          "lat": 17.383801,
+          "lng": 104.642998
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Suphan Buri": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kanchanaburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Amnat Charoen": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Samut Songkhram": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Prachin Buri": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Phetchabun": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Buri Ram": {
+      "plane": [
+        {
+          "code": "BFV",
+          "name": "Buri Ram Airport",
+          "lat": 15.2295,
+          "lng": 103.252998
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Chanthaburi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Satun": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sa Kaeo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Yasothon": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nong Bua Lamphu": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Loei": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Phichit": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bueng Kan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Phayao": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ranong": {
+      "plane": [
+        {
+          "code": "UNN",
+          "name": "Ranong Airport",
+          "lat": 9.77762,
+          "lng": 98.585503
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Sing Buri": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lamphun": {
+      "plane": [
+        {
+          "code": "VTCO",
+          "name": "Lamphun Airport",
+          "lat": 18.548986,
+          "lng": 99.012426
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nakhon Nayok": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mae Hong Son": {
+      "plane": [
+        {
+          "code": "HGN",
+          "name": "Mae Hong Son Airport",
+          "lat": 19.3013,
+          "lng": 97.9758
+        },
+        {
+          "code": "MAQ",
+          "name": "Mae Sot Airport",
+          "lat": 16.699899673461914,
+          "lng": 98.54509735107422
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Uthai Thani": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Phrae": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Chai Nat": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ang Thong": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Trat": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Phangnga": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:17:43.256Z"
+  }
+}

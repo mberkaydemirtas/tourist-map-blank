@@ -1,0 +1,811 @@
+{
+  "code": "HN",
+  "name": "Honduras",
+  "cities": {
+    "Francisco Morazán": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:10605346105",
+          "name": "Bus from Choluteca and Nicaragua ends here",
+          "lat": 14.0938426,
+          "lng": -87.2109744
+        },
+        {
+          "code": "OSM:37112739",
+          "name": "Estación buses Interurbanos",
+          "lat": 15.7767477,
+          "lng": -86.8011534
+        },
+        {
+          "code": "OSM:10730227205",
+          "name": "Ferry to Roatan",
+          "lat": 16.4406779,
+          "lng": -85.8881798
+        },
+        {
+          "code": "OSM:223780899",
+          "name": "Gran Central Metropolitana",
+          "lat": 15.4713546,
+          "lng": -88.0313615
+        },
+        {
+          "code": "OSM:8215131217",
+          "name": "Transportes Gracianos",
+          "lat": 14.7783881,
+          "lng": -88.7798535
+        },
+        {
+          "code": "OSM:5563100722",
+          "name": "Transportes Mi Esperanza Sur",
+          "lat": 14.0848593,
+          "lng": -87.2108542
+        },
+        {
+          "code": "OSM:631655751",
+          "name": "Transportes Sierritas",
+          "lat": 14.5418408,
+          "lng": -86.8299461
+        }
+      ]
+    },
+    "Cortés": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5478965923",
+          "name": "CEU",
+          "lat": 15.3995403,
+          "lng": -87.8076985
+        },
+        {
+          "code": "OSM:4733043521",
+          "name": "Contreras Express",
+          "lat": 14.0938009,
+          "lng": -87.2124264
+        },
+        {
+          "code": "OSM:908804269",
+          "name": "Discovery",
+          "lat": 14.0932852,
+          "lng": -87.2109719
+        },
+        {
+          "code": "OSM:4526602134",
+          "name": "Ejecutivo V Estrellas",
+          "lat": 14.4540868,
+          "lng": -87.6440333
+        },
+        {
+          "code": "OSM:4617475095",
+          "name": "Ejecutivo V Estrellas",
+          "lat": 14.0602298,
+          "lng": -87.2194637
+        },
+        {
+          "code": "OSM:3230307027",
+          "name": "Seguro Social",
+          "lat": 15.5408837,
+          "lng": -88.0153235
+        },
+        {
+          "code": "OSM:3711395542",
+          "name": "TICA Bus",
+          "lat": 14.0440072,
+          "lng": -87.2223664
+        },
+        {
+          "code": "OSM:2461821217",
+          "name": "Ticabus",
+          "lat": 14.0903735,
+          "lng": -87.209965
+        },
+        {
+          "code": "OSM:5873558590",
+          "name": "to Catedral",
+          "lat": 14.0428989,
+          "lng": -87.222812
+        },
+        {
+          "code": "OSM:4602950289",
+          "name": "To CHaqewyq",
+          "lat": 15.0576085,
+          "lng": -88.7544949
+        },
+        {
+          "code": "OSM:3181205129",
+          "name": "Transportes El Rey",
+          "lat": 14.0926913,
+          "lng": -87.2117978
+        }
+      ]
+    },
+    "Atlántida": {
+      "plane": [
+        {
+          "code": "UII",
+          "name": "Utila Airport",
+          "lat": 16.1131,
+          "lng": -86.880302
+        }
+      ],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:4359541789",
+          "name": "Empresa Cristina",
+          "lat": 15.779541,
+          "lng": -86.8008814
+        },
+        {
+          "code": "OSM:3192207685",
+          "name": "Hedman Alas",
+          "lat": 14.0929818,
+          "lng": -87.2147892
+        },
+        {
+          "code": "OSM:3241979066",
+          "name": "Hedman Alas",
+          "lat": 14.0826858,
+          "lng": -87.1849165
+        },
+        {
+          "code": "OSM:4222837690",
+          "name": "Hedman Alas",
+          "lat": 14.8348875,
+          "lng": -89.1536544
+        },
+        {
+          "code": "OSM:321869882",
+          "name": "Hedman Alas",
+          "lat": 15.50793,
+          "lng": -88.0280116
+        },
+        {
+          "code": "OSM:7185203986",
+          "name": "Terminal Blanquita Express",
+          "lat": 14.0851473,
+          "lng": -87.2109584
+        },
+        {
+          "code": "OSM:7185204485",
+          "name": "Terminal Blanquita Express",
+          "lat": 13.3043316,
+          "lng": -87.1883889
+        },
+        {
+          "code": "OSM:4454226089",
+          "name": "Terminal Cristina",
+          "lat": 14.0787217,
+          "lng": -87.2166633
+        },
+        {
+          "code": "OSM:6082823741",
+          "name": "Transnica",
+          "lat": 14.0867744,
+          "lng": -87.1916933
+        }
+      ]
+    },
+    "Yoro": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:3181205128",
+          "name": "Mirna",
+          "lat": 14.0928213,
+          "lng": -87.2107624
+        },
+        {
+          "code": "OSM:1391133488",
+          "name": "UNAH",
+          "lat": 15.529296,
+          "lng": -88.035561
+        }
+      ]
+    },
+    "Choluteca": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:808558248",
+          "name": "Estación Tela",
+          "lat": 15.7809383,
+          "lng": -87.4493269
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5888790985",
+          "name": "Bus to Choluteca",
+          "lat": 13.0646344,
+          "lng": -86.9626334
+        },
+        {
+          "code": "OSM:420644771",
+          "name": "Punto de Buses Tela",
+          "lat": 15.7843066,
+          "lng": -87.449241
+        },
+        {
+          "code": "OSM:5563100921",
+          "name": "Yellow bus to Choluteca",
+          "lat": 14.0849388,
+          "lng": -87.2108871
+        }
+      ]
+    },
+    "Comayagua": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5893558686",
+          "name": "Bus to Guasa",
+          "lat": 13.310127,
+          "lng": -87.1789592
+        },
+        {
+          "code": "OSM:3900889616",
+          "name": "Discovery / Aurora",
+          "lat": 14.6626369,
+          "lng": -86.2160364
+        },
+        {
+          "code": "OSM:386101346",
+          "name": "Terminal de Autobuses Comayagua",
+          "lat": 14.4649983,
+          "lng": -87.6466019
+        },
+        {
+          "code": "OSM:11125142121",
+          "name": "Terminal de Comayagua",
+          "lat": 14.4649959,
+          "lng": -87.6464314
+        }
+      ]
+    },
+    "Olancho": {
+      "plane": [
+        {
+          "code": "RTB",
+          "name": "Juan Manuel Gálvez International Airport",
+          "lat": 16.316799,
+          "lng": -86.523003
+        },
+        {
+          "code": "GJA",
+          "name": "La Laguna Airport",
+          "lat": 16.4454,
+          "lng": -85.906601
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "El Paraíso": {
+      "plane": [
+        {
+          "code": "SAP",
+          "name": "Ramón Villeda Morales International Airport",
+          "lat": 15.4526,
+          "lng": -87.923599
+        }
+      ],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:6540665961",
+          "name": "Aleman - Plaza Miraflores - Centro",
+          "lat": 14.0584444,
+          "lng": -87.1966939
+        },
+        {
+          "code": "OSM:7020778489",
+          "name": "Bus hasta el Paraiso",
+          "lat": 13.7939556,
+          "lng": -86.5710366
+        },
+        {
+          "code": "OSM:5276633665",
+          "name": "El Rey Express",
+          "lat": 14.0750682,
+          "lng": -87.2129905
+        },
+        {
+          "code": "OSM:320753571",
+          "name": "El Rey Express",
+          "lat": 14.0966513,
+          "lng": -87.2105964
+        },
+        {
+          "code": "OSM:314260528",
+          "name": "El Soldado",
+          "lat": 14.3222734,
+          "lng": -87.6790229
+        },
+        {
+          "code": "OSM:2339342433",
+          "name": "Empresa Aurora",
+          "lat": 14.0971246,
+          "lng": -87.210197
+        },
+        {
+          "code": "OSM:6250568191",
+          "name": "Mikrobus para Santa Rosa 90L",
+          "lat": 14.4333019,
+          "lng": -89.1827252
+        },
+        {
+          "code": "OSM:419940859",
+          "name": "Tela Express",
+          "lat": 15.7787154,
+          "lng": -87.4517006
+        },
+        {
+          "code": "OSM:9910590817",
+          "name": "Terminal Juticalpa-Catacamas-Culmí",
+          "lat": 14.848872,
+          "lng": -85.8955559
+        },
+        {
+          "code": "OSM:5642609922",
+          "name": "Terminal Kamaldy",
+          "lat": 15.3991382,
+          "lng": -87.8130193
+        },
+        {
+          "code": "OSM:4605863989",
+          "name": "To Copan Ruins",
+          "lat": 15.0577573,
+          "lng": -88.7544319
+        }
+      ]
+    },
+    "Colón": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:9906835620",
+          "name": "Sultana",
+          "lat": 14.0937622,
+          "lng": -87.2108633
+        }
+      ]
+    },
+    "Copán": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5318860924",
+          "name": "CITRAL",
+          "lat": 15.8476755,
+          "lng": -87.9452041
+        },
+        {
+          "code": "OSM:1336513672",
+          "name": "Viana",
+          "lat": 15.7751445,
+          "lng": -86.8034969
+        }
+      ]
+    },
+    "Valle": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:9910591518",
+          "name": "Saenz",
+          "lat": 14.09375,
+          "lng": -87.2115034
+        },
+        {
+          "code": "OSM:5478968524",
+          "name": "Trasul",
+          "lat": 15.3997097,
+          "lng": -87.8102029
+        }
+      ]
+    },
+    "Intibucá": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:11541676370",
+          "name": "Cristina Bus",
+          "lat": 15.7750964,
+          "lng": -87.4454379
+        }
+      ]
+    },
+    "Lempira": {
+      "plane": [
+        {
+          "code": "PEU",
+          "name": "Puerto Lempira Airport",
+          "lat": 15.2622,
+          "lng": -83.781197
+        },
+        {
+          "code": "TGU",
+          "name": "Toncontín International Airport",
+          "lat": 14.0609,
+          "lng": -87.217201
+        }
+      ],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:3179708925",
+          "name": "La Puerta",
+          "lat": 15.4746973,
+          "lng": -88.0363723
+        },
+        {
+          "code": "OSM:4407615789",
+          "name": "Leiva",
+          "lat": 14.6004796,
+          "lng": -87.8367096
+        }
+      ]
+    },
+    "Gracias a Dios": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:727656952",
+          "name": "Estación San Pedro Sula",
+          "lat": 15.506087,
+          "lng": -88.0224113
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:417616080",
+          "name": "Estación de Buses ETUL",
+          "lat": 14.5970737,
+          "lng": -87.832599
+        },
+        {
+          "code": "OSM:1327072949",
+          "name": "Gran Terminal del Pacífico",
+          "lat": 13.29418,
+          "lng": -87.1537637
+        },
+        {
+          "code": "OSM:4421253276",
+          "name": "La Honduras Bus station",
+          "lat": 14.0514035,
+          "lng": -87.1734345
+        },
+        {
+          "code": "OSM:4937068321",
+          "name": "Mirna - Terminal de buses",
+          "lat": 14.0937623,
+          "lng": -87.2106135
+        },
+        {
+          "code": "OSM:787398964",
+          "name": "Parqueo de rapiditos ruta 4",
+          "lat": 15.5254359,
+          "lng": -88.0147389
+        },
+        {
+          "code": "OSM:7362072634",
+          "name": "Punto de rapiditos Ruta 4",
+          "lat": 15.5255126,
+          "lng": -88.0147198
+        },
+        {
+          "code": "OSM:4604540913",
+          "name": "Punto Rapiditos conejos",
+          "lat": 15.500909,
+          "lng": -87.9752224
+        },
+        {
+          "code": "OSM:1201615428",
+          "name": "Terminal de autobuses",
+          "lat": 15.4824151,
+          "lng": -86.5705108
+        },
+        {
+          "code": "OSM:3158565260",
+          "name": "terminal de buses",
+          "lat": 14.9176702,
+          "lng": -88.2371925
+        },
+        {
+          "code": "OSM:1234136155",
+          "name": "Terminal de Buses",
+          "lat": 14.5912385,
+          "lng": -88.58652
+        },
+        {
+          "code": "OSM:225113786",
+          "name": "Terminal de Buses",
+          "lat": 14.0984003,
+          "lng": -87.2096095
+        },
+        {
+          "code": "OSM:225113787",
+          "name": "Terminal de Buses",
+          "lat": 14.1014133,
+          "lng": -87.2059427
+        },
+        {
+          "code": "OSM:3292056776",
+          "name": "Terminal de buses Discovery",
+          "lat": 14.8453941,
+          "lng": -85.9007329
+        },
+        {
+          "code": "OSM:7215291329",
+          "name": "Terminal Travesía Mololoa",
+          "lat": 14.100292,
+          "lng": -87.1462576
+        },
+        {
+          "code": "OSM:12627062601",
+          "name": "Transportes La Ceiba a San Pedro Sula",
+          "lat": 15.7697093,
+          "lng": -86.7984412
+        },
+        {
+          "code": "OSM:5899743843",
+          "name": "Transportes Los Angelitos",
+          "lat": 14.5490909,
+          "lng": -86.8286434
+        },
+        {
+          "code": "OSM:12591656401",
+          "name": "Transportes Mirna - Bus to San Pedro Sula",
+          "lat": 15.769765,
+          "lng": -86.798479
+        }
+      ]
+    },
+    "La Paz": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:4560367489",
+          "name": "Diana Express",
+          "lat": 15.7696882,
+          "lng": -86.7945137
+        }
+      ]
+    },
+    "Santa Bárbara": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:2686018218",
+          "name": "Estción de Buses Antigua Penitenciaria Central",
+          "lat": 14.103283,
+          "lng": -87.2016517
+        },
+        {
+          "code": "OSM:4507022792",
+          "name": "Punto de Buses Campos bananeros",
+          "lat": 15.4015713,
+          "lng": -87.810821
+        },
+        {
+          "code": "OSM:6277248386",
+          "name": "Punto de taxis Tiloarque-Centro",
+          "lat": 14.0799921,
+          "lng": -87.2165304
+        },
+        {
+          "code": "OSM:9910577221",
+          "name": "Transporte Padilla Express",
+          "lat": 14.0948586,
+          "lng": -87.2111286
+        }
+      ]
+    },
+    "Ocotepeque": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:4917854521",
+          "name": "Minibus a Nuevo Otepeque 10L",
+          "lat": 14.3749092,
+          "lng": -89.2093931
+        },
+        {
+          "code": "OSM:4917854621",
+          "name": "Taxi compartido a Nuevo Otepeque 15L",
+          "lat": 14.3748245,
+          "lng": -89.2093009
+        }
+      ]
+    },
+    "Islas de la Bahía": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:9710266418",
+          "name": "Bus a El Amatillo (El Salvador) $7",
+          "lat": 13.0627825,
+          "lng": -86.958092
+        },
+        {
+          "code": "OSM:7006031687",
+          "name": "Bus hasta Tegucigalpa (85L)",
+          "lat": 13.8640752,
+          "lng": -86.5575327
+        },
+        {
+          "code": "OSM:9906835724",
+          "name": "Bus para Las Vegas, S.B. (Las Naranjos)",
+          "lat": 14.0947233,
+          "lng": -87.211807
+        },
+        {
+          "code": "OSM:3711395854",
+          "name": "Buses to La Esperanza",
+          "lat": 14.5858074,
+          "lng": -88.5811254
+        },
+        {
+          "code": "OSM:3845809383",
+          "name": "Estación de buses CATISA",
+          "lat": 15.4023712,
+          "lng": -87.8069081
+        },
+        {
+          "code": "OSM:738557188",
+          "name": "Estacion de Buses de Aldeas Garifunas",
+          "lat": 15.7855089,
+          "lng": -87.4504402
+        },
+        {
+          "code": "OSM:420911150",
+          "name": "Estación de buses de Mezapa",
+          "lat": 15.4018997,
+          "lng": -87.8066247
+        },
+        {
+          "code": "OSM:561248746",
+          "name": "Estacion de Buses Etimesa",
+          "lat": 15.7840278,
+          "lng": -87.4501421
+        },
+        {
+          "code": "OSM:4737365221",
+          "name": "Estación de buses Tiloarque",
+          "lat": 14.0797412,
+          "lng": -87.2163601
+        },
+        {
+          "code": "OSM:833661369",
+          "name": "Parada de buses escuela zona 2",
+          "lat": 14.1159885,
+          "lng": -87.2231969
+        },
+        {
+          "code": "OSM:833659275",
+          "name": "Parada de buses gasolinera",
+          "lat": 14.1192693,
+          "lng": -87.2243758
+        },
+        {
+          "code": "OSM:4507150095",
+          "name": "Punto de buses de los campos bananeros y Tela",
+          "lat": 15.4015713,
+          "lng": -87.8108398
+        },
+        {
+          "code": "OSM:4508994790",
+          "name": "Punto de Buses de los campos Bananeros y Tela",
+          "lat": 15.4015673,
+          "lng": -87.81088
+        },
+        {
+          "code": "OSM:5992586787",
+          "name": "Punto de Moto Taxi",
+          "lat": 14.0635326,
+          "lng": -87.2064415
+        },
+        {
+          "code": "OSM:6277247087",
+          "name": "Punto de taxis Centro-Tiloarque",
+          "lat": 14.1048265,
+          "lng": -87.2060046
+        },
+        {
+          "code": "OSM:11541676369",
+          "name": "Terminal Cristina Bus (a San Pedro, Tegu., La Ceiba)",
+          "lat": 15.775059,
+          "lng": -87.4455067
+        },
+        {
+          "code": "OSM:4057017684",
+          "name": "Terminal de Autobús a la frontera",
+          "lat": 14.8394386,
+          "lng": -89.1589722
+        },
+        {
+          "code": "OSM:756671576",
+          "name": "Terminal de Buses de Danlí",
+          "lat": 14.031424,
+          "lng": -86.5776392
+        },
+        {
+          "code": "OSM:1066690615",
+          "name": "Terminal de buses de Marcala",
+          "lat": 14.1601403,
+          "lng": -88.0346294
+        },
+        {
+          "code": "OSM:386261268",
+          "name": "Terminal de Buses Guilliam Guifarro",
+          "lat": 14.6637723,
+          "lng": -86.2155281
+        },
+        {
+          "code": "OSM:1198476059",
+          "name": "Terminal de Buses La Bendición",
+          "lat": 14.3124789,
+          "lng": -88.1734536
+        },
+        {
+          "code": "OSM:2875735855",
+          "name": "Terminal de Buses Municipal",
+          "lat": 13.3043609,
+          "lng": -87.185379
+        },
+        {
+          "code": "OSM:9686499349",
+          "name": "Terminal de Buses OTRANSINOL",
+          "lat": 14.6624289,
+          "lng": -86.2175943
+        },
+        {
+          "code": "OSM:5921525027",
+          "name": "Terminal de buses UNITEC",
+          "lat": 14.0497353,
+          "lng": -87.1734609
+        },
+        {
+          "code": "OSM:1198476058",
+          "name": "Terminal de Buses Zona Rural de Intibuca",
+          "lat": 14.312979,
+          "lng": -88.1764395
+        },
+        {
+          "code": "OSM:4737214721",
+          "name": "Terminal de buses, a la frontera Nicaragua",
+          "lat": 14.0694409,
+          "lng": -87.184763
+        },
+        {
+          "code": "OSM:450837438",
+          "name": "transportes de buses \"Rodriguez\"",
+          "lat": 14.4009097,
+          "lng": -87.0824227
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:37:51.832Z"
+  }
+}

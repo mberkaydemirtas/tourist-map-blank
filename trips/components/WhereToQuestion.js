@@ -1,39 +1,46 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, FlatList, Pressable, ScrollView } from 'react-native';
-
-import { searchCities, getCityCenter, listCountries } from '../services/geoService';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet, Modal,
+  FlatList, Pressable, InteractionManager,
+} from 'react-native';
+import { searchCities, listCountries, getCitiesForCountry } from '../services/geoService';
 
 const BORDER = '#23262F';
 const BTN = '#2563EB';
 
-/**
- * WhereToQuestion
- * - Tek şehir: Ülke (dropdown) + Şehir arama (ülkeye kısıtlı)
- * - Çoklu: Dinamik satırlar (Ülke dropdown + Şehir arama) + Ekle/Sil
- *
- * onChange(answer):
- *  - { mode: 'single', single: { countryCode, countryLabel, city } }
- *  - { mode: 'multi',  items: [{ countryCode, countryLabel, city }, ...] }
- * city: { place_id, name, description, center:{lat,lng} }
- */
-export default function WhereToQuestion({ initialMode = 'single', onChange }) {
-  const [mode, setMode] = useState(initialMode); // 'single' | 'multi'
+// basit debounce
+function debounce(fn, ms = 120) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), ms);
+  };
+}
 
-  // Ülke listesi (geoService)
+export default function WhereToQuestion({ initialMode = 'single', onChange }) {
+  const [mode, setMode] = useState(initialMode);
+
+  // Ülkeler
   const rawCountries = useMemo(() => listCountries(), []);
   const countryOptions = useMemo(
-    () => rawCountries.map(c => ({ key: c.code, label: c.name })),
+    () => rawCountries.map((c) => ({ key: c.code, label: c.name })),
     [rawCountries]
   );
-  const findLabel = (code) => rawCountries.find(c => c.code === code)?.name || code;
+  const findLabel = useCallback(
+    (code) => rawCountries.find((c) => c.code === code)?.name || code,
+    [rawCountries]
+  );
 
-  // --- Tek şehir durumu ---
-  const [singleCountryCode, setSingleCountryCode] = useState(rawCountries[0]?.code || 'TR');
+  // Tek şehir
+  const defaultCountry = rawCountries[0]?.code || 'TR';
+  const [singleCountryCode, setSingleCountryCode] = useState(defaultCountry);
   const [singleCityQuery, setSingleCityQuery] = useState('');
-  const [singleCityOptions, setSingleCityOptions] = useState([]);
+  const [singleCityOptions, setSingleCityOptions] = useState(() =>
+    getCitiesForCountry(defaultCountry, '')
+  );
   const [singleCity, setSingleCity] = useState(null);
 
-  // --- Çoklu şehir/ülke durumu ---
+  // Çoklu
   const [rows, setRows] = useState([makeRow()]);
   function makeRow() {
     return {
@@ -42,60 +49,128 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
       countryLabel: null,
       cityQuery: '',
       cityOptions: [],
-      city: null, // { place_id, name, description, center }
+      city: null,
     };
   }
-  const addRow = () => setRows(prev => [...prev, makeRow()]);
-  const removeRow = (id) => setRows(prev => prev.filter(r => r.id !== id));
+  const addRow = () => setRows((prev) => [...prev, makeRow()]);
+  const removeRow = (id) => setRows((prev) => prev.filter((r) => r.id !== id));
 
   const sessionTokenRef = useRef(makeSessionToken());
 
-  // --- Tek: şehir arama ---
-  async function runSingleCitySearch(q) {
-    setSingleCityQuery(q);
-    if (!q?.trim()) { setSingleCityOptions([]); return; }
-    const res = await searchCities({ countryCode: singleCountryCode, query: q, sessionToken: sessionTokenRef.current });
-    setSingleCityOptions(res);
-  }
+  /** ───── Tek şehir: şehir dropdown davranışı (debounced) ───── */
+  const runSingleCitySearch = useMemo(
+    () =>
+      debounce(async (q) => {
+        setSingleCityQuery(q);
+        setSingleCityOptions(getCitiesForCountry(singleCountryCode, q));
+        // Etkileşim sonrası preload (UI bloklanmasın)
+        InteractionManager.runAfterInteractions(async () => {
+          try {
+            await searchCities({ countryCode: singleCountryCode, query: q, sessionToken: sessionTokenRef.current });
+          } finally {
+            setSingleCityOptions(getCitiesForCountry(singleCountryCode, q));
+          }
+        });
+      }, 120),
+    [singleCountryCode]
+  );
+
   async function selectSingleCity(opt) {
-    const details = await getCityCenter(opt.place_id);
     const city = {
       place_id: opt.place_id,
       description: opt.description,
-      name: opt.main_text || details?.name || opt.description,
-      center: details?.location,
+      name: opt.main_text || opt.description,
+      center: null, // admins-only
     };
     setSingleCity(city);
     setSingleCityQuery(city.name || '');
-    setSingleCityOptions([]);
+    setSingleCityOptions(getCitiesForCountry(singleCountryCode, city.name || ''));
   }
 
-  // --- Çoklu: ülke/şehir işlemleri ---
+  // İlk açılış: default ülkeyi preload et (etkileşim sonrası)
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(async () => {
+      await searchCities({ countryCode: defaultCountry, query: '', sessionToken: sessionTokenRef.current });
+      setSingleCityOptions(getCitiesForCountry(defaultCountry, ''));
+    });
+    return () => { task?.cancel?.(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Ülke değişince: önce cache → sonra etkileşim sonrası preload
+  useEffect(() => {
+    setSingleCity(null);
+    setSingleCityQuery('');
+    setSingleCityOptions(getCitiesForCountry(singleCountryCode, ''));
+    const task = InteractionManager.runAfterInteractions(async () => {
+      try {
+        await searchCities({ countryCode: singleCountryCode, query: '', sessionToken: sessionTokenRef.current });
+      } finally {
+        setSingleCityOptions(getCitiesForCountry(singleCountryCode, ''));
+      }
+    });
+    return () => { task?.cancel?.(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [singleCountryCode]);
+
+  /** ───── Çoklu: ülke/şehir ───── */
   function pickRowCountry(rowId, code, label) {
-    setRows(prev => prev.map(r => r.id === rowId ? { ...r, countryCode: code, countryLabel: label, city: null, cityQuery: '', cityOptions: [] } : r));
+    setRows((prev) =>
+      prev.map((r) =>
+        r.id === rowId
+          ? { ...r, countryCode: code, countryLabel: label, city: null, cityQuery: '', cityOptions: getCitiesForCountry(code, '') }
+          : r
+      )
+    );
+    InteractionManager.runAfterInteractions(async () => {
+      try {
+        await searchCities({ countryCode: code, query: '', sessionToken: sessionTokenRef.current });
+      } finally {
+        setRows((prev) =>
+          prev.map((r) => (r.id === rowId ? { ...r, cityOptions: getCitiesForCountry(code, '') } : r))
+        );
+      }
+    });
   }
-  async function runRowCitySearch(rowId, q) {
-    setRows(prev => prev.map(r => r.id === rowId ? { ...r, cityQuery: q } : r));
-    const row = rows.find(r => r.id === rowId);
-    if (!row?.countryCode || !q?.trim()) {
-      setRows(prev => prev.map(r => r.id === rowId ? { ...r, cityOptions: [] } : r));
-      return;
-    }
-    const res = await searchCities({ countryCode: row.countryCode, query: q, sessionToken: sessionTokenRef.current });
-    setRows(prev => prev.map(r => r.id === rowId ? { ...r, cityOptions: res } : r));
-  }
+
+  const runRowCitySearch = useMemo(
+    () =>
+      debounce(async (rowId, q) => {
+        setRows((prev) =>
+          prev.map((r) =>
+            r.id === rowId
+              ? { ...r, cityQuery: q, cityOptions: getCitiesForCountry(r.countryCode, q) }
+              : r
+          )
+        );
+        const row = rows.find((r) => r.id === rowId);
+        if (!row?.countryCode) return;
+        InteractionManager.runAfterInteractions(async () => {
+          try {
+            await searchCities({ countryCode: row.countryCode, query: q, sessionToken: sessionTokenRef.current });
+          } finally {
+            setRows((prev) =>
+              prev.map((r) =>
+                r.id === rowId ? { ...r, cityOptions: getCitiesForCountry(r.countryCode, q) } : r
+              )
+            );
+          }
+        });
+      }, 120),
+    [rows]
+  );
+
   async function pickRowCity(rowId, opt) {
-    const details = await getCityCenter(opt.place_id);
     const city = {
       place_id: opt.place_id,
       description: opt.description,
-      name: opt.main_text || details?.name || opt.description,
-      center: details?.location,
+      name: opt.main_text || opt.description,
+      center: null,
     };
-    setRows(prev => prev.map(r => r.id === rowId ? { ...r, city, cityQuery: city.name || '', cityOptions: [] } : r));
+    setRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, city, cityQuery: city.name || '' } : r)));
   }
 
-  // --- Parent'a cevap gönder ---
+  /** ───── Parent onChange ───── */
   useEffect(() => {
     if (mode === 'single') {
       onChange?.({
@@ -108,12 +183,18 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
       });
     } else {
       const items = rows
-        .filter(r => r.countryCode && r.city?.name)
-        .map(r => ({ countryCode: r.countryCode, countryLabel: r.countryLabel || findLabel(r.countryCode), city: r.city }));
+        .filter((r) => r.countryCode && r.city?.name)
+        .map((r) => ({
+          countryCode: r.countryCode,
+          countryLabel: r.countryLabel || findLabel(r.countryCode),
+          city: r.city,
+        }));
       onChange?.({ mode: 'multi', items });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, singleCountryCode, singleCity, rows]);
+
+  /* ---------------- UI ---------------- */
 
   return (
     <View style={{ gap: 12 }}>
@@ -130,35 +211,42 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
               value={singleCountryCode}
               label={findLabel(singleCountryCode)}
               options={countryOptions}
-              onPick={(code, label) => {
-                setSingleCountryCode(code);
-                setSingleCity(null);
-                setSingleCityQuery('');
-                setSingleCityOptions([]);
-              }}
+              onPick={(code, label) => setSingleCountryCode(code)}
             />
           </Field>
 
-          <Field label="Şehir (ülkeye kısıtlı arama)">
+          <Field label="Şehir (yazdıkça en benzerler üste)">
             <TextInput
-              placeholder="Şehir adı yazın (örn. Paris)"
+              placeholder="Şehir yaz (örn. Paris)"
               placeholderTextColor="#6B7280"
               style={styles.input}
               value={singleCityQuery}
               onChangeText={runSingleCitySearch}
             />
-{!!singleCityOptions.length && (
-  <View style={styles.dropdown}>
-    <ScrollView style={{ maxHeight: 220 }} nestedScrollEnabled>
-      {singleCityOptions.map((item) => (
-        <TouchableOpacity key={item.place_id} style={styles.dropItem} onPress={() => selectSingleCity(item)}>
-          <Text style={styles.dropText}>{item.description}</Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
-  </View>
-)}
-
+            {!!singleCityOptions.length && (
+              <View style={styles.dropdown}>
+                <FlatList
+                  data={singleCityOptions}
+                  keyExtractor={(item) => String(item.place_id)}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity style={styles.dropItem} onPress={() => selectSingleCity(item)}>
+                      <Text style={styles.dropText}>{item.description}</Text>
+                    </TouchableOpacity>
+                  )}
+                  ItemSeparatorComponent={() => <View style={styles.separator} />}
+                  initialNumToRender={16}
+                  maxToRenderPerBatch={16}
+                  windowSize={6}
+                  removeClippedSubviews
+                  style={{ maxHeight: 240 }}
+                />
+                {singleCityOptions.length >= 200 && (
+                  <Text style={styles.hint}>
+                    Çok sonuç var, daha fazla daraltmak için yazmaya devam edin.
+                  </Text>
+                )}
+              </View>
+            )}
             {singleCity?.name ? <Text style={styles.selInfo}>Seçilen: {singleCity.name}</Text> : null}
           </Field>
         </>
@@ -175,7 +263,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                 />
               </Field>
 
-              <Field label="Şehir (ülkeye kısıtlı arama)">
+              <Field label="Şehir (yazdıkça en benzerler üste)">
                 <TextInput
                   placeholder="Şehir adı yazın"
                   placeholderTextColor="#6B7280"
@@ -184,18 +272,31 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                   onChangeText={(q) => runRowCitySearch(row.id, q)}
                   editable={!!row.countryCode}
                 />
-{!!row.cityOptions?.length && (
-  <View style={styles.dropdown}>
-    <ScrollView style={{ maxHeight: 220 }} nestedScrollEnabled>
-      {row.cityOptions.map((item) => (
-        <TouchableOpacity key={item.place_id} style={styles.dropItem} onPress={() => pickRowCity(row.id, item)}>
-          <Text style={styles.dropText}>{item.description}</Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
-  </View>
-)}
 
+                {!!row.cityOptions?.length && (
+                  <View style={styles.dropdown}>
+                    <FlatList
+                      data={row.cityOptions}
+                      keyExtractor={(item) => String(item.place_id)}
+                      renderItem={({ item }) => (
+                        <TouchableOpacity style={styles.dropItem} onPress={() => pickRowCity(row.id, item)}>
+                          <Text style={styles.dropText}>{item.description}</Text>
+                        </TouchableOpacity>
+                      )}
+                      ItemSeparatorComponent={() => <View style={styles.separator} />}
+                      initialNumToRender={16}
+                      maxToRenderPerBatch={16}
+                      windowSize={6}
+                      removeClippedSubviews
+                      style={{ maxHeight: 240 }}
+                    />
+                    {row.cityOptions.length >= 200 && (
+                      <Text style={styles.hint}>
+                        Çok sonuç var, daha fazla daraltmak için yazmaya devam edin.
+                      </Text>
+                    )}
+                  </View>
+                )}
                 {row.city?.name ? <Text style={styles.selInfo}>Seçilen: {row.city.name}</Text> : null}
               </Field>
 
@@ -216,7 +317,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
   );
 }
 
-/* ------- küçük yardımcı bileşenler ------- */
+/* ------- yardımcı bileşenler / stil ------- */
 function Field({ label, children }) {
   return (
     <View style={{ gap: 6 }}>
@@ -249,7 +350,7 @@ function CountrySelect({ value, label, options, onPick }) {
           <Text style={styles.modalTitle}>Ülke Seçin</Text>
           <FlatList
             data={options}
-            keyExtractor={it => String(it.key)}
+            keyExtractor={(it) => String(it.key)}
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.optionRow}
@@ -262,6 +363,10 @@ function CountrySelect({ value, label, options, onPick }) {
               </TouchableOpacity>
             )}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
+            initialNumToRender={20}
+            maxToRenderPerBatch={20}
+            windowSize={6}
+            removeClippedSubviews
           />
           <TouchableOpacity onPress={() => setOpen(false)} style={[styles.smallBtn, { marginTop: 8 }]}>
             <Text style={{ color: '#fff', fontWeight: '700' }}>Kapat</Text>
@@ -272,20 +377,20 @@ function CountrySelect({ value, label, options, onPick }) {
   );
 }
 
-/* ------------- utils ------------- */
 function makeSessionToken() {
   return Math.random().toString(36).slice(2) + Date.now();
 }
 
-/* ------------- styles ------------- */
 const styles = StyleSheet.create({
   label: { fontSize: 13, color: '#A8A8B3' },
   input: { borderWidth: 1, borderColor: BORDER, borderRadius: 10, padding: 12, fontSize: 15, color: '#fff', backgroundColor: '#0D0F14' },
 
-  dropdown: { marginTop: 6, maxHeight: 220, borderWidth: 1, borderColor: BORDER, borderRadius: 10, backgroundColor: '#0D0F14' },
-  dropItem: { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderColor: BORDER },
+  dropdown: { marginTop: 6, borderWidth: 1, borderColor: BORDER, borderRadius: 10, backgroundColor: '#0D0F14' },
+  dropItem: { paddingHorizontal: 12, paddingVertical: 10 },
   dropText: { color: '#fff' },
   selInfo: { color: '#A8A8B3', marginTop: 6 },
+
+  hint: { color: '#9AA0A6', fontSize: 12, paddingHorizontal: 12, paddingVertical: 8 },
 
   segChip: { paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: BORDER, borderRadius: 10, backgroundColor: '#0D0F14' },
   segChipActive: { borderColor: BTN, backgroundColor: '#0E1B2E' },

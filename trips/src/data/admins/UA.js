@@ -1,0 +1,30 @@
+// AUTO-GENERATED admins for UA
+const ADMINS = [
+  "Cherkaska Oblast",
+  "Chernihivska Oblast",
+  "Chernivetska Oblast",
+  "Dnipropetrovska Oblast",
+  "Donetska Oblast",
+  "Ivano-Frankivska Oblast",
+  "Kharkivska Oblast",
+  "Khersonska Oblast",
+  "Khmelnytska Oblast",
+  "Kirovohradska Oblast",
+  "Krym, Avtonomna Respublika",
+  "Kyiv, Misto",
+  "Luhanska Oblast",
+  "Lvivska Oblast",
+  "Mykolaivska Oblast",
+  "Odeska Oblast",
+  "Poltavska Oblast",
+  "Rivnenska Oblast",
+  "Sevastopol, Misto",
+  "Sumska Oblast",
+  "Ternopilska Oblast",
+  "Vinnytska Oblast",
+  "Volynska Oblast",
+  "Zakarpatska Oblast",
+  "Zaporizka Oblast",
+  "Zhytomyrska Oblast"
+];
+export default ADMINS;

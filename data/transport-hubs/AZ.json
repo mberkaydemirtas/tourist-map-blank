@@ -1,0 +1,413 @@
+{
+  "code": "AZ",
+  "name": "Azerbaijan",
+  "cities": {
+    "Bakı": {
+      "plane": [
+        {
+          "code": "GBB",
+          "name": "Gabala International Airport",
+          "lat": 40.808617,
+          "lng": 47.725389
+        },
+        {
+          "code": "GYD",
+          "name": "Heydar Aliyev International Airport",
+          "lat": 40.467498779296875,
+          "lng": 50.04669952392578
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Sumqayıt": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gəncə": {
+      "plane": [
+        {
+          "code": "GNJ",
+          "name": "Ganja International Airport",
+          "lat": 40.738935,
+          "lng": 46.320067
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Mingəçevir": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Abşeron": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Naxçıvan": {
+      "plane": [
+        {
+          "code": "NAJ",
+          "name": "Nakhchivan Airport",
+          "lat": 39.18880081176758,
+          "lng": 45.45840072631836
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Salyan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Şirvan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Şəki": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Yevlax": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lənkəran": {
+      "plane": [
+        {
+          "code": "LLK",
+          "name": "Lankaran International Airport",
+          "lat": 38.757919,
+          "lng": 48.807042
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Xankəndi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ağcabədi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Şəmkir": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Xaçmaz": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Şamaxı": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bərdə": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Quba": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Göygöl": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Göyçay": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Qazax": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "İmişli": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Zaqatala": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sabirabad": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ağdaş": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hacıqabul": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Cəlilabad": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "İsmayıllı": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ağsu": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ağstafa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Biləsuvar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Siyəzən": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Saatlı": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Astara": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Qusar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ucar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Masallı": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kürdəmir": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Neftçala": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Babək": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tovuz": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ağdam": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Qəbələ": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tərtər": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Culfa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Beyləqan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Qax": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Daşkəsən": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ordubad": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Samux": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Naftalan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sədərək": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gədəbəy": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Goranboy": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Zərdab": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Yardımlı": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lerik": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Oğuz": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Cəbrayıl": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Xocavənd": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Şuşa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kəngərli": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Qobustan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Füzuli": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Şahbuz": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Laçın": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Balakən": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Xızı": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Xocalı": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Qubadlı": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kəlbəcər": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Şabran": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Şərur": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:32:28.389Z"
+  }
+}

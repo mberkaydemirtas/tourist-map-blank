@@ -1,0 +1,41 @@
+{
+  "code": "BH",
+  "name": "Bahrain",
+  "cities": {
+    "Al ‘Āşimah": {
+      "plane": [
+        {
+          "code": "BAH",
+          "name": "Bahrain International Airport",
+          "lat": 26.267295,
+          "lng": 50.63764
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Al Muḩarraq": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ash Shamālīyah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Al Janūbīyah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:42:34.942Z"
+  }
+}

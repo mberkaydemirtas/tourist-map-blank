@@ -1,0 +1,30 @@
+// AUTO-GENERATED admins for CD
+const ADMINS = [
+  "Bas-Uele",
+  "Equateur",
+  "Haut-Katanga",
+  "Haut-Lomami",
+  "Haut-Uele",
+  "Ituri",
+  "Kasai",
+  "Kasai Central",
+  "Kasai Oriental",
+  "Kinshasa",
+  "Kongo Central",
+  "Kwango",
+  "Kwilu",
+  "Lomami",
+  "Lualaba",
+  "Mai-Ndombe",
+  "Maniema",
+  "Mongala",
+  "Nord-Kivu",
+  "Nord-Ubangi",
+  "Sankuru",
+  "Sud-Kivu",
+  "Sud-Ubangi",
+  "Tanganyika",
+  "Tshopo",
+  "Tshuapa"
+];
+export default ADMINS;

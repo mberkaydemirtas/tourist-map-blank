@@ -1,0 +1,31 @@
+{
+  "code": "MS",
+  "name": "Montserrat",
+  "cities": {
+    "Saint Peter": {
+      "plane": [
+        {
+          "code": "MNI",
+          "name": "John A. Osborne Airport",
+          "lat": 16.791401,
+          "lng": -62.193298
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Saint Anthony": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:52:29.544Z"
+  }
+}

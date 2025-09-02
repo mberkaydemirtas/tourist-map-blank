@@ -1,0 +1,184 @@
+{
+  "code": "PL",
+  "name": "Poland",
+  "cities": {
+    "Mazowieckie": {
+      "plane": [
+        {
+          "code": "KTW",
+          "name": "Katowice Wojciech Korfanty International Airport",
+          "lat": 50.476015,
+          "lng": 19.080705
+        },
+        {
+          "code": "WMI",
+          "name": "Modlin Airport",
+          "lat": 52.451099,
+          "lng": 20.6518
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Małopolskie": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Pomorskie": {
+      "plane": [
+        {
+          "code": "IEG",
+          "name": "Zielona Góra-Babimost Airport",
+          "lat": 52.1385,
+          "lng": 15.7986
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Dolnośląskie": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Łódzkie": {
+      "plane": [
+        {
+          "code": "WRO",
+          "name": "Copernicus Wrocław Airport",
+          "lat": 51.103719,
+          "lng": 16.882096
+        },
+        {
+          "code": "LCJ",
+          "name": "Łódź Władysław Reymont Airport",
+          "lat": 51.721901,
+          "lng": 19.3981
+        },
+        {
+          "code": "POZ",
+          "name": "Poznań-Ławica Airport",
+          "lat": 52.421598,
+          "lng": 16.823359
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Wielkopolskie": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Zachodniopomorskie": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kujawsko-Pomorskie": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lubelskie": {
+      "plane": [
+        {
+          "code": "LUZ",
+          "name": "Lublin Airport",
+          "lat": 51.240157,
+          "lng": 22.713461
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Podlaskie": {
+      "plane": [
+        {
+          "code": "BZG",
+          "name": "Bydgoszcz Ignacy Jan Paderewski Airport",
+          "lat": 53.096802,
+          "lng": 17.977699
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Śląskie": {
+      "plane": [
+        {
+          "code": "GDN",
+          "name": "Gdańsk Lech Wałęsa Airport",
+          "lat": 54.377602,
+          "lng": 18.4662
+        },
+        {
+          "code": "KRK",
+          "name": "Kraków John Paul II International Airport",
+          "lat": 50.077702,
+          "lng": 19.7848
+        },
+        {
+          "code": "SZY",
+          "name": "Olsztyn-Mazury Airport",
+          "lat": 53.481899,
+          "lng": 20.9377
+        },
+        {
+          "code": "RZE",
+          "name": "Rzeszów-Jasionka Airport",
+          "lat": 50.109791,
+          "lng": 22.024155
+        },
+        {
+          "code": "SZZ",
+          "name": "Solidarity Szczecin–Goleniów Airport",
+          "lat": 53.584702,
+          "lng": 14.9022
+        },
+        {
+          "code": "WAW",
+          "name": "Warsaw Chopin Airport",
+          "lat": 52.165699,
+          "lng": 20.9671
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Lubuskie": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Podkarpackie": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Świętokrzyskie": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Warmińsko-Mazurskie": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Opolskie": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:33:00.842Z"
+  }
+}

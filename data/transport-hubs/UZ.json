@@ -1,0 +1,171 @@
+{
+  "code": "UZ",
+  "name": "Uzbekistan",
+  "cities": {
+    "Toshkent": {
+      "plane": [
+        {
+          "code": "UTTP",
+          "name": "Tashkent East Airport",
+          "lat": 41.312889,
+          "lng": 69.395535
+        },
+        {
+          "code": "TAS",
+          "name": "Tashkent International Airport",
+          "lat": 41.257900238,
+          "lng": 69.2811965942
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Namangan": {
+      "plane": [
+        {
+          "code": "NMA",
+          "name": "Namangan Airport",
+          "lat": 40.9846,
+          "lng": 71.556702
+        },
+        {
+          "code": "AFS",
+          "name": "Sugraly Airport",
+          "lat": 41.613899,
+          "lng": 64.2332
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Andijon": {
+      "plane": [
+        {
+          "code": "AZN",
+          "name": "Andizhan Airport",
+          "lat": 40.727699,
+          "lng": 72.293999
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Samarqand": {
+      "plane": [
+        {
+          "code": "SKD",
+          "name": "Samarkand Airport",
+          "lat": 39.70050048828125,
+          "lng": 66.98380279541016
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Qoraqalpog‘iston": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Farg‘ona": {
+      "plane": [
+        {
+          "code": "FEG",
+          "name": "Fergana International Airport",
+          "lat": 40.358799,
+          "lng": 71.745003
+        },
+        {
+          "code": "UGC",
+          "name": "Urgench Airport",
+          "lat": 41.58430099487305,
+          "lng": 60.641700744628906
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Buxoro": {
+      "plane": [
+        {
+          "code": "BHK",
+          "name": "Bukhara International Airport",
+          "lat": 39.775002,
+          "lng": 64.483299
+        },
+        {
+          "code": "NCU",
+          "name": "Nukus Airport",
+          "lat": 42.4884,
+          "lng": 59.623299
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Qashqadaryo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Jizzax": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Surxondaryo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Xorazm": {
+      "plane": [
+        {
+          "code": "KSQ",
+          "name": "Karshi Airport",
+          "lat": 38.802246,
+          "lng": 65.773068
+        },
+        {
+          "code": "TMJ",
+          "name": "Termez Airport",
+          "lat": 37.287261,
+          "lng": 67.311869
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Navoiy": {
+      "plane": [
+        {
+          "code": "NVI",
+          "name": "Navoi Airport",
+          "lat": 40.117199,
+          "lng": 65.170799
+        },
+        {
+          "code": "OMN",
+          "name": "Zomin Airport",
+          "lat": 40.01402,
+          "lng": 68.41103
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Sirdaryo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:28:58.114Z"
+  }
+}

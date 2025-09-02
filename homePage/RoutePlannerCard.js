@@ -455,7 +455,6 @@ export default function RoutePlannerCard() {
 
   /* --------- ekleme/silme/yer değiştir --------- */
    const insertAt = (index) => {
-     // Hiçbir şey ekleme; sadece picker’ı aç.
      // Kullanıcı bir yer seçerse applyPickedPlace içinde eklenecek.
      dlog('insertAt (deferred)', { index });
      openPickerForIndex(index);

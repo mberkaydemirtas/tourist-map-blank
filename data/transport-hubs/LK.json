@@ -1,0 +1,4323 @@
+{
+  "code": "LK",
+  "name": "Sri Lanka",
+  "cities": {
+    "Western": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:8972985817",
+          "name": "Ambewela",
+          "lat": 6.8773347,
+          "lng": 80.8143421
+        },
+        {
+          "code": "OSM:1128188513",
+          "name": "Avissawella",
+          "lat": 6.954549,
+          "lng": 80.2070547
+        },
+        {
+          "code": "OSM:619234325",
+          "name": "Dematagoda",
+          "lat": 6.937547,
+          "lng": 79.8790153
+        },
+        {
+          "code": "OSM:1179884454",
+          "name": "Demodara",
+          "lat": 6.9029362,
+          "lng": 81.0627711
+        },
+        {
+          "code": "OSM:278646045",
+          "name": "Heel-Oya",
+          "lat": 6.8442851,
+          "lng": 81.0257154
+        },
+        {
+          "code": "OSM:3092204056",
+          "name": "Hightenford",
+          "lat": 7.0330481,
+          "lng": 80.530848
+        },
+        {
+          "code": "OSM:3315021374",
+          "name": "Konwewa",
+          "lat": 7.8507932,
+          "lng": 80.3491121
+        },
+        {
+          "code": "OSM:1128191571",
+          "name": "Kosgama",
+          "lat": 6.9406031,
+          "lng": 80.1372925
+        },
+        {
+          "code": "OSM:92128871",
+          "name": "Kosgoda",
+          "lat": 6.3385232,
+          "lng": 80.029375
+        },
+        {
+          "code": "OSM:1176188739",
+          "name": "Koshinna",
+          "lat": 7.2335858,
+          "lng": 80.5950443
+        },
+        {
+          "code": "OSM:291036786",
+          "name": "Kottawa",
+          "lat": 6.8437324,
+          "lng": 79.9682677
+        },
+        {
+          "code": "OSM:4713850107",
+          "name": "Meegammana",
+          "lat": 7.3404456,
+          "lng": 80.6670587
+        },
+        {
+          "code": "OSM:1148494560",
+          "name": "Meesalai",
+          "lat": 9.6735961,
+          "lng": 80.1889621
+        },
+        {
+          "code": "OSM:5769697429",
+          "name": "Megalegoda",
+          "lat": 7.133754,
+          "lng": 80.0363003
+        },
+        {
+          "code": "OSM:400381639",
+          "name": "Negombo",
+          "lat": 7.2103088,
+          "lng": 79.8418761
+        },
+        {
+          "code": "OSM:401404014",
+          "name": "Nelumpokuna",
+          "lat": 7.4754149,
+          "lng": 79.8450442
+        },
+        {
+          "code": "OSM:5769838369",
+          "name": "Peralanda",
+          "lat": 7.0381323,
+          "lng": 79.9122199
+        },
+        {
+          "code": "OSM:400566453",
+          "name": "Peralanda",
+          "lat": 7.0381229,
+          "lng": 79.9122223
+        },
+        {
+          "code": "OSM:1168787880",
+          "name": "Pesalai",
+          "lat": 9.0823153,
+          "lng": 79.8227946
+        },
+        {
+          "code": "OSM:8158766889",
+          "name": "Puwakpitiya",
+          "lat": 6.9337144,
+          "lng": 80.1880442
+        },
+        {
+          "code": "OSM:1177512252",
+          "name": "Rozelle",
+          "lat": 6.9348701,
+          "lng": 80.5587202
+        },
+        {
+          "code": "OSM:6025358",
+          "name": "Slave Island",
+          "lat": 6.9229273,
+          "lng": 79.8496464
+        },
+        {
+          "code": "OSM:3093076279",
+          "name": "Tismalpola",
+          "lat": 7.3217113,
+          "lng": 80.3431512
+        },
+        {
+          "code": "OSM:401750624",
+          "name": "Walgama",
+          "lat": 5.9453867,
+          "lng": 80.5141884
+        },
+        {
+          "code": "OSM:609704974",
+          "name": "Walpola",
+          "lat": 7.0472266,
+          "lng": 79.9311878
+        },
+        {
+          "code": "OSM:4197716350",
+          "name": "Waskaduwa",
+          "lat": 6.6325467,
+          "lng": 79.9403371
+        },
+        {
+          "code": "OSM:338554325",
+          "name": "Watagoda",
+          "lat": 6.9688843,
+          "lng": 80.6528447
+        },
+        {
+          "code": "OSM:10050777317",
+          "name": "Watareka",
+          "lat": 6.8431734,
+          "lng": 80.0598726
+        },
+        {
+          "code": "OSM:1175898701",
+          "name": "Wattegama",
+          "lat": 7.350651,
+          "lng": 80.6825578
+        },
+        {
+          "code": "OSM:12514925408",
+          "name": "Weherahena",
+          "lat": 5.9570646,
+          "lng": 80.5779236
+        },
+        {
+          "code": "OSM:408242066",
+          "name": "Weligama",
+          "lat": 5.9755638,
+          "lng": 80.4295648
+        },
+        {
+          "code": "OSM:3092912530",
+          "name": "Welikanda",
+          "lat": 7.9471138,
+          "lng": 81.2503557
+        },
+        {
+          "code": "OSM:1728286790",
+          "name": "Wellawa",
+          "lat": 7.5596275,
+          "lng": 80.3661793
+        },
+        {
+          "code": "OSM:6025359",
+          "name": "Wellawatta",
+          "lat": 6.8750183,
+          "lng": 79.8574596
+        },
+        {
+          "code": "OSM:6402509511",
+          "name": "Wewrukannala",
+          "lat": 5.9794925,
+          "lng": 80.6973864
+        },
+        {
+          "code": "OSM:1140291626",
+          "name": "Wilwatta",
+          "lat": 7.2563223,
+          "lng": 80.1354324
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:1815548741",
+          "name": "166 Bus Station",
+          "lat": 6.9241865,
+          "lng": 79.9270076
+        },
+        {
+          "code": "OSM:3379528819",
+          "name": "219 Bus Stand",
+          "lat": 6.8478462,
+          "lng": 79.9274916
+        },
+        {
+          "code": "OSM:522184350",
+          "name": "Bibile Bus Station",
+          "lat": 7.1604339,
+          "lng": 81.2256584
+        },
+        {
+          "code": "OSM:4045295723",
+          "name": "Bus Depot",
+          "lat": 6.5038245,
+          "lng": 80.6462867
+        },
+        {
+          "code": "OSM:4045441240",
+          "name": "Bus Depot",
+          "lat": 6.5214987,
+          "lng": 80.390903
+        },
+        {
+          "code": "OSM:1082569558",
+          "name": "Bus Depot",
+          "lat": 7.2509669,
+          "lng": 80.4510087
+        },
+        {
+          "code": "OSM:2152800180",
+          "name": "Bus Stand",
+          "lat": 6.5830946,
+          "lng": 80.5734952
+        },
+        {
+          "code": "OSM:4427494193",
+          "name": "Bus Stand",
+          "lat": 7.5165883,
+          "lng": 81.78687
+        },
+        {
+          "code": "OSM:11867062590",
+          "name": "Bus Stand",
+          "lat": 7.9172951,
+          "lng": 81.5192162
+        },
+        {
+          "code": "OSM:539166891",
+          "name": "Bus Stand",
+          "lat": 7.7806061,
+          "lng": 81.1839857
+        },
+        {
+          "code": "OSM:682833340",
+          "name": "Bus Stand",
+          "lat": 6.7117331,
+          "lng": 79.9079573
+        },
+        {
+          "code": "OSM:5544863531",
+          "name": "Bus Station",
+          "lat": 6.8357129,
+          "lng": 80.9858116
+        },
+        {
+          "code": "OSM:9903546517",
+          "name": "Bus to Sigiriya",
+          "lat": 7.8704789,
+          "lng": 80.6518156
+        },
+        {
+          "code": "OSM:383031713",
+          "name": "CTB bus station",
+          "lat": 7.0787161,
+          "lng": 79.890046
+        },
+        {
+          "code": "OSM:534193328",
+          "name": "CTB Bus Station",
+          "lat": 8.3407028,
+          "lng": 80.4146507
+        },
+        {
+          "code": "OSM:1523693980",
+          "name": "CTB Depot",
+          "lat": 6.8433607,
+          "lng": 79.9239225
+        },
+        {
+          "code": "OSM:1980792528",
+          "name": "CTB Depot",
+          "lat": 6.054187,
+          "lng": 80.1819705
+        },
+        {
+          "code": "OSM:319057681",
+          "name": "CTB Depot",
+          "lat": 6.8261733,
+          "lng": 79.8686977
+        },
+        {
+          "code": "OSM:317905011",
+          "name": "Dickwella",
+          "lat": 5.9639385,
+          "lng": 80.6940446
+        },
+        {
+          "code": "OSM:1001142484",
+          "name": "Galle Public Bus Station",
+          "lat": 6.0329742,
+          "lng": 80.2157428
+        },
+        {
+          "code": "OSM:1965377640",
+          "name": "Heel-Oya",
+          "lat": 6.8438555,
+          "lng": 81.0255363
+        },
+        {
+          "code": "OSM:341169321",
+          "name": "Imaduwa Bus station",
+          "lat": 6.0360736,
+          "lng": 80.3870309
+        },
+        {
+          "code": "OSM:287420904",
+          "name": "Kaduwela Bus Stand",
+          "lat": 6.9361767,
+          "lng": 79.9832729
+        },
+        {
+          "code": "OSM:1262810111",
+          "name": "Kaduwela Bus Terminal",
+          "lat": 6.9359393,
+          "lng": 79.9828105
+        },
+        {
+          "code": "OSM:5303513462",
+          "name": "Kiriella Bus",
+          "lat": 6.7375021,
+          "lng": 80.2727289
+        },
+        {
+          "code": "OSM:11132562676",
+          "name": "Mahawa Bus station",
+          "lat": 7.8218196,
+          "lng": 80.273643
+        },
+        {
+          "code": "OSM:256398248",
+          "name": "Malabe Bus station",
+          "lat": 6.9033609,
+          "lng": 79.9552056
+        },
+        {
+          "code": "OSM:319055606",
+          "name": "Malabe Bus Station",
+          "lat": 6.9039188,
+          "lng": 79.9544274
+        },
+        {
+          "code": "OSM:4681519153",
+          "name": "Mawanella Bus Depot",
+          "lat": 7.2508173,
+          "lng": 80.4512908
+        },
+        {
+          "code": "OSM:2340215068",
+          "name": "Mawanella Bus Station",
+          "lat": 7.252405,
+          "lng": 80.446929
+        },
+        {
+          "code": "OSM:6631154364",
+          "name": "Melsiripura Bus Stand",
+          "lat": 7.6409704,
+          "lng": 80.5079513
+        },
+        {
+          "code": "OSM:2343140806",
+          "name": "Menikhinna",
+          "lat": 7.3155217,
+          "lng": 80.7020152
+        },
+        {
+          "code": "OSM:759553965",
+          "name": "New bus stand",
+          "lat": 7.8217849,
+          "lng": 80.2734868
+        },
+        {
+          "code": "OSM:5052550921",
+          "name": "Old bus stand",
+          "lat": 7.1413975,
+          "lng": 80.0949594
+        },
+        {
+          "code": "OSM:1529039673",
+          "name": "Puhulwella Bus Stand",
+          "lat": 6.0515944,
+          "lng": 80.6295154
+        },
+        {
+          "code": "OSM:4614290593",
+          "name": "Pussellawa",
+          "lat": 7.1070608,
+          "lng": 80.6363236
+        },
+        {
+          "code": "OSM:11671532552",
+          "name": "PWD Busstand",
+          "lat": 6.8682594,
+          "lng": 80.6174344
+        },
+        {
+          "code": "OSM:286929133",
+          "name": "Ruwanwella Bus Station",
+          "lat": 7.0448619,
+          "lng": 80.2534478
+        },
+        {
+          "code": "OSM:3200327310",
+          "name": "Tangalle CTB Depot",
+          "lat": 6.0314784,
+          "lng": 80.7926199
+        },
+        {
+          "code": "OSM:454985073",
+          "name": "VVT Bus Station",
+          "lat": 9.8235562,
+          "lng": 80.1693815
+        },
+        {
+          "code": "OSM:3870413552",
+          "name": "Wattegama Bus Station",
+          "lat": 7.3502087,
+          "lng": 80.6815511
+        },
+        {
+          "code": "OSM:3634825143",
+          "name": "Weeraketiya",
+          "lat": 6.1541106,
+          "lng": 80.7684937
+        },
+        {
+          "code": "OSM:1821073284",
+          "name": "Welimada Bus Station",
+          "lat": 6.9056221,
+          "lng": 80.9114117
+        },
+        {
+          "code": "OSM:2407558285",
+          "name": "Weliweriya",
+          "lat": 7.0324394,
+          "lng": 80.0282845
+        },
+        {
+          "code": "OSM:2096464851",
+          "name": "Wellampityia Bus station",
+          "lat": 6.9370601,
+          "lng": 79.8964948
+        },
+        {
+          "code": "OSM:3658467143",
+          "name": "Wennappuwa Bus Stand",
+          "lat": 7.3423741,
+          "lng": 79.8417382
+        },
+        {
+          "code": "OSM:1887862837",
+          "name": "Wennappuwa Depot",
+          "lat": 7.3271251,
+          "lng": 79.8451185
+        }
+      ]
+    },
+    "Sabaragamuwa": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:426239894",
+          "name": "Ahangama",
+          "lat": 5.9732443,
+          "lng": 80.3638768
+        },
+        {
+          "code": "OSM:5769838363",
+          "name": "Alawathupitiya",
+          "lat": 7.115952,
+          "lng": 79.8870266
+        },
+        {
+          "code": "OSM:3926651383",
+          "name": "Ambalangoda Railway Station",
+          "lat": 6.2353754,
+          "lng": 80.0549325
+        },
+        {
+          "code": "OSM:347323242",
+          "name": "Ambepussa Railway Station",
+          "lat": 7.2559962,
+          "lng": 80.1693049
+        },
+        {
+          "code": "OSM:3091350958",
+          "name": "Angampitya",
+          "lat": 6.8529835,
+          "lng": 80.1094043
+        },
+        {
+          "code": "OSM:1146591924",
+          "name": "Ariviyal Nagar",
+          "lat": 9.3187473,
+          "lng": 80.4076622
+        },
+        {
+          "code": "OSM:92128703",
+          "name": "Balapititya",
+          "lat": 6.2764251,
+          "lng": 80.0433039
+        },
+        {
+          "code": "OSM:4762471168",
+          "name": "Bambalapitiya",
+          "lat": 6.8939813,
+          "lng": 79.8529747
+        },
+        {
+          "code": "OSM:7571568170",
+          "name": "Bambalapitiya",
+          "lat": 6.893674,
+          "lng": 79.8529894
+        },
+        {
+          "code": "OSM:401634484",
+          "name": "Bambalapitiya",
+          "lat": 6.8937227,
+          "lng": 79.8529779
+        },
+        {
+          "code": "OSM:5345933452",
+          "name": "Bambaranda",
+          "lat": 5.9705981,
+          "lng": 80.6607525
+        },
+        {
+          "code": "OSM:1137449694",
+          "name": "Bangadeniya",
+          "lat": 7.6272671,
+          "lng": 79.8286013
+        },
+        {
+          "code": "OSM:401403677",
+          "name": "Bolawatta",
+          "lat": 7.2971555,
+          "lng": 79.8609022
+        },
+        {
+          "code": "OSM:6298925921",
+          "name": "Boossa Train Station",
+          "lat": 6.0739289,
+          "lng": 80.1611425
+        },
+        {
+          "code": "OSM:347323226",
+          "name": "Bujjomuwa",
+          "lat": 7.2731777,
+          "lng": 80.2106384
+        },
+        {
+          "code": "OSM:1139279942",
+          "name": "Bulugahagoda",
+          "lat": 7.0655794,
+          "lng": 79.9454477
+        },
+        {
+          "code": "OSM:1148494963",
+          "name": "Chavakachcheri",
+          "lat": 9.6571317,
+          "lng": 80.1584591
+        },
+        {
+          "code": "OSM:5769697431",
+          "name": "Daraluwa",
+          "lat": 7.1070543,
+          "lng": 80.0104022
+        },
+        {
+          "code": "OSM:244908385",
+          "name": "Diyatalawa",
+          "lat": 6.8019598,
+          "lng": 80.9592661
+        },
+        {
+          "code": "OSM:9552182535",
+          "name": "Ella Railway Station",
+          "lat": 6.8761593,
+          "lng": 81.0474841
+        },
+        {
+          "code": "OSM:4613703731",
+          "name": "Erukkalampiddy-Nagavillu Railway station",
+          "lat": 7.9615801,
+          "lng": 79.8301236
+        },
+        {
+          "code": "OSM:1728286792",
+          "name": "Galgamuwa",
+          "lat": 8.0021635,
+          "lng": 80.2715285
+        },
+        {
+          "code": "OSM:758034305",
+          "name": "Galgamuwa",
+          "lat": 8.0021665,
+          "lng": 80.2715477
+        },
+        {
+          "code": "OSM:1192251147",
+          "name": "Gampaha railway station",
+          "lat": 7.0935051,
+          "lng": 79.9935624
+        },
+        {
+          "code": "OSM:376487144",
+          "name": "Gampaha Railway Station",
+          "lat": 7.0935036,
+          "lng": 79.9935986
+        },
+        {
+          "code": "OSM:405263894",
+          "name": "Gampaha Railway Station",
+          "lat": 7.0938841,
+          "lng": 79.9941048
+        },
+        {
+          "code": "OSM:287241117",
+          "name": "Ganemulla railway station",
+          "lat": 7.0684269,
+          "lng": 79.960676
+        },
+        {
+          "code": "OSM:379720199",
+          "name": "Ganemulla railway station",
+          "lat": 7.0685935,
+          "lng": 79.9606244
+        },
+        {
+          "code": "OSM:8997200408",
+          "name": "Godagama",
+          "lat": 6.8479029,
+          "lng": 80.0328649
+        },
+        {
+          "code": "OSM:1169246067",
+          "name": "Habarana",
+          "lat": 8.0573101,
+          "lng": 80.7695893
+        },
+        {
+          "code": "OSM:3092143617",
+          "name": "Hatares Kotuwa",
+          "lat": 8.1451745,
+          "lng": 80.8391243
+        },
+        {
+          "code": "OSM:5769697428",
+          "name": "Heendeniya-Pattigoda",
+          "lat": 7.1410796,
+          "lng": 80.0472008
+        },
+        {
+          "code": "OSM:10050777328",
+          "name": "Homagama",
+          "lat": 6.8456046,
+          "lng": 80.0042414
+        },
+        {
+          "code": "OSM:10050777335",
+          "name": "Homagama Hospital",
+          "lat": 6.8457616,
+          "lng": 79.992439
+        },
+        {
+          "code": "OSM:1177512876",
+          "name": "Ihala Watawala",
+          "lat": 6.9481148,
+          "lng": 80.542167
+        },
+        {
+          "code": "OSM:5610108237",
+          "name": "IPZ - Katunayake South",
+          "lat": 7.157917,
+          "lng": 79.8752569
+        },
+        {
+          "code": "OSM:3091412586",
+          "name": "Iratperiya Kulam",
+          "lat": 8.7095586,
+          "lng": 80.4811639
+        },
+        {
+          "code": "OSM:4949449992",
+          "name": "Kadigamuwa",
+          "lat": 7.3179288,
+          "lng": 80.4333295
+        },
+        {
+          "code": "OSM:1175902881",
+          "name": "Kadugannawa",
+          "lat": 7.2577827,
+          "lng": 80.5207503
+        },
+        {
+          "code": "OSM:1137449524",
+          "name": "Kakkapalliya",
+          "lat": 7.5328175,
+          "lng": 79.8227037
+        },
+        {
+          "code": "OSM:1207977318",
+          "name": "Kalutara North",
+          "lat": 6.6011832,
+          "lng": 79.9543904
+        },
+        {
+          "code": "OSM:1078869154",
+          "name": "Kalutara South",
+          "lat": 6.5841062,
+          "lng": 79.9590123
+        },
+        {
+          "code": "OSM:401750625",
+          "name": "Kamburugamuwa",
+          "lat": 5.9434064,
+          "lng": 80.4957962
+        },
+        {
+          "code": "OSM:808882938",
+          "name": "Kankasanturai",
+          "lat": 9.8144959,
+          "lng": 80.0487349
+        },
+        {
+          "code": "OSM:3092287638",
+          "name": "Karadipuwal",
+          "lat": 8.1353837,
+          "lng": 79.8639129
+        },
+        {
+          "code": "OSM:921906493",
+          "name": "Kathaluwa",
+          "lat": 5.9825774,
+          "lng": 80.340424
+        },
+        {
+          "code": "OSM:1148494997",
+          "name": "Kodaikamam",
+          "lat": 9.6813106,
+          "lng": 80.2193279
+        },
+        {
+          "code": "OSM:3092346627",
+          "name": "Koralawalla",
+          "lat": 6.7584506,
+          "lng": 79.8859478
+        },
+        {
+          "code": "OSM:11960031252",
+          "name": "kotagala railway station",
+          "lat": 6.9283117,
+          "lng": 80.6086713
+        },
+        {
+          "code": "OSM:5769838364",
+          "name": "Kudahakapola",
+          "lat": 7.103881,
+          "lng": 79.889804
+        },
+        {
+          "code": "OSM:61602781",
+          "name": "Kumarakanda",
+          "lat": 6.1124846,
+          "lng": 80.1242971
+        },
+        {
+          "code": "OSM:1685297495",
+          "name": "Kumbalgama",
+          "lat": 5.9636147,
+          "lng": 80.4097062
+        },
+        {
+          "code": "OSM:400381640",
+          "name": "Kurana Railway Station",
+          "lat": 7.1910946,
+          "lng": 79.8621571
+        },
+        {
+          "code": "OSM:394549122",
+          "name": "Liyanagemulla",
+          "lat": 7.1471765,
+          "lng": 79.8782061
+        },
+        {
+          "code": "OSM:92128330",
+          "name": "Madampagama",
+          "lat": 6.2122769,
+          "lng": 80.0612425
+        },
+        {
+          "code": "OSM:3092418626",
+          "name": "Madegama",
+          "lat": 8.4750004,
+          "lng": 80.4351423
+        },
+        {
+          "code": "OSM:3092375152",
+          "name": "Madurankuli",
+          "lat": 7.9020671,
+          "lng": 79.8204737
+        },
+        {
+          "code": "OSM:400348756",
+          "name": "Magalegoda",
+          "lat": 7.1337428,
+          "lng": 80.0362933
+        },
+        {
+          "code": "OSM:1138479797",
+          "name": "Mahainduruwa",
+          "lat": 6.3643888,
+          "lng": 80.0139361
+        },
+        {
+          "code": "OSM:549927029",
+          "name": "Mahaiyawa",
+          "lat": 7.3037074,
+          "lng": 80.6342116
+        },
+        {
+          "code": "OSM:10050777356",
+          "name": "Maharagama",
+          "lat": 6.8480166,
+          "lng": 79.9271848
+        },
+        {
+          "code": "OSM:724564794",
+          "name": "Makubura Railway Station",
+          "lat": 6.8405853,
+          "lng": 79.9764039
+        },
+        {
+          "code": "OSM:229247590",
+          "name": "Manampitiya",
+          "lat": 7.9095562,
+          "lng": 81.110115
+        },
+        {
+          "code": "OSM:1137449047",
+          "name": "Manuwangama",
+          "lat": 7.6006132,
+          "lng": 79.8274738
+        },
+        {
+          "code": "OSM:808882902",
+          "name": "Maviddapuram",
+          "lat": 9.798393,
+          "lng": 80.0384504
+        },
+        {
+          "code": "OSM:1146141350",
+          "name": "Medawachchiya",
+          "lat": 8.5545098,
+          "lng": 80.4581661
+        },
+        {
+          "code": "OSM:1140291685",
+          "name": "Mirigama",
+          "lat": 7.2425912,
+          "lng": 80.1265584
+        },
+        {
+          "code": "OSM:3092551270",
+          "name": "Moragollagama",
+          "lat": 7.905764,
+          "lng": 80.4221695
+        },
+        {
+          "code": "OSM:1728294289",
+          "name": "Nagollagama",
+          "lat": 7.7538118,
+          "lng": 80.314565
+        },
+        {
+          "code": "OSM:454163238",
+          "name": "Nawalapitiya",
+          "lat": 7.0576153,
+          "lng": 80.5350509
+        },
+        {
+          "code": "OSM:4713839156",
+          "name": "Palle Talawinna",
+          "lat": 7.3379695,
+          "lng": 80.6415662
+        },
+        {
+          "code": "OSM:3092624215",
+          "name": "Palugaswewa",
+          "lat": 8.0590196,
+          "lng": 80.7132576
+        },
+        {
+          "code": "OSM:3092671587",
+          "name": "Pangiriwatta",
+          "lat": 6.864956,
+          "lng": 79.9022473
+        },
+        {
+          "code": "OSM:1146140887",
+          "name": "Parasangaswewa Railway Station",
+          "lat": 8.4453692,
+          "lng": 80.4315165
+        },
+        {
+          "code": "OSM:3092751586",
+          "name": "Patanpaha",
+          "lat": 7.3840931,
+          "lng": 80.6616741
+        },
+        {
+          "code": "OSM:3092677804",
+          "name": "Pathegamgoda",
+          "lat": 6.297115,
+          "lng": 80.0415561
+        },
+        {
+          "code": "OSM:1138481003",
+          "name": "Payagala North",
+          "lat": 6.5315528,
+          "lng": 79.9750435
+        },
+        {
+          "code": "OSM:4775762063",
+          "name": "Perakumpura Sub Railway",
+          "lat": 6.9198221,
+          "lng": 80.7536319
+        },
+        {
+          "code": "OSM:3092775163",
+          "name": "Periyanagavillu",
+          "lat": 8.2283858,
+          "lng": 79.8666104
+        },
+        {
+          "code": "OSM:12389487403",
+          "name": "Pilimatalawa Railway Staition",
+          "lat": 7.2669217,
+          "lng": 80.5526682
+        },
+        {
+          "code": "OSM:3092793918",
+          "name": "Piyagama",
+          "lat": 6.3290357,
+          "lng": 80.0335213
+        },
+        {
+          "code": "OSM:87762356",
+          "name": "Piyathigama",
+          "lat": 6.0536503,
+          "lng": 80.1909694
+        },
+        {
+          "code": "OSM:1173326087",
+          "name": "Polonnaruwa",
+          "lat": 7.9301686,
+          "lng": 81.0333406
+        },
+        {
+          "code": "OSM:3092851447",
+          "name": "Puliyankulam",
+          "lat": 8.9609281,
+          "lng": 80.5230039
+        },
+        {
+          "code": "OSM:454143853",
+          "name": "Railway station -Vantharumoolai",
+          "lat": 7.8018504,
+          "lng": 81.5835763
+        },
+        {
+          "code": "OSM:916907494",
+          "name": "Railway Station Habaraduwa",
+          "lat": 5.9939594,
+          "lng": 80.3083783
+        },
+        {
+          "code": "OSM:11192254346",
+          "name": "Railway Station, Mannar",
+          "lat": 8.9713411,
+          "lng": 79.8937444
+        },
+        {
+          "code": "OSM:3092896687",
+          "name": "Randenigama",
+          "lat": 7.8485354,
+          "lng": 80.2593352
+        },
+        {
+          "code": "OSM:1138577561",
+          "name": "Rathgama",
+          "lat": 6.09335,
+          "lng": 80.1401109
+        },
+        {
+          "code": "OSM:251744054",
+          "name": "Sarasavi Uyana",
+          "lat": 7.2600133,
+          "lng": 80.5965289
+        },
+        {
+          "code": "OSM:3092966618",
+          "name": "Sawarana",
+          "lat": 7.5614974,
+          "lng": 79.805341
+        },
+        {
+          "code": "OSM:2837565658",
+          "name": "Senarathgama",
+          "lat": 8.0858801,
+          "lng": 80.2777081
+        },
+        {
+          "code": "OSM:279533039",
+          "name": "Senarathgama Railway Station",
+          "lat": 8.0858711,
+          "lng": 80.2777095
+        },
+        {
+          "code": "OSM:6541919413",
+          "name": "Slave Island Railway Station",
+          "lat": 6.9230404,
+          "lng": 79.8496524
+        },
+        {
+          "code": "OSM:1143313922",
+          "name": "Srawasthipura",
+          "lat": 8.2987964,
+          "lng": 80.3769783
+        },
+        {
+          "code": "OSM:1168788044",
+          "name": "Talaimannar",
+          "lat": 9.1033259,
+          "lng": 79.7298828
+        },
+        {
+          "code": "OSM:1143315442",
+          "name": "Thalawattegedara",
+          "lat": 7.3878803,
+          "lng": 80.3016136
+        },
+        {
+          "code": "OSM:1143314681",
+          "name": "Thambuttegama",
+          "lat": 8.1543184,
+          "lng": 80.3038834
+        },
+        {
+          "code": "OSM:1728255091",
+          "name": "Thampalakamam",
+          "lat": 8.498339,
+          "lng": 81.0953498
+        },
+        {
+          "code": "OSM:91029612",
+          "name": "Thiranagama",
+          "lat": 6.1223145,
+          "lng": 80.1143858
+        },
+        {
+          "code": "OSM:3093068369",
+          "name": "Timbiriyagedara",
+          "lat": 7.7812961,
+          "lng": 80.2976683
+        },
+        {
+          "code": "OSM:4713846086",
+          "name": "Uda Talawinna",
+          "lat": 7.3395582,
+          "lng": 80.6513081
+        },
+        {
+          "code": "OSM:1128192639",
+          "name": "Udahamulla",
+          "lat": 6.8622118,
+          "lng": 79.9087271
+        },
+        {
+          "code": "OSM:1173695522",
+          "name": "Valaichchenai",
+          "lat": 7.9102735,
+          "lng": 81.5318574
+        },
+        {
+          "code": "OSM:9785228872",
+          "name": "vavuniya Railway  station",
+          "lat": 8.753866,
+          "lng": 80.4936629
+        },
+        {
+          "code": "OSM:3093567807",
+          "name": "Viralmurippuwa",
+          "lat": 8.5308063,
+          "lng": 80.446541
+        },
+        {
+          "code": "OSM:5260460514",
+          "name": "Wadurawa Railway Station",
+          "lat": 7.167838,
+          "lng": 80.0660584
+        },
+        {
+          "code": "OSM:1137449334",
+          "name": "Walahapitiya",
+          "lat": 7.439463,
+          "lng": 79.8591858
+        },
+        {
+          "code": "OSM:3093577995",
+          "name": "Walakumbura",
+          "lat": 7.3138576,
+          "lng": 80.2690495
+        },
+        {
+          "code": "OSM:304322071",
+          "name": "Wanawasala",
+          "lat": 6.9755509,
+          "lng": 79.8993572
+        },
+        {
+          "code": "OSM:5769719768",
+          "name": "Wijayarajadahana",
+          "lat": 7.2309324,
+          "lng": 80.1184778
+        },
+        {
+          "code": "OSM:3093588829",
+          "name": "Yatagama",
+          "lat": 7.3186864,
+          "lng": 80.3641048
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:3053064379",
+          "name": "Ahangama",
+          "lat": 5.9712914,
+          "lng": 80.3655365
+        },
+        {
+          "code": "OSM:235940441",
+          "name": "Akkaraipattu",
+          "lat": 7.2178434,
+          "lng": 81.8499416
+        },
+        {
+          "code": "OSM:4705226989",
+          "name": "Alawwa-Colombo",
+          "lat": 7.2941317,
+          "lng": 80.2409972
+        },
+        {
+          "code": "OSM:4737706226",
+          "name": "Ambagahamula Bus Station",
+          "lat": 7.4713321,
+          "lng": 80.6226563
+        },
+        {
+          "code": "OSM:1076389404",
+          "name": "Ambalangoda Bus Station",
+          "lat": 6.2367031,
+          "lng": 80.0545734
+        },
+        {
+          "code": "OSM:3598835034",
+          "name": "Ambalantota",
+          "lat": 6.1228576,
+          "lng": 81.0267194
+        },
+        {
+          "code": "OSM:1684345036",
+          "name": "Ampara Bus Station",
+          "lat": 7.290358,
+          "lng": 81.6731457
+        },
+        {
+          "code": "OSM:4359585048",
+          "name": "Anamaduwa bus station",
+          "lat": 7.8789837,
+          "lng": 80.0119288
+        },
+        {
+          "code": "OSM:8003506348",
+          "name": "Aruppola Bus Stand",
+          "lat": 7.3073106,
+          "lng": 80.6492024
+        },
+        {
+          "code": "OSM:514427584",
+          "name": "Ayagama Bus Station",
+          "lat": 6.6378851,
+          "lng": 80.3124163
+        },
+        {
+          "code": "OSM:1636578569",
+          "name": "Baddegama Bus Station",
+          "lat": 6.1724823,
+          "lng": 80.1781078
+        },
+        {
+          "code": "OSM:520867791",
+          "name": "Bakamuna Bus Station",
+          "lat": 7.7764347,
+          "lng": 80.8178507
+        },
+        {
+          "code": "OSM:1829358383",
+          "name": "Balangoda Main Bus Stand",
+          "lat": 6.6506211,
+          "lng": 80.70156
+        },
+        {
+          "code": "OSM:286362219",
+          "name": "Balapitiya Bus Stand",
+          "lat": 6.280195,
+          "lng": 80.0407735
+        },
+        {
+          "code": "OSM:198014734",
+          "name": "Bandaragama New Bus Station",
+          "lat": 6.7141762,
+          "lng": 79.9908028
+        },
+        {
+          "code": "OSM:11659171769",
+          "name": "Bogamabara Bus Terminal - Long Distance",
+          "lat": 7.2897854,
+          "lng": 80.633769
+        },
+        {
+          "code": "OSM:4402350585",
+          "name": "Bulathkohupitiya",
+          "lat": 7.1052627,
+          "lng": 80.3356431
+        },
+        {
+          "code": "OSM:1078087267",
+          "name": "Bus Main station Naula",
+          "lat": 7.7046413,
+          "lng": 80.6531279
+        },
+        {
+          "code": "OSM:5519616115",
+          "name": "Bus Stand - Galnewa",
+          "lat": 8.0343505,
+          "lng": 80.4804663
+        },
+        {
+          "code": "OSM:405675063",
+          "name": "Bus Stand Dehiowita",
+          "lat": 6.9690447,
+          "lng": 80.2651555
+        },
+        {
+          "code": "OSM:405675635",
+          "name": "Bus Stand Deraniyagala",
+          "lat": 6.9276123,
+          "lng": 80.3397765
+        },
+        {
+          "code": "OSM:4059273139",
+          "name": "Bus Stand Galnewa",
+          "lat": 8.0351321,
+          "lng": 80.4800093
+        },
+        {
+          "code": "OSM:1807855778",
+          "name": "Bus Stand Ganemulla",
+          "lat": 7.0662794,
+          "lng": 79.9611268
+        },
+        {
+          "code": "OSM:435253160",
+          "name": "Bus Stand Minuwangoda",
+          "lat": 7.1697339,
+          "lng": 79.9473427
+        },
+        {
+          "code": "OSM:288663983",
+          "name": "Bus Stand Rikillagaskda",
+          "lat": 7.1447802,
+          "lng": 80.7836008
+        },
+        {
+          "code": "OSM:12111937092",
+          "name": "Bus Station - Direction Monaragala / Ella",
+          "lat": 6.4240979,
+          "lng": 80.8171453
+        },
+        {
+          "code": "OSM:7053783986",
+          "name": "Bus Station Hasalaka",
+          "lat": 7.3524119,
+          "lng": 80.9527759
+        },
+        {
+          "code": "OSM:5636928",
+          "name": "Bus terminal - Averiwatta",
+          "lat": 7.1663034,
+          "lng": 79.8840624
+        },
+        {
+          "code": "OSM:6283933687",
+          "name": "Buses to Dalhousie/Adam's Peak (Rs 100)",
+          "lat": 6.8349416,
+          "lng": 80.5717452
+        },
+        {
+          "code": "OSM:3320212330",
+          "name": "CTB Depot, Kalmunai",
+          "lat": 7.4200691,
+          "lng": 81.8222412
+        },
+        {
+          "code": "OSM:233483533",
+          "name": "CTB Monaragala",
+          "lat": 6.855654,
+          "lng": 81.3451685
+        },
+        {
+          "code": "OSM:3320210420",
+          "name": "CTB Stand, Kalmunai",
+          "lat": 7.4131365,
+          "lng": 81.826747
+        },
+        {
+          "code": "OSM:191390686",
+          "name": "Dambula Bus Station",
+          "lat": 7.8705098,
+          "lng": 80.6515112
+        },
+        {
+          "code": "OSM:2361349574",
+          "name": "Debathgama",
+          "lat": 7.1721631,
+          "lng": 80.4201347
+        },
+        {
+          "code": "OSM:11843006169",
+          "name": "Dehiala railway station",
+          "lat": 6.8509062,
+          "lng": 79.8623123
+        },
+        {
+          "code": "OSM:1974728792",
+          "name": "Dehiattakandiya Main Bus Stand",
+          "lat": 7.6720099,
+          "lng": 81.0471451
+        },
+        {
+          "code": "OSM:3104880275",
+          "name": "Deraniyagala Bus Depot",
+          "lat": 6.9447777,
+          "lng": 80.3328579
+        },
+        {
+          "code": "OSM:4698131490",
+          "name": "Digana - Senarathwela",
+          "lat": 7.2992534,
+          "lng": 80.7371109
+        },
+        {
+          "code": "OSM:1818771788",
+          "name": "Diyatalawa Bus Station",
+          "lat": 6.8080968,
+          "lng": 80.9569572
+        },
+        {
+          "code": "OSM:1175228013",
+          "name": "Embilipitiya",
+          "lat": 6.3321117,
+          "lng": 80.8568162
+        },
+        {
+          "code": "OSM:3871119306",
+          "name": "Etampitiya Bus Stand",
+          "lat": 6.9363051,
+          "lng": 80.9883723
+        },
+        {
+          "code": "OSM:1004913955",
+          "name": "Galaha Bus Stand",
+          "lat": 7.1977778,
+          "lng": 80.6682392
+        },
+        {
+          "code": "OSM:5306039429",
+          "name": "Galapitamada Bus",
+          "lat": 7.1396338,
+          "lng": 80.2348226
+        },
+        {
+          "code": "OSM:4904980058",
+          "name": "Galenbindunuwewa Bus",
+          "lat": 8.2895192,
+          "lng": 80.7156046
+        },
+        {
+          "code": "OSM:9399745857",
+          "name": "Galgamuwa Bus Stand",
+          "lat": 7.996165,
+          "lng": 80.2703445
+        },
+        {
+          "code": "OSM:232407774",
+          "name": "Gampaha CTB Depot",
+          "lat": 7.0837708,
+          "lng": 80.0231046
+        },
+        {
+          "code": "OSM:916907491",
+          "name": "Habaraduwa Bus Stand",
+          "lat": 5.9938427,
+          "lng": 80.3079393
+        },
+        {
+          "code": "OSM:1814540626",
+          "name": "Hambantota Bus Stand",
+          "lat": 6.1255312,
+          "lng": 81.1257755
+        },
+        {
+          "code": "OSM:6066661858",
+          "name": "Hatharaliyadda Bus Station",
+          "lat": 7.3340162,
+          "lng": 80.4705539
+        },
+        {
+          "code": "OSM:1077856427",
+          "name": "hemmathagama",
+          "lat": 7.1755077,
+          "lng": 80.5005775
+        },
+        {
+          "code": "OSM:588870153",
+          "name": "Hingurakgoda CTB Stand",
+          "lat": 8.0401355,
+          "lng": 80.9520507
+        },
+        {
+          "code": "OSM:764951559",
+          "name": "Homagama Bus Stand",
+          "lat": 6.8401196,
+          "lng": 79.999876
+        },
+        {
+          "code": "OSM:1290148402",
+          "name": "Homagama Bus Station",
+          "lat": 6.8396052,
+          "lng": 79.9996962
+        },
+        {
+          "code": "OSM:6158493884",
+          "name": "Jaffna / Batticaloa Private Bus",
+          "lat": 6.8654953,
+          "lng": 79.8594408
+        },
+        {
+          "code": "OSM:543642419",
+          "name": "Jaffna Private Bus Stand",
+          "lat": 9.6648765,
+          "lng": 80.0086929
+        },
+        {
+          "code": "OSM:4357163359",
+          "name": "Kacheriyady Bus Station",
+          "lat": 9.6615664,
+          "lng": 80.0291678
+        },
+        {
+          "code": "OSM:286530117",
+          "name": "Kadawatha Bus Stand",
+          "lat": 7.0052211,
+          "lng": 79.9546749
+        },
+        {
+          "code": "OSM:10588777058",
+          "name": "Kadawatha Highway Bus Stand",
+          "lat": 7.0052104,
+          "lng": 79.9544555
+        },
+        {
+          "code": "OSM:3235924898",
+          "name": "Kadugannawa",
+          "lat": 7.2573134,
+          "lng": 80.5199725
+        },
+        {
+          "code": "OSM:6158486235",
+          "name": "Kalmunai Private Bus",
+          "lat": 6.8644621,
+          "lng": 79.8597492
+        },
+        {
+          "code": "OSM:496339118",
+          "name": "Kalutara Bus Station",
+          "lat": 6.5843827,
+          "lng": 79.9603667
+        },
+        {
+          "code": "OSM:4329256789",
+          "name": "Kalutara North",
+          "lat": 6.6020331,
+          "lng": 79.9554631
+        },
+        {
+          "code": "OSM:509243990",
+          "name": "Kamburupitiya Bus Stand",
+          "lat": 6.081685,
+          "lng": 80.5668228
+        },
+        {
+          "code": "OSM:2165130859",
+          "name": "Kamburupitiya Bus Station",
+          "lat": 6.0817162,
+          "lng": 80.5666906
+        },
+        {
+          "code": "OSM:1261082799",
+          "name": "Karagampitiya ",
+          "lat": 6.8505585,
+          "lng": 79.8719
+        },
+        {
+          "code": "OSM:4614290990",
+          "name": "Karagasthalawa",
+          "lat": 7.0752334,
+          "lng": 80.6752056
+        },
+        {
+          "code": "OSM:1025870461",
+          "name": "Karaliyadda Private Bus Stand",
+          "lat": 7.3086355,
+          "lng": 80.7660865
+        },
+        {
+          "code": "OSM:5925725459",
+          "name": "Karapitiya",
+          "lat": 6.0666715,
+          "lng": 80.2246796
+        },
+        {
+          "code": "OSM:3129338625",
+          "name": "Karawanella Bus Station",
+          "lat": 7.0232806,
+          "lng": 80.2614329
+        },
+        {
+          "code": "OSM:99814311",
+          "name": "Kasbawa Depot",
+          "lat": 6.7914454,
+          "lng": 79.9476722
+        },
+        {
+          "code": "OSM:1744023358",
+          "name": "Katharagama Bus Station",
+          "lat": 6.4130142,
+          "lng": 81.3323745
+        },
+        {
+          "code": "OSM:1744023360",
+          "name": "Katharagama Depot",
+          "lat": 6.4160925,
+          "lng": 81.3427303
+        },
+        {
+          "code": "OSM:2857487801",
+          "name": "Katunayake Airport",
+          "lat": 7.1751325,
+          "lng": 79.8886332
+        },
+        {
+          "code": "OSM:3224510500",
+          "name": "Kegalle Main Bus Stand",
+          "lat": 7.2534343,
+          "lng": 80.3447144
+        },
+        {
+          "code": "OSM:4690499326",
+          "name": "Kekirawa Bus Station",
+          "lat": 8.0411658,
+          "lng": 80.5963932
+        },
+        {
+          "code": "OSM:3714320125",
+          "name": "Kelaniya Bus Stand",
+          "lat": 6.9517698,
+          "lng": 79.9173689
+        },
+        {
+          "code": "OSM:534188450",
+          "name": "Kiribathgoda Bus Stand",
+          "lat": 6.9797327,
+          "lng": 79.9302217
+        },
+        {
+          "code": "OSM:452221707",
+          "name": "Koduwamadu Bus Stand",
+          "lat": 7.7709244,
+          "lng": 81.575194
+        },
+        {
+          "code": "OSM:1918165072",
+          "name": "Kotikawatta",
+          "lat": 6.9360244,
+          "lng": 79.9165498
+        },
+        {
+          "code": "OSM:4370702914",
+          "name": "Maaviddapuram",
+          "lat": 9.8003332,
+          "lng": 80.0342954
+        },
+        {
+          "code": "OSM:864204189",
+          "name": "Madawachchiya Bus Stand",
+          "lat": 8.5390726,
+          "lng": 80.4925588
+        },
+        {
+          "code": "OSM:1662166663",
+          "name": "Maharagama Bus Stand",
+          "lat": 6.8481858,
+          "lng": 79.9256137
+        },
+        {
+          "code": "OSM:2093145103",
+          "name": "Maharagama-Moratuwa",
+          "lat": 6.845243,
+          "lng": 79.9260878
+        },
+        {
+          "code": "OSM:2093145092",
+          "name": "Maharagama-Nugegoda",
+          "lat": 6.8445612,
+          "lng": 79.9258732
+        },
+        {
+          "code": "OSM:2093145111",
+          "name": "Maharagama-Piliyandala",
+          "lat": 6.8444728,
+          "lng": 79.9260121
+        },
+        {
+          "code": "OSM:10588777059",
+          "name": "Makumbura Highway Bus Stand",
+          "lat": 6.8407693,
+          "lng": 79.9756799
+        },
+        {
+          "code": "OSM:724564798",
+          "name": "Makumbura Multimodal Center",
+          "lat": 6.8407167,
+          "lng": 79.9759658
+        },
+        {
+          "code": "OSM:1332583722",
+          "name": "Matara Expressway Bus Stand",
+          "lat": 5.9430833,
+          "lng": 80.5486428
+        },
+        {
+          "code": "OSM:18329297",
+          "name": "Matara_Bus stand",
+          "lat": 5.9439938,
+          "lng": 80.5493628
+        },
+        {
+          "code": "OSM:2634774644",
+          "name": "Mathugama CTB Bus Stand",
+          "lat": 6.5222765,
+          "lng": 80.1148423
+        },
+        {
+          "code": "OSM:2908719555",
+          "name": "Mathugama Private Bus Stand",
+          "lat": 6.5227986,
+          "lng": 80.1165271
+        },
+        {
+          "code": "OSM:6615720010",
+          "name": "Mattakuliya Bus station",
+          "lat": 6.9794769,
+          "lng": 79.8757799
+        },
+        {
+          "code": "OSM:1969470956",
+          "name": "Matugama Bus Depot",
+          "lat": 6.5146783,
+          "lng": 80.1209449
+        },
+        {
+          "code": "OSM:6251353251",
+          "name": "Mawaramandiya Bus Stand",
+          "lat": 6.987159,
+          "lng": 79.9758097
+        },
+        {
+          "code": "OSM:3207193062",
+          "name": "Mawathagama",
+          "lat": 7.4323223,
+          "lng": 80.4481081
+        },
+        {
+          "code": "OSM:1169523286",
+          "name": "Medirigiriya Main Bus Stand",
+          "lat": 8.1410972,
+          "lng": 80.9630137
+        },
+        {
+          "code": "OSM:2034260183",
+          "name": "Meethotamulla",
+          "lat": 6.9358787,
+          "lng": 79.8885393
+        },
+        {
+          "code": "OSM:1140291200",
+          "name": "Mirigama",
+          "lat": 7.2428859,
+          "lng": 80.127163
+        },
+        {
+          "code": "OSM:2418605292",
+          "name": "Monaragala Bus Stand",
+          "lat": 6.8717933,
+          "lng": 81.3519393
+        },
+        {
+          "code": "OSM:445281683",
+          "name": "Nabada Bus Station",
+          "lat": 6.5929746,
+          "lng": 80.0880832
+        },
+        {
+          "code": "OSM:4948776115",
+          "name": "Naula main bus station",
+          "lat": 7.7046004,
+          "lng": 80.6531626
+        },
+        {
+          "code": "OSM:9400273079",
+          "name": "Nawagattegama Bus Stand",
+          "lat": 8.0040141,
+          "lng": 80.1052003
+        },
+        {
+          "code": "OSM:454158081",
+          "name": "Nawalapitiya",
+          "lat": 7.0557486,
+          "lng": 80.53425
+        },
+        {
+          "code": "OSM:5385095922",
+          "name": "Nawaloka junction",
+          "lat": 7.1933814,
+          "lng": 79.9807113
+        },
+        {
+          "code": "OSM:820101723",
+          "name": "New BusStand Morawaka",
+          "lat": 6.2607261,
+          "lng": 80.4912202
+        },
+        {
+          "code": "OSM:6458186201",
+          "name": "Nuawara Eliya Main Bus Station",
+          "lat": 6.9718717,
+          "lng": 80.7672963
+        },
+        {
+          "code": "OSM:487430075",
+          "name": "Padiyapelella Bus Station",
+          "lat": 7.0911098,
+          "lng": 80.7985221
+        },
+        {
+          "code": "OSM:527013693",
+          "name": "Padiyathalawa Bus Station",
+          "lat": 7.404026,
+          "lng": 81.2439949
+        },
+        {
+          "code": "OSM:4368018190",
+          "name": "Palai Bus Stand",
+          "lat": 9.6090892,
+          "lng": 80.3303191
+        },
+        {
+          "code": "OSM:11210754436",
+          "name": "Panama Bus Station",
+          "lat": 6.7557757,
+          "lng": 81.8104083
+        },
+        {
+          "code": "OSM:1414198397",
+          "name": "Pannala bus stand",
+          "lat": 7.3286144,
+          "lng": 80.0225764
+        },
+        {
+          "code": "OSM:452217223",
+          "name": "Periapullumalai Bus Station",
+          "lat": 7.580501,
+          "lng": 81.449664
+        },
+        {
+          "code": "OSM:9130911351",
+          "name": "Piliyandala New Bus Stand",
+          "lat": 6.8020833,
+          "lng": 79.9250648
+        },
+        {
+          "code": "OSM:1213039419",
+          "name": "Pimbura Hospital Bus Stand",
+          "lat": 6.5759408,
+          "lng": 80.1580212
+        },
+        {
+          "code": "OSM:802830807",
+          "name": "Pitigala Bus Station",
+          "lat": 6.3427152,
+          "lng": 80.2229035
+        },
+        {
+          "code": "OSM:3320202233",
+          "name": "Private Bus Stand, Kalmunai",
+          "lat": 7.4138527,
+          "lng": 81.826843
+        },
+        {
+          "code": "OSM:4645363183",
+          "name": "Raddolugama Bus stand",
+          "lat": 7.138692,
+          "lng": 79.900277
+        },
+        {
+          "code": "OSM:5220190829",
+          "name": "Ragala Bus Station",
+          "lat": 7.0122783,
+          "lng": 80.8607148
+        },
+        {
+          "code": "OSM:4487927782",
+          "name": "Ragama Bus Station",
+          "lat": 7.0282985,
+          "lng": 79.9201792
+        },
+        {
+          "code": "OSM:550918957",
+          "name": "Rambukkana Bus Station",
+          "lat": 7.3225629,
+          "lng": 80.3910647
+        },
+        {
+          "code": "OSM:2151514566",
+          "name": "Ratnapura CTB Depot",
+          "lat": 6.6848557,
+          "lng": 80.410543
+        },
+        {
+          "code": "OSM:5124025377",
+          "name": "Rattota Bus Stand;Rattota Bus stand",
+          "lat": 7.5199903,
+          "lng": 80.6778835
+        },
+        {
+          "code": "OSM:653306028",
+          "name": "rikillagaskada bus stand",
+          "lat": 7.1460656,
+          "lng": 80.7841812
+        },
+        {
+          "code": "OSM:751307099",
+          "name": "Saliya Wewa Bus Stand",
+          "lat": 8.1946887,
+          "lng": 80.0945405
+        },
+        {
+          "code": "OSM:1921371333",
+          "name": "Thalangama Depot",
+          "lat": 6.9067802,
+          "lng": 79.9261129
+        },
+        {
+          "code": "OSM:4089614484",
+          "name": "Thambuttegama Bus Station",
+          "lat": 8.1561538,
+          "lng": 80.2969409
+        },
+        {
+          "code": "OSM:3400061187",
+          "name": "Thanamalwila",
+          "lat": 6.4332859,
+          "lng": 81.1310436
+        },
+        {
+          "code": "OSM:3865615671",
+          "name": "Thapalkaddi Juction",
+          "lat": 9.6607665,
+          "lng": 80.04608
+        },
+        {
+          "code": "OSM:2071095588",
+          "name": "Udahamulla Bus Depot",
+          "lat": 6.8647897,
+          "lng": 79.9111586
+        },
+        {
+          "code": "OSM:4370701932",
+          "name": "Valanthalai Junction",
+          "lat": 9.7400471,
+          "lng": 79.8896505
+        },
+        {
+          "code": "OSM:415285091",
+          "name": "Vavuniya Depo",
+          "lat": 8.7358979,
+          "lng": 80.4909259
+        },
+        {
+          "code": "OSM:773555458",
+          "name": "Vinayagapuram Bus Stand",
+          "lat": 7.1035296,
+          "lng": 81.8438996
+        },
+        {
+          "code": "OSM:353020962",
+          "name": "Walapane Old bus stand",
+          "lat": 7.0950065,
+          "lng": 80.861828
+        },
+        {
+          "code": "OSM:198120808",
+          "name": "Warakapola Bus Stand",
+          "lat": 7.224063,
+          "lng": 80.1960146
+        },
+        {
+          "code": "OSM:720130166",
+          "name": "Wariyapola Bus Station",
+          "lat": 7.6201137,
+          "lng": 80.2451999
+        },
+        {
+          "code": "OSM:381188901",
+          "name": "Weligama Main Bus Stand",
+          "lat": 5.973487,
+          "lng": 80.4295018
+        },
+        {
+          "code": "OSM:1818697076",
+          "name": "Wellawaya Bus Stand",
+          "lat": 6.7296084,
+          "lng": 81.1023813
+        },
+        {
+          "code": "OSM:342244016",
+          "name": "Yakkalamulla bus stand",
+          "lat": 6.1062088,
+          "lng": 80.3486077
+        },
+        {
+          "code": "OSM:1529038304",
+          "name": "Yatiyana Bus Stand",
+          "lat": 6.0248077,
+          "lng": 80.6007188
+        },
+        {
+          "code": "OSM:3216973630",
+          "name": "Yatiyanthota",
+          "lat": 7.0285467,
+          "lng": 80.2949461
+        },
+        {
+          "code": "OSM:484504782",
+          "name": "Yatiyanthota Bus Stand",
+          "lat": 7.0286113,
+          "lng": 80.2948351
+        }
+      ]
+    },
+    "Central": {
+      "plane": [
+        {
+          "code": "BTC",
+          "name": "Batticaloa Airport",
+          "lat": 7.70576,
+          "lng": 81.678802
+        },
+        {
+          "code": "RML",
+          "name": "Colombo Ratmalana Airport",
+          "lat": 6.821990013122559,
+          "lng": 79.88619995117188
+        },
+        {
+          "code": "HRI",
+          "name": "Mattala Rajapaksa International Airport",
+          "lat": 6.284467,
+          "lng": 81.124128
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:92128815",
+          "name": "Ahungalla",
+          "lat": 6.3127714,
+          "lng": 80.0375793
+        },
+        {
+          "code": "OSM:1138562255",
+          "name": "Akurala",
+          "lat": 6.1920745,
+          "lng": 80.0647968
+        },
+        {
+          "code": "OSM:1143313787",
+          "name": "Ambanpola",
+          "lat": 7.9188843,
+          "lng": 80.2461079
+        },
+        {
+          "code": "OSM:3091348048",
+          "name": "Andadola",
+          "lat": 6.2661943,
+          "lng": 80.0469401
+        },
+        {
+          "code": "OSM:245405528",
+          "name": "Bandarawela",
+          "lat": 6.8289592,
+          "lng": 80.9876495
+        },
+        {
+          "code": "OSM:1128194191",
+          "name": "Baseline Road",
+          "lat": 6.926363,
+          "lng": 79.8785882
+        },
+        {
+          "code": "OSM:223241304",
+          "name": "Batticaloa",
+          "lat": 7.7244699,
+          "lng": 81.6987216
+        },
+        {
+          "code": "OSM:3634859066",
+          "name": "Beliatta",
+          "lat": 6.0421661,
+          "lng": 80.7372524
+        },
+        {
+          "code": "OSM:5769697430",
+          "name": "Bemmulla",
+          "lat": 7.1224062,
+          "lng": 80.0204927
+        },
+        {
+          "code": "OSM:128541717",
+          "name": "Bentota",
+          "lat": 6.4221603,
+          "lng": 79.9967093
+        },
+        {
+          "code": "OSM:1138480606",
+          "name": "Beruwala",
+          "lat": 6.4769437,
+          "lng": 79.983632
+        },
+        {
+          "code": "OSM:347323250",
+          "name": "Botale",
+          "lat": 7.2565981,
+          "lng": 80.1531824
+        },
+        {
+          "code": "OSM:1137448708",
+          "name": "Chilaw",
+          "lat": 7.5757856,
+          "lng": 79.7909316
+        },
+        {
+          "code": "OSM:1172970228",
+          "name": "China Bay",
+          "lat": 8.556397,
+          "lng": 81.1904552
+        },
+        {
+          "code": "OSM:808882888",
+          "name": "Chunnakam",
+          "lat": 9.7462412,
+          "lng": 80.0333794
+        },
+        {
+          "code": "OSM:1128187926",
+          "name": "Cotta Road",
+          "lat": 6.9133542,
+          "lng": 79.8845224
+        },
+        {
+          "code": "OSM:10046923330",
+          "name": "Dehiwala",
+          "lat": 6.8509082,
+          "lng": 79.8621137
+        },
+        {
+          "code": "OSM:1148494958",
+          "name": "Elephant Pass",
+          "lat": 9.5023899,
+          "lng": 80.4058641
+        },
+        {
+          "code": "OSM:3091402165",
+          "name": "Elwala",
+          "lat": 7.4416745,
+          "lng": 80.6321344
+        },
+        {
+          "code": "OSM:5769656117",
+          "name": "Enderamulla",
+          "lat": 7.0004396,
+          "lng": 79.9068341
+        },
+        {
+          "code": "OSM:12633608551",
+          "name": "Ganegoda",
+          "lat": 7.2129312,
+          "lng": 80.1052505
+        },
+        {
+          "code": "OSM:1728286789",
+          "name": "Ganewatte",
+          "lat": 7.6550184,
+          "lng": 80.3486525
+        },
+        {
+          "code": "OSM:12982392314",
+          "name": "Gangoda",
+          "lat": 7.2983135,
+          "lng": 80.4534106
+        },
+        {
+          "code": "OSM:1728263431",
+          "name": "Ganthalawa",
+          "lat": 8.4165855,
+          "lng": 81.036773
+        },
+        {
+          "code": "OSM:91036830",
+          "name": "Ginthota",
+          "lat": 6.0606665,
+          "lng": 80.1793892
+        },
+        {
+          "code": "OSM:258445946",
+          "name": "Haputale",
+          "lat": 6.7683009,
+          "lng": 80.9575728
+        },
+        {
+          "code": "OSM:3092187158",
+          "name": "Hettimulla",
+          "lat": 6.4576854,
+          "lng": 79.9907622
+        },
+        {
+          "code": "OSM:406161143",
+          "name": "Hingurakgoda",
+          "lat": 8.0395376,
+          "lng": 80.9515407
+        },
+        {
+          "code": "OSM:1143313572",
+          "name": "Hiriyala",
+          "lat": 7.6975804,
+          "lng": 80.3397981
+        },
+        {
+          "code": "OSM:3092194402",
+          "name": "Horiwiala",
+          "lat": 8.0677899,
+          "lng": 80.6785139
+        },
+        {
+          "code": "OSM:5769656118",
+          "name": "Hunupitiya",
+          "lat": 6.9877406,
+          "lng": 79.9004906
+        },
+        {
+          "code": "OSM:5769838368",
+          "name": "Kandana",
+          "lat": 7.04929,
+          "lng": 79.9015367
+        },
+        {
+          "code": "OSM:400562343",
+          "name": "Kandana",
+          "lat": 7.0492692,
+          "lng": 79.9015372
+        },
+        {
+          "code": "OSM:1171391647",
+          "name": "Kantale",
+          "lat": 8.3562353,
+          "lng": 81.0062054
+        },
+        {
+          "code": "OSM:5769840419",
+          "name": "Katunayake",
+          "lat": 7.1674441,
+          "lng": 79.8718829
+        },
+        {
+          "code": "OSM:379307897",
+          "name": "Katunayake",
+          "lat": 7.1674609,
+          "lng": 79.8718674
+        },
+        {
+          "code": "OSM:3092295473",
+          "name": "Keenawala",
+          "lat": 7.1854854,
+          "lng": 80.0743794
+        },
+        {
+          "code": "OSM:7483359602",
+          "name": "Kekanadura",
+          "lat": 5.9606591,
+          "lng": 80.5990478
+        },
+        {
+          "code": "OSM:1168900232",
+          "name": "Kekirawa",
+          "lat": 8.0584532,
+          "lng": 80.5814517
+        },
+        {
+          "code": "OSM:2648621439",
+          "name": "Kelaniya",
+          "lat": 6.9610592,
+          "lng": 79.8944725
+        },
+        {
+          "code": "OSM:245321308",
+          "name": "Kinigama",
+          "lat": 6.8298814,
+          "lng": 81.0058893
+        },
+        {
+          "code": "OSM:1137449199",
+          "name": "Kiriyankalli",
+          "lat": 7.7571732,
+          "lng": 79.8282517
+        },
+        {
+          "code": "OSM:483006833",
+          "name": "Kithalella",
+          "lat": 6.8612537,
+          "lng": 81.0431639
+        },
+        {
+          "code": "OSM:401401342",
+          "name": "Kochchikade",
+          "lat": 7.2642602,
+          "lng": 79.8571484
+        },
+        {
+          "code": "OSM:914902433",
+          "name": "Koggala",
+          "lat": 5.985953,
+          "lng": 80.3316327
+        },
+        {
+          "code": "OSM:808882860",
+          "name": "Kondavil",
+          "lat": 9.7039741,
+          "lng": 80.0248294
+        },
+        {
+          "code": "OSM:510691515",
+          "name": "Kurunegala",
+          "lat": 7.4770348,
+          "lng": 80.3742481
+        },
+        {
+          "code": "OSM:3092365290",
+          "name": "Liyanwala",
+          "lat": 6.8383604,
+          "lng": 80.0797169
+        },
+        {
+          "code": "OSM:401403680",
+          "name": "Lunuwila",
+          "lat": 7.3467912,
+          "lng": 79.8630515
+        },
+        {
+          "code": "OSM:2671478503",
+          "name": "Madhu Road",
+          "lat": 8.7738352,
+          "lng": 80.1501633
+        },
+        {
+          "code": "OSM:10050777338",
+          "name": "Malapalla",
+          "lat": 6.8440838,
+          "lng": 79.9750754
+        },
+        {
+          "code": "OSM:808882895",
+          "name": "Mallakam",
+          "lat": 9.7618907,
+          "lng": 80.0327075
+        },
+        {
+          "code": "OSM:3092419086",
+          "name": "Mankulam",
+          "lat": 9.12999,
+          "lng": 80.4445722
+        },
+        {
+          "code": "OSM:1175901078",
+          "name": "Matale",
+          "lat": 7.467966,
+          "lng": 80.6248632
+        },
+        {
+          "code": "OSM:1685576493",
+          "name": "Midigama",
+          "lat": 5.9651656,
+          "lng": 80.3914881
+        },
+        {
+          "code": "OSM:1144853746",
+          "name": "Mihintale",
+          "lat": 8.3586214,
+          "lng": 80.5016942
+        },
+        {
+          "code": "OSM:1137449691",
+          "name": "Mundalama",
+          "lat": 7.7975461,
+          "lng": 79.8256822
+        },
+        {
+          "code": "OSM:1146591688",
+          "name": "Murikandi-Kokavil",
+          "lat": 9.2063495,
+          "lng": 80.4175742
+        },
+        {
+          "code": "OSM:1143313912",
+          "name": "Muttetugala",
+          "lat": 7.4956732,
+          "lng": 80.3791226
+        },
+        {
+          "code": "OSM:3092596010",
+          "name": "Negama",
+          "lat": 7.9799089,
+          "lng": 80.4835241
+        },
+        {
+          "code": "OSM:3092600710",
+          "name": "Neriyakulam",
+          "lat": 8.6165845,
+          "lng": 80.3568548
+        },
+        {
+          "code": "OSM:664316636",
+          "name": "Omanthai",
+          "lat": 8.8652383,
+          "lng": 80.501248
+        },
+        {
+          "code": "OSM:3092611353",
+          "name": "Pallewala",
+          "lat": 7.1983011,
+          "lng": 80.0899349
+        },
+        {
+          "code": "OSM:92056585",
+          "name": "Panadura",
+          "lat": 6.7124698,
+          "lng": 79.9045698
+        },
+        {
+          "code": "OSM:10050777326",
+          "name": "Panagoda",
+          "lat": 6.846941,
+          "lng": 80.0190057
+        },
+        {
+          "code": "OSM:613202379",
+          "name": "Panagoda",
+          "lat": 6.8469127,
+          "lng": 80.0189929
+        },
+        {
+          "code": "OSM:1175901262",
+          "name": "Pannaliya",
+          "lat": 7.3286016,
+          "lng": 80.3253063
+        },
+        {
+          "code": "OSM:10050777350",
+          "name": "Pannipitiya",
+          "lat": 6.8473816,
+          "lng": 79.9488784
+        },
+        {
+          "code": "OSM:3092675479",
+          "name": "Paranthan",
+          "lat": 9.4401189,
+          "lng": 80.407105
+        },
+        {
+          "code": "OSM:12662892465",
+          "name": "Pattipola",
+          "lat": 6.8558565,
+          "lng": 80.8306009
+        },
+        {
+          "code": "OSM:92058899",
+          "name": "Payagala",
+          "lat": 6.5218897,
+          "lng": 79.9789255
+        },
+        {
+          "code": "OSM:3092757203",
+          "name": "Penrose",
+          "lat": 6.9943143,
+          "lng": 80.5394705
+        },
+        {
+          "code": "OSM:1862832376",
+          "name": "Pinnawala",
+          "lat": 6.8693009,
+          "lng": 80.1173053
+        },
+        {
+          "code": "OSM:1138324718",
+          "name": "Pinwatta",
+          "lat": 6.6859877,
+          "lng": 79.9159943
+        },
+        {
+          "code": "OSM:1148496040",
+          "name": "Punkankulam",
+          "lat": 9.6593033,
+          "lng": 80.0382833
+        },
+        {
+          "code": "OSM:401412645",
+          "name": "Puttalam",
+          "lat": 8.0226735,
+          "lng": 79.8378517
+        },
+        {
+          "code": "OSM:401635566",
+          "name": "Ratmalana",
+          "lat": 6.8152594,
+          "lng": 79.8667777
+        },
+        {
+          "code": "OSM:92129026",
+          "name": "Richmond Hill",
+          "lat": 6.0539303,
+          "lng": 80.2048071
+        },
+        {
+          "code": "OSM:92126866",
+          "name": "Seenigama",
+          "lat": 6.1586793,
+          "lng": 80.094758
+        },
+        {
+          "code": "OSM:897870746",
+          "name": "Talawakele",
+          "lat": 6.9400481,
+          "lng": 80.6609908
+        },
+        {
+          "code": "OSM:808882897",
+          "name": "Tellippalai",
+          "lat": 9.7849804,
+          "lng": 80.0352382
+        },
+        {
+          "code": "OSM:3990565228",
+          "name": "Thachanthoppu",
+          "lat": 9.6571772,
+          "lng": 80.1108181
+        },
+        {
+          "code": "OSM:1146140491",
+          "name": "Thandikulam",
+          "lat": 8.7782563,
+          "lng": 80.4850221
+        },
+        {
+          "code": "OSM:1172969921",
+          "name": "Trincomalee",
+          "lat": 8.5844138,
+          "lng": 81.2262012
+        },
+        {
+          "code": "OSM:5769702653",
+          "name": "Veyangoda",
+          "lat": 7.1530741,
+          "lng": 80.0584119
+        },
+        {
+          "code": "OSM:400348758",
+          "name": "Veyangoda",
+          "lat": 7.152419,
+          "lng": 80.058373
+        },
+        {
+          "code": "OSM:478549152",
+          "name": "Watawala",
+          "lat": 6.9620933,
+          "lng": 80.5263422
+        },
+        {
+          "code": "OSM:298341841",
+          "name": "Weligalla",
+          "lat": 7.1893382,
+          "lng": 80.593008
+        },
+        {
+          "code": "OSM:347323232",
+          "name": "Yaththalgoda",
+          "lat": 7.270437,
+          "lng": 80.1943101
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:3848579769",
+          "name": "Bokkawala",
+          "lat": 7.393704,
+          "lng": 80.5535188
+        },
+        {
+          "code": "OSM:373556868",
+          "name": "Bus halt",
+          "lat": 7.0887381,
+          "lng": 81.0469767
+        },
+        {
+          "code": "OSM:244787869",
+          "name": "Bus Halt",
+          "lat": 6.8143653,
+          "lng": 80.9584968
+        },
+        {
+          "code": "OSM:1174488273",
+          "name": "Buttala",
+          "lat": 6.7601709,
+          "lng": 81.2474288
+        },
+        {
+          "code": "OSM:148710822",
+          "name": "Central Bus Station",
+          "lat": 6.4319494,
+          "lng": 79.9983151
+        },
+        {
+          "code": "OSM:220862777",
+          "name": "Central Bus Station",
+          "lat": 7.7146446,
+          "lng": 81.6947282
+        },
+        {
+          "code": "OSM:286531937",
+          "name": "Central Bus Station",
+          "lat": 7.2895946,
+          "lng": 80.63383
+        },
+        {
+          "code": "OSM:1229797065",
+          "name": "Central Bus Station",
+          "lat": 6.9880632,
+          "lng": 81.0576875
+        },
+        {
+          "code": "OSM:13068688",
+          "name": "Central Bus Station",
+          "lat": 6.9350636,
+          "lng": 79.8545053
+        },
+        {
+          "code": "OSM:256026311",
+          "name": "CTB  Depot - Horana",
+          "lat": 6.7219363,
+          "lng": 80.0751124
+        },
+        {
+          "code": "OSM:1831954362",
+          "name": "Ethgala",
+          "lat": 7.132673,
+          "lng": 80.5681174
+        },
+        {
+          "code": "OSM:2426388323",
+          "name": "Ingiriya",
+          "lat": 6.744272,
+          "lng": 80.1754635
+        },
+        {
+          "code": "OSM:5601187925",
+          "name": "Kaduruwela",
+          "lat": 7.9299768,
+          "lng": 81.03317
+        },
+        {
+          "code": "OSM:1172642004",
+          "name": "Kinniya",
+          "lat": 8.5007635,
+          "lng": 81.1919815
+        },
+        {
+          "code": "OSM:2407690010",
+          "name": "Kirillawala",
+          "lat": 7.0345428,
+          "lng": 79.9906539
+        },
+        {
+          "code": "OSM:4614290991",
+          "name": "Kothmale",
+          "lat": 7.0648726,
+          "lng": 80.683538
+        },
+        {
+          "code": "OSM:1848020284",
+          "name": "Makandura",
+          "lat": 7.3227673,
+          "lng": 79.9768432
+        },
+        {
+          "code": "OSM:4039495732",
+          "name": "Panwila",
+          "lat": 7.361757,
+          "lng": 80.7151609
+        },
+        {
+          "code": "OSM:4109810982",
+          "name": "Paranthan",
+          "lat": 9.4369804,
+          "lng": 80.4073022
+        },
+        {
+          "code": "OSM:9779417978",
+          "name": "Rathna Tevels",
+          "lat": 8.7561617,
+          "lng": 80.484995
+        },
+        {
+          "code": "OSM:7261842",
+          "name": "Talawakele",
+          "lat": 6.9356946,
+          "lng": 80.6612536
+        },
+        {
+          "code": "OSM:1213039235",
+          "name": "Udatiyawala",
+          "lat": 6.5832231,
+          "lng": 80.158704
+        },
+        {
+          "code": "OSM:3756850496",
+          "name": "Weligalla",
+          "lat": 7.1891899,
+          "lng": 80.5923995
+        }
+      ]
+    },
+    "Eastern": {
+      "plane": [
+        {
+          "code": "KCT",
+          "name": "Koggala Airport",
+          "lat": 5.993680000305176,
+          "lng": 80.32029724121094
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:4713806031",
+          "name": "Asgiriya",
+          "lat": 7.2978431,
+          "lng": 80.6352522
+        },
+        {
+          "code": "OSM:5338791530",
+          "name": "Battulu Oya",
+          "lat": 7.7272017,
+          "lng": 79.8316925
+        },
+        {
+          "code": "OSM:3665942841",
+          "name": "Chettikulam Station",
+          "lat": 8.6689844,
+          "lng": 80.3059036
+        },
+        {
+          "code": "OSM:2681885360",
+          "name": "Egoda Uyana",
+          "lat": 6.7429318,
+          "lng": 79.8916572
+        },
+        {
+          "code": "OSM:1173695483",
+          "name": "Eravur",
+          "lat": 7.7855975,
+          "lng": 81.6044408
+        },
+        {
+          "code": "OSM:1177512170",
+          "name": "Galboda",
+          "lat": 6.9860278,
+          "lng": 80.5300581
+        },
+        {
+          "code": "OSM:1001155982",
+          "name": "Galle",
+          "lat": 6.0345812,
+          "lng": 80.2141068
+        },
+        {
+          "code": "OSM:3092123008",
+          "name": "Gammana",
+          "lat": 6.8771479,
+          "lng": 80.1231952
+        },
+        {
+          "code": "OSM:5769697432",
+          "name": "Gampaha",
+          "lat": 7.0920985,
+          "lng": 79.992772
+        },
+        {
+          "code": "OSM:454165222",
+          "name": "Gampola",
+          "lat": 7.162162,
+          "lng": 80.5670372
+        },
+        {
+          "code": "OSM:2918209198",
+          "name": "Gelioya Train Station",
+          "lat": 7.2139104,
+          "lng": 80.5986203
+        },
+        {
+          "code": "OSM:1179884414",
+          "name": "Hali-Ela",
+          "lat": 6.9539582,
+          "lng": 81.0334492
+        },
+        {
+          "code": "OSM:1174703583",
+          "name": "Hatton",
+          "lat": 6.8933542,
+          "lng": 80.59804
+        },
+        {
+          "code": "OSM:1178458977",
+          "name": "Idalgashinna",
+          "lat": 6.7793989,
+          "lng": 80.8968826
+        },
+        {
+          "code": "OSM:1175898763",
+          "name": "Ihalakotte",
+          "lat": 7.2887,
+          "lng": 80.469259
+        },
+        {
+          "code": "OSM:5769838366",
+          "name": "Ja ela",
+          "lat": 7.0777904,
+          "lng": 79.8921517
+        },
+        {
+          "code": "OSM:406388507",
+          "name": "Ja-Ela",
+          "lat": 7.0778002,
+          "lng": 79.8919509
+        },
+        {
+          "code": "OSM:3092276619",
+          "name": "Kalawewa",
+          "lat": 8.0237261,
+          "lng": 80.5311746
+        },
+        {
+          "code": "OSM:1138480165",
+          "name": "Kandegoda",
+          "lat": 6.2501907,
+          "lng": 80.0529169
+        },
+        {
+          "code": "OSM:4038338014",
+          "name": "Kattuwa",
+          "lat": 7.2399357,
+          "lng": 79.8475622
+        },
+        {
+          "code": "OSM:1175904246",
+          "name": "Katugastota",
+          "lat": 7.3304562,
+          "lng": 80.6330084
+        },
+        {
+          "code": "OSM:1138324992",
+          "name": "Katukurunda",
+          "lat": 6.5601254,
+          "lng": 79.9661171
+        },
+        {
+          "code": "OSM:596839994",
+          "name": "Madampe",
+          "lat": 7.4968733,
+          "lng": 79.8413774
+        },
+        {
+          "code": "OSM:1138479999",
+          "name": "Maggona",
+          "lat": 6.5048876,
+          "lng": 79.9813658
+        },
+        {
+          "code": "OSM:443093753",
+          "name": "Maho junction",
+          "lat": 7.8231775,
+          "lng": 80.2750844
+        },
+        {
+          "code": "OSM:1143314167",
+          "name": "Maho Junction",
+          "lat": 7.8231561,
+          "lng": 80.2750922
+        },
+        {
+          "code": "OSM:5847983789",
+          "name": "Maradana",
+          "lat": 6.9292373,
+          "lng": 79.865796
+        },
+        {
+          "code": "OSM:400153469",
+          "name": "Maradana",
+          "lat": 6.9284329,
+          "lng": 79.8649095
+        },
+        {
+          "code": "OSM:401750623",
+          "name": "Matara",
+          "lat": 5.9517619,
+          "lng": 80.5434
+        },
+        {
+          "code": "OSM:733187083",
+          "name": "meegoda train station",
+          "lat": 6.8435499,
+          "lng": 80.0462036
+        },
+        {
+          "code": "OSM:733187086",
+          "name": "Meegoda train station",
+          "lat": 6.8433667,
+          "lng": 80.0462514
+        },
+        {
+          "code": "OSM:1143314135",
+          "name": "Nailiya",
+          "lat": 7.449891,
+          "lng": 80.3587223
+        },
+        {
+          "code": "OSM:6022914",
+          "name": "Nattandiya",
+          "lat": 7.4143184,
+          "lng": 79.866057
+        },
+        {
+          "code": "OSM:1128188069",
+          "name": "Nawinna",
+          "lat": 6.8528888,
+          "lng": 79.9178611
+        },
+        {
+          "code": "OSM:3092762743",
+          "name": "Peradeniya Junction",
+          "lat": 7.2573002,
+          "lng": 80.5901975
+        },
+        {
+          "code": "OSM:6498438905",
+          "name": "Peradeniya Junction",
+          "lat": 7.2556021,
+          "lng": 80.5893918
+        },
+        {
+          "code": "OSM:3092857095",
+          "name": "Radella",
+          "lat": 6.9448004,
+          "lng": 80.716728
+        },
+        {
+          "code": "OSM:3092858649",
+          "name": "Rambukkana",
+          "lat": 7.3210536,
+          "lng": 80.3903192
+        },
+        {
+          "code": "OSM:1257408439",
+          "name": "Talpe",
+          "lat": 5.9984751,
+          "lng": 80.2801328
+        },
+        {
+          "code": "OSM:1139209103",
+          "name": "Telwatte",
+          "lat": 6.169066,
+          "lng": 80.0888763
+        },
+        {
+          "code": "OSM:1139248175",
+          "name": "Unawatuna",
+          "lat": 6.0220651,
+          "lng": 80.2492172
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:1005747104",
+          "name": "Deltota Bus Stand",
+          "lat": 7.1743839,
+          "lng": 80.6972506
+        },
+        {
+          "code": "OSM:2176977987",
+          "name": "Deniyaya Bus Station",
+          "lat": 6.3422812,
+          "lng": 80.560347
+        },
+        {
+          "code": "OSM:185230916",
+          "name": "Elpitiya Bus Depot",
+          "lat": 6.2877258,
+          "lng": 80.1649976
+        },
+        {
+          "code": "OSM:286781099",
+          "name": "Elpitiya Bus Station",
+          "lat": 6.2918608,
+          "lng": 80.1629711
+        },
+        {
+          "code": "OSM:3147140221",
+          "name": "Embilipitiya Bus Depot",
+          "lat": 6.3152096,
+          "lng": 80.8657836
+        },
+        {
+          "code": "OSM:1233279084",
+          "name": "Eravur Bus Station",
+          "lat": 7.7839876,
+          "lng": 81.6072871
+        },
+        {
+          "code": "OSM:4073082136",
+          "name": "Galagedara",
+          "lat": 7.3725591,
+          "lng": 80.5242144
+        },
+        {
+          "code": "OSM:2918212343",
+          "name": "Gelioya Bus Stand",
+          "lat": 7.2150961,
+          "lng": 80.5982376
+        },
+        {
+          "code": "OSM:1932061100",
+          "name": "Hakmana",
+          "lat": 6.0825765,
+          "lng": 80.6436511
+        },
+        {
+          "code": "OSM:477430523",
+          "name": "Hakmana",
+          "lat": 6.0824792,
+          "lng": 80.6436394
+        },
+        {
+          "code": "OSM:4946331220",
+          "name": "Hettipola Bus Station",
+          "lat": 7.5365968,
+          "lng": 80.9135342
+        },
+        {
+          "code": "OSM:429049158",
+          "name": "Jaela Depot",
+          "lat": 7.078932,
+          "lng": 79.8895989
+        },
+        {
+          "code": "OSM:9880362117",
+          "name": "Keerimalai bus station",
+          "lat": 9.8132159,
+          "lng": 80.013718
+        },
+        {
+          "code": "OSM:3219914034",
+          "name": "Kegalle Bus Depot",
+          "lat": 7.2516531,
+          "lng": 80.3439455
+        },
+        {
+          "code": "OSM:3403175025",
+          "name": "Kelaniya Bus Depot",
+          "lat": 6.9555309,
+          "lng": 79.8852167
+        },
+        {
+          "code": "OSM:5419504321",
+          "name": "Kelaniya Bus Station",
+          "lat": 6.9531538,
+          "lng": 79.9190684
+        },
+        {
+          "code": "OSM:229951972",
+          "name": "Kesbewa Bus Station",
+          "lat": 6.7951003,
+          "lng": 79.9408561
+        },
+        {
+          "code": "OSM:543271940",
+          "name": "Kurunegala Bus Terminal",
+          "lat": 7.4878908,
+          "lng": 80.3644624
+        },
+        {
+          "code": "OSM:3679751396",
+          "name": "Madampe",
+          "lat": 7.496852,
+          "lng": 79.8409839
+        },
+        {
+          "code": "OSM:4045510604",
+          "name": "Main Bus Stand",
+          "lat": 6.5322814,
+          "lng": 80.3973948
+        },
+        {
+          "code": "OSM:11530092833",
+          "name": "Maskeliya bus station",
+          "lat": 6.8331497,
+          "lng": 80.5724122
+        },
+        {
+          "code": "OSM:3633738907",
+          "name": "Middeniya Bus Station",
+          "lat": 6.2513201,
+          "lng": 80.7646383
+        },
+        {
+          "code": "OSM:1480054176",
+          "name": "Nattandiya",
+          "lat": 7.4112619,
+          "lng": 79.8644902
+        },
+        {
+          "code": "OSM:4353903220",
+          "name": "Nelliady Junction",
+          "lat": 9.7999479,
+          "lng": 80.2007805
+        },
+        {
+          "code": "OSM:2155827432",
+          "name": "Neluwa Bus Station",
+          "lat": 6.3780225,
+          "lng": 80.3613968
+        },
+        {
+          "code": "OSM:10636822271",
+          "name": "Neluwa Bus Station",
+          "lat": 6.8927936,
+          "lng": 80.9857843
+        },
+        {
+          "code": "OSM:3937750671",
+          "name": "Nugegoda Bus Stand",
+          "lat": 6.8726803,
+          "lng": 79.8919657
+        },
+        {
+          "code": "OSM:6631008191",
+          "name": "Nugegoda Bus Station",
+          "lat": 6.8743137,
+          "lng": 79.8916136
+        },
+        {
+          "code": "OSM:1128186650",
+          "name": "Padukka Bus Station",
+          "lat": 6.8417931,
+          "lng": 80.0907678
+        },
+        {
+          "code": "OSM:2908730924",
+          "name": "Pelmadulla Bus Station",
+          "lat": 6.6245559,
+          "lng": 80.5415914
+        },
+        {
+          "code": "OSM:2347304116",
+          "name": "Pugoda Bus Station‎",
+          "lat": 6.9763026,
+          "lng": 80.1206628
+        },
+        {
+          "code": "OSM:2334181612",
+          "name": "Teldeniya CTB Depot",
+          "lat": 7.3148182,
+          "lng": 80.7585462
+        },
+        {
+          "code": "OSM:4477735892",
+          "name": "tempal Road stand",
+          "lat": 6.4700947,
+          "lng": 79.9852948
+        },
+        {
+          "code": "OSM:1744470929",
+          "name": "Tissa Bus Stand",
+          "lat": 6.2762454,
+          "lng": 81.2869799
+        },
+        {
+          "code": "OSM:1139318218",
+          "name": "Veyangoda Bus Station",
+          "lat": 7.1531545,
+          "lng": 80.0577355
+        }
+      ]
+    },
+    "North Central": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:320613588",
+          "name": "Diesel Electric Locomotive Shed",
+          "lat": 6.9296918,
+          "lng": 79.8655137
+        },
+        {
+          "code": "OSM:1148495492",
+          "name": "Eluthumadduval",
+          "lat": 9.661095,
+          "lng": 80.2656514
+        },
+        {
+          "code": "OSM:8710649328",
+          "name": "Eluthumadduval",
+          "lat": 9.6521856,
+          "lng": 80.2808064
+        },
+        {
+          "code": "OSM:278865181",
+          "name": "Mihintale Junction",
+          "lat": 8.3593754,
+          "lng": 80.4185997
+        },
+        {
+          "code": "OSM:3092797789",
+          "name": "Polwathumodara",
+          "lat": 5.9645346,
+          "lng": 80.4572358
+        },
+        {
+          "code": "OSM:12641162740",
+          "name": "Thiruketheeswaram",
+          "lat": 8.9154185,
+          "lng": 79.9477753
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:1856812595",
+          "name": "Alawwa Central Bus Stand",
+          "lat": 7.2960675,
+          "lng": 80.2374601
+        },
+        {
+          "code": "OSM:4432557292",
+          "name": "Bandarawela Central Bus Station",
+          "lat": 6.829772,
+          "lng": 80.9884632
+        },
+        {
+          "code": "OSM:599713337",
+          "name": "Homagama Central Bus Stand",
+          "lat": 6.8412668,
+          "lng": 80.0020131
+        },
+        {
+          "code": "OSM:135623267",
+          "name": "Horana CTB depot",
+          "lat": 6.7224669,
+          "lng": 80.0747297
+        },
+        {
+          "code": "OSM:99282960",
+          "name": "Jaffna Central Bus Stand",
+          "lat": 9.666771,
+          "lng": 80.0118201
+        },
+        {
+          "code": "OSM:3219914163",
+          "name": "Kegalle Central Bus Stand",
+          "lat": 7.2532654,
+          "lng": 80.34794
+        },
+        {
+          "code": "OSM:915756494",
+          "name": "Koggala CTB Dippo",
+          "lat": 5.9865072,
+          "lng": 80.3295036
+        },
+        {
+          "code": "OSM:915756495",
+          "name": "Koggala CTB Dippo",
+          "lat": 5.9864034,
+          "lng": 80.3301693
+        },
+        {
+          "code": "OSM:915756496",
+          "name": "Koggala CTB Dippo",
+          "lat": 5.9864544,
+          "lng": 80.3300423
+        },
+        {
+          "code": "OSM:915756497",
+          "name": "Koggala CTB Dippo",
+          "lat": 5.9863059,
+          "lng": 80.3304457
+        },
+        {
+          "code": "OSM:915756498",
+          "name": "Koggala CTB Dippo",
+          "lat": 5.9861534,
+          "lng": 80.3303882
+        },
+        {
+          "code": "OSM:915756499",
+          "name": "Koggala CTB Dippo",
+          "lat": 5.9862621,
+          "lng": 80.3301192
+        },
+        {
+          "code": "OSM:915756500",
+          "name": "Koggala CTB Dippo",
+          "lat": 5.9863081,
+          "lng": 80.3299784
+        },
+        {
+          "code": "OSM:915756501",
+          "name": "Koggala CTB Dippo",
+          "lat": 5.9860057,
+          "lng": 80.3300522
+        },
+        {
+          "code": "OSM:915756502",
+          "name": "Koggala CTB Dippo",
+          "lat": 5.9856714,
+          "lng": 80.3299229
+        },
+        {
+          "code": "OSM:6632922963",
+          "name": "Kotte Rd/2nd Cross St",
+          "lat": 6.8788373,
+          "lng": 79.8998505
+        },
+        {
+          "code": "OSM:904112848",
+          "name": "Long distance bus terminal",
+          "lat": 9.6643555,
+          "lng": 80.0110211
+        },
+        {
+          "code": "OSM:10682926205",
+          "name": "Long Distance Bus Terminal",
+          "lat": 9.6643645,
+          "lng": 80.0112155
+        },
+        {
+          "code": "OSM:592530172",
+          "name": "Mannar bus station(Private)",
+          "lat": 8.9787787,
+          "lng": 79.9136254
+        },
+        {
+          "code": "OSM:1138325722",
+          "name": "Moratuwa Terminal",
+          "lat": 6.7748233,
+          "lng": 79.8820469
+        },
+        {
+          "code": "OSM:330190252",
+          "name": "New Hospital",
+          "lat": 6.865673,
+          "lng": 79.927769
+        },
+        {
+          "code": "OSM:6017749355",
+          "name": "Poththapitiya",
+          "lat": 7.2913329,
+          "lng": 80.4909494
+        },
+        {
+          "code": "OSM:1723604078",
+          "name": "Ratnapura Central Bus Stand",
+          "lat": 6.6835785,
+          "lng": 80.4021871
+        },
+        {
+          "code": "OSM:5549855429",
+          "name": "Route 222 - Kadawatha",
+          "lat": 7.0294102,
+          "lng": 79.9216788
+        },
+        {
+          "code": "OSM:1308297980",
+          "name": "SLTB Bus Depot - Pottuvil",
+          "lat": 6.8588369,
+          "lng": 81.8321751
+        },
+        {
+          "code": "OSM:11028932205",
+          "name": "Train Station Waikkal",
+          "lat": 7.2774201,
+          "lng": 79.8602067
+        },
+        {
+          "code": "OSM:359510490",
+          "name": "Vavuniya SLTB (CTB) Bus Stand",
+          "lat": 8.7535449,
+          "lng": 80.4975906
+        }
+      ]
+    },
+    "Southern": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:147409123",
+          "name": "Aluthgama",
+          "lat": 6.4321574,
+          "lng": 80.000339
+        },
+        {
+          "code": "OSM:232514810",
+          "name": "Colombo Fort",
+          "lat": 6.9337497,
+          "lng": 79.8500755
+        },
+        {
+          "code": "OSM:400543368",
+          "name": "Katunayake South - EPZ",
+          "lat": 7.1582838,
+          "lng": 79.8751621
+        },
+        {
+          "code": "OSM:1128188042",
+          "name": "Kirulapona",
+          "lat": 6.8830467,
+          "lng": 79.8828978
+        },
+        {
+          "code": "OSM:7571568171",
+          "name": "Kollupitiya",
+          "lat": 6.9113228,
+          "lng": 79.8481929
+        },
+        {
+          "code": "OSM:258877261",
+          "name": "Kollupitiya",
+          "lat": 6.9113084,
+          "lng": 79.8481768
+        },
+        {
+          "code": "OSM:1728263442",
+          "name": "Mollipothana",
+          "lat": 8.4450308,
+          "lng": 81.0618736
+        },
+        {
+          "code": "OSM:6025361",
+          "name": "Mount Lavinia",
+          "lat": 6.8317253,
+          "lng": 79.8627768
+        },
+        {
+          "code": "OSM:1143315265",
+          "name": "Pothuhera",
+          "lat": 7.4198455,
+          "lng": 80.3274809
+        },
+        {
+          "code": "OSM:401403681",
+          "name": "Thummodara",
+          "lat": 7.3905059,
+          "lng": 79.8590148
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:3213933930",
+          "name": "Ankumbura",
+          "lat": 7.4393348,
+          "lng": 80.5715542
+        },
+        {
+          "code": "OSM:9775003465",
+          "name": "Bogo Bus station",
+          "lat": 6.7948316,
+          "lng": 80.679511
+        },
+        {
+          "code": "OSM:5228638659",
+          "name": "Kandy South Depot.",
+          "lat": 7.285611,
+          "lng": 80.625082
+        },
+        {
+          "code": "OSM:543871335",
+          "name": "SLTB Bus Station",
+          "lat": 6.7144935,
+          "lng": 79.9080546
+        },
+        {
+          "code": "OSM:1974694465",
+          "name": "SLTB Bus Station",
+          "lat": 7.3379987,
+          "lng": 80.9919204
+        },
+        {
+          "code": "OSM:2279222357",
+          "name": "SLTB Depot",
+          "lat": 7.9296751,
+          "lng": 81.0328745
+        },
+        {
+          "code": "OSM:392561948",
+          "name": "SLTB Depot",
+          "lat": 8.1574707,
+          "lng": 81.4242996
+        },
+        {
+          "code": "OSM:11270997158",
+          "name": "upcot bus station",
+          "lat": 6.7870051,
+          "lng": 80.615217
+        }
+      ]
+    },
+    "North Western": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:179220315",
+          "name": "Anuradhapura Railway Station",
+          "lat": 8.3444311,
+          "lng": 80.4108361
+        },
+        {
+          "code": "OSM:1169246212",
+          "name": "Galoya Junction Railway Station",
+          "lat": 8.1377809,
+          "lng": 80.8658177
+        },
+        {
+          "code": "OSM:5172591870",
+          "name": "Glenanore Railway Station",
+          "lat": 6.7712498,
+          "lng": 80.9366065
+        },
+        {
+          "code": "OSM:892780206",
+          "name": "Great Western",
+          "lat": 6.9572412,
+          "lng": 80.6891016
+        },
+        {
+          "code": "OSM:991900848",
+          "name": "Moratuwa Railway Station",
+          "lat": 6.7670732,
+          "lng": 79.8831704
+        },
+        {
+          "code": "OSM:3540412142",
+          "name": "Navatkuli Railway Station",
+          "lat": 9.6616561,
+          "lng": 80.0814724
+        },
+        {
+          "code": "OSM:1140291390",
+          "name": "Polgahawela Junction",
+          "lat": 7.3307027,
+          "lng": 80.3011647
+        },
+        {
+          "code": "OSM:3958951994",
+          "name": "Sangathanai Railway Station",
+          "lat": 9.664046,
+          "lng": 80.1723805
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:222104674",
+          "name": "Aluthgama Bus deport",
+          "lat": 6.4370427,
+          "lng": 79.9973236
+        },
+        {
+          "code": "OSM:723203576",
+          "name": "Anuradhapura New Bus Station",
+          "lat": 8.3230624,
+          "lng": 80.4024323
+        },
+        {
+          "code": "OSM:989790950",
+          "name": "Avittawa Bus Station",
+          "lat": 6.3666,
+          "lng": 80.1466939
+        },
+        {
+          "code": "OSM:5222832132",
+          "name": "Bulathsinhala Bus Station",
+          "lat": 6.6490704,
+          "lng": 80.1787028
+        },
+        {
+          "code": "OSM:3655100685",
+          "name": "Chilaw CTB Bus Stand",
+          "lat": 7.5767494,
+          "lng": 79.7961515
+        },
+        {
+          "code": "OSM:534193327",
+          "name": "Colombo Bus Station",
+          "lat": 8.3392182,
+          "lng": 80.4152328
+        },
+        {
+          "code": "OSM:5800938653",
+          "name": "Danowita bus station",
+          "lat": 7.2044064,
+          "lng": 80.1736533
+        },
+        {
+          "code": "OSM:405221642",
+          "name": "Gampaha Bus Station",
+          "lat": 7.0917876,
+          "lng": 79.9925747
+        },
+        {
+          "code": "OSM:742133987",
+          "name": "Gampaha Bus Station",
+          "lat": 7.0920012,
+          "lng": 79.9916157
+        },
+        {
+          "code": "OSM:454165886",
+          "name": "Gampola CTB Bus Stand",
+          "lat": 7.1617567,
+          "lng": 80.5683504
+        },
+        {
+          "code": "OSM:454165885",
+          "name": "Gampola Private Bus Station",
+          "lat": 7.1617592,
+          "lng": 80.5676587
+        },
+        {
+          "code": "OSM:3215382457",
+          "name": "Ginigathhena Bus Station",
+          "lat": 6.9900126,
+          "lng": 80.4932829
+        },
+        {
+          "code": "OSM:4265991020",
+          "name": "Girandurukotte Bus Station",
+          "lat": 7.472409,
+          "lng": 81.017887
+        },
+        {
+          "code": "OSM:525196935",
+          "name": "Giriulla Bus Station",
+          "lat": 7.3292999,
+          "lng": 80.1218437
+        },
+        {
+          "code": "OSM:3202518117",
+          "name": "Hanguranketha Bus Stand",
+          "lat": 7.1766088,
+          "lng": 80.7779343
+        },
+        {
+          "code": "OSM:1178458715",
+          "name": "Haputale Bus Station",
+          "lat": 6.769155,
+          "lng": 80.9603421
+        },
+        {
+          "code": "OSM:330316808",
+          "name": "Hatton CTB Bus Stand",
+          "lat": 6.8888933,
+          "lng": 80.5992708
+        },
+        {
+          "code": "OSM:1830387320",
+          "name": "Hatton Private Bus Stand",
+          "lat": 6.8893098,
+          "lng": 80.5988877
+        },
+        {
+          "code": "OSM:2285443802",
+          "name": "Hingurakgoda Private Bus Stand",
+          "lat": 8.0406831,
+          "lng": 80.9513166
+        },
+        {
+          "code": "OSM:1077471524",
+          "name": "Horana Bus Stand",
+          "lat": 6.7168862,
+          "lng": 80.0635104
+        },
+        {
+          "code": "OSM:6295845563",
+          "name": "Kalpitiya Bus Terminal",
+          "lat": 8.2404819,
+          "lng": 79.7635843
+        },
+        {
+          "code": "OSM:3730621129",
+          "name": "Kirindiwela Bus Station",
+          "lat": 7.042678,
+          "lng": 80.1300346
+        },
+        {
+          "code": "OSM:457816294",
+          "name": "Kokkaddicholai Bus Stand",
+          "lat": 7.605433,
+          "lng": 81.7118677
+        },
+        {
+          "code": "OSM:4901575950",
+          "name": "Kothmale Depot",
+          "lat": 7.0149604,
+          "lng": 80.6722252
+        },
+        {
+          "code": "OSM:406614256",
+          "name": "Kuliyapitiya Bus Station",
+          "lat": 7.468317,
+          "lng": 80.0414369
+        },
+        {
+          "code": "OSM:302206239",
+          "name": "Kurunegala South Bus Depot",
+          "lat": 7.4793363,
+          "lng": 80.3707729
+        },
+        {
+          "code": "OSM:2146223782",
+          "name": "Kuruwita Bus Stand",
+          "lat": 6.7755132,
+          "lng": 80.3672592
+        },
+        {
+          "code": "OSM:4921735467",
+          "name": "Lunugala Bus Station",
+          "lat": 7.0416568,
+          "lng": 81.2025824
+        },
+        {
+          "code": "OSM:1664611736",
+          "name": "Mount Lavinia Bus Stand",
+          "lat": 6.8330085,
+          "lng": 79.8672728
+        },
+        {
+          "code": "OSM:7056379585",
+          "name": "Murukkan Train Station",
+          "lat": 8.8351263,
+          "lng": 80.0490194
+        },
+        {
+          "code": "OSM:599906101",
+          "name": "Muthu Bus Station",
+          "lat": 8.4531964,
+          "lng": 81.2630774
+        },
+        {
+          "code": "OSM:291488114",
+          "name": "Nagoda Bus Depot",
+          "lat": 6.5591512,
+          "lng": 79.9752548
+        },
+        {
+          "code": "OSM:2196976335",
+          "name": "Negombo Bus Depot",
+          "lat": 7.2216047,
+          "lng": 79.8514419
+        },
+        {
+          "code": "OSM:97913613",
+          "name": "Negombo Bus Terminal",
+          "lat": 7.2052053,
+          "lng": 79.8412145
+        },
+        {
+          "code": "OSM:388391209",
+          "name": "New Private Bus Stand",
+          "lat": 8.7632087,
+          "lng": 80.4956861
+        },
+        {
+          "code": "OSM:5052913836",
+          "name": "Nikaweratiya Bus Station",
+          "lat": 7.7506053,
+          "lng": 80.114999
+        },
+        {
+          "code": "OSM:385075513",
+          "name": "Nittambuwa New Bus Stand",
+          "lat": 7.1417382,
+          "lng": 80.0963511
+        },
+        {
+          "code": "OSM:5245293241",
+          "name": "Nochchiyagama Bus Station",
+          "lat": 8.2638059,
+          "lng": 80.2100739
+        },
+        {
+          "code": "OSM:599359426",
+          "name": "Pannala Bus Station",
+          "lat": 7.3286144,
+          "lng": 80.0225764
+        },
+        {
+          "code": "OSM:5387262383",
+          "name": "Pelawaththa Bus Station",
+          "lat": 6.4047941,
+          "lng": 80.2170423
+        },
+        {
+          "code": "OSM:4427767090",
+          "name": "peththalai bus stand",
+          "lat": 7.9258376,
+          "lng": 81.538092
+        },
+        {
+          "code": "OSM:200567908",
+          "name": "Pettah Private Bus Station",
+          "lat": 6.9336311,
+          "lng": 79.8553348
+        },
+        {
+          "code": "OSM:368862707",
+          "name": "Polgahawela bus station",
+          "lat": 7.3357488,
+          "lng": 80.2997021
+        },
+        {
+          "code": "OSM:5208691724",
+          "name": "Pottuvil Bus Stand",
+          "lat": 6.8769203,
+          "lng": 81.8294612
+        },
+        {
+          "code": "OSM:1201356096",
+          "name": "private bus stand",
+          "lat": 6.5226777,
+          "lng": 80.1155408
+        },
+        {
+          "code": "OSM:1796683828",
+          "name": "Private Bus Stand",
+          "lat": 6.7140679,
+          "lng": 79.9889989
+        },
+        {
+          "code": "OSM:4918978256",
+          "name": "Private Bus Station",
+          "lat": 7.3390395,
+          "lng": 80.9922403
+        },
+        {
+          "code": "OSM:220862779",
+          "name": "Private Bus Station",
+          "lat": 7.7148335,
+          "lng": 81.6963111
+        },
+        {
+          "code": "OSM:352751955",
+          "name": "Private Bus Station",
+          "lat": 6.7119407,
+          "lng": 79.9077127
+        },
+        {
+          "code": "OSM:4901574656",
+          "name": "Punduloya Bus stand",
+          "lat": 7.0151787,
+          "lng": 80.665167
+        },
+        {
+          "code": "OSM:429407034",
+          "name": "Puthukudiyirupu Bus Station",
+          "lat": 9.3208532,
+          "lng": 80.68512
+        },
+        {
+          "code": "OSM:1400433846",
+          "name": "Puttalam Bus Station",
+          "lat": 8.0278817,
+          "lng": 79.8333513
+        },
+        {
+          "code": "OSM:3200289112",
+          "name": "Tangalle Bus Station",
+          "lat": 6.028373,
+          "lng": 80.7944502
+        },
+        {
+          "code": "OSM:1025869918",
+          "name": "Teldeniya CTB Bus Stand",
+          "lat": 7.309018,
+          "lng": 80.7655575
+        },
+        {
+          "code": "OSM:287982682",
+          "name": "Trincomalee Bus Station",
+          "lat": 8.5766872,
+          "lng": 81.2352949
+        }
+      ]
+    },
+    "Northern": {
+      "plane": [
+        {
+          "code": "LK-0001",
+          "name": "Iranamadu Airport",
+          "lat": 9.3066,
+          "lng": 80.489
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:5769656116",
+          "name": "Horape",
+          "lat": 7.0165896,
+          "lng": 79.918322
+        },
+        {
+          "code": "OSM:1177513749",
+          "name": "Inguru Oya",
+          "lat": 7.018222,
+          "lng": 80.5457206
+        },
+        {
+          "code": "OSM:2671478496",
+          "name": "Killinochchi",
+          "lat": 9.3857084,
+          "lng": 80.4059976
+        },
+        {
+          "code": "OSM:3092570865",
+          "name": "Morakele",
+          "lat": 6.8832238,
+          "lng": 80.123948
+        },
+        {
+          "code": "OSM:2681885364",
+          "name": "Moratuwa",
+          "lat": 6.7743504,
+          "lng": 79.8817806
+        },
+        {
+          "code": "OSM:1128190754",
+          "name": "Narahenpita",
+          "lat": 6.8969122,
+          "lng": 79.8780613
+        },
+        {
+          "code": "OSM:4038370993",
+          "name": "Noor Nagar",
+          "lat": 8.035971,
+          "lng": 79.8398157
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:1728275640",
+          "name": "Horowpotana",
+          "lat": 8.5489248,
+          "lng": 80.8317571
+        },
+        {
+          "code": "OSM:2152832340",
+          "name": "Killinochchi",
+          "lat": 9.3833191,
+          "lng": 80.4066967
+        }
+      ]
+    },
+    "Uva": {
+      "plane": [
+        {
+          "code": "JAF",
+          "name": "Jaffna International Airport",
+          "lat": 9.79233,
+          "lng": 80.070099
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:1171391608",
+          "name": "Agbopura",
+          "lat": 8.3267329,
+          "lng": 80.9796646
+        },
+        {
+          "code": "OSM:1140291692",
+          "name": "Alawwa",
+          "lat": 7.2934242,
+          "lng": 80.2386365
+        },
+        {
+          "code": "OSM:4753573110",
+          "name": "Angulana",
+          "lat": 6.7988303,
+          "lng": 79.8727054
+        },
+        {
+          "code": "OSM:287235937",
+          "name": "Badulla",
+          "lat": 6.9796316,
+          "lng": 81.0597582
+        },
+        {
+          "code": "OSM:1175901018",
+          "name": "Balana",
+          "lat": 7.2667493,
+          "lng": 80.489353
+        },
+        {
+          "code": "OSM:347323315",
+          "name": "Batuwatta",
+          "lat": 7.0551005,
+          "lng": 79.9372147
+        },
+        {
+          "code": "OSM:92124678",
+          "name": "Dodanduwa",
+          "lat": 6.0981764,
+          "lng": 80.1328946
+        },
+        {
+          "code": "OSM:1856813120",
+          "name": "Girambe",
+          "lat": 7.3646496,
+          "lng": 80.3025304
+        },
+        {
+          "code": "OSM:195275704",
+          "name": "Hikkaduwa",
+          "lat": 6.1421137,
+          "lng": 80.1000822
+        },
+        {
+          "code": "OSM:1138479649",
+          "name": "Induruwa",
+          "lat": 6.3873819,
+          "lng": 80.0086384
+        },
+        {
+          "code": "OSM:808882870",
+          "name": "Inuvil",
+          "lat": 9.7259364,
+          "lng": 80.0295273
+        },
+        {
+          "code": "OSM:808882873",
+          "name": "Inuvil",
+          "lat": 9.7266594,
+          "lng": 80.0296472
+        },
+        {
+          "code": "OSM:12643612533",
+          "name": "Jaffna",
+          "lat": 9.6654661,
+          "lng": 80.0207059
+        },
+        {
+          "code": "OSM:12670315153",
+          "name": "Kadugoda",
+          "lat": 6.9180501,
+          "lng": 80.1348044
+        },
+        {
+          "code": "OSM:92126920",
+          "name": "Kahawe",
+          "lat": 6.1831844,
+          "lng": 80.073997
+        },
+        {
+          "code": "OSM:258496237",
+          "name": "Kandy",
+          "lat": 7.2894743,
+          "lng": 80.6322495
+        },
+        {
+          "code": "OSM:5769838367",
+          "name": "Kapuwatta",
+          "lat": 7.0629149,
+          "lng": 79.896002
+        },
+        {
+          "code": "OSM:4187025379",
+          "name": "Katugoda",
+          "lat": 6.0327454,
+          "lng": 80.2401656
+        },
+        {
+          "code": "OSM:808882853",
+          "name": "Kokkuvil",
+          "lat": 9.6880891,
+          "lng": 80.0212093
+        },
+        {
+          "code": "OSM:1137449404",
+          "name": "Kudawewa",
+          "lat": 7.4621812,
+          "lng": 79.8530119
+        },
+        {
+          "code": "OSM:4753573335",
+          "name": "Lunawa",
+          "lat": 6.786652,
+          "lng": 79.8755526
+        },
+        {
+          "code": "OSM:3092545086",
+          "name": "Mirissa",
+          "lat": 5.9566902,
+          "lng": 80.4734963
+        },
+        {
+          "code": "OSM:4109833590",
+          "name": "Mirusuvil",
+          "lat": 9.6741668,
+          "lng": 80.2432739
+        },
+        {
+          "code": "OSM:3092584733",
+          "name": "Nanu Oya",
+          "lat": 6.9420663,
+          "lng": 80.7436484
+        },
+        {
+          "code": "OSM:258445949",
+          "name": "Nanu Oya",
+          "lat": 6.942275,
+          "lng": 80.7438801
+        },
+        {
+          "code": "OSM:516597661",
+          "name": "Nugegoda",
+          "lat": 6.8720836,
+          "lng": 79.8906835
+        },
+        {
+          "code": "OSM:1178458796",
+          "name": "Ohiya",
+          "lat": 6.8177121,
+          "lng": 80.8430198
+        },
+        {
+          "code": "OSM:1128193060",
+          "name": "Padukka",
+          "lat": 6.8427474,
+          "lng": 80.0911536
+        },
+        {
+          "code": "OSM:401412650",
+          "name": "Palavi",
+          "lat": 7.9816689,
+          "lng": 79.8328121
+        },
+        {
+          "code": "OSM:3313919778",
+          "name": "Pallai",
+          "lat": 9.6078751,
+          "lng": 80.3298414
+        },
+        {
+          "code": "OSM:388710548",
+          "name": "Punani",
+          "lat": 7.9636416,
+          "lng": 81.3871793
+        },
+        {
+          "code": "OSM:3092822215",
+          "name": "Punewa",
+          "lat": 8.6130857,
+          "lng": 80.462864
+        },
+        {
+          "code": "OSM:5769656115",
+          "name": "Ragama",
+          "lat": 7.0299493,
+          "lng": 79.921428
+        },
+        {
+          "code": "OSM:400381944",
+          "name": "Seeduwa",
+          "lat": 7.1290257,
+          "lng": 79.88254
+        },
+        {
+          "code": "OSM:1143314565",
+          "name": "Talawa",
+          "lat": 8.231752,
+          "lng": 80.348274
+        },
+        {
+          "code": "OSM:5769838365",
+          "name": "Tudella",
+          "lat": 7.0929503,
+          "lng": 79.8909487
+        },
+        {
+          "code": "OSM:12628680967",
+          "name": "Uduwara",
+          "lat": 6.9303742,
+          "lng": 81.0446989
+        },
+        {
+          "code": "OSM:1175900259",
+          "name": "Ukuwela",
+          "lat": 7.4202246,
+          "lng": 80.6342993
+        },
+        {
+          "code": "OSM:1177231213",
+          "name": "Ulapane",
+          "lat": 7.1082827,
+          "lng": 80.5597211
+        },
+        {
+          "code": "OSM:4197716349",
+          "name": "Wadduwa",
+          "lat": 6.6632626,
+          "lng": 79.9286921
+        },
+        {
+          "code": "OSM:1128191687",
+          "name": "Waga",
+          "lat": 6.9013533,
+          "lng": 80.1276619
+        },
+        {
+          "code": "OSM:5769656114",
+          "name": "Yagoda",
+          "lat": 7.0747267,
+          "lng": 79.9739
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:6158473478",
+          "name": "154",
+          "lat": 6.8956629,
+          "lng": 79.8558978
+        },
+        {
+          "code": "OSM:2164965826",
+          "name": "Akuressa",
+          "lat": 6.0995623,
+          "lng": 80.4777065
+        },
+        {
+          "code": "OSM:3492756622",
+          "name": "Angoda",
+          "lat": 6.9287793,
+          "lng": 79.9274552
+        },
+        {
+          "code": "OSM:11169270942",
+          "name": "Bus St",
+          "lat": 9.2686546,
+          "lng": 80.8131244
+        },
+        {
+          "code": "OSM:2335072238",
+          "name": "Digana",
+          "lat": 7.2952739,
+          "lng": 80.7354898
+        },
+        {
+          "code": "OSM:195275705",
+          "name": "Hikkaduwa",
+          "lat": 6.140264,
+          "lng": 80.1000502
+        },
+        {
+          "code": "OSM:4727704902",
+          "name": "Kirinda",
+          "lat": 6.2154193,
+          "lng": 81.3348618
+        },
+        {
+          "code": "OSM:6185575099",
+          "name": "Madulla",
+          "lat": 7.0539337,
+          "lng": 80.9267306
+        },
+        {
+          "code": "OSM:2142229459",
+          "name": "Taladuwa",
+          "lat": 7.2036857,
+          "lng": 79.842081
+        },
+        {
+          "code": "OSM:4690500351",
+          "name": "Talawa",
+          "lat": 8.2368827,
+          "lng": 80.3506013
+        },
+        {
+          "code": "OSM:4615291591",
+          "name": "Udagama",
+          "lat": 7.1225491,
+          "lng": 80.5646634
+        },
+        {
+          "code": "OSM:3633692200",
+          "name": "Urubokka",
+          "lat": 6.3004697,
+          "lng": 80.6352764
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:42:32.746Z"
+  }
+}

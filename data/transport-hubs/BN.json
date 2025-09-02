@@ -1,0 +1,87 @@
+{
+  "code": "BN",
+  "name": "Brunei",
+  "cities": {
+    "Brunei dan Muara": {
+      "plane": [
+        {
+          "code": "BWN",
+          "name": "Brunei International Airport",
+          "lat": 4.9442,
+          "lng": 114.928001
+        }
+      ],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:11237840138",
+          "name": "Brunei International Airport Public Bus Station",
+          "lat": 4.9448078,
+          "lng": 114.9351941
+        },
+        {
+          "code": "OSM:4861497722",
+          "name": "Bus to BSB and Miri",
+          "lat": 4.6133935,
+          "lng": 114.3314214
+        },
+        {
+          "code": "OSM:5338124421",
+          "name": "Muara Town Terminal",
+          "lat": 5.0259513,
+          "lng": 115.07078
+        }
+      ]
+    },
+    "Belait": {
+      "plane": [
+        {
+          "code": "WBAK",
+          "name": "Anduki Airport",
+          "lat": 4.635158,
+          "lng": 114.378748
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Tutong": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5486880422",
+          "name": "Bus to Miri",
+          "lat": 4.8877171,
+          "lng": 114.9442985
+        }
+      ]
+    },
+    "Temburong": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:4820963323",
+          "name": "Temburong Boat Jetty",
+          "lat": 4.8781059,
+          "lng": 114.9504663
+        },
+        {
+          "code": "OSM:5362929522",
+          "name": "Terminal BSB Brunei",
+          "lat": 4.7079349,
+          "lng": 115.0734501
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:49:19.618Z"
+  }
+}

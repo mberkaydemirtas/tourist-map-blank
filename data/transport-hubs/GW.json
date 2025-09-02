@@ -1,0 +1,66 @@
+{
+  "code": "GW",
+  "name": "Guinea-Bissau",
+  "cities": {
+    "Bissau": {
+      "plane": [
+        {
+          "code": "OXB",
+          "name": "Osvaldo Vieira International Airport",
+          "lat": 11.894800186157227,
+          "lng": -15.65369987487793
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Oio": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gabú": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Biombo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bafatá": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Cacheu": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Quinara": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tombali": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bolama/Bijagós": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:44:09.191Z"
+  }
+}

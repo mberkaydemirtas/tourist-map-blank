@@ -1,0 +1,168 @@
+{
+  "code": "HU",
+  "name": "Hungary",
+  "cities": {
+    "Budapest": {
+      "plane": [
+        {
+          "code": "BUD",
+          "name": "Budapest Liszt Ferenc International Airport",
+          "lat": 47.43018,
+          "lng": 19.262393
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Győr-Moson-Sopron": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hajdú-Bihar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Csongrád-Csanád": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vas": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Borsod-Abaúj-Zemplén": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Baranya": {
+      "plane": [
+        {
+          "code": "SOB",
+          "name": "Hévíz–Balaton Airport",
+          "lat": 46.686391,
+          "lng": 17.159084
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Szabolcs-Szatmár-Bereg": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bács-Kiskun": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sopron": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Fejér": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Pest": {
+      "plane": [
+        {
+          "code": "LHPR",
+          "name": "Győr-Pér International Airport",
+          "lat": 47.628436,
+          "lng": 17.804718
+        },
+        {
+          "code": "PEV",
+          "name": "Pécs-Pogány Airport",
+          "lat": 45.988891,
+          "lng": 18.242044
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Jász-Nagykun-Szolnok": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Komárom-Esztergom": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Somogy": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Veszprém": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Zala": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Békés": {
+      "plane": [
+        {
+          "code": "DEB",
+          "name": "Debrecen International Airport",
+          "lat": 47.488899,
+          "lng": 21.615299
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Heves": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nagykanizsa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hódmezővásárhely": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dunaújváros": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nógrád": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tolna": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:34:40.045Z"
+  }
+}

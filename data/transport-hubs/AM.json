@@ -1,0 +1,174 @@
+{
+  "code": "AM",
+  "name": "Armenia",
+  "cities": {
+    "Yerevan": {
+      "plane": [
+        {
+          "code": "EVN",
+          "name": "Zvartnots International Airport",
+          "lat": 40.1473007202,
+          "lng": 44.3959007263
+        }
+      ],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:558386291",
+          "name": "Calle 26",
+          "lat": 4.6166332,
+          "lng": -74.0721953
+        },
+        {
+          "code": "OSM:637237178",
+          "name": "P. E. P. Centro",
+          "lat": 4.5344775,
+          "lng": -75.6765827
+        },
+        {
+          "code": "OSM:583595789",
+          "name": "P. E. P. Los Naranjos",
+          "lat": 4.5203763,
+          "lng": -75.6987579
+        },
+        {
+          "code": "OSM:19211317",
+          "name": "Temporal Calle 34",
+          "lat": 4.6189333,
+          "lng": -74.0709815
+        }
+      ]
+    },
+    "Shirak": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:1288094382",
+          "name": "P. E. P. Hospital",
+          "lat": 4.5560055,
+          "lng": -75.6568894
+        },
+        {
+          "code": "OSM:614055972",
+          "name": "P. E. P. Mirador",
+          "lat": 4.5220498,
+          "lng": -75.6847081
+        }
+      ]
+    },
+    "Lorri": {
+      "plane": [
+        {
+          "code": "LWN",
+          "name": "Shirak International Airport",
+          "lat": 40.750401,
+          "lng": 43.859299
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Armavir": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:515112835",
+          "name": "Armenia (En desuso)",
+          "lat": 13.7463125,
+          "lng": -89.5060515
+        }
+      ],
+      "bus": []
+    },
+    "Kotayk’": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5816506279",
+          "name": "Ruta 208",
+          "lat": 13.7463937,
+          "lng": -89.5003152
+        }
+      ]
+    },
+    "Syunik’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Geghark’unik’": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:614506545",
+          "name": "P. E. P. Coliseo",
+          "lat": 4.5477137,
+          "lng": -75.6674593
+        }
+      ]
+    },
+    "Aragatsotn": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:1413973268",
+          "name": "Terminal de Ruta Cañas Gordas",
+          "lat": 4.5070065,
+          "lng": -75.6960621
+        },
+        {
+          "code": "OSM:818910703",
+          "name": "Terminal de Ruta Puerto Espejo",
+          "lat": 4.5174134,
+          "lng": -75.7154037
+        },
+        {
+          "code": "OSM:270168957",
+          "name": "Terminal de Transportes de Armenia",
+          "lat": 4.5277461,
+          "lng": -75.6839952
+        },
+        {
+          "code": "OSM:301728072",
+          "name": "Terminal de Transportes de Armenia",
+          "lat": 4.5283736,
+          "lng": -75.6840715
+        }
+      ]
+    },
+    "Ararat": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tavush": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vayots’ Dzor": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:613844052",
+          "name": "P. E. P. Hospital del Sur",
+          "lat": 4.5143592,
+          "lng": -75.7017241
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:39:16.023Z"
+  }
+}

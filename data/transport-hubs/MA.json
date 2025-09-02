@@ -1,0 +1,156 @@
+{
+  "code": "MA",
+  "name": "Morocco",
+  "cities": {
+    "Casablanca-Settat": {
+      "plane": [
+        {
+          "code": "CMN",
+          "name": "Mohammed V International Airport",
+          "lat": 33.3675,
+          "lng": -7.58997
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Tanger-Tétouan-Al Hoceïma": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Fès-Meknès": {
+      "plane": [
+        {
+          "code": "ESU",
+          "name": "Essaouira-Mogador Airport",
+          "lat": 31.397499,
+          "lng": -9.68167
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Marrakech-Safi": {
+      "plane": [
+        {
+          "code": "RAK",
+          "name": "Menara Airport",
+          "lat": 31.606899,
+          "lng": -8.0363
+        },
+        {
+          "code": "ERH",
+          "name": "Moulay Ali Cherif Airport",
+          "lat": 31.9475002289,
+          "lng": -4.39833021164
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Rabat-Salé-Kénitra": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Oriental": {
+      "plane": [
+        {
+          "code": "AGA",
+          "name": "Al Massira Airport",
+          "lat": 30.322478,
+          "lng": -9.412003
+        },
+        {
+          "code": "FEZ",
+          "name": "Fes Saïss International Airport",
+          "lat": 33.927299,
+          "lng": -4.97796
+        },
+        {
+          "code": "NDR",
+          "name": "Nador Al Aaroui International Airport",
+          "lat": 34.9888,
+          "lng": -3.02821
+        },
+        {
+          "code": "OZZ",
+          "name": "Ouarzazate Airport",
+          "lat": 30.9391002655,
+          "lng": -6.909430027010001
+        },
+        {
+          "code": "OUD",
+          "name": "Oujda Angads Airport",
+          "lat": 34.789558,
+          "lng": -1.926041
+        },
+        {
+          "code": "RBA",
+          "name": "Rabat-Salé Airport",
+          "lat": 34.051498,
+          "lng": -6.75152
+        },
+        {
+          "code": "TTU",
+          "name": "Sania Ramel Airport",
+          "lat": 35.594299,
+          "lng": -5.32002
+        },
+        {
+          "code": "TTA",
+          "name": "Tan Tan Airport",
+          "lat": 28.448200225830078,
+          "lng": -11.161299705505371
+        },
+        {
+          "code": "TNG",
+          "name": "Tangier Ibn Battuta Airport",
+          "lat": 35.731741,
+          "lng": -5.921459
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Souss-Massa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Béni Mellal-Khénifra": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Laâyoune-Sakia El Hamra": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Guelmim-Oued Noun": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dakhla-Oued Ed-Dahab": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Drâa-Tafilalet": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:28:39.249Z"
+  }
+}

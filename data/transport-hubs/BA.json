@@ -1,0 +1,55 @@
+{
+  "code": "BA",
+  "name": "Bosnia and Herzegovina",
+  "cities": {
+    "Bosnia and Herzegovina, Federation of": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Srpska, Republika": {
+      "plane": [
+        {
+          "code": "SJJ",
+          "name": "Sarajevo International Airport",
+          "lat": 43.8246,
+          "lng": 18.331499
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Brcko District": {
+      "plane": [
+        {
+          "code": "BNX",
+          "name": "Banja Luka International Airport",
+          "lat": 44.941399,
+          "lng": 17.297501
+        },
+        {
+          "code": "OMO",
+          "name": "Mostar International Airport",
+          "lat": 43.282901763916016,
+          "lng": 17.84589958190918
+        },
+        {
+          "code": "TZL",
+          "name": "Tuzla International Airport",
+          "lat": 44.458698,
+          "lng": 18.7248
+        }
+      ],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:46:23.746Z"
+  }
+}

@@ -1,0 +1,255 @@
+{
+  "code": "EG",
+  "name": "Egypt",
+  "cities": {
+    "Al Qāhirah": {
+      "plane": [
+        {
+          "code": "HBE",
+          "name": "Borj El Arab International Airport",
+          "lat": 30.93249,
+          "lng": 29.696437
+        },
+        {
+          "code": "AAC",
+          "name": "El Arish International Airport",
+          "lat": 31.078565,
+          "lng": 33.836791
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Al Jīzah": {
+      "plane": [
+        {
+          "code": "ABS",
+          "name": "Abu Simbel Airport",
+          "lat": 22.367657,
+          "lng": 31.609962
+        },
+        {
+          "code": "SPX",
+          "name": "Sphinx International Airport",
+          "lat": 30.108179,
+          "lng": 30.895728
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Al Iskandarīyah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Al Qalyūbīyah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Al Minūfīyah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Al Fayyūm": {
+      "plane": [
+        {
+          "code": "DBB",
+          "name": "El Alamein International Airport",
+          "lat": 30.924324,
+          "lng": 28.46161
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Asyūţ": {
+      "plane": [
+        {
+          "code": "ATZ",
+          "name": "Asyut International Airport",
+          "lat": 27.050818,
+          "lng": 31.016309
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ad Daqahlīyah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Al Gharbīyah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Al Buḩayrah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Būr Sa‘īd": {
+      "plane": [
+        {
+          "code": "SEW",
+          "name": "Siwa Oasis North Airport",
+          "lat": 29.346234,
+          "lng": 25.505624
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "As Suways": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Qinā": {
+      "plane": [
+        {
+          "code": "CAI",
+          "name": "Cairo International Airport",
+          "lat": 30.111534,
+          "lng": 31.396694
+        },
+        {
+          "code": "TCP",
+          "name": "Taba International Airport",
+          "lat": 29.594496,
+          "lng": 34.775752
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Banī Suwayf": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sūhāj": {
+      "plane": [
+        {
+          "code": "HRG",
+          "name": "Hurghada International Airport",
+          "lat": 27.176776,
+          "lng": 33.796692
+        },
+        {
+          "code": "LXR",
+          "name": "Luxor International Airport",
+          "lat": 25.671037,
+          "lng": 32.706451
+        },
+        {
+          "code": "HMB",
+          "name": "Sohag International Airport",
+          "lat": 26.342515,
+          "lng": 31.743017
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Al Ismā‘īlīyah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ash Sharqīyah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kafr ash Shaykh": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Aswān": {
+      "plane": [
+        {
+          "code": "ASW",
+          "name": "Aswan International Airport",
+          "lat": 23.968137,
+          "lng": 32.824445
+        },
+        {
+          "code": "RMF",
+          "name": "Marsa Alam International Airport",
+          "lat": 25.555548,
+          "lng": 34.59245
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Al Minyā": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Al Baḩr al Aḩmar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dumyāţ": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Al Uqşur": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Shamāl Sīnā’": {
+      "plane": [
+        {
+          "code": "SSH",
+          "name": "Sharm El Sheikh International Airport",
+          "lat": 27.977272,
+          "lng": 34.394717
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Maţrūḩ": {
+      "plane": [
+        {
+          "code": "MUH",
+          "name": "Marsa Matruh International Airport",
+          "lat": 31.325464,
+          "lng": 27.221716
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Janūb Sīnā’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Al Wādī al Jadīd": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:16:03.478Z"
+  }
+}

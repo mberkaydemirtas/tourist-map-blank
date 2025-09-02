@@ -1,0 +1,150 @@
+{
+  "code": "SD",
+  "name": "Sudan",
+  "cities": {
+    "Khartoum": {
+      "plane": [
+        {
+          "code": "KRT",
+          "name": "Khartoum International Airport",
+          "lat": 15.5895,
+          "lng": 32.5532
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Red Sea": {
+      "plane": [
+        {
+          "code": "ELF",
+          "name": "El Fasher Airport",
+          "lat": 13.614899635314941,
+          "lng": 25.324600219726562
+        },
+        {
+          "code": "EBD",
+          "name": "El-Obeid Airport",
+          "lat": 13.1532,
+          "lng": 30.2327
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "West Darfur": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kassala": {
+      "plane": [
+        {
+          "code": "DOG",
+          "name": "Dongola Airport",
+          "lat": 19.153900146499996,
+          "lng": 30.430099487299998
+        },
+        {
+          "code": "KSL",
+          "name": "Kassala Airport",
+          "lat": 15.387499809265137,
+          "lng": 36.328800201416016
+        },
+        {
+          "code": "UYL",
+          "name": "Nyala Airport",
+          "lat": 12.0535,
+          "lng": 24.9562
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "North Darfur": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "South Darfur": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "North Kordofan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gedaref": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gezira": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "White Nile": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "East Darfur": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sennar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Blue Nile": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "River Nile": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "West Kordofan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "South Kordofan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Northern": {
+      "plane": [
+        {
+          "code": "PZU",
+          "name": "Port Sudan New International Airport",
+          "lat": 19.4335994720459,
+          "lng": 37.234100341796875
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Central Darfur": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:24:28.829Z"
+  }
+}

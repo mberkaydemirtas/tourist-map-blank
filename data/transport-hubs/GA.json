@@ -1,0 +1,332 @@
+{
+  "code": "GA",
+  "name": "Gabon",
+  "cities": {
+    "Estuaire": {
+      "plane": [
+        {
+          "code": "LBV",
+          "name": "Libreville Leon M'ba International Airport",
+          "lat": 0.458600014448,
+          "lng": 9.412280082699999
+        },
+        {
+          "code": "MVB",
+          "name": "M'Vengue El Hadj Omar Bongo Ondimba International Airport",
+          "lat": -1.6561599969863892,
+          "lng": 13.437999725341797
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:1954863566",
+          "name": "Franceville",
+          "lat": -1.6403306,
+          "lng": 13.5723893
+        },
+        {
+          "code": "OSM:4866795981",
+          "name": "Lastourville",
+          "lat": -0.7936004,
+          "lng": 12.7741894
+        },
+        {
+          "code": "OSM:13011095808",
+          "name": "Owendo Viré",
+          "lat": 0.322166,
+          "lng": 9.498031
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5662130623",
+          "name": "Agence Ultramex",
+          "lat": 2.0797999,
+          "lng": 11.4917994
+        },
+        {
+          "code": "OSM:6054175385",
+          "name": "Bitam express",
+          "lat": 0.4085678,
+          "lng": 9.4449047
+        },
+        {
+          "code": "OSM:10757904490",
+          "name": "Gare routière",
+          "lat": 0.388458,
+          "lng": 9.7616475
+        },
+        {
+          "code": "OSM:10761952662",
+          "name": "Gare routière",
+          "lat": 0.3906313,
+          "lng": 9.7555059
+        },
+        {
+          "code": "OSM:1827907509",
+          "name": "Gare Routière",
+          "lat": 0.403235,
+          "lng": 9.4512491
+        },
+        {
+          "code": "OSM:4986529561",
+          "name": "Gare Routière",
+          "lat": -0.8092546,
+          "lng": 12.7307135
+        },
+        {
+          "code": "OSM:655339045",
+          "name": "Gare Routière",
+          "lat": 1.5757756,
+          "lng": 11.5699569
+        },
+        {
+          "code": "OSM:967241687",
+          "name": "Gare Routiere de Mekambo",
+          "lat": 1.00761,
+          "lng": 13.9662147
+        },
+        {
+          "code": "OSM:12058614644",
+          "name": "Gare Routière de Mékambo",
+          "lat": 1.0077318,
+          "lng": 13.966257
+        },
+        {
+          "code": "OSM:509918493",
+          "name": "Gare Routière de Mounana",
+          "lat": -1.3838529,
+          "lng": 13.1569637
+        },
+        {
+          "code": "OSM:636659731",
+          "name": "Major Transport",
+          "lat": 2.0802049,
+          "lng": 11.4914502
+        },
+        {
+          "code": "OSM:2751706543",
+          "name": "Sogatra",
+          "lat": -0.7053074,
+          "lng": 10.2233266
+        },
+        {
+          "code": "OSM:7150704685",
+          "name": "Station de Bus",
+          "lat": -2.9172254,
+          "lng": 10.9943834
+        }
+      ]
+    },
+    "Ogooué-Maritime": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:10292664409",
+          "name": "Makokou central bus station",
+          "lat": 0.5592939,
+          "lng": 12.8556077
+        },
+        {
+          "code": "OSM:10050424017",
+          "name": "Transport to Lopé and Lastoursville",
+          "lat": 0.4096284,
+          "lng": 9.4910106
+        }
+      ]
+    },
+    "Haut-Ogooué": {
+      "plane": [
+        {
+          "code": "MKU",
+          "name": "Makokou Airport",
+          "lat": 0.5792109966278076,
+          "lng": 12.890899658203125
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Woleu-Ntem": {
+      "plane": [
+        {
+          "code": "POG",
+          "name": "Port Gentil Airport",
+          "lat": -0.7117390036582947,
+          "lng": 8.754380226135254
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Moyen-Ogooué": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ngounié": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:4867037884",
+          "name": "Alembé",
+          "lat": -0.1131959,
+          "lng": 10.9445245
+        },
+        {
+          "code": "OSM:4867037545",
+          "name": "Bissouma",
+          "lat": -0.0956715,
+          "lng": 11.2572059
+        },
+        {
+          "code": "OSM:4866293707",
+          "name": "Booué",
+          "lat": -0.103874,
+          "lng": 11.9486385
+        },
+        {
+          "code": "OSM:4867038343",
+          "name": "Doumé",
+          "lat": -0.888786,
+          "lng": 12.9916929
+        },
+        {
+          "code": "OSM:4867038142",
+          "name": "Lifouta",
+          "lat": -1.0667581,
+          "lng": 13.1468014
+        },
+        {
+          "code": "OSM:4866650406",
+          "name": "Lopé",
+          "lat": -0.1029336,
+          "lng": 11.6053887
+        },
+        {
+          "code": "OSM:4867038479",
+          "name": "Mboungou",
+          "lat": -1.3144394,
+          "lng": 13.2643407
+        },
+        {
+          "code": "OSM:4866795923",
+          "name": "Milolé",
+          "lat": -0.5478569,
+          "lng": 12.6449884
+        },
+        {
+          "code": "OSM:4866796496",
+          "name": "Mouyabi",
+          "lat": -0.342556,
+          "lng": 12.4374358
+        },
+        {
+          "code": "OSM:4866419173",
+          "name": "Ndjolé",
+          "lat": -0.1338261,
+          "lng": 10.8000166
+        },
+        {
+          "code": "OSM:13011095809",
+          "name": "Ntoum",
+          "lat": 0.3662582,
+          "lng": 9.748997
+        },
+        {
+          "code": "OSM:4866649951",
+          "name": "Offoué",
+          "lat": -0.101181,
+          "lng": 11.7759825
+        },
+        {
+          "code": "OSM:4866419146",
+          "name": "Otoumbi",
+          "lat": -0.0804394,
+          "lng": 11.1240126
+        }
+      ],
+      "bus": []
+    },
+    "Nyanga": {
+      "plane": [
+        {
+          "code": "GAX",
+          "name": "Gamba Airport",
+          "lat": -2.785278,
+          "lng": 10.047222
+        },
+        {
+          "code": "OYE",
+          "name": "Oyem Airport",
+          "lat": 1.5431100130081177,
+          "lng": 11.581399917602539
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:4866498062",
+          "name": "Abanga",
+          "lat": -0.1431778,
+          "lng": 10.519149
+        },
+        {
+          "code": "OSM:13011095812",
+          "name": "Andem",
+          "lat": 0.3518215,
+          "lng": 9.9322717
+        },
+        {
+          "code": "OSM:4866430703",
+          "name": "Ayem",
+          "lat": -0.1182345,
+          "lng": 11.43703
+        },
+        {
+          "code": "OSM:4866796398",
+          "name": "Ivindo",
+          "lat": -0.196446,
+          "lng": 12.1960746
+        },
+        {
+          "code": "OSM:13011095832",
+          "name": "M'Bel",
+          "lat": 0.2721651,
+          "lng": 10.1689621
+        },
+        {
+          "code": "OSM:4433410188",
+          "name": "Moanda",
+          "lat": -1.5029718,
+          "lng": 13.2879841
+        },
+        {
+          "code": "OSM:13011095834",
+          "name": "Oyan",
+          "lat": 0.0421244,
+          "lng": 10.3320186
+        }
+      ],
+      "bus": []
+    },
+    "Ogooué-Lolo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ogooué-Ivindo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:41:33.541Z"
+  }
+}

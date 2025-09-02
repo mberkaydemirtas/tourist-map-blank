@@ -1,0 +1,51 @@
+{
+  "code": "DJ",
+  "name": "Djibouti",
+  "cities": {
+    "Djibouti": {
+      "plane": [
+        {
+          "code": "JIB",
+          "name": "Djibouti-Ambouli Airport",
+          "lat": 11.5473,
+          "lng": 43.1595
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ali Sabieh": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dikhil": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Obock": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tadjourah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Arta": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:43:30.542Z"
+  }
+}

@@ -1,0 +1,180 @@
+{
+  "code": "ME",
+  "name": "Montenegro",
+  "cities": {
+    "Podgorica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nikšić": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ulcinj": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Herceg Novi": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:4332968733",
+          "name": "Faro Aeroporto",
+          "lat": 37.0220984,
+          "lng": -7.9689498
+        }
+      ]
+    },
+    "Pljevlja": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Budva": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Plav": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Rožaje": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kotor": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bijelo Polje": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:616417070",
+          "name": "Estación Montenegro",
+          "lat": 4.5341459,
+          "lng": -75.7702189
+        },
+        {
+          "code": "OSM:601128646",
+          "name": "Tren de las Fábulas",
+          "lat": 4.5345606,
+          "lng": -75.7695815
+        }
+      ],
+      "bus": []
+    },
+    "Cetinje": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:499413151",
+          "name": "Estación Armenia",
+          "lat": 4.5391821,
+          "lng": -75.7671948
+        }
+      ],
+      "bus": []
+    },
+    "Berane": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tivat": {
+      "plane": [
+        {
+          "code": "TIV",
+          "name": "Tivat Airport",
+          "lat": 42.404701232910156,
+          "lng": 18.72330093383789
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Petnjica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Danilovgrad": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:88683800",
+          "name": "Estação Rodoviária de Montenegro",
+          "lat": -29.678505,
+          "lng": -51.4660197
+        }
+      ]
+    },
+    "Tuzi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mojkovac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Zeta": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kolašin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Žabljak": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gusinje": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Plužine": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Andrijevica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Šavnik": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:47:30.807Z"
+  }
+}

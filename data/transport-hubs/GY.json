@@ -1,0 +1,305 @@
+{
+  "code": "GY",
+  "name": "Guyana",
+  "cities": {
+    "Demerara-Mahaica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Upper Demerara-Berbice": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:576003075",
+          "name": "Rosignol - New Amsterdam Bus Terminal",
+          "lat": 6.2708292,
+          "lng": -57.5352943
+        }
+      ]
+    },
+    "East Berbice-Corentyne": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Pomeroon-Supenaam": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:12645697701",
+          "name": "Bus to Georgetown",
+          "lat": 3.3694235,
+          "lng": -59.7916055
+        },
+        {
+          "code": "OSM:392013793",
+          "name": "Springlands Bus Park",
+          "lat": 6.8109658,
+          "lng": -58.1658284
+        },
+        {
+          "code": "OSM:5179272721",
+          "name": "Timehri Bus Park",
+          "lat": 6.8091136,
+          "lng": -58.1672762
+        }
+      ]
+    },
+    "Cuyuni-Mazaruni": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5440259221",
+          "name": "Camp ville town",
+          "lat": 5.2855354,
+          "lng": -59.1502244
+        },
+        {
+          "code": "OSM:6833188886",
+          "name": "Cindy's Bus",
+          "lat": 3.3728231,
+          "lng": -59.7958302
+        }
+      ]
+    },
+    "Upper Takutu-Upper Essequibo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Potaro-Siparuni": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:6845642286",
+          "name": "Boats to Islands",
+          "lat": 6.810714,
+          "lng": -58.4728161
+        },
+        {
+          "code": "OSM:364121470",
+          "name": "East Bank Bus Park",
+          "lat": 6.8091958,
+          "lng": -58.1675122
+        },
+        {
+          "code": "OSM:672498908",
+          "name": "Intraserv",
+          "lat": 6.8155814,
+          "lng": -58.1608925
+        },
+        {
+          "code": "OSM:5179272621",
+          "name": "Linden Bus Park",
+          "lat": 6.8084105,
+          "lng": -58.1671988
+        },
+        {
+          "code": "OSM:392013794",
+          "name": "Rosignal Bus Park",
+          "lat": 6.8110599,
+          "lng": -58.1657937
+        },
+        {
+          "code": "OSM:364120892",
+          "name": "West Bank Bus Park",
+          "lat": 6.8086249,
+          "lng": -58.1684846
+        },
+        {
+          "code": "OSM:385607119",
+          "name": "West Coast Parika Bus Park",
+          "lat": 6.8093451,
+          "lng": -58.1682406
+        }
+      ]
+    },
+    "Barima-Waini": {
+      "plane": [
+        {
+          "code": "GEO",
+          "name": "Cheddi Jagan International Airport",
+          "lat": 6.49855,
+          "lng": -58.254101
+        },
+        {
+          "code": "OGL",
+          "name": "Eugene F. Correia International Airport",
+          "lat": 6.80628,
+          "lng": -58.1059
+        },
+        {
+          "code": "KAI",
+          "name": "Kaieteur International Airport",
+          "lat": 5.177349,
+          "lng": -59.48898
+        },
+        {
+          "code": "LTM",
+          "name": "Lethem Airport",
+          "lat": 3.37276,
+          "lng": -59.789398
+        }
+      ],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:702316825",
+          "name": "32",
+          "lat": 6.8621361,
+          "lng": -58.4238192
+        },
+        {
+          "code": "OSM:392013796",
+          "name": "40",
+          "lat": 6.809783,
+          "lng": -58.1663929
+        },
+        {
+          "code": "OSM:364121213",
+          "name": "41",
+          "lat": 6.809637,
+          "lng": -58.167279
+        },
+        {
+          "code": "OSM:392013785",
+          "name": "42",
+          "lat": 6.8067838,
+          "lng": -58.0521996
+        },
+        {
+          "code": "OSM:527899276",
+          "name": "42 Timehri",
+          "lat": 6.8091025,
+          "lng": -58.1672725
+        },
+        {
+          "code": "OSM:703733166",
+          "name": "43",
+          "lat": 6.007599,
+          "lng": -58.3045107
+        },
+        {
+          "code": "OSM:364121036",
+          "name": "44",
+          "lat": 6.8111839,
+          "lng": -58.1665617
+        },
+        {
+          "code": "OSM:392013786",
+          "name": "44",
+          "lat": 6.8066007,
+          "lng": -58.0518687
+        },
+        {
+          "code": "OSM:392013810",
+          "name": "44",
+          "lat": 6.6704554,
+          "lng": -57.9240681
+        },
+        {
+          "code": "OSM:702331584",
+          "name": "44",
+          "lat": 6.8115437,
+          "lng": -58.1657779
+        },
+        {
+          "code": "OSM:528510962",
+          "name": "45",
+          "lat": 6.8100337,
+          "lng": -58.1672883
+        },
+        {
+          "code": "OSM:595783204",
+          "name": "45",
+          "lat": 6.8166414,
+          "lng": -58.1571351
+        },
+        {
+          "code": "OSM:364121131",
+          "name": "46",
+          "lat": 6.80976,
+          "lng": -58.1669627
+        },
+        {
+          "code": "OSM:392013795",
+          "name": "47",
+          "lat": 6.8101255,
+          "lng": -58.1667556
+        },
+        {
+          "code": "OSM:392013797",
+          "name": "48",
+          "lat": 6.8096756,
+          "lng": -58.1661569
+        },
+        {
+          "code": "OSM:364868232",
+          "name": "50",
+          "lat": 6.2721851,
+          "lng": -57.5411768
+        },
+        {
+          "code": "OSM:392013811",
+          "name": "50",
+          "lat": 6.6703619,
+          "lng": -57.9238631
+        },
+        {
+          "code": "OSM:679558345",
+          "name": "63 Bus",
+          "lat": 6.2545545,
+          "lng": -57.3556077
+        },
+        {
+          "code": "OSM:6833188885",
+          "name": "Amataur",
+          "lat": 3.3719311,
+          "lng": -59.7964788
+        },
+        {
+          "code": "OSM:12643623202",
+          "name": "Bus to Lethem",
+          "lat": 6.8100104,
+          "lng": -58.1548074
+        },
+        {
+          "code": "OSM:6819872596",
+          "name": "Kui",
+          "lat": 5.2511492,
+          "lng": -58.0714772
+        }
+      ]
+    },
+    "Essequibo Islands-West Demerara": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mahaica-Berbice": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5689053421",
+          "name": "Cindy's Bus Service",
+          "lat": 6.8089502,
+          "lng": -58.1521521
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:46:57.319Z"
+  }
+}

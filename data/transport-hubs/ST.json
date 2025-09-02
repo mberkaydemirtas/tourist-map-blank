@@ -1,0 +1,63 @@
+{
+  "code": "ST",
+  "name": "Sao Tome and Principe",
+  "cities": {
+    "Água Grande": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mé-Zóchi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Cantagalo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lembá": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lobata": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Caué": {
+      "plane": [
+        {
+          "code": "TMS",
+          "name": "São Tomé International Airport",
+          "lat": 0.378175,
+          "lng": 6.71215
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Príncipe": {
+      "plane": [
+        {
+          "code": "PCP",
+          "name": "Principe Airport",
+          "lat": 1.66294,
+          "lng": 7.41174
+        }
+      ],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:49:03.501Z"
+  }
+}

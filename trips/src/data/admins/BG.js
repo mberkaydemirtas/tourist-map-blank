@@ -1,0 +1,31 @@
+// AUTO-GENERATED admins for BG
+const ADMINS = [
+  "Blagoevgrad",
+  "Burgas",
+  "Dobrich",
+  "Gabrovo",
+  "Haskovo",
+  "Kardzhali",
+  "Kyustendil",
+  "Lovech",
+  "Montana",
+  "Pazardzhik",
+  "Pernik",
+  "Pleven",
+  "Plovdiv",
+  "Razgrad",
+  "Ruse",
+  "Shumen",
+  "Silistra",
+  "Sliven",
+  "Smolyan",
+  "Sofia-Grad",
+  "Stara Zagora",
+  "Targovishte",
+  "Varna",
+  "Veliko Tarnovo",
+  "Vidin",
+  "Vratsa",
+  "Yambol"
+];
+export default ADMINS;

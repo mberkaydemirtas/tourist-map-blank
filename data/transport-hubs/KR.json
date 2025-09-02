@@ -1,0 +1,171 @@
+{
+  "code": "KR",
+  "name": "Korea, South",
+  "cities": {
+    "Seoul": {
+      "plane": [
+        {
+          "code": "GMP",
+          "name": "Gimpo International Airport",
+          "lat": 37.5583,
+          "lng": 126.791
+        },
+        {
+          "code": "ICN",
+          "name": "Incheon International Airport",
+          "lat": 37.469101,
+          "lng": 126.450996
+        },
+        {
+          "code": "MWX",
+          "name": "Muan International Airport",
+          "lat": 34.991406,
+          "lng": 126.382814
+        },
+        {
+          "code": "RSU",
+          "name": "Yeosu Airport",
+          "lat": 34.84230041503906,
+          "lng": 127.61699676513672
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Busan": {
+      "plane": [
+        {
+          "code": "PUS",
+          "name": "Gimhae International Airport",
+          "lat": 35.179501,
+          "lng": 128.938004
+        },
+        {
+          "code": "KPO",
+          "name": "Pohang Airport (G-815/K-3)",
+          "lat": 35.987955,
+          "lng": 129.420383
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Incheon": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Daegu": {
+      "plane": [
+        {
+          "code": "TAE",
+          "name": "Daegu Airport",
+          "lat": 35.896872,
+          "lng": 128.65531
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Gwangju": {
+      "plane": [
+        {
+          "code": "KWJ",
+          "name": "Gwangju Airport",
+          "lat": 35.123173,
+          "lng": 126.805444
+        },
+        {
+          "code": "YNY",
+          "name": "Yangyang International Airport",
+          "lat": 38.061298,
+          "lng": 128.669006
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Daejeon": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gyeonggi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ulsan": {
+      "plane": [
+        {
+          "code": "USN",
+          "name": "Ulsan Airport",
+          "lat": 35.59349823,
+          "lng": 129.352005005
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Gyeongnam": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Chungbuk": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Chungnam": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gyeongbuk": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Jeju": {
+      "plane": [
+        {
+          "code": "CJU",
+          "name": "Jeju International Airport",
+          "lat": 33.512058,
+          "lng": 126.492548
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Jeonbuk": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gangwon": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Jeonnam": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sejong": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:15:58.084Z"
+  }
+}

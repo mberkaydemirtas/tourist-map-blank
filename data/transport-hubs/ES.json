@@ -1,0 +1,375 @@
+{
+  "code": "ES",
+  "name": "Spain",
+  "cities": {
+    "Madrid": {
+      "plane": [
+        {
+          "code": "LCG",
+          "name": "A Coruña Airport",
+          "lat": 43.302101,
+          "lng": -8.37726
+        },
+        {
+          "code": "MAD",
+          "name": "Adolfo Suárez Madrid–Barajas Airport",
+          "lat": 40.471926,
+          "lng": -3.56264
+        },
+        {
+          "code": "FUE",
+          "name": "Fuerteventura Airport",
+          "lat": 28.4527,
+          "lng": -13.8638
+        },
+        {
+          "code": "AGP",
+          "name": "Málaga-Costa del Sol Airport",
+          "lat": 36.6749,
+          "lng": -4.49911
+        },
+        {
+          "code": "TFN",
+          "name": "Tenerife Norte-Ciudad de La Laguna Airport",
+          "lat": 28.4827,
+          "lng": -16.341499
+        },
+        {
+          "code": "TFS",
+          "name": "Tenerife Sur Airport",
+          "lat": 28.0445,
+          "lng": -16.5725
+        },
+        {
+          "code": "LETF",
+          "name": "Tomás Fernández Espada Airfield",
+          "lat": 36.871793,
+          "lng": -5.648775
+        },
+        {
+          "code": "VLL",
+          "name": "Valladolid Airport",
+          "lat": 41.7061,
+          "lng": -4.85194
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Catalonia": {
+      "plane": [
+        {
+          "code": "BCN",
+          "name": "Josep Tarradellas Barcelona-El Prat Airport",
+          "lat": 41.2971,
+          "lng": 2.07846
+        },
+        {
+          "code": "PMI",
+          "name": "Palma de Mallorca Airport",
+          "lat": 39.551701,
+          "lng": 2.73881
+        },
+        {
+          "code": "PNA",
+          "name": "Pamplona Airport",
+          "lat": 42.77,
+          "lng": -1.64633
+        },
+        {
+          "code": "SLM",
+          "name": "Salamanca Airport",
+          "lat": 40.952099,
+          "lng": -5.50199
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Valencia": {
+      "plane": [
+        {
+          "code": "LEI",
+          "name": "Almería Airport",
+          "lat": 36.843899,
+          "lng": -2.3701
+        },
+        {
+          "code": "IBZ",
+          "name": "Ibiza Airport",
+          "lat": 38.872898,
+          "lng": 1.37312
+        },
+        {
+          "code": "LEN",
+          "name": "León Int'l Airport",
+          "lat": 42.589001,
+          "lng": -5.65556
+        },
+        {
+          "code": "MAH",
+          "name": "Menorca Airport",
+          "lat": 39.862598,
+          "lng": 4.21865
+        },
+        {
+          "code": "VLC",
+          "name": "Valencia Airport",
+          "lat": 39.4893,
+          "lng": -0.481625
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Andalusia": {
+      "plane": [
+        {
+          "code": "EAS",
+          "name": "San Sebastián Airport",
+          "lat": 43.356499,
+          "lng": -1.79061
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Basque Country": {
+      "plane": [
+        {
+          "code": "SCQ",
+          "name": "Santiago-Rosalía de Castro Airport",
+          "lat": 42.896301,
+          "lng": -8.41514
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Aragon": {
+      "plane": [
+        {
+          "code": "OVD",
+          "name": "Asturias Airport",
+          "lat": 43.563599,
+          "lng": -6.03462
+        },
+        {
+          "code": "BJZ",
+          "name": "Badajoz Airport",
+          "lat": 38.8913,
+          "lng": -6.82133
+        },
+        {
+          "code": "GRX",
+          "name": "F.G.L. Airport Granada-Jaén Airport",
+          "lat": 37.188702,
+          "lng": -3.77736
+        },
+        {
+          "code": "VGO",
+          "name": "Vigo Airport",
+          "lat": 42.2318,
+          "lng": -8.62677
+        },
+        {
+          "code": "VIT",
+          "name": "Vitoria Airport",
+          "lat": 42.882801,
+          "lng": -2.72447
+        },
+        {
+          "code": "ZAZ",
+          "name": "Zaragoza Airport",
+          "lat": 41.666199,
+          "lng": -1.04155
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Murcia": {
+      "plane": [
+        {
+          "code": "GRO",
+          "name": "Girona-Costa Brava Airport",
+          "lat": 41.904639,
+          "lng": 2.761774
+        },
+        {
+          "code": "RMU",
+          "name": "Región de Murcia International Airport",
+          "lat": 37.803,
+          "lng": -1.125
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Canary Islands": {
+      "plane": [
+        {
+          "code": "VDE",
+          "name": "El Hierro Airport",
+          "lat": 27.8148,
+          "lng": -17.8871
+        },
+        {
+          "code": "LPA",
+          "name": "Gran Canaria Airport",
+          "lat": 27.9319,
+          "lng": -15.3866
+        },
+        {
+          "code": "GMZ",
+          "name": "La Gomera Airport",
+          "lat": 28.0296,
+          "lng": -17.2146
+        },
+        {
+          "code": "SPC",
+          "name": "La Palma Airport",
+          "lat": 28.626499,
+          "lng": -17.7556
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Balearic Islands": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Castille-Leon": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Galicia": {
+      "plane": [
+        {
+          "code": "ALC",
+          "name": "Alicante-Elche Miguel Hernández Airport",
+          "lat": 38.2822,
+          "lng": -0.558156
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Asturias": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Navarre": {
+      "plane": [
+        {
+          "code": "ACE",
+          "name": "César Manrique-Lanzarote Airport",
+          "lat": 28.945499,
+          "lng": -13.6052
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Castille-La Mancha": {
+      "plane": [
+        {
+          "code": "CDT",
+          "name": "Castellón-Costa Azahar Airport",
+          "lat": 40.213889,
+          "lng": 0.073333
+        },
+        {
+          "code": "XRY",
+          "name": "Jerez Airport",
+          "lat": 36.744598,
+          "lng": -6.06011
+        },
+        {
+          "code": "LEU",
+          "name": "Pirineus - la Seu d'Urgel Airport",
+          "lat": 42.3386,
+          "lng": 1.40917
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Cantabria": {
+      "plane": [
+        {
+          "code": "SDR",
+          "name": "Seve Ballesteros-Santander Airport",
+          "lat": 43.427101,
+          "lng": -3.82001
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "La Rioja": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Extremadura": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Melilla": {
+      "plane": [
+        {
+          "code": "BIO",
+          "name": "Bilbao Airport",
+          "lat": 43.301102,
+          "lng": -2.91061
+        },
+        {
+          "code": "MLN",
+          "name": "Melilla Airport",
+          "lat": 35.2798,
+          "lng": -2.95626
+        },
+        {
+          "code": "SVQ",
+          "name": "Sevilla Airport",
+          "lat": 37.417999,
+          "lng": -5.89311
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ceuta": {
+      "plane": [
+        {
+          "code": "ILD",
+          "name": "Lleida-Alguaire Airport",
+          "lat": 41.728185,
+          "lng": 0.535023
+        },
+        {
+          "code": "REU",
+          "name": "Reus Airport",
+          "lat": 41.1474,
+          "lng": 1.16717
+        }
+      ],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:25:28.848Z"
+  }
+}

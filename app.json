@@ -36,7 +36,7 @@
       "jsEngine": "jsc",
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyBP0UQMQsLeyJNQLfGrmEEWkoB8QhWY4V8"
+          "apiKey": "AIzaSyD3J8FFJDqPymAs1vW-bbsmBMQp4ModVeU"
         }
       },
       "package": "com.anonymous.touristmapblank"

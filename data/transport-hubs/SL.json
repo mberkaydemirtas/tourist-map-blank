@@ -1,0 +1,152 @@
+{
+  "code": "SL",
+  "name": "Sierra Leone",
+  "cities": {
+    "Western Area": {
+      "plane": [
+        {
+          "code": "FNA",
+          "name": "Lungi International Airport",
+          "lat": 8.61644,
+          "lng": -13.1955
+        }
+      ],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:4751127021",
+          "name": "buses to kanema",
+          "lat": 8.4910111,
+          "lng": -13.2351044
+        },
+        {
+          "code": "OSM:4526412290",
+          "name": "Mini Bus Terminal Shell",
+          "lat": 8.474416,
+          "lng": -13.191146
+        },
+        {
+          "code": "OSM:4533776992",
+          "name": "Shared Taxi Park",
+          "lat": 7.9455045,
+          "lng": -11.7365145
+        },
+        {
+          "code": "OSM:4531925395",
+          "name": "Shared Taxi Park for Liberia Border(Jendema)",
+          "lat": 7.9602524,
+          "lng": -11.7434277
+        },
+        {
+          "code": "OSM:4532060589",
+          "name": "Shared Taxi Park Station for Makeni Kono",
+          "lat": 7.965084,
+          "lng": -11.737095
+        },
+        {
+          "code": "OSM:4534008090",
+          "name": "Shared Taxi Park(How for do Park, Liberia Park)",
+          "lat": 7.8746615,
+          "lng": -11.1936415
+        },
+        {
+          "code": "OSM:4532007190",
+          "name": "Shated Taxi Park for Kenema",
+          "lat": 7.9649737,
+          "lng": -11.737394
+        },
+        {
+          "code": "OSM:11190277737",
+          "name": "Show Field parking - Transport to Kono/Koidu Town",
+          "lat": 7.8822371,
+          "lng": -11.1929777
+        }
+      ]
+    },
+    "Southern": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Eastern": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:629364575",
+          "name": "Hastings",
+          "lat": 8.3864639,
+          "lng": -13.1342396
+        },
+        {
+          "code": "OSM:401475830",
+          "name": "Waterloo",
+          "lat": 8.3390841,
+          "lng": -13.0736106
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:3345922939",
+          "name": "Melian Tours",
+          "lat": 8.4950067,
+          "lng": -13.2684383
+        },
+        {
+          "code": "OSM:4537495792",
+          "name": "Shared Taxi Station",
+          "lat": 7.020405,
+          "lng": -11.382365
+        }
+      ]
+    },
+    "North Western": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:4534094991",
+          "name": "Goverment Bus Station",
+          "lat": 7.8795824,
+          "lng": -11.1899993
+        },
+        {
+          "code": "OSM:12020259869",
+          "name": "Local car station",
+          "lat": 7.9448632,
+          "lng": -11.7277139
+        },
+        {
+          "code": "OSM:11202044337",
+          "name": "portee junction",
+          "lat": 8.464408,
+          "lng": -13.1746092
+        },
+        {
+          "code": "OSM:4526166389",
+          "name": "Shared Taxi to Guinea Station",
+          "lat": 8.4806426,
+          "lng": -13.2073274
+        },
+        {
+          "code": "OSM:11205009237",
+          "name": "Tombo - Kent Park",
+          "lat": 8.3286853,
+          "lng": -13.0710301
+        }
+      ]
+    },
+    "Northern": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:40:30.844Z"
+  }
+}

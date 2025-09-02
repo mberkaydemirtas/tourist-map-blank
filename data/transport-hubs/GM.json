@@ -1,0 +1,56 @@
+{
+  "code": "GM",
+  "name": "Gambia, The",
+  "cities": {
+    "Banjul": {
+      "plane": [
+        {
+          "code": "BJL",
+          "name": "Banjul International Airport",
+          "lat": 13.338,
+          "lng": -16.652201
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kanifing": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "West Coast": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "North Bank": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lower River": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Upper River": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Central River": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:45:09.266Z"
+  }
+}

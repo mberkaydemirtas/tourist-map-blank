@@ -1,0 +1,108 @@
+{
+  "code": "BD",
+  "name": "Bangladesh",
+  "cities": {
+    "Dhaka": {
+      "plane": [
+        {
+          "code": "CXB",
+          "name": "Cox's Bazar Airport",
+          "lat": 21.457517,
+          "lng": 91.963263
+        },
+        {
+          "code": "DAC",
+          "name": "Hazrat Shahjalal International Airport",
+          "lat": 23.843347,
+          "lng": 90.397783
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Chattogram": {
+      "plane": [
+        {
+          "code": "CGP",
+          "name": "Shah Amanat International Airport",
+          "lat": 22.249599,
+          "lng": 91.813301
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Rangpur": {
+      "plane": [
+        {
+          "code": "SPD",
+          "name": "Saidpur Airport",
+          "lat": 25.759199,
+          "lng": 88.908897
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Khulna": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mymensingh": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sylhet": {
+      "plane": [
+        {
+          "code": "ZYL",
+          "name": "Osmany International Airport",
+          "lat": 24.963832,
+          "lng": 91.864843
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Rājshāhi": {
+      "plane": [
+        {
+          "code": "JSR",
+          "name": "Jessore Airport",
+          "lat": 23.1838,
+          "lng": 89.160797
+        },
+        {
+          "code": "RJH",
+          "name": "Shah Mokhdum Airport",
+          "lat": 24.437201,
+          "lng": 88.616501
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Barishal": {
+      "plane": [
+        {
+          "code": "BZL",
+          "name": "Barisal Airport",
+          "lat": 22.801001,
+          "lng": 90.301201
+        }
+      ],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:16:16.779Z"
+  }
+}

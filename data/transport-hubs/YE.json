@@ -1,0 +1,160 @@
+{
+  "code": "YE",
+  "name": "Yemen",
+  "cities": {
+    "Amānat al ‘Āşimah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "‘Adan": {
+      "plane": [
+        {
+          "code": "SAH",
+          "name": "Sanaa International Airport",
+          "lat": 15.4763,
+          "lng": 44.2197
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ḩaḑramawt": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ta‘izz": {
+      "plane": [
+        {
+          "code": "TAI",
+          "name": "Ta'izz International Airport",
+          "lat": 13.6859998703,
+          "lng": 44.139099121099996
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Al Ḩudaydah": {
+      "plane": [
+        {
+          "code": "AAY",
+          "name": "Al Ghaydah International Airport",
+          "lat": 16.193341,
+          "lng": 52.174186
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ibb": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dhamār": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ḩajjah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Şa‘dah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Al Bayḑā’": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Shabwah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Laḩij": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Aḑ Ḑāli‘": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Abyan": {
+      "plane": [
+        {
+          "code": "RIY",
+          "name": "Riyan Mukalla International Airport",
+          "lat": 14.6626,
+          "lng": 49.375
+        },
+        {
+          "code": "GXF",
+          "name": "Seiyun Hadhramaut International Airport",
+          "lat": 15.9661,
+          "lng": 48.7883
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "‘Amrān": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ma’rib": {
+      "plane": [
+        {
+          "code": "SCT",
+          "name": "Socotra International Airport",
+          "lat": 12.6307,
+          "lng": 53.9058
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Al Maḩwīt": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Al Jawf": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Al Mahrah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Arkhabīl Suquţrá": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Raymah": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:31:31.156Z"
+  }
+}

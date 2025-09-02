@@ -1,0 +1,226 @@
+{
+  "code": "IE",
+  "name": "Ireland",
+  "cities": {
+    "Dublin": {
+      "plane": [
+        {
+          "code": "NNR",
+          "name": "Connemara Regional Airport",
+          "lat": 53.23030090332031,
+          "lng": -9.467780113220215
+        },
+        {
+          "code": "DUB",
+          "name": "Dublin Airport",
+          "lat": 53.428713,
+          "lng": -6.262121
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Cork": {
+      "plane": [
+        {
+          "code": "ORK",
+          "name": "Cork Airport",
+          "lat": 51.841301,
+          "lng": -8.49111
+        },
+        {
+          "code": "INQ",
+          "name": "Inisheer Aerodrome",
+          "lat": 53.064701,
+          "lng": -9.5109
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Galway": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "South Dublin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Limerick": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Waterford": {
+      "plane": [
+        {
+          "code": "KIR",
+          "name": "Kerry Airport",
+          "lat": 52.180901,
+          "lng": -9.52378
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Louth": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Fingal": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Meath": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dún Laoghaire-Rathdown": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kerry": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Carlow": {
+      "plane": [
+        {
+          "code": "NOC",
+          "name": "Ireland West Knock Airport",
+          "lat": 53.910301,
+          "lng": -8.81849
+        },
+        {
+          "code": "SNN",
+          "name": "Shannon Airport",
+          "lat": 52.702,
+          "lng": -8.92482
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Clare": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Laois": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Westmeath": {
+      "plane": [
+        {
+          "code": "IIA",
+          "name": "Inishmaan Aerodrome",
+          "lat": 53.092999,
+          "lng": -9.56806
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Donegal": {
+      "plane": [
+        {
+          "code": "CFN",
+          "name": "Donegal Airport",
+          "lat": 55.0442008972168,
+          "lng": -8.340999603271484
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kilkenny": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Wicklow": {
+      "plane": [
+        {
+          "code": "IOR",
+          "name": "Inishmore Aerodrome",
+          "lat": 53.1067008972168,
+          "lng": -9.653610229492188
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kildare": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Wexford": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sligo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tipperary": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Offaly": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mayo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Cavan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Longford": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Monaghan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Roscommon": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Leitrim": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:43:35.688Z"
+  }
+}

@@ -1,0 +1,189 @@
+{
+  "code": "TW",
+  "name": "Taiwan",
+  "cities": {
+    "Taichung": {
+      "plane": [
+        {
+          "code": "CYI",
+          "name": "Chiayi Airport",
+          "lat": 23.462577,
+          "lng": 120.390544
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kaohsiung": {
+      "plane": [
+        {
+          "code": "KHH",
+          "name": "Kaohsiung International Airport",
+          "lat": 22.577101,
+          "lng": 120.349998
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Taipei": {
+      "plane": [
+        {
+          "code": "TSA",
+          "name": "Taipei Songshan Airport",
+          "lat": 25.069401,
+          "lng": 121.552002
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Tainan": {
+      "plane": [
+        {
+          "code": "MFK",
+          "name": "Matsu Beigan Airport",
+          "lat": 26.224199,
+          "lng": 120.002998
+        },
+        {
+          "code": "LZN",
+          "name": "Matsu Nangan Airport",
+          "lat": 26.159656,
+          "lng": 119.958376
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Hsinchu": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Taoyuan": {
+      "plane": [
+        {
+          "code": "TPE",
+          "name": "Taiwan Taoyuan International Airport",
+          "lat": 25.0777,
+          "lng": 121.233002
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Keelung": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Chiayi": {
+      "plane": [
+        {
+          "code": "KYD",
+          "name": "Lanyu Airport",
+          "lat": 22.027000427246094,
+          "lng": 121.53500366210938
+        },
+        {
+          "code": "MZG",
+          "name": "Penghu Magong Airport",
+          "lat": 23.568701,
+          "lng": 119.627998
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Changhua": {
+      "plane": [
+        {
+          "code": "KNH",
+          "name": "Kinmen Airport",
+          "lat": 24.4279,
+          "lng": 118.359001
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Pingtung": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Yunlin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Miaoli": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Taitung": {
+      "plane": [
+        {
+          "code": "TTT",
+          "name": "Taitung Airport",
+          "lat": 22.7549991607666,
+          "lng": 121.10199737548828
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Hualien": {
+      "plane": [
+        {
+          "code": "HUN",
+          "name": "Hualien Airport",
+          "lat": 24.023099899291992,
+          "lng": 121.61799621582031
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nantou": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Yilan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Penghu": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kinmen": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lienchiang": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "New Taipei": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:30:46.335Z"
+  }
+}

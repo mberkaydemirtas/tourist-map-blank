@@ -1,0 +1,1031 @@
+{
+  "code": "BR",
+  "name": "Brazil",
+  "cities": {
+    "São Paulo": {
+      "plane": [
+        {
+          "code": "CFB",
+          "name": "Cabo Frio Airport",
+          "lat": -22.921485,
+          "lng": -42.071874
+        },
+        {
+          "code": "CGH",
+          "name": "Congonhas Airport",
+          "lat": -23.627657,
+          "lng": -46.654601
+        },
+        {
+          "code": "PVH",
+          "name": "Governador Jorge Teixeira de Oliveira Airport",
+          "lat": -8.707854,
+          "lng": -63.90242
+        },
+        {
+          "code": "GRU",
+          "name": "Guarulhos - Governador André Franco Montoro International Airport",
+          "lat": -23.431944,
+          "lng": -46.467778
+        },
+        {
+          "code": "PFB",
+          "name": "Lauro Kurtz Airport",
+          "lat": -28.243976,
+          "lng": -52.32777
+        },
+        {
+          "code": "RAO",
+          "name": "Leite Lopes Airport",
+          "lat": -21.134314,
+          "lng": -47.774053
+        },
+        {
+          "code": "SLZ",
+          "name": "Marechal Cunha Machado International Airport",
+          "lat": -2.58536,
+          "lng": -44.2341
+        },
+        {
+          "code": "BPS",
+          "name": "Porto Seguro Airport",
+          "lat": -16.438426,
+          "lng": -39.080584
+        },
+        {
+          "code": "JPA",
+          "name": "Presidente Castro Pinto International Airport",
+          "lat": -7.148691,
+          "lng": -34.950554
+        },
+        {
+          "code": "SJK",
+          "name": "Professor Urbano Ernesto Stumpf Airport",
+          "lat": -23.2292,
+          "lng": -45.8615
+        },
+        {
+          "code": "RBR",
+          "name": "Rio Branco-Plácido de Castro International Airport",
+          "lat": -9.869031,
+          "lng": -67.893984
+        },
+        {
+          "code": "GEL",
+          "name": "Santo Ângelo Airport",
+          "lat": -28.282503,
+          "lng": -54.169623
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Rio de Janeiro": {
+      "plane": [
+        {
+          "code": "JDF",
+          "name": "Francisco de Assis Airport",
+          "lat": -21.791482,
+          "lng": -43.386072
+        },
+        {
+          "code": "VDC",
+          "name": "Glauber de Andrade Rocha Airport",
+          "lat": -14.907885,
+          "lng": -40.914804
+        },
+        {
+          "code": "FEC",
+          "name": "João Durval Carneiro Airport",
+          "lat": -12.200694,
+          "lng": -38.906164
+        },
+        {
+          "code": "IZA",
+          "name": "Presidente Itamar Franco Airport",
+          "lat": -21.513086,
+          "lng": -43.173069
+        },
+        {
+          "code": "GIG",
+          "name": "Rio Galeão – Tom Jobim International Airport",
+          "lat": -22.809999,
+          "lng": -43.250557
+        },
+        {
+          "code": "POA",
+          "name": "Salgado Filho International Airport",
+          "lat": -29.994712,
+          "lng": -51.166592
+        },
+        {
+          "code": "SDU",
+          "name": "Santos Dumont Airport",
+          "lat": -22.9105,
+          "lng": -43.163101
+        },
+        {
+          "code": "SJL",
+          "name": "São Gabriel da Cachoeira Airport",
+          "lat": -0.14835,
+          "lng": -66.9855
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Minas Gerais": {
+      "plane": [
+        {
+          "code": "CAW",
+          "name": "Bartolomeu Lisandro Airport",
+          "lat": -21.698299,
+          "lng": -41.301701
+        },
+        {
+          "code": "GVR",
+          "name": "Coronel Altino Machado Airport",
+          "lat": -18.895882,
+          "lng": -41.982869
+        },
+        {
+          "code": "MOC",
+          "name": "Mário Ribeiro Airport",
+          "lat": -16.706919,
+          "lng": -43.818901
+        },
+        {
+          "code": "CPV",
+          "name": "Presidente João Suassuna Airport",
+          "lat": -7.269662,
+          "lng": -35.896057
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ceará": {
+      "plane": [
+        {
+          "code": "GGF",
+          "name": "Almeirim Airport",
+          "lat": -1.479524,
+          "lng": -52.578214
+        },
+        {
+          "code": "ATM",
+          "name": "Altamira Interstate Airport",
+          "lat": -3.253144,
+          "lng": -52.253938
+        },
+        {
+          "code": "BAZ",
+          "name": "Barcelos Airport",
+          "lat": -0.981191,
+          "lng": -62.918603
+        },
+        {
+          "code": "BVS",
+          "name": "Breves Airport",
+          "lat": -1.63653,
+          "lng": -50.4436
+        },
+        {
+          "code": "OAL",
+          "name": "Cacoal Airport",
+          "lat": -11.496,
+          "lng": -61.4508
+        },
+        {
+          "code": "CEL",
+          "name": "Canela Airport",
+          "lat": -29.370091,
+          "lng": -50.831729
+        },
+        {
+          "code": "CAU",
+          "name": "Caruaru Airport",
+          "lat": -8.28239,
+          "lng": -36.0135
+        },
+        {
+          "code": "MVF",
+          "name": "Dix-Sept Rosado Airport",
+          "lat": -5.20192,
+          "lng": -37.3643
+        },
+        {
+          "code": "JSO",
+          "name": "Dr. Luciano de Arruda Coelho Regional Airport",
+          "lat": -3.614488,
+          "lng": -40.231426
+        },
+        {
+          "code": "VIX",
+          "name": "Eurico de Aguiar Salles Airport",
+          "lat": -20.258,
+          "lng": -40.285
+        },
+        {
+          "code": "BR-0925",
+          "name": "Fazenda Rosa do Deserto Airstrip",
+          "lat": -13.240032,
+          "lng": -39.759292
+        },
+        {
+          "code": "GGJ",
+          "name": "Guaíra Airport",
+          "lat": -24.0811,
+          "lng": -54.1917
+        },
+        {
+          "code": "CGB",
+          "name": "Marechal Rondon Airport",
+          "lat": -15.6529,
+          "lng": -56.116699
+        },
+        {
+          "code": "UBA",
+          "name": "Mário de Almeida Franco Airport",
+          "lat": -19.765036,
+          "lng": -47.964805
+        },
+        {
+          "code": "SNPP",
+          "name": "Morro de São Paulo Airport",
+          "lat": -13.428781,
+          "lng": -38.913689
+        },
+        {
+          "code": "IMP",
+          "name": "Prefeito Renato Moreira Airport",
+          "lat": -5.53129,
+          "lng": -47.459999
+        },
+        {
+          "code": "XAP",
+          "name": "Serafin Enoss Bertaso Airport",
+          "lat": -27.134199,
+          "lng": -52.656601
+        },
+        {
+          "code": "BEL",
+          "name": "Val de Cans/Júlio Cezar Ribeiro International Airport",
+          "lat": -1.379279,
+          "lng": -48.476207
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Bahia": {
+      "plane": [
+        {
+          "code": "BVB",
+          "name": "Atlas Brasil Cantanhede Airport",
+          "lat": 2.845855,
+          "lng": -60.690944
+        },
+        {
+          "code": "IOS",
+          "name": "Bahia - Jorge Amado Airport",
+          "lat": -14.815929,
+          "lng": -39.033458
+        },
+        {
+          "code": "JTC",
+          "name": "Bauru/Arealva–Moussa Nakhal Tobias State Airport",
+          "lat": -22.160755,
+          "lng": -49.070325
+        },
+        {
+          "code": "BYO",
+          "name": "Bonito Airport",
+          "lat": -21.2473,
+          "lng": -56.452399
+        },
+        {
+          "code": "RBB",
+          "name": "Borba Airport",
+          "lat": -4.40634,
+          "lng": -59.602402
+        },
+        {
+          "code": "BVH",
+          "name": "Brigadeiro Camarão Airport",
+          "lat": -12.6944,
+          "lng": -60.098301
+        },
+        {
+          "code": "BRA",
+          "name": "Dom Ricardo Weberberger Airport",
+          "lat": -12.0789,
+          "lng": -45.008999
+        },
+        {
+          "code": "SNM6",
+          "name": "Fazenda Mimosa Airport",
+          "lat": -22.396719,
+          "lng": -53.680777
+        },
+        {
+          "code": "SWGT",
+          "name": "Fazenda Nova Airport",
+          "lat": -17.172918,
+          "lng": -50.208507
+        },
+        {
+          "code": "MII",
+          "name": "Frank Miloye Milenkowichi–Marília State Airport",
+          "lat": -22.196899,
+          "lng": -49.926485
+        },
+        {
+          "code": "BSB",
+          "name": "Presidente Juscelino Kubitschek International Airport",
+          "lat": -15.869167,
+          "lng": -47.920834
+        },
+        {
+          "code": "TBT",
+          "name": "Tabatinga Airport",
+          "lat": -4.25567,
+          "lng": -69.935799
+        },
+        {
+          "code": "UDI",
+          "name": "Ten. Cel. Aviador César Bombonato Airport",
+          "lat": -18.883579,
+          "lng": -48.225936
+        },
+        {
+          "code": "MCZ",
+          "name": "Zumbi dos Palmares Airport",
+          "lat": -9.51081,
+          "lng": -35.791698
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Paraná": {
+      "plane": [
+        {
+          "code": "AJU",
+          "name": "Aracaju - Santa Maria International Airport",
+          "lat": -10.984,
+          "lng": -37.070301
+        },
+        {
+          "code": "AUX",
+          "name": "Araguaína Airport",
+          "lat": -7.22787,
+          "lng": -48.240501
+        },
+        {
+          "code": "AQA",
+          "name": "Araraquara Airport",
+          "lat": -21.812,
+          "lng": -48.132999
+        },
+        {
+          "code": "CAF",
+          "name": "Carauari Airport",
+          "lat": -4.871473,
+          "lng": -66.897552
+        },
+        {
+          "code": "MAO",
+          "name": "Eduardo Gomes International Airport",
+          "lat": -3.03861,
+          "lng": -60.049702
+        },
+        {
+          "code": "GUZ",
+          "name": "Guarapari Airport",
+          "lat": -20.6465,
+          "lng": -40.491901
+        },
+        {
+          "code": "JJG",
+          "name": "Humberto Ghizzo Bortoluzzi Regional Airport",
+          "lat": -28.6753,
+          "lng": -49.0596
+        },
+        {
+          "code": "JPR",
+          "name": "Ji-Paraná Airport",
+          "lat": -10.870743,
+          "lng": -61.846675
+        },
+        {
+          "code": "MAB",
+          "name": "João Correa da Rocha Airport",
+          "lat": -5.36859,
+          "lng": -49.138
+        },
+        {
+          "code": "NVT",
+          "name": "Ministro Victor Konder International Airport",
+          "lat": -26.879431,
+          "lng": -48.650979
+        },
+        {
+          "code": "JPE",
+          "name": "Nagib Demachki Airport",
+          "lat": -3.019798,
+          "lng": -47.316474
+        },
+        {
+          "code": "UMU",
+          "name": "Orlando de Carvalho Airport",
+          "lat": -23.7987,
+          "lng": -53.313801
+        },
+        {
+          "code": "JPY",
+          "name": "Paraty Airport",
+          "lat": -23.224044,
+          "lng": -44.7234
+        },
+        {
+          "code": "PYT",
+          "name": "Pedro Rabelo de Souza Airport",
+          "lat": -17.242599,
+          "lng": -46.883099
+        },
+        {
+          "code": "MGF",
+          "name": "Regional de Maringá - Sílvio Name Júnior Airport",
+          "lat": -23.47606,
+          "lng": -52.016187
+        },
+        {
+          "code": "AAX",
+          "name": "Romeu Zema Airport",
+          "lat": -19.5632,
+          "lng": -46.9604
+        },
+        {
+          "code": "URG",
+          "name": "Rubem Berta Airport",
+          "lat": -29.7822,
+          "lng": -57.0382
+        },
+        {
+          "code": "PNZ",
+          "name": "Senador Nilo Coelho Airport",
+          "lat": -9.362422,
+          "lng": -40.569098
+        },
+        {
+          "code": "THE",
+          "name": "Senador Petrônio Portela Airport",
+          "lat": -5.06025,
+          "lng": -42.823712
+        },
+        {
+          "code": "SOD",
+          "name": "Sorocaba Airport",
+          "lat": -23.478001,
+          "lng": -47.490002
+        },
+        {
+          "code": "GPB",
+          "name": "Tancredo Thomas de Faria Airport",
+          "lat": -25.388327,
+          "lng": -51.52349
+        },
+        {
+          "code": "IPN",
+          "name": "Usiminas Airport",
+          "lat": -19.470699,
+          "lng": -42.487598
+        },
+        {
+          "code": "VAL",
+          "name": "Valença Airport",
+          "lat": -13.2965,
+          "lng": -38.992401
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Pernambuco": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Rio Grande do Sul": {
+      "plane": [
+        {
+          "code": "CZS",
+          "name": "Cruzeiro do Sul Airport",
+          "lat": -7.59991,
+          "lng": -72.769501
+        },
+        {
+          "code": "CXJ",
+          "name": "Hugo Cantergiani Regional Airport",
+          "lat": -29.197183,
+          "lng": -51.187647
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Pará": {
+      "plane": [
+        {
+          "code": "MUU",
+          "name": "Barra Grande Airport",
+          "lat": -13.906082,
+          "lng": -38.940804
+        },
+        {
+          "code": "PMW",
+          "name": "Brigadeiro Lysias Rodrigues Airport",
+          "lat": -10.2915,
+          "lng": -48.356998
+        },
+        {
+          "code": "SNFH",
+          "name": "Fazenda Dom Felipe Airport",
+          "lat": -22.559118,
+          "lng": -55.381143
+        },
+        {
+          "code": "LBR",
+          "name": "Lábrea Airport",
+          "lat": -7.27897,
+          "lng": -64.769501
+        },
+        {
+          "code": "PMG",
+          "name": "Ponta Porã Airport",
+          "lat": -22.549601,
+          "lng": -55.702599
+        },
+        {
+          "code": "NAT",
+          "name": "São Gonçalo do Amarante - Governador Aluízio Alves International Airport",
+          "lat": -5.769804,
+          "lng": -35.366578
+        },
+        {
+          "code": "UNA",
+          "name": "Una-Comandatuba Airport",
+          "lat": -15.354358,
+          "lng": -38.998729
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Goiás": {
+      "plane": [
+        {
+          "code": "LEC",
+          "name": "Coronel Horácio de Mattos Airport",
+          "lat": -12.4823,
+          "lng": -41.277
+        },
+        {
+          "code": "FLN",
+          "name": "Hercílio Luz International Airport",
+          "lat": -27.670279,
+          "lng": -48.552502
+        },
+        {
+          "code": "PET",
+          "name": "João Simões Lopes Neto International Airport",
+          "lat": -31.717253,
+          "lng": -52.327952
+        },
+        {
+          "code": "JOI",
+          "name": "Lauro Carneiro de Loyola Airport",
+          "lat": -26.224501,
+          "lng": -48.797401
+        },
+        {
+          "code": "GYN",
+          "name": "Santa Genoveva Airport",
+          "lat": -16.632,
+          "lng": -49.220699
+        },
+        {
+          "code": "TOW",
+          "name": "Toledo - Luiz Dalcanale Filho Municipal Airport",
+          "lat": -24.6863,
+          "lng": -53.697498
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Maranhão": {
+      "plane": [
+        {
+          "code": "BRB",
+          "name": "Barreirinhas National Airport",
+          "lat": -2.756644,
+          "lng": -42.803187
+        },
+        {
+          "code": "SET",
+          "name": "Santa Magalhães Airport",
+          "lat": -8.061433,
+          "lng": -38.328888
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Alagoas": {
+      "plane": [
+        {
+          "code": "SSA",
+          "name": "Deputado Luiz Eduardo Magalhães International Airport",
+          "lat": -12.908611,
+          "lng": -38.322498
+        },
+        {
+          "code": "LAJ",
+          "name": "Lages Airport",
+          "lat": -27.782101,
+          "lng": -50.281502
+        },
+        {
+          "code": "CLV",
+          "name": "Nelson Ribeiro Guimarães Airport",
+          "lat": -17.725096,
+          "lng": -48.606324
+        },
+        {
+          "code": "AFL",
+          "name": "Piloto Osvaldo Marques Dias Airport",
+          "lat": -9.866389,
+          "lng": -56.106298
+        },
+        {
+          "code": "TJL",
+          "name": "Plínio Alarcom Airport",
+          "lat": -20.752643,
+          "lng": -51.682026
+        },
+        {
+          "code": "OPP",
+          "name": "Salinópolis Airport",
+          "lat": -0.696111,
+          "lng": -47.336111
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Piauí": {
+      "plane": [
+        {
+          "code": "OPS",
+          "name": "Presidente João Batista Figueiredo Airport",
+          "lat": -11.885001,
+          "lng": -55.586109
+        },
+        {
+          "code": "TUR",
+          "name": "Tucuruí Airport",
+          "lat": -3.78601,
+          "lng": -49.720299
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Paraíba": {
+      "plane": [
+        {
+          "code": "CWB",
+          "name": "Afonso Pena Airport",
+          "lat": -25.5285,
+          "lng": -49.1758
+        },
+        {
+          "code": "ARU",
+          "name": "Araçatuba Airport",
+          "lat": -21.141479,
+          "lng": -50.424575
+        },
+        {
+          "code": "CKS",
+          "name": "Carajás Airport",
+          "lat": -6.117841,
+          "lng": -50.003372
+        },
+        {
+          "code": "CMG",
+          "name": "Corumbá International Airport",
+          "lat": -19.01193,
+          "lng": -57.672772
+        },
+        {
+          "code": "SNL3",
+          "name": "Fazenda Riozinho Airport",
+          "lat": -18.267161,
+          "lng": -56.487952
+        },
+        {
+          "code": "ITB",
+          "name": "Itaituba Airport",
+          "lat": -4.242131,
+          "lng": -56.000651
+        },
+        {
+          "code": "PHB",
+          "name": "Parnaíba - Prefeito Doutor João Silva Filho International Airport",
+          "lat": -2.89375,
+          "lng": -41.731998
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Rio Grande do Norte": {
+      "plane": [
+        {
+          "code": "FEN",
+          "name": "Fernando de Noronha Airport",
+          "lat": -3.854471,
+          "lng": -32.423302
+        },
+        {
+          "code": "JDO",
+          "name": "Orlando Bezerra de Menezes Airport",
+          "lat": -7.21932,
+          "lng": -39.269096
+        },
+        {
+          "code": "SJP",
+          "name": "Prof. Eribelto Manoel Reino State Airport",
+          "lat": -20.817113,
+          "lng": -49.406963
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Sergipe": {
+      "plane": [
+        {
+          "code": "SMT",
+          "name": "Adolino Bedin Regional Airport",
+          "lat": -12.479177,
+          "lng": -55.672341
+        },
+        {
+          "code": "REC",
+          "name": "Recife/Guararapes - Gilberto Freyre International Airport",
+          "lat": -8.125984,
+          "lng": -34.923316
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Mato Grosso do Sul": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Amapá": {
+      "plane": [
+        {
+          "code": "MCP",
+          "name": "Macapá - Alberto Alcolumbre International Airport",
+          "lat": 0.050664,
+          "lng": -51.072201
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Mato Grosso": {
+      "plane": [
+        {
+          "code": "CGR",
+          "name": "Campo Grande Airport",
+          "lat": -20.469998,
+          "lng": -54.673988
+        },
+        {
+          "code": "PTO",
+          "name": "Juvenal Loureiro Cardoso Airport",
+          "lat": -26.217184,
+          "lng": -52.694463
+        },
+        {
+          "code": "SRA",
+          "name": "Luis Alberto Lehr Airport",
+          "lat": -27.90658,
+          "lng": -54.520628
+        },
+        {
+          "code": "PAV",
+          "name": "Paulo Afonso Airport",
+          "lat": -9.40088,
+          "lng": -38.250599
+        },
+        {
+          "code": "PGZ",
+          "name": "Ponta Grossa Airport - Comandante Antonio Amilton Beraldo",
+          "lat": -25.184476,
+          "lng": -50.143822
+        },
+        {
+          "code": "CNF",
+          "name": "Tancredo Neves International Airport",
+          "lat": -19.63571,
+          "lng": -43.966928
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Espírito Santo": {
+      "plane": [
+        {
+          "code": "PPB",
+          "name": "Presidente Prudente Airport",
+          "lat": -22.1751,
+          "lng": -51.424599
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Santa Catarina": {
+      "plane": [
+        {
+          "code": "LCB",
+          "name": "André Antônio Maggi Airport",
+          "lat": -15.1934,
+          "lng": -59.3848
+        },
+        {
+          "code": "UVI",
+          "name": "José Cleto Airport",
+          "lat": -26.233224,
+          "lng": -51.066754
+        },
+        {
+          "code": "RIA",
+          "name": "Santa Maria Airport",
+          "lat": -29.711399,
+          "lng": -53.688202
+        },
+        {
+          "code": "TGQ",
+          "name": "Tangará da Serra Airport",
+          "lat": -14.662,
+          "lng": -57.443744
+        },
+        {
+          "code": "IRZ",
+          "name": "Tapuruquara Airport",
+          "lat": -0.3786,
+          "lng": -64.9923
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Roraima": {
+      "plane": [
+        {
+          "code": "CCM",
+          "name": "Forquilhinha - Criciúma  Airport",
+          "lat": -28.725743,
+          "lng": -49.424475
+        },
+        {
+          "code": "FOR",
+          "name": "Pinto Martins International Airport",
+          "lat": -3.775833,
+          "lng": -38.532222
+        },
+        {
+          "code": "TMT",
+          "name": "Trombetas Airport",
+          "lat": -1.4896,
+          "lng": -56.396801
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Acre": {
+      "plane": [
+        {
+          "code": "JJD",
+          "name": "Comandante Ariston Pessoa Airport",
+          "lat": -2.906425,
+          "lng": -40.357338
+        },
+        {
+          "code": "CAC",
+          "name": "Coronel Adalberto Mendes da Silva Airport",
+          "lat": -25.000323,
+          "lng": -53.501208
+        },
+        {
+          "code": "MNX",
+          "name": "Manicoré Airport",
+          "lat": -5.81138,
+          "lng": -61.278301
+        },
+        {
+          "code": "STM",
+          "name": "Santarém - Maestro Wilson Fonseca International Airport",
+          "lat": -2.422423,
+          "lng": -54.79306
+        },
+        {
+          "code": "TFF",
+          "name": "Tefé Airport",
+          "lat": -3.38294,
+          "lng": -64.724098
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Rondônia": {
+      "plane": [
+        {
+          "code": "IGU",
+          "name": "Cataratas International Airport",
+          "lat": -25.594167,
+          "lng": -54.489444
+        },
+        {
+          "code": "LDB",
+          "name": "Governor José Richa Airport",
+          "lat": -23.334375,
+          "lng": -51.128365
+        },
+        {
+          "code": "ROO",
+          "name": "Maestro Marinho Franco Airport",
+          "lat": -16.584292,
+          "lng": -54.724803
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Tocantins": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Amazonas": {
+      "plane": [
+        {
+          "code": "CJZ",
+          "name": "Pedro Vieira Moreira Airport",
+          "lat": -6.8827,
+          "lng": -38.61583
+        },
+        {
+          "code": "VCP",
+          "name": "Viracopos International Airport",
+          "lat": -23.007404,
+          "lng": -47.134502
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Distrito Federal": {
+      "plane": [
+        {
+          "code": "FBE",
+          "name": "Paulo Abdala Airport",
+          "lat": -26.05938,
+          "lng": -53.063827
+        }
+      ],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:15:53.376Z"
+  }
+}

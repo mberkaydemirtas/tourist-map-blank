@@ -1,5 +1,5 @@
 // src/trips/CreateTripWizardScreen.js
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, FlatList } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { createTrip } from './services/tripsService';
@@ -7,6 +7,7 @@ import { buildInitialDailyPlan, outboundMustArriveBeforeMin } from './shared/typ
 import WhereToQuestion from './components/WhereToQuestion';
 import StartEndQuestion from './components/StartEndQuestion';
 import LodgingQuestion from './components/LodgingQuestion';
+import { useTripsExploreBridge } from '../bridges/useTripsExploreBridge';
 
 const BORDER = '#23262F';
 const BTN = '#2563EB';
@@ -14,7 +15,7 @@ const BTN = '#2563EB';
 export default function CreateTripWizardScreen() {
   const nav = useNavigation();
   const route = useRoute();
-  const mapPickResolverRef = React.useRef(null);
+
   const [step, setStep] = useState(0);
 
   // Step 0 — Nereye gidiyorsun?
@@ -57,6 +58,48 @@ export default function CreateTripWizardScreen() {
       return { start: se?.start?.date || null, end: se?.end?.date || null };
     }
   }, [whereAnswer, activeCityKey, startEndSingle, startEndByCity]);
+
+  // Map ↔ Wizard köprüsü
+  const bridge = useTripsExploreBridge({
+    nav,
+    route,
+    onPick: (pick) => {
+      // MapScreen → geri dönüş burada yakalanır
+      if (whereAnswer?.mode === 'single') {
+        if (pick.which === 'start' || pick.which === 'end') {
+          setStartEndSingle(prev => ({
+            ...(prev || {}),
+            [pick.which]: {
+              ...(prev?.[pick.which] || { date: null, time: pick.which === 'start' ? '09:00' : '17:00' }),
+              type: 'map',
+              hub: pick.hub, // { name, place_id, location }
+            },
+          }));
+        } else if (pick.which === 'lodging') {
+          setLodgingSingle(prev => [...prev, { place: pick.hub, start: null, end: null }]);
+        }
+      } else if (pick.cityKey) {
+        if (pick.which === 'start' || pick.which === 'end') {
+          setStartEndByCity(prev => ({
+            ...prev,
+            [pick.cityKey]: {
+              ...(prev[pick.cityKey] || {}),
+              [pick.which]: {
+                ...(prev[pick.cityKey]?.[pick.which] || { date: null, time: pick.which === 'start' ? '09:00' : '17:00' }),
+                type: 'map',
+                hub: pick.hub,
+              },
+            },
+          }));
+        } else if (pick.which === 'lodging') {
+          setLodgingByCity(prev => ({
+            ...prev,
+            [pick.cityKey]: [...(prev[pick.cityKey] || []), { place: pick.hub, start: null, end: null }],
+          }));
+        }
+      }
+    },
+  });
 
   // Step 1 valid?
   const step1Valid = useMemo(() => {
@@ -149,94 +192,22 @@ export default function CreateTripWizardScreen() {
     nav.navigate('TripEditor', { id: created.id });
   };
 
-  /** START/END için haritadan seçim */
+  /** START/END için haritadan seçim — köprü üzerinden */
   function handleMapPick(which /* 'start' | 'end' */) {
-    return new Promise((resolve) => {
-      mapPickResolverRef.current = resolve; // MapScreen dönüşünde çözeceğiz
-     // aktif şehrin merkezi (lat/lng) hazırlanır
-     const c = activeCityObj?.center;
-     const lat = c?.lat ?? c?.latitude;
-     const lng = c?.lng ?? c?.longitude;
-     const center = Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
-       nav.navigate('Keşfet', {
-         screen: 'Map',
-         params: {
-           picker: { enabled: true, which, cityKey: activeCityKey }, // Explore + picker modu
-         },
-       });
+    return bridge.openStartEndPicker({
+      which,
+      cityKey: activeCityKey,
+      cityObj: activeCityObj,
     });
   }
 
-  /** KONAKLAMA için haritadan seçim */
+  /** KONAKLAMA için haritadan seçim — köprü üzerinden */
   function openLodgingPicker() {
-    // LodgingQuestion bu dönüşü Promise ile beklemiyor; dönüşte state'e item push edeceğiz
-    mapPickResolverRef.current = null;
-     const c = activeCityObj?.center;
-     const lat = c?.lat ?? c?.latitude;
-     const lng = c?.lng ?? c?.longitude;
-     const center = Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
-     nav.navigate('Keşfet', {
-       screen: 'Map',
-       params: {
-         picker: { enabled: true, which: 'lodging', cityKey: activeCityKey, sheetInitial: 'half' },
-       },
-     });
+    bridge.openLodgingPicker({
+      cityKey: activeCityKey,
+      cityObj: activeCityObj,
+    });
   }
-
-  // MapScreen'den dönüş paramı
-  useEffect(() => {
-    const pick = route.params?.pickFromMap;
-    if (!pick) return;
-
-    if (whereAnswer?.mode === 'single') {
-      // Start/End
-      if (pick.which === 'start' || pick.which === 'end') {
-        setStartEndSingle(prev => ({
-          ...(prev || {}),
-          [pick.which]: {
-            ...(prev?.[pick.which] || { date: null, time: pick.which === 'start' ? '09:00' : '17:00' }),
-            type: 'map',
-            hub: pick.hub, // { name, place_id, location }
-          },
-        }));
-      }
-      // Lodging
-      if (pick.which === 'lodging') {
-        setLodgingSingle(prev => [...prev, { place: pick.hub, start: null, end: null }]);
-      }
-    } else if (pick.cityKey) {
-      // Multi: Start/End
-      if (pick.which === 'start' || pick.which === 'end') {
-        setStartEndByCity(prev => ({
-          ...prev,
-          [pick.cityKey]: {
-            ...(prev[pick.cityKey] || {}),
-            [pick.which]: {
-              ...(prev[pick.cityKey]?.[pick.which] || { date: null, time: pick.which === 'start' ? '09:00' : '17:00' }),
-              type: 'map',
-              hub: pick.hub,
-            },
-          },
-        }));
-      }
-      // Multi: Lodging
-      if (pick.which === 'lodging') {
-        setLodgingByCity(prev => ({
-          ...prev,
-          [pick.cityKey]: [...(prev[pick.cityKey] || []), { place: pick.hub, start: null, end: null }],
-        }));
-      }
-    }
-
-    // Start/End seçimlerinde bekleyen Promise'i çöz
-    if (mapPickResolverRef.current) {
-      mapPickResolverRef.current(pick.hub);
-      mapPickResolverRef.current = null;
-    }
-
-    // paramı temizle (loop önleme)
-    nav.setParams({ pickFromMap: undefined });
-  }, [route.params?.pickFromMap]); // eslint-disable-line
 
   // --- Render
   const titles = ['Lokasyon', 'Başlangıç & Bitiş', 'Konaklama', 'Önizleme'];
@@ -263,6 +234,7 @@ export default function CreateTripWizardScreen() {
                 {whereAnswer.mode === 'single' ? (
                   activeCityObj ? (
                     <StartEndQuestion
+                    countryCode={activeCityObj.country}
                       cityName={activeCityObj.name}
                       cityCenter={activeCityObj.center}
                       value={startEndSingle}
@@ -285,6 +257,7 @@ export default function CreateTripWizardScreen() {
                           />
                           {activeCityObj ? (
                             <StartEndQuestion
+                            countryCode={activeCityObj.country}
                               cityName={activeCityObj.name}
                               cityCenter={activeCityObj.center}
                               value={startEndByCity[activeCityKey]}

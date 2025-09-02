@@ -1,0 +1,135 @@
+{
+  "code": "MZ",
+  "name": "Mozambique",
+  "cities": {
+    "Maputo": {
+      "plane": [
+        {
+          "code": "VPY",
+          "name": "Chimoio Airport",
+          "lat": -19.15130043029785,
+          "lng": 33.42900085449219
+        },
+        {
+          "code": "MPM",
+          "name": "Maputo Airport",
+          "lat": -25.920799,
+          "lng": 32.572601
+        },
+        {
+          "code": "VNX",
+          "name": "Vilankulo Airport",
+          "lat": -22.018400192260742,
+          "lng": 35.31330108642578
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nampula": {
+      "plane": [
+        {
+          "code": "APL",
+          "name": "Nampula Airport",
+          "lat": -15.105600357055664,
+          "lng": 39.28179931640625
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Sofala": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Manica": {
+      "plane": [
+        {
+          "code": "BEW",
+          "name": "Beira Airport",
+          "lat": -19.7964,
+          "lng": 34.9076
+        },
+        {
+          "code": "VXC",
+          "name": "Lichinga Airport",
+          "lat": -13.274,
+          "lng": 35.2663
+        },
+        {
+          "code": "VJB",
+          "name": "Xai-Xai Chongoene Airport",
+          "lat": -24.895362,
+          "lng": 33.749896
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Zambézia": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tete": {
+      "plane": [
+        {
+          "code": "TET",
+          "name": "Chingozi Airport",
+          "lat": -16.104799270629883,
+          "lng": 33.640201568603516
+        },
+        {
+          "code": "POL",
+          "name": "Pemba Airport",
+          "lat": -12.993302,
+          "lng": 40.524867
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Niassa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Cabo Delgado": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gaza": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Inhambane": {
+      "plane": [
+        {
+          "code": "INH",
+          "name": "Inhambane Airport",
+          "lat": -23.8764,
+          "lng": 35.408501
+        },
+        {
+          "code": "UEL",
+          "name": "Quelimane Airport",
+          "lat": -17.855499267578125,
+          "lng": 36.86909866333008
+        }
+      ],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:38:53.745Z"
+  }
+}

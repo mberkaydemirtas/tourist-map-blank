@@ -1,0 +1,135 @@
+{
+  "code": "BT",
+  "name": "Bhutan",
+  "cities": {
+    "Thimphu": {
+      "plane": [
+        {
+          "code": "YON",
+          "name": "Yongphulla Airport",
+          "lat": 27.25627,
+          "lng": 91.514633
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Chhukha": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sarpang": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Samdrup Jongkhar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Wangdue Phodrang": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Punakha": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bumthang": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Samtse": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mongar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Trashigang": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Trashi Yangtse": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Trongsa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Paro": {
+      "plane": [
+        {
+          "code": "PBH",
+          "name": "Paro International Airport",
+          "lat": 27.4032,
+          "lng": 89.424599
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Zhemgang": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dagana": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Pemagatshel": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gasa": {
+      "plane": [
+        {
+          "code": "BUT",
+          "name": "Bathpalathang Airport",
+          "lat": 27.5622,
+          "lng": 90.7471
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Haa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lhuentse": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tsirang": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:48:15.417Z"
+  }
+}

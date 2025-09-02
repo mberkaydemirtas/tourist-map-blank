@@ -1,0 +1,1568 @@
+{
+  "code": "AO",
+  "name": "Angola",
+  "cities": {
+    "Luanda": {
+      "plane": [
+        {
+          "code": "SDD",
+          "name": "Lubango Airport",
+          "lat": -14.924699783325195,
+          "lng": 13.574999809265137
+        },
+        {
+          "code": "LAD",
+          "name": "Quatro de Fevereiro International Airport",
+          "lat": -8.85837,
+          "lng": 13.2312
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:7831128782",
+          "name": "Aguada (Km 147)",
+          "lat": -14.8116401,
+          "lng": 13.2484354
+        },
+        {
+          "code": "OSM:1541419178",
+          "name": "Boas Águas",
+          "lat": -12.6975804,
+          "lng": 16.0251988
+        },
+        {
+          "code": "OSM:8745977609",
+          "name": "Cassai",
+          "lat": -11.5111553,
+          "lng": 20.954379
+        },
+        {
+          "code": "OSM:4099327420",
+          "name": "Colui (Km 543)",
+          "lat": -14.5287156,
+          "lng": 15.9986351
+        },
+        {
+          "code": "OSM:2041623503",
+          "name": "Comarca",
+          "lat": -8.8938834,
+          "lng": 13.3573492
+        },
+        {
+          "code": "OSM:4104883104",
+          "name": "Ganda",
+          "lat": -13.0146842,
+          "lng": 14.6377652
+        },
+        {
+          "code": "OSM:4099148206",
+          "name": "Garganta (Km 140)",
+          "lat": -14.8295505,
+          "lng": 13.1911495
+        },
+        {
+          "code": "OSM:4099354337",
+          "name": "Gunda",
+          "lat": -14.5454171,
+          "lng": 16.528071
+        },
+        {
+          "code": "OSM:2126024968",
+          "name": "Kunhinga",
+          "lat": -12.2388124,
+          "lng": 16.7853815
+        },
+        {
+          "code": "OSM:4105379167",
+          "name": "Kwanza",
+          "lat": -11.992476,
+          "lng": 17.6653489
+        },
+        {
+          "code": "OSM:3193495479",
+          "name": "Leça (Km 499)",
+          "lat": -14.6051986,
+          "lng": 15.6319889
+        },
+        {
+          "code": "OSM:3720540325",
+          "name": "Léua",
+          "lat": -11.6553038,
+          "lng": 20.4482331
+        },
+        {
+          "code": "OSM:4099387109",
+          "name": "Liunda",
+          "lat": -14.6364234,
+          "lng": 16.722473
+        },
+        {
+          "code": "OSM:4105406000",
+          "name": "Luacano",
+          "lat": -11.213505,
+          "lng": 21.6539123
+        },
+        {
+          "code": "OSM:2099519340",
+          "name": "Luasenha",
+          "lat": -14.68897,
+          "lng": 17.1741821
+        },
+        {
+          "code": "OSM:8746050618",
+          "name": "Luau",
+          "lat": -10.704897,
+          "lng": 22.2263688
+        },
+        {
+          "code": "OSM:207879864",
+          "name": "Lucala",
+          "lat": -9.2728137,
+          "lng": 15.2445051
+        },
+        {
+          "code": "OSM:715010238",
+          "name": "Luculo",
+          "lat": -11.678784,
+          "lng": 20.2595999
+        },
+        {
+          "code": "OSM:1251073600",
+          "name": "Luena",
+          "lat": -11.7830828,
+          "lng": 19.9094802
+        },
+        {
+          "code": "OSM:4104403948",
+          "name": "Luongo",
+          "lat": -12.4587352,
+          "lng": 13.5196471
+        },
+        {
+          "code": "OSM:4097504303",
+          "name": "Mukanka (Km 251)",
+          "lat": -14.9531929,
+          "lng": 13.5451079
+        },
+        {
+          "code": "OSM:2595504927",
+          "name": "Munhango",
+          "lat": -12.1610655,
+          "lng": 18.555381
+        },
+        {
+          "code": "OSM:706349662",
+          "name": "N'dalantando",
+          "lat": -9.3005668,
+          "lng": 14.9094976
+        },
+        {
+          "code": "OSM:1916523612",
+          "name": "Olivença(Km 303)",
+          "lat": -14.8616579,
+          "lng": 13.944357
+        },
+        {
+          "code": "OSM:4113705890",
+          "name": "Quizenga",
+          "lat": -9.3625712,
+          "lng": 15.4726857
+        },
+        {
+          "code": "OSM:4257105053",
+          "name": "Rotunda",
+          "lat": -8.7963327,
+          "lng": 13.277729
+        },
+        {
+          "code": "OSM:3720540220",
+          "name": "Sandando",
+          "lat": -11.5997591,
+          "lng": 20.6281563
+        },
+        {
+          "code": "OSM:5476375171",
+          "name": "Tombua",
+          "lat": -12.6171233,
+          "lng": 13.4476767
+        },
+        {
+          "code": "OSM:3193495563",
+          "name": "Trindade (Km 496)",
+          "lat": -14.6268998,
+          "lng": 15.6099978
+        },
+        {
+          "code": "OSM:4104977570",
+          "name": "Ukuma",
+          "lat": -12.8642034,
+          "lng": 15.0692935
+        },
+        {
+          "code": "OSM:1655557465",
+          "name": "Viana",
+          "lat": -8.9053452,
+          "lng": 13.375061
+        },
+        {
+          "code": "OSM:2180949118",
+          "name": "Zanga",
+          "lat": -9.4838225,
+          "lng": 15.9862453
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:11407391369",
+          "name": "Entrada Luatamba",
+          "lat": -12.1096529,
+          "lng": 20.4144493
+        }
+      ]
+    },
+    "Huíla": {
+      "plane": [
+        {
+          "code": "CBT",
+          "name": "Catumbela Airport",
+          "lat": -12.4792,
+          "lng": 13.4869
+        },
+        {
+          "code": "DUE",
+          "name": "Dundo Airport",
+          "lat": -7.400889873504639,
+          "lng": 20.818500518798828
+        },
+        {
+          "code": "VPE",
+          "name": "Ngjiva Pereira Airport",
+          "lat": -17.0435009003,
+          "lng": 15.683799743700002
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:4097442697",
+          "name": "Arimba (Km 256)",
+          "lat": -14.945923,
+          "lng": 13.5967331
+        },
+        {
+          "code": "OSM:4105130570",
+          "name": "Caála",
+          "lat": -12.8496728,
+          "lng": 15.5552227
+        },
+        {
+          "code": "OSM:4104403949",
+          "name": "Catumbela",
+          "lat": -12.4316255,
+          "lng": 13.5396044
+        },
+        {
+          "code": "OSM:2139151265",
+          "name": "Chamutete Cidade",
+          "lat": -15.239802,
+          "lng": 16.0286521
+        },
+        {
+          "code": "OSM:2139153446",
+          "name": "Chamutete Minas",
+          "lat": -15.2440721,
+          "lng": 16.0628889
+        },
+        {
+          "code": "OSM:4105371292",
+          "name": "Chipeta",
+          "lat": -12.2635535,
+          "lng": 17.1253911
+        },
+        {
+          "code": "OSM:6894001457",
+          "name": "Cubal",
+          "lat": -13.0421531,
+          "lng": 14.243666
+        },
+        {
+          "code": "OSM:2099518677",
+          "name": "Cuchi",
+          "lat": -14.650285,
+          "lng": 16.89279
+        },
+        {
+          "code": "OSM:6173840163",
+          "name": "Cueli",
+          "lat": -12.0641835,
+          "lng": 17.7881125
+        },
+        {
+          "code": "OSM:2028188403",
+          "name": "Cuíto",
+          "lat": -12.3325501,
+          "lng": 16.9376836
+        },
+        {
+          "code": "OSM:8745276314",
+          "name": "Cuiva",
+          "lat": -12.1302445,
+          "lng": 17.9477066
+        },
+        {
+          "code": "OSM:1651411879",
+          "name": "Filda",
+          "lat": -8.8505796,
+          "lng": 13.2886053
+        },
+        {
+          "code": "OSM:714800540",
+          "name": "Hia",
+          "lat": -9.0327951,
+          "lng": 13.5788699
+        },
+        {
+          "code": "OSM:4099430327",
+          "name": "Kuelei",
+          "lat": -14.7101338,
+          "lng": 17.4086193
+        },
+        {
+          "code": "OSM:4104525250",
+          "name": "Mina",
+          "lat": -12.5989087,
+          "lng": 13.5073139
+        },
+        {
+          "code": "OSM:8786151197",
+          "name": "Tchavola (Km 232)",
+          "lat": -14.8662964,
+          "lng": 13.4857305
+        },
+        {
+          "code": "OSM:9643718902",
+          "name": "Tchicala",
+          "lat": -11.9404844,
+          "lng": 19.6316114
+        }
+      ],
+      "bus": []
+    },
+    "Cabinda": {
+      "plane": [
+        {
+          "code": "CAB",
+          "name": "Cabinda Airport",
+          "lat": -5.59699010848999,
+          "lng": 12.188400268554688
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:949093510",
+          "name": "Apeadeiro da Tchavola",
+          "lat": -14.8663041,
+          "lng": 13.4858034
+        },
+        {
+          "code": "OSM:4104906409",
+          "name": "Babaera",
+          "lat": -12.900325,
+          "lng": 14.8055508
+        },
+        {
+          "code": "OSM:6893972571",
+          "name": "Bairro da Luz",
+          "lat": -12.3808063,
+          "lng": 13.5402726
+        },
+        {
+          "code": "OSM:4107393700",
+          "name": "Barraca",
+          "lat": -9.184817,
+          "lng": 13.9658041
+        },
+        {
+          "code": "OSM:3193495445",
+          "name": "Cabanas (Km 480)",
+          "lat": -14.6034208,
+          "lng": 15.4950066
+        },
+        {
+          "code": "OSM:1808830389",
+          "name": "Cábio",
+          "lat": -12.8768984,
+          "lng": 13.8098458
+        },
+        {
+          "code": "OSM:8745901679",
+          "name": "Cachipoque",
+          "lat": -11.9284121,
+          "lng": 19.3461215
+        },
+        {
+          "code": "OSM:207842048",
+          "name": "Cacuso",
+          "lat": -9.4196229,
+          "lng": 15.7394481
+        },
+        {
+          "code": "OSM:4105038238",
+          "name": "Calenga",
+          "lat": -12.8463094,
+          "lng": 15.4669106
+        },
+        {
+          "code": "OSM:3306567297",
+          "name": "Camacupa",
+          "lat": -12.0224433,
+          "lng": 17.4741266
+        },
+        {
+          "code": "OSM:207842044",
+          "name": "Cambunze",
+          "lat": -9.3908436,
+          "lng": 15.6310104
+        },
+        {
+          "code": "OSM:2927568125",
+          "name": "Cangonga",
+          "lat": -12.135095,
+          "lng": 18.7954147
+        },
+        {
+          "code": "OSM:2123967325",
+          "name": "Canhoca",
+          "lat": -9.2509218,
+          "lng": 14.6816177
+        },
+        {
+          "code": "OSM:706199632",
+          "name": "Canhoca",
+          "lat": -9.2508023,
+          "lng": 14.681481
+        },
+        {
+          "code": "OSM:4107362990",
+          "name": "Capalanca",
+          "lat": -8.9214599,
+          "lng": 13.4006602
+        },
+        {
+          "code": "OSM:1916523696",
+          "name": "Capembe (Km 319)",
+          "lat": -14.8810932,
+          "lng": 14.0922447
+        },
+        {
+          "code": "OSM:6717959355",
+          "name": "Caponte",
+          "lat": -12.6014449,
+          "lng": 13.4334814
+        },
+        {
+          "code": "OSM:3301683185",
+          "name": "Capunda",
+          "lat": -14.5867947,
+          "lng": 16.6039155
+        },
+        {
+          "code": "OSM:3193493383",
+          "name": "Carvalhais",
+          "lat": -14.6746228,
+          "lng": 15.915207
+        },
+        {
+          "code": "OSM:2527300781",
+          "name": "Cassoalala",
+          "lat": -9.4856157,
+          "lng": 14.3573009
+        },
+        {
+          "code": "OSM:4105372652",
+          "name": "Catabola",
+          "lat": -12.1496557,
+          "lng": 17.2799861
+        },
+        {
+          "code": "OSM:1251160324",
+          "name": "Catchiungo",
+          "lat": -12.5688878,
+          "lng": 16.2279016
+        },
+        {
+          "code": "OSM:4105295720",
+          "name": "Chinguar",
+          "lat": -12.557299,
+          "lng": 16.3331024
+        },
+        {
+          "code": "OSM:2378425822",
+          "name": "Damba Maria",
+          "lat": -12.5309483,
+          "lng": 13.4605931
+        },
+        {
+          "code": "OSM:4107362999",
+          "name": "Entroncamento",
+          "lat": -8.9423055,
+          "lng": 13.4339648
+        },
+        {
+          "code": "OSM:735174646",
+          "name": "Estação 1º de Maio",
+          "lat": -15.19144,
+          "lng": 12.1497344
+        },
+        {
+          "code": "OSM:699026299",
+          "name": "Estação da Arimba",
+          "lat": -14.9460819,
+          "lng": 13.5967421
+        },
+        {
+          "code": "OSM:10269264798",
+          "name": "Estação da Bibala",
+          "lat": -14.7594317,
+          "lng": 13.3498307
+        },
+        {
+          "code": "OSM:2100103880",
+          "name": "Jamba (Km 43)",
+          "lat": -14.6812097,
+          "lng": 16.0366129
+        },
+        {
+          "code": "OSM:1916494464",
+          "name": "Mapunda (Km 239)",
+          "lat": -14.9005266,
+          "lng": 13.4772907
+        },
+        {
+          "code": "OSM:1916494763",
+          "name": "Rio Capitão (Km 248)",
+          "lat": -14.9397622,
+          "lng": 13.5260055
+        },
+        {
+          "code": "OSM:4097602233",
+          "name": "Saco-Mar (Km 10)",
+          "lat": -15.1178036,
+          "lng": 12.1436978
+        },
+        {
+          "code": "OSM:4105186010",
+          "name": "Santa Iria",
+          "lat": -12.7519637,
+          "lng": 15.773524
+        },
+        {
+          "code": "OSM:4105145725",
+          "name": "São Pedro",
+          "lat": -12.7690436,
+          "lng": 15.7279985
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:8521153039",
+          "name": "Terminal Rodoviário",
+          "lat": -14.9287236,
+          "lng": 13.5246204
+        },
+        {
+          "code": "OSM:8853569927",
+          "name": "Terminal Rodoviário",
+          "lat": -8.8841403,
+          "lng": 13.2069829
+        }
+      ]
+    },
+    "Huambo": {
+      "plane": [
+        {
+          "code": "NOV",
+          "name": "Albano Machado Airport",
+          "lat": -12.8089,
+          "lng": 15.7605
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:1808959231",
+          "name": "Assunção (Km 130)",
+          "lat": -14.8650058,
+          "lng": 13.1094436
+        },
+        {
+          "code": "OSM:2631795513",
+          "name": "Chela (Km 211)",
+          "lat": -14.7614168,
+          "lng": 13.5053545
+        },
+        {
+          "code": "OSM:4104883096",
+          "name": "Chimboa",
+          "lat": -12.981263,
+          "lng": 14.4757052
+        },
+        {
+          "code": "OSM:736369734",
+          "name": "Ciambambo",
+          "lat": -13.0072907,
+          "lng": 13.9897805
+        },
+        {
+          "code": "OSM:2181665808",
+          "name": "Cuemba",
+          "lat": -12.1462632,
+          "lng": 18.0948524
+        },
+        {
+          "code": "OSM:2180316480",
+          "name": "Cutato",
+          "lat": -12.3860574,
+          "lng": 16.4389649
+        },
+        {
+          "code": "OSM:2041606698",
+          "name": "Gamek",
+          "lat": -8.8679871,
+          "lng": 13.3162846
+        },
+        {
+          "code": "OSM:4105156944",
+          "name": "Huambo",
+          "lat": -12.7638489,
+          "lng": 15.7456509
+        },
+        {
+          "code": "OSM:4099170981",
+          "name": "Humbia (Km180)",
+          "lat": -14.7308164,
+          "lng": 13.4554744
+        },
+        {
+          "code": "OSM:6718997031",
+          "name": "Santo Amaro",
+          "lat": -12.7164569,
+          "lng": 15.8655918
+        },
+        {
+          "code": "OSM:7729587543",
+          "name": "Serra (Km 198)",
+          "lat": -14.6987983,
+          "lng": 13.476438
+        },
+        {
+          "code": "OSM:4097344072",
+          "name": "Tontum (Km 349)",
+          "lat": -14.8362159,
+          "lng": 14.3512064
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:7164324186",
+          "name": "Desembarque",
+          "lat": -8.8816927,
+          "lng": 13.2070908
+        },
+        {
+          "code": "OSM:2323988874",
+          "name": "Mutamba",
+          "lat": -8.8151093,
+          "lng": 13.2323648
+        }
+      ]
+    },
+    "Malanje": {
+      "plane": [
+        {
+          "code": "MEG",
+          "name": "Malanje Airport",
+          "lat": -9.525090217590332,
+          "lng": 16.312400817871094
+        },
+        {
+          "code": "SPP",
+          "name": "Menongue Airport",
+          "lat": -14.657600402832031,
+          "lng": 17.71980094909668
+        },
+        {
+          "code": "MSZ",
+          "name": "Welwitschia Mirabilis International Airport",
+          "lat": -15.2612,
+          "lng": 12.1468
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:4099164211",
+          "name": "Bibala (Km162)",
+          "lat": -14.7594426,
+          "lng": 13.3496879
+        },
+        {
+          "code": "OSM:1808755035",
+          "name": "Calenguer",
+          "lat": -13.0359524,
+          "lng": 14.1305582
+        },
+        {
+          "code": "OSM:2041597777",
+          "name": "Estalagem",
+          "lat": -8.8797603,
+          "lng": 13.3349349
+        },
+        {
+          "code": "OSM:4113781153",
+          "name": "Malanje",
+          "lat": -9.5423583,
+          "lng": 16.3480103
+        },
+        {
+          "code": "OSM:3193496202",
+          "name": "Maquelo (Km 436)",
+          "lat": -14.7311317,
+          "lng": 15.1236266
+        },
+        {
+          "code": "OSM:3193493389",
+          "name": "Matala (Km 424)",
+          "lat": -14.7394925,
+          "lng": 15.0245004
+        },
+        {
+          "code": "OSM:3193495627",
+          "name": "Micosse (Km 466)",
+          "lat": -14.6344949,
+          "lng": 15.3845813
+        },
+        {
+          "code": "OSM:3295459084",
+          "name": "Mira-Praia (Km 32)",
+          "lat": -15.0177861,
+          "lng": 12.2709009
+        },
+        {
+          "code": "OSM:4101699515",
+          "name": "Moçâmedes (Km 0)",
+          "lat": -15.1913515,
+          "lng": 12.1496445
+        },
+        {
+          "code": "OSM:4113589174",
+          "name": "N'dalahui",
+          "lat": -9.1941087,
+          "lng": 14.3912413
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:6037651685",
+          "name": "macon",
+          "lat": -12.37906,
+          "lng": 13.5749752
+        },
+        {
+          "code": "OSM:6038640686",
+          "name": "macon",
+          "lat": -11.2129506,
+          "lng": 13.8464793
+        },
+        {
+          "code": "OSM:6984590239",
+          "name": "Macon",
+          "lat": -15.1871735,
+          "lng": 12.157768
+        },
+        {
+          "code": "OSM:426335370",
+          "name": "Macon",
+          "lat": -14.8821846,
+          "lng": 13.5306982
+        },
+        {
+          "code": "OSM:837168442",
+          "name": "Macon",
+          "lat": -12.7646754,
+          "lng": 15.7224092
+        },
+        {
+          "code": "OSM:1186482297",
+          "name": "Macon",
+          "lat": -17.3800022,
+          "lng": 15.8866594
+        },
+        {
+          "code": "OSM:426327498",
+          "name": "Orcalves",
+          "lat": -14.921553,
+          "lng": 13.4967835
+        },
+        {
+          "code": "OSM:11407390072",
+          "name": "Sateresa ( Samufundji-Chiembele)",
+          "lat": -11.5042987,
+          "lng": 19.8495888
+        },
+        {
+          "code": "OSM:958698567",
+          "name": "Terminal Interprovincial",
+          "lat": -8.8816915,
+          "lng": 13.2075565
+        }
+      ]
+    },
+    "Benguela": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:4104894603",
+          "name": "Alto Catumbela",
+          "lat": -12.9375051,
+          "lng": 14.7590667
+        },
+        {
+          "code": "OSM:1916523448",
+          "name": "Bember (Km 402)",
+          "lat": -14.782109,
+          "lng": 14.826288
+        },
+        {
+          "code": "OSM:4104403932",
+          "name": "Benguela",
+          "lat": -12.5771706,
+          "lng": 13.4120614
+        },
+        {
+          "code": "OSM:8745931747",
+          "name": "Cangumbe",
+          "lat": -11.9551233,
+          "lng": 19.2038868
+        },
+        {
+          "code": "OSM:2099518976",
+          "name": "Menongue (Km 756)",
+          "lat": -14.6666172,
+          "lng": 17.6951852
+        },
+        {
+          "code": "OSM:8840341480",
+          "name": "Nanguluve (Km 234)",
+          "lat": -14.8822498,
+          "lng": 13.4843246
+        },
+        {
+          "code": "OSM:2595504920",
+          "name": "Savinguila",
+          "lat": -12.1601091,
+          "lng": 18.3896038
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:6037180386",
+          "name": "Ango-Real",
+          "lat": -12.3670354,
+          "lng": 13.5546333
+        },
+        {
+          "code": "OSM:9515740117",
+          "name": "Best Fly Terminal",
+          "lat": -8.849786,
+          "lng": 13.2309075
+        },
+        {
+          "code": "OSM:11126807808",
+          "name": "Entrada Tchinengue (Via Cachipoque)",
+          "lat": -11.7105085,
+          "lng": 19.5609952
+        },
+        {
+          "code": "OSM:10311362409",
+          "name": "Estrada Canhengue-Captação",
+          "lat": -11.7602774,
+          "lng": 19.8636756
+        },
+        {
+          "code": "OSM:11174928037",
+          "name": "Ponte sobre o rio Luculu",
+          "lat": -11.6051911,
+          "lng": 20.4688329
+        }
+      ]
+    },
+    "Bié": {
+      "plane": [
+        {
+          "code": "SZA",
+          "name": "Soyo Airport",
+          "lat": -6.141089916229248,
+          "lng": 12.371800422668457
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:4107364764",
+          "name": "Baía",
+          "lat": -8.9706055,
+          "lng": 13.4790856
+        },
+        {
+          "code": "OSM:2345455332",
+          "name": "Bimbas",
+          "lat": -12.6430152,
+          "lng": 13.4630496
+        },
+        {
+          "code": "OSM:4104997527",
+          "name": "Lépi",
+          "lat": -12.8719619,
+          "lng": 15.3992606
+        },
+        {
+          "code": "OSM:4104548754",
+          "name": "Ombe",
+          "lat": -12.8865889,
+          "lng": 13.6785987
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:315716745",
+          "name": "TGL",
+          "lat": -12.3788323,
+          "lng": 13.5747609
+        },
+        {
+          "code": "OSM:915941368",
+          "name": "TGL",
+          "lat": -14.9240782,
+          "lng": 13.5305811
+        }
+      ]
+    },
+    "Lunda-Sul": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:3193494850",
+          "name": "Riunda (Km 531)",
+          "lat": -14.5249448,
+          "lng": 15.8950831
+        },
+        {
+          "code": "OSM:3041927764",
+          "name": "Santa Cruz",
+          "lat": -12.4073576,
+          "lng": 13.5399
+        },
+        {
+          "code": "OSM:7729704013",
+          "name": "Tolundo (Km 192)",
+          "lat": -14.6737433,
+          "lng": 13.4706965
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:426335863",
+          "name": "Angoreal - Terminal Provincial da Huíla",
+          "lat": -14.8866046,
+          "lng": 13.523334
+        },
+        {
+          "code": "OSM:10692958705",
+          "name": "Lucusse Camwenetulo",
+          "lat": -11.9908544,
+          "lng": 20.1168521
+        },
+        {
+          "code": "OSM:1271039885",
+          "name": "Parque da Staff \"Tá Limpo\"",
+          "lat": -14.9024762,
+          "lng": 13.5141358
+        },
+        {
+          "code": "OSM:11803599270",
+          "name": "Parque da Staff Tá Limpo\"",
+          "lat": -14.9022968,
+          "lng": 13.5138072
+        },
+        {
+          "code": "OSM:6184236685",
+          "name": "Rotunda Sumbe Luanda",
+          "lat": -12.3672085,
+          "lng": 13.5519621
+        }
+      ]
+    },
+    "Moxico": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:2378425769",
+          "name": "Aeroporto",
+          "lat": -12.4890465,
+          "lng": 13.4973433
+        },
+        {
+          "code": "OSM:4104403931",
+          "name": "Cavaco",
+          "lat": -12.5631685,
+          "lng": 13.4193479
+        },
+        {
+          "code": "OSM:6893980392",
+          "name": "Lobito",
+          "lat": -12.3486666,
+          "lng": 13.54222
+        },
+        {
+          "code": "OSM:1808932895",
+          "name": "Munhino (Km 111)",
+          "lat": -14.9413255,
+          "lng": 12.9613137
+        },
+        {
+          "code": "OSM:4097318000",
+          "name": "Nompeto (Km 391)",
+          "lat": -14.7971252,
+          "lng": 14.7277987
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:426328724",
+          "name": "Macon - Base Tchioco",
+          "lat": -14.9250953,
+          "lng": 13.5283335
+        },
+        {
+          "code": "OSM:3746051699",
+          "name": "Macon Executivo",
+          "lat": -8.8990464,
+          "lng": 13.2113608
+        },
+        {
+          "code": "OSM:426322332",
+          "name": "Macon Executivo",
+          "lat": -14.9222221,
+          "lng": 13.4953506
+        },
+        {
+          "code": "OSM:6988787185",
+          "name": "Minibus",
+          "lat": -15.1891072,
+          "lng": 12.1552468
+        }
+      ]
+    },
+    "Uíge": {
+      "plane": [
+        {
+          "code": "GXG",
+          "name": "Negage Airport",
+          "lat": -7.754509925842285,
+          "lng": 15.287699699401855
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Cuando Cubango": {
+      "plane": [
+        {
+          "code": "SSY",
+          "name": "Mbanza Congo Airport",
+          "lat": -6.269899845123291,
+          "lng": 14.246999740600586
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:11412068983",
+          "name": "Aeroporto Internacional Dr. António Agostinho Neto",
+          "lat": -9.0525358,
+          "lng": 13.5012424
+        },
+        {
+          "code": "OSM:955134856",
+          "name": "Apeadeiro de Nanguluve",
+          "lat": -14.8823158,
+          "lng": 13.4843547
+        },
+        {
+          "code": "OSM:226831624",
+          "name": "Bungo - Estação Central de Luanda",
+          "lat": -8.8052724,
+          "lng": 13.2443498
+        },
+        {
+          "code": "OSM:4099134601",
+          "name": "Capangombe (Km 93)",
+          "lat": -14.9925549,
+          "lng": 12.8190392
+        },
+        {
+          "code": "OSM:2484946401",
+          "name": "Caraculo (Km 76)",
+          "lat": -15.0206079,
+          "lng": 12.6678608
+        },
+        {
+          "code": "OSM:4097389404",
+          "name": "Chanja (Km 280)",
+          "lat": -14.8642665,
+          "lng": 13.759642
+        },
+        {
+          "code": "OSM:6718997073",
+          "name": "Chicala-Choloanga",
+          "lat": -12.6365469,
+          "lng": 16.0487743
+        },
+        {
+          "code": "OSM:4097344078",
+          "name": "Chicungo (Km 329)",
+          "lat": -14.8816066,
+          "lng": 14.1766364
+        },
+        {
+          "code": "OSM:3193493388",
+          "name": "Cuvango (Km 579)",
+          "lat": -14.4664967,
+          "lng": 16.2995182
+        },
+        {
+          "code": "OSM:8922260239",
+          "name": "Entroncamento (Km 516)",
+          "lat": -14.5732918,
+          "lng": 15.7714854
+        },
+        {
+          "code": "OSM:3706692681",
+          "name": "Estação de Comboio",
+          "lat": -10.85097,
+          "lng": 14.3706209
+        },
+        {
+          "code": "OSM:912221957",
+          "name": "Estação do Sacomar",
+          "lat": -15.1177094,
+          "lng": 12.1440198
+        },
+        {
+          "code": "OSM:4097318004",
+          "name": "Gungo (Km 378)",
+          "lat": -14.8167533,
+          "lng": 14.6174359
+        },
+        {
+          "code": "OSM:1948897114",
+          "name": "Lubango (Km 246)",
+          "lat": -14.9299206,
+          "lng": 13.508781
+        },
+        {
+          "code": "OSM:4104403933",
+          "name": "Nossa Senhora da Graça",
+          "lat": -12.5514395,
+          "lng": 13.4333351
+        },
+        {
+          "code": "OSM:4096999016",
+          "name": "Quipungo (Km 369)",
+          "lat": -14.8244372,
+          "lng": 14.5432243
+        },
+        {
+          "code": "OSM:8474238275",
+          "name": "Terminal Mineraleiro do Sacomar (Virador de Vagões)",
+          "lat": -15.1194839,
+          "lng": 12.1391974
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:11435366576",
+          "name": "Cruzamento Luatamba (Zaza Lucuaze 2)",
+          "lat": -12.0898373,
+          "lng": 20.3389808
+        },
+        {
+          "code": "OSM:11126807906",
+          "name": "Cruzamento Luena Cachipoque (Manga)",
+          "lat": -11.9193877,
+          "lng": 19.3622054
+        },
+        {
+          "code": "OSM:11126807711",
+          "name": "Cruzamento Lungaumwe ( Nhamupenda- Camisa).",
+          "lat": -12.1068849,
+          "lng": 20.4218936
+        },
+        {
+          "code": "OSM:11126804008",
+          "name": "Cruzamento Munhango ( Cangumbr Chipupa)",
+          "lat": -11.7052619,
+          "lng": 19.133468
+        },
+        {
+          "code": "OSM:11126804016",
+          "name": "Cruzamento Zaza (Kamuale) Luatamba",
+          "lat": -12.1493762,
+          "lng": 20.4911931
+        },
+        {
+          "code": "OSM:11126807816",
+          "name": "Cruzamento Zaza Sengo ( Fazenda ) Luatamba",
+          "lat": -12.1216559,
+          "lng": 20.4306989
+        },
+        {
+          "code": "OSM:11126804010",
+          "name": "Desvio Kaminhão ( Mário/ Nascente do Cassai) Alto Chicapa",
+          "lat": -11.569435,
+          "lng": 19.0159931
+        },
+        {
+          "code": "OSM:11126807710",
+          "name": "Desvio Luatamba (Zaza)Nhamupenda Ndumbaba",
+          "lat": -12.1543332,
+          "lng": 20.5083104
+        },
+        {
+          "code": "OSM:11126804006",
+          "name": "Desvio Manga( Chinengue, Cachipoque)",
+          "lat": -11.7044572,
+          "lng": 19.5559634
+        },
+        {
+          "code": "OSM:11126807708",
+          "name": "Desvio Sauanga ( Muthunga-Saitar)",
+          "lat": -11.5670195,
+          "lng": 18.9562763
+        },
+        {
+          "code": "OSM:11435365776",
+          "name": "Entrada para Kamwale e Fumo",
+          "lat": -12.1510088,
+          "lng": 20.4916201
+        },
+        {
+          "code": "OSM:11179474438",
+          "name": "Estrada - saida para Pinto Chazi",
+          "lat": -11.3673134,
+          "lng": 19.8437938
+        },
+        {
+          "code": "OSM:955349068",
+          "name": "Orcalves - Parque Logístico",
+          "lat": -14.8961996,
+          "lng": 13.5066173
+        },
+        {
+          "code": "OSM:4674864991",
+          "name": "paragem de Comboios",
+          "lat": -9.0635362,
+          "lng": 13.63631
+        },
+        {
+          "code": "OSM:912789870",
+          "name": "Parque de Viagem do Nambambi",
+          "lat": -14.881268,
+          "lng": 13.5344706
+        },
+        {
+          "code": "OSM:10692946109",
+          "name": "Ponte do rio Munhango",
+          "lat": -11.8732369,
+          "lng": 19.1706456
+        },
+        {
+          "code": "OSM:11174928040",
+          "name": "Ponte sobre o rio Luanguirico",
+          "lat": -11.5378705,
+          "lng": 19.9198569
+        },
+        {
+          "code": "OSM:11739180270",
+          "name": "Ponte sobre o rio Luguembungo",
+          "lat": -12.7489558,
+          "lng": 20.7318505
+        },
+        {
+          "code": "OSM:11126804017",
+          "name": "Primeira entrada de Kassumbi para Mbalangandu",
+          "lat": -12.2377927,
+          "lng": 20.4893482
+        },
+        {
+          "code": "OSM:957145092",
+          "name": "SGO - Transportes Urbano",
+          "lat": -14.9243058,
+          "lng": 13.5289558
+        },
+        {
+          "code": "OSM:778150147",
+          "name": "Terminal Rodoviário do Mutundo",
+          "lat": -14.8742434,
+          "lng": 13.5839251
+        },
+        {
+          "code": "OSM:824504053",
+          "name": "TGL - Lubango",
+          "lat": -14.8887889,
+          "lng": 13.5205493
+        },
+        {
+          "code": "OSM:4786386788",
+          "name": "Transporte Colectivo Urbano de Luanda (TCUL)",
+          "lat": -8.815158,
+          "lng": 13.2324826
+        }
+      ]
+    },
+    "Cuanza-Sul": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:11407391472",
+          "name": "Chiembele (Sateresa-Sacambunji)",
+          "lat": -11.5079738,
+          "lng": 19.8712898
+        },
+        {
+          "code": "OSM:11126804012",
+          "name": "Desvio Sauanga Salieza",
+          "lat": -11.4722442,
+          "lng": 18.7495293
+        }
+      ]
+    },
+    "Namibe": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:4105394920",
+          "name": "Cavimbe",
+          "lat": -12.0844638,
+          "lng": 18.9875574
+        },
+        {
+          "code": "OSM:2181227456",
+          "name": "Lombe",
+          "lat": -9.4885434,
+          "lng": 16.1480055
+        },
+        {
+          "code": "OSM:207879863",
+          "name": "Lombe",
+          "lat": -9.4884438,
+          "lng": 16.1481328
+        },
+        {
+          "code": "OSM:1916493594",
+          "name": "Nangombe (Km 227)",
+          "lat": -14.8281476,
+          "lng": 13.4901958
+        },
+        {
+          "code": "OSM:207989409",
+          "name": "Zenza do Itombe",
+          "lat": -9.2862345,
+          "lng": 14.2142905
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:11126807913",
+          "name": "Entrada Kamawe, Praia (Kamba)",
+          "lat": -12.2107261,
+          "lng": 20.5372805
+        },
+        {
+          "code": "OSM:11126807910",
+          "name": "Entrada Kamuimba",
+          "lat": -12.1114295,
+          "lng": 20.3804041
+        },
+        {
+          "code": "OSM:11407376172",
+          "name": "Entrada para Kamwimba",
+          "lat": -12.1119196,
+          "lng": 20.3803331
+        }
+      ]
+    },
+    "Bengo": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:441601821",
+          "name": "Bungo",
+          "lat": -8.8053477,
+          "lng": 13.2444404
+        },
+        {
+          "code": "OSM:4104548764",
+          "name": "Cango",
+          "lat": -12.7115209,
+          "lng": 13.5879776
+        },
+        {
+          "code": "OSM:1808751011",
+          "name": "Dango",
+          "lat": -12.80823,
+          "lng": 15.645063
+        },
+        {
+          "code": "OSM:489806258",
+          "name": "Dondo",
+          "lat": -9.6878344,
+          "lng": 14.4248481
+        },
+        {
+          "code": "OSM:3193493384",
+          "name": "Dongo (Km 508)",
+          "lat": -14.5968122,
+          "lng": 15.7117909
+        },
+        {
+          "code": "OSM:1808753566",
+          "name": "Longonjo",
+          "lat": -12.9049258,
+          "lng": 15.2494153
+        },
+        {
+          "code": "OSM:643462597",
+          "name": "Textang",
+          "lat": -8.8008882,
+          "lng": 13.2613494
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:10296362009",
+          "name": "Desvio",
+          "lat": -12.0334825,
+          "lng": 20.2635797
+        }
+      ]
+    },
+    "Zaire": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:6716178055",
+          "name": "Caifuche",
+          "lat": -11.3386705,
+          "lng": 21.5154407
+        },
+        {
+          "code": "OSM:3193495877",
+          "name": "Laceiras (Km 452)",
+          "lat": -14.679551,
+          "lng": 15.2633202
+        },
+        {
+          "code": "OSM:1916494610",
+          "name": "Poiares (Km 264)",
+          "lat": -14.9169394,
+          "lng": 13.6490418
+        },
+        {
+          "code": "OSM:2182327121",
+          "name": "Raposeira (Km 59)",
+          "lat": -15.0110139,
+          "lng": 12.5099755
+        }
+      ],
+      "bus": []
+    },
+    "Lunda-Norte": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:916232388",
+          "name": "Jobita Transportes",
+          "lat": -14.9243339,
+          "lng": 13.5282143
+        },
+        {
+          "code": "OSM:4446537034",
+          "name": "Paragem da Shoprite",
+          "lat": -14.9239185,
+          "lng": 13.4766496
+        }
+      ]
+    },
+    "Cuanza-Norte": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:426337102",
+          "name": "Sotrans - Transporte Interprovincial",
+          "lat": -14.8972765,
+          "lng": 13.5074952
+        }
+      ]
+    },
+    "Cunene": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:4105308930",
+          "name": "Capeio",
+          "lat": -12.3338224,
+          "lng": 16.6256307
+        },
+        {
+          "code": "OSM:1809747288",
+          "name": "Catete",
+          "lat": -9.0841081,
+          "lng": 13.6875754
+        },
+        {
+          "code": "OSM:6894119911",
+          "name": "Chinjenje",
+          "lat": -12.8273182,
+          "lng": 14.9274145
+        },
+        {
+          "code": "OSM:3306517538",
+          "name": "Lumeje",
+          "lat": -11.555453,
+          "lng": 20.7821981
+        },
+        {
+          "code": "OSM:6513758412",
+          "name": "Muceques",
+          "lat": -8.8312028,
+          "lng": 13.2737298
+        },
+        {
+          "code": "OSM:4105432451",
+          "name": "Mucussueje",
+          "lat": -11.0262536,
+          "lng": 21.9366419
+        }
+      ],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:22:56.016Z"
+  }
+}

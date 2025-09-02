@@ -1,0 +1,232 @@
+{
+  "code": "AF",
+  "name": "Afghanistan",
+  "cities": {
+    "Kābul": {
+      "plane": [
+        {
+          "code": "KBL",
+          "name": "Kabul International Airport",
+          "lat": 34.565899,
+          "lng": 69.212303
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Jowzjān": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kandahār": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Herāt": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Farāh": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Balkh": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Helmand": {
+      "plane": [
+        {
+          "code": "MMZ",
+          "name": "Maymana Zahiraddin Faryabi Airport",
+          "lat": 35.930801,
+          "lng": 64.760902
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kunduz": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nangarhār": {
+      "plane": [
+        {
+          "code": "MZR",
+          "name": "Mazar-i-Sharif International Airport",
+          "lat": 36.706902,
+          "lng": 67.209702
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Takhār": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nīmrōz": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Khōst": {
+      "plane": [
+        {
+          "code": "KDH",
+          "name": "Ahmad Shah Baba International Airport / Kandahar Airfield",
+          "lat": 31.5058,
+          "lng": 65.847801
+        },
+        {
+          "code": "AF-0017",
+          "name": "Salerno South Airport",
+          "lat": 33.333401,
+          "lng": 69.952003
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Fāryāb": {
+      "plane": [
+        {
+          "code": "FBD",
+          "name": "Fayzabad Airport",
+          "lat": 37.122148,
+          "lng": 70.5201
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Laghmān": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ghaznī": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Baghlān": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bāmyān": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Parwān": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Uruzgān": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Paktiyā": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Badakhshān": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bādghīs": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sar-e Pul": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kāpīsā": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Zābul": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Samangān": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Wardak": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Panjshir": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lōgar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kunaṟ": {
+      "plane": [
+        {
+          "code": "HEA",
+          "name": "Herat - Khwaja Abdullah Ansari International Airport",
+          "lat": 34.209999,
+          "lng": 62.228298
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Paktīkā": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ghōr": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dāykundī": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nūristān": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:27:48.445Z"
+  }
+}

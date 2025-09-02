@@ -1,0 +1,336 @@
+{
+  "code": "LU",
+  "name": "Luxembourg",
+  "cities": {
+    "Luxembourg": {
+      "plane": [
+        {
+          "code": "LUX",
+          "name": "Luxembourg-Findel International Airport",
+          "lat": 49.6233333,
+          "lng": 6.2044444
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:5863457530",
+          "name": "Carlsbourg",
+          "lat": 49.9073932,
+          "lng": 5.0873516
+        },
+        {
+          "code": "OSM:3964570119",
+          "name": "Luxembourg",
+          "lat": 49.5999681,
+          "lng": 6.1342493
+        },
+        {
+          "code": "OSM:6446185",
+          "name": "Luxembourg Gare Centrale",
+          "lat": 49.5998388,
+          "lng": 6.1342191
+        }
+      ],
+      "bus": []
+    },
+    "Esch-sur-Alzette": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:5450440057",
+          "name": "Marche-en-Famenne",
+          "lat": 50.2224969,
+          "lng": 5.3459878
+        },
+        {
+          "code": "OSM:5884971672",
+          "name": "Poix-Saint-Hubert",
+          "lat": 50.0194244,
+          "lng": 5.2926645
+        }
+      ],
+      "bus": []
+    },
+    "Diekirch": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:5885099289",
+          "name": "Forrières",
+          "lat": 50.1324018,
+          "lng": 5.2766908
+        },
+        {
+          "code": "OSM:5450310140",
+          "name": "Vielsalm",
+          "lat": 50.2787325,
+          "lng": 5.9095207
+        }
+      ],
+      "bus": []
+    },
+    "Echternach": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:5884549412",
+          "name": "Neufchâteau",
+          "lat": 49.8541594,
+          "lng": 5.4525893
+        },
+        {
+          "code": "OSM:5276083280",
+          "name": "Rout Bréck-Pafendall",
+          "lat": 49.6188621,
+          "lng": 6.1360568
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:1255622503",
+          "name": "Bastogne Sud",
+          "lat": 49.9999968,
+          "lng": 5.7102243
+        },
+        {
+          "code": "OSM:191092383",
+          "name": "Lignes internationales",
+          "lat": 49.5999197,
+          "lng": 6.1048297
+        }
+      ]
+    },
+    "Wiltz": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:5875951223",
+          "name": "Arlon",
+          "lat": 49.680415,
+          "lng": 5.8095313
+        },
+        {
+          "code": "OSM:5117245255",
+          "name": "Athus",
+          "lat": 49.5639089,
+          "lng": 5.8292864
+        },
+        {
+          "code": "OSM:5892762838",
+          "name": "Aye",
+          "lat": 50.2244872,
+          "lng": 5.3009737
+        },
+        {
+          "code": "OSM:5450587661",
+          "name": "Bomal",
+          "lat": 50.3768695,
+          "lng": 5.5195859
+        },
+        {
+          "code": "OSM:5450310126",
+          "name": "Gouvy",
+          "lat": 50.1896189,
+          "lng": 5.9540191
+        },
+        {
+          "code": "OSM:5764358887",
+          "name": "Halanzy",
+          "lat": 49.5559197,
+          "lng": 5.7428745
+        },
+        {
+          "code": "OSM:5861541102",
+          "name": "Paliseul",
+          "lat": 49.8952062,
+          "lng": 5.1187309
+        },
+        {
+          "code": "OSM:5766470106",
+          "name": "Virton",
+          "lat": 49.5605149,
+          "lng": 5.5196466
+        },
+        {
+          "code": "OSM:5876112729",
+          "name": "Viville",
+          "lat": 49.6882087,
+          "lng": 5.7858779
+        }
+      ],
+      "bus": []
+    },
+    "Grevenmacher": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:5221201562",
+          "name": "Pfaffenthal-Kirchberg",
+          "lat": 49.6189511,
+          "lng": 6.1329276
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:301453879",
+          "name": "Bastogne Pépinière",
+          "lat": 50.0060435,
+          "lng": 5.7196483
+        },
+        {
+          "code": "OSM:863560258",
+          "name": "Gare routière Luxexpo",
+          "lat": 49.6362188,
+          "lng": 6.17502
+        }
+      ]
+    },
+    "Remich": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:5768862934",
+          "name": "Florenville",
+          "lat": 49.7070559,
+          "lng": 5.331825
+        },
+        {
+          "code": "OSM:5885099337",
+          "name": "Grupont",
+          "lat": 50.0907661,
+          "lng": 5.2807569
+        },
+        {
+          "code": "OSM:10773674667",
+          "name": "Hollerich",
+          "lat": 49.5956799,
+          "lng": 6.1201184
+        },
+        {
+          "code": "OSM:5779840185",
+          "name": "Libramont",
+          "lat": 49.9202357,
+          "lng": 5.3792715
+        }
+      ],
+      "bus": []
+    },
+    "Vianden": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:5876112723",
+          "name": "Stockem",
+          "lat": 49.6909216,
+          "lng": 5.7678737
+        }
+      ],
+      "bus": []
+    },
+    "Capellen": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Clervaux": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:5450587713",
+          "name": "Barvaux",
+          "lat": 50.3490942,
+          "lng": 5.5014037
+        },
+        {
+          "code": "OSM:5771497176",
+          "name": "Bertrix",
+          "lat": 49.8526996,
+          "lng": 5.267806
+        }
+      ],
+      "bus": []
+    },
+    "Mersch": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:25609667",
+          "name": "Cents-Hamm",
+          "lat": 49.6150126,
+          "lng": 6.1659779
+        },
+        {
+          "code": "OSM:7794796",
+          "name": "Cents-Hamm",
+          "lat": 49.6150229,
+          "lng": 6.166326
+        },
+        {
+          "code": "OSM:5882541161",
+          "name": "Marbehan",
+          "lat": 49.7274187,
+          "lng": 5.5393884
+        },
+        {
+          "code": "OSM:5450440093",
+          "name": "Marloie",
+          "lat": 50.2025003,
+          "lng": 5.3139556
+        },
+        {
+          "code": "OSM:5450434202",
+          "name": "Melreux-Hotton",
+          "lat": 50.2839828,
+          "lng": 5.4409722
+        },
+        {
+          "code": "OSM:5761481284",
+          "name": "Messancy",
+          "lat": 49.5928992,
+          "lng": 5.8184601
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:512007231",
+          "name": "Limpertsberg, L.T.C.",
+          "lat": 49.6247518,
+          "lng": 6.1152113
+        }
+      ]
+    },
+    "Redange": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:5764359919",
+          "name": "Aubange",
+          "lat": 49.5634996,
+          "lng": 5.7994748
+        },
+        {
+          "code": "OSM:3730497336",
+          "name": "Dommeldange",
+          "lat": 49.6337994,
+          "lng": 6.1368137
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:124523459",
+          "name": "Martelange, Dépôt TEC N4",
+          "lat": 49.8335091,
+          "lng": 5.7382853
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:48:09.901Z"
+  }
+}

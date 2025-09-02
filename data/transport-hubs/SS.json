@@ -1,0 +1,71 @@
+{
+  "code": "SS",
+  "name": "South Sudan",
+  "cities": {
+    "Central Equatoria": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Jonglei": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Eastern Equatoria": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Western Bahr el Ghazal": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Western Equatoria": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Upper Nile": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Unity": {
+      "plane": [
+        {
+          "code": "JUB",
+          "name": "Juba International Airport",
+          "lat": 4.87201,
+          "lng": 31.601101
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Warrap": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Northern Bahr el Ghazal": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lakes": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:44:50.070Z"
+  }
+}

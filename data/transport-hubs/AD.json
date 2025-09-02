@@ -1,0 +1,75 @@
+{
+  "code": "AD",
+  "name": "Andorra",
+  "cities": {
+    "Andorra la Vella": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Canillo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Escaldes-Engordany": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Encamp": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "La Massana": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:7264181383",
+          "name": "5205 La Grau",
+          "lat": 42.5055591,
+          "lng": 1.5196546
+        },
+        {
+          "code": "OSM:7233737886",
+          "name": "DirectBus Bus station",
+          "lat": 42.5050814,
+          "lng": 1.5219253
+        }
+      ]
+    },
+    "Sant Julià de Lòria": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:604030704",
+          "name": "Estació Nacional d'Autobussos",
+          "lat": 42.5045576,
+          "lng": 1.5210224
+        },
+        {
+          "code": "OSM:280975185",
+          "name": "Estación de Autobuses de Andorra",
+          "lat": 40.979155,
+          "lng": -0.4439488
+        }
+      ]
+    },
+    "Ordino": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:51:03.964Z"
+  }
+}

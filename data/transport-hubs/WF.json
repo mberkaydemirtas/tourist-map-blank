@@ -1,0 +1,38 @@
+{
+  "code": "WF",
+  "name": "Wallis and Futuna",
+  "cities": {
+    "Uvea": {
+      "plane": [
+        {
+          "code": "FUT",
+          "name": "Pointe Vele Airport",
+          "lat": -14.311565,
+          "lng": -178.066492
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Sigave": {
+      "plane": [
+        {
+          "code": "WLS",
+          "name": "Hihifo Airport",
+          "lat": -13.2383003235,
+          "lng": -176.199005127
+        }
+      ],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:51:54.551Z"
+  }
+}

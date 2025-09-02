@@ -1,0 +1,148 @@
+{
+  "code": "LA",
+  "name": "Laos",
+  "cities": {
+    "Viangchan": {
+      "plane": [
+        {
+          "code": "VTE",
+          "name": "Wattay International Airport",
+          "lat": 17.988300323500003,
+          "lng": 102.56300354
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Xiangkhouang": {
+      "plane": [
+        {
+          "code": "XKH",
+          "name": "Xieng Khouang Airport",
+          "lat": 19.450001,
+          "lng": 103.157997
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Savannakhét": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Salavan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Oudômxai": {
+      "plane": [
+        {
+          "code": "ODY",
+          "name": "Oudomsay Airport",
+          "lat": 20.68269920349121,
+          "lng": 101.99400329589844
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Champasak": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Xaignabouli": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Khammouan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Houaphan": {
+      "plane": [
+        {
+          "code": "BOR",
+          "name": "Bokeo International Airport",
+          "lat": 20.323986,
+          "lng": 100.165392
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Louangnamtha": {
+      "plane": [
+        {
+          "code": "LXG",
+          "name": "Luang Namtha Airport",
+          "lat": 20.966999,
+          "lng": 101.400002
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Louangphabang": {
+      "plane": [
+        {
+          "code": "LPQ",
+          "name": "Luang Phabang International Airport",
+          "lat": 19.897300720214844,
+          "lng": 102.16100311279297
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Bolikhamxai": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Attapu": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bokèo": {
+      "plane": [
+        {
+          "code": "PKZ",
+          "name": "Pakse International Airport",
+          "lat": 15.132100105285645,
+          "lng": 105.78099822998047
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Phôngsali": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Xaisômboun": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Xékong": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:40:47.316Z"
+  }
+}

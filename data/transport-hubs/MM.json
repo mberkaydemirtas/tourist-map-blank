@@ -1,0 +1,233 @@
+{
+  "code": "MM",
+  "name": "Burma",
+  "cities": {
+    "Yangon": {
+      "plane": [
+        {
+          "code": "NYU",
+          "name": "Bagan Airport",
+          "lat": 21.178800582885742,
+          "lng": 94.9301986694336
+        },
+        {
+          "code": "BMO",
+          "name": "Banmaw Airport",
+          "lat": 24.27044,
+          "lng": 97.2476
+        },
+        {
+          "code": "KHM",
+          "name": "Kanti Airport",
+          "lat": 25.9883,
+          "lng": 95.6744
+        },
+        {
+          "code": "KAW",
+          "name": "Kawthoung Airport",
+          "lat": 10.049300193786621,
+          "lng": 98.53800201416016
+        },
+        {
+          "code": "KET",
+          "name": "Kengtung Airport",
+          "lat": 21.301599502563477,
+          "lng": 99.63600158691406
+        },
+        {
+          "code": "KYP",
+          "name": "Kyaukpyu Airport",
+          "lat": 19.42639923095703,
+          "lng": 93.53479766845703
+        },
+        {
+          "code": "MYT",
+          "name": "Myitkyina Airport",
+          "lat": 25.3836,
+          "lng": 97.351898
+        },
+        {
+          "code": "NYT",
+          "name": "Nay Pyi Taw International Airport",
+          "lat": 19.623501,
+          "lng": 96.200996
+        },
+        {
+          "code": "BSX",
+          "name": "Pathein Airport",
+          "lat": 16.815201,
+          "lng": 94.7799
+        },
+        {
+          "code": "AKY",
+          "name": "Sittwe Airport",
+          "lat": 20.133165,
+          "lng": 92.870693
+        },
+        {
+          "code": "SNW",
+          "name": "Thandwe Airport",
+          "lat": 18.4606990814209,
+          "lng": 94.30010223388672
+        },
+        {
+          "code": "RGN",
+          "name": "Yangon International Airport",
+          "lat": 16.907300949099998,
+          "lng": 96.1332015991
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Mandalay": {
+      "plane": [
+        {
+          "code": "MDL",
+          "name": "Mandalay International Airport",
+          "lat": 21.702199935913086,
+          "lng": 95.97789764404297
+        },
+        {
+          "code": "THL",
+          "name": "Tachileik Airport",
+          "lat": 20.483800888061523,
+          "lng": 99.9354019165039
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nay Pyi Taw": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kayin State": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Rakhine State": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Magway": {
+      "plane": [
+        {
+          "code": "TVY",
+          "name": "Dawei Airport",
+          "lat": 14.103899955749512,
+          "lng": 98.20359802246094
+        },
+        {
+          "code": "LIW",
+          "name": "Loikaw Airport",
+          "lat": 19.691499710083008,
+          "lng": 97.21479797363281
+        },
+        {
+          "code": "MWQ",
+          "name": "Magway Airport",
+          "lat": 20.1656,
+          "lng": 94.941399
+        },
+        {
+          "code": "MNU",
+          "name": "Mawlamyine Airport",
+          "lat": 16.444700241088867,
+          "lng": 97.66069793701172
+        },
+        {
+          "code": "MGZ",
+          "name": "Myeik Airport",
+          "lat": 12.439800262451172,
+          "lng": 98.62149810791016
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ayeyarwady": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bago": {
+      "plane": [
+        {
+          "code": "LSH",
+          "name": "Lashio Airport",
+          "lat": 22.9778995513916,
+          "lng": 97.752197265625
+        },
+        {
+          "code": "PBU",
+          "name": "Putao Airport",
+          "lat": 27.32990074157715,
+          "lng": 97.42630004882812
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Shan State": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mon State": {
+      "plane": [
+        {
+          "code": "MOG",
+          "name": "Mong Hsat Airport",
+          "lat": 20.516799926757812,
+          "lng": 99.25679779052734
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kachin State": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tanintharyi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sagaing": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Chin State": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kayah State": {
+      "plane": [
+        {
+          "code": "HEH",
+          "name": "Heho Airport",
+          "lat": 20.74714,
+          "lng": 96.792029
+        }
+      ],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:25:10.449Z"
+  }
+}

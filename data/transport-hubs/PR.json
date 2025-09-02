@@ -1,0 +1,513 @@
+{
+  "code": "PR",
+  "name": "Puerto Rico",
+  "cities": {
+    "Puerto Rico": {
+      "plane": [
+        {
+          "code": "VQS",
+          "name": "Antonio Rivera Rodriguez Airport",
+          "lat": 18.1348,
+          "lng": -65.493599
+        },
+        {
+          "code": "CPX",
+          "name": "Benjamin Rivera Noriega Airport",
+          "lat": 18.312954,
+          "lng": -65.303893
+        },
+        {
+          "code": "MAZ",
+          "name": "Eugenio Maria De Hostos Airport",
+          "lat": 18.255699157714844,
+          "lng": -67.14849853515625
+        },
+        {
+          "code": "SIG",
+          "name": "Fernando Luis Ribas Dominicci Airport",
+          "lat": 18.45680046081543,
+          "lng": -66.09809875488281
+        },
+        {
+          "code": "NRR",
+          "name": "José Aponte de la Torre Airport",
+          "lat": 18.2453,
+          "lng": -65.643402
+        },
+        {
+          "code": "SJU",
+          "name": "Luis Munoz Marin International Airport",
+          "lat": 18.4394,
+          "lng": -66.001801
+        },
+        {
+          "code": "PSE",
+          "name": "Mercedita Airport",
+          "lat": 18.00830078125,
+          "lng": -66.56300354003906
+        },
+        {
+          "code": "BQN",
+          "name": "Rafael Hernández International Airport",
+          "lat": 18.4949,
+          "lng": -67.129402
+        }
+      ],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:302318248",
+          "name": "Centro de Transferencia de Hato Rey",
+          "lat": 18.4238645,
+          "lng": -66.0577337
+        },
+        {
+          "code": "OSM:248070214",
+          "name": "Centro de Transportación Francisco Pereira Casillas \"Don Pancho\"",
+          "lat": 18.2350686,
+          "lng": -66.0323493
+        },
+        {
+          "code": "OSM:5408662380",
+          "name": "Estación de Carros Públicos de San Germán",
+          "lat": 18.0830357,
+          "lng": -67.0417254
+        },
+        {
+          "code": "OSM:5059265621",
+          "name": "Paraderos de Puerto Rico",
+          "lat": 1.9098238,
+          "lng": -75.1570013
+        },
+        {
+          "code": "OSM:315084870",
+          "name": "Terminal Barcelona",
+          "lat": 18.2041746,
+          "lng": -67.1385926
+        },
+        {
+          "code": "OSM:223782906",
+          "name": "Terminal Capetillo \"Doña Cruz María \"Cucú\" Velázquez Benítez\"",
+          "lat": 18.3999817,
+          "lng": -66.0447569
+        },
+        {
+          "code": "OSM:60252431",
+          "name": "Terminal Covadonga",
+          "lat": 18.4647353,
+          "lng": -66.1106539
+        },
+        {
+          "code": "OSM:3894920588",
+          "name": "Terminal Cupey",
+          "lat": 18.390489,
+          "lng": -66.0637606
+        },
+        {
+          "code": "OSM:2057194530",
+          "name": "Terminal de Carolina",
+          "lat": 18.3861153,
+          "lng": -65.9536244
+        },
+        {
+          "code": "OSM:338720317",
+          "name": "Terminal de Carros Públicos Antonio Guadarrama",
+          "lat": 18.396476,
+          "lng": -66.1546753
+        },
+        {
+          "code": "OSM:525940065",
+          "name": "Terminal de Carros Públicos Carlos Garay",
+          "lat": 18.0141963,
+          "lng": -66.615649
+        },
+        {
+          "code": "OSM:529712515",
+          "name": "Terminal de Carros Públicos de Adjuntas",
+          "lat": 18.1626567,
+          "lng": -66.7215332
+        },
+        {
+          "code": "OSM:527775305",
+          "name": "Terminal de Carros Públicos de Aguada",
+          "lat": 18.3795216,
+          "lng": -67.1876067
+        },
+        {
+          "code": "OSM:462878215",
+          "name": "Terminal de Carros Públicos de Aguadilla Pedro A. Hernández \"King Face\"",
+          "lat": 18.428774,
+          "lng": -67.1531861
+        },
+        {
+          "code": "OSM:540415617",
+          "name": "Terminal de Carros Públicos de Barceloneta",
+          "lat": 18.453079,
+          "lng": -66.5387552
+        },
+        {
+          "code": "OSM:527246496",
+          "name": "Terminal de Carros Públicos de Camuy Felipe Martínez Hernández",
+          "lat": 18.4831636,
+          "lng": -66.8447341
+        },
+        {
+          "code": "OSM:530100053",
+          "name": "Terminal de Carros Públicos de Cayey",
+          "lat": 18.1139705,
+          "lng": -66.16458
+        },
+        {
+          "code": "OSM:531442990",
+          "name": "Terminal de Carros Públicos de Ciales",
+          "lat": 18.3343827,
+          "lng": -66.4684334
+        },
+        {
+          "code": "OSM:1071705298",
+          "name": "Terminal de Carros Públicos de Coamo",
+          "lat": 18.0803506,
+          "lng": -66.3584288
+        },
+        {
+          "code": "OSM:1071350791",
+          "name": "Terminal de Carros Públicos de Dorado \"José \"Pepito\" López",
+          "lat": 18.4601648,
+          "lng": -66.2653465
+        },
+        {
+          "code": "OSM:529948002",
+          "name": "Terminal de Carros Públicos de Guayama \"Miguel Díaz Tirado\"",
+          "lat": 17.9838466,
+          "lng": -66.1128967
+        },
+        {
+          "code": "OSM:406005078",
+          "name": "Terminal de Carros Públicos de Guaynabo",
+          "lat": 18.3568589,
+          "lng": -66.1100819
+        },
+        {
+          "code": "OSM:529975170",
+          "name": "Terminal de Carros Públicos de Gurabo",
+          "lat": 18.2564271,
+          "lng": -65.970225
+        },
+        {
+          "code": "OSM:537693342",
+          "name": "Terminal de Carros Públicos de Hatillo",
+          "lat": 18.4847912,
+          "lng": -66.8249188
+        },
+        {
+          "code": "OSM:531088428",
+          "name": "Terminal de Carros Públicos de Juana Díaz",
+          "lat": 18.0534692,
+          "lng": -66.5070583
+        },
+        {
+          "code": "OSM:1072445941",
+          "name": "Terminal de Carros Públicos de Juncos",
+          "lat": 18.227278,
+          "lng": -65.9210037
+        },
+        {
+          "code": "OSM:533071087",
+          "name": "Terminal de Carros Públicos de Lajas",
+          "lat": 18.0488704,
+          "lng": -67.0597034
+        },
+        {
+          "code": "OSM:532624326",
+          "name": "Terminal de Carros Públicos de Lares",
+          "lat": 18.2957415,
+          "lng": -66.8783747
+        },
+        {
+          "code": "OSM:534259647",
+          "name": "Terminal de Carros Públicos de Las Piedras \"Antonio Toño Rivera\"",
+          "lat": 18.1844142,
+          "lng": -65.8707364
+        },
+        {
+          "code": "OSM:429777874",
+          "name": "Terminal de Carros Públicos de Loíza",
+          "lat": 18.4343067,
+          "lng": -65.8790964
+        },
+        {
+          "code": "OSM:527561252",
+          "name": "Terminal de Carros Públicos de Moca",
+          "lat": 18.3949562,
+          "lng": -67.1114384
+        },
+        {
+          "code": "OSM:528743110",
+          "name": "Terminal de Carros Públicos de Naguabo",
+          "lat": 18.2123734,
+          "lng": -65.7364418
+        },
+        {
+          "code": "OSM:537604718",
+          "name": "Terminal de Carros Públicos de Naranjito Juan Molina Negrón",
+          "lat": 18.3005245,
+          "lng": -66.2474206
+        },
+        {
+          "code": "OSM:512705621",
+          "name": "Terminal de Carros Públicos de Patillas",
+          "lat": 18.0037174,
+          "lng": -66.0145478
+        },
+        {
+          "code": "OSM:527156452",
+          "name": "Terminal de Carros Públicos de Quebradillas",
+          "lat": 18.4719925,
+          "lng": -66.9391899
+        },
+        {
+          "code": "OSM:527695673",
+          "name": "Terminal de Carros Públicos de Rincón",
+          "lat": 18.3376843,
+          "lng": -67.2515674
+        },
+        {
+          "code": "OSM:528803163",
+          "name": "Terminal de Carros Públicos de Río Grande",
+          "lat": 18.3790562,
+          "lng": -65.8284357
+        },
+        {
+          "code": "OSM:532435226",
+          "name": "Terminal de Carros Públicos de Sabana Grande",
+          "lat": 18.0789281,
+          "lng": -66.9599526
+        },
+        {
+          "code": "OSM:1071721207",
+          "name": "Terminal de Carros Públicos de San Germán",
+          "lat": 18.0807545,
+          "lng": -67.0370225
+        },
+        {
+          "code": "OSM:1072444717",
+          "name": "Terminal de Carros Públicos de San Lorenzo",
+          "lat": 18.1874333,
+          "lng": -65.9614799
+        },
+        {
+          "code": "OSM:530141599",
+          "name": "Terminal de Carros Públicos de Santa Isabel",
+          "lat": 17.9656654,
+          "lng": -66.4029622
+        },
+        {
+          "code": "OSM:532513770",
+          "name": "Terminal de Carros Públicos de Trujillo Alto",
+          "lat": 18.3552753,
+          "lng": -66.0061478
+        },
+        {
+          "code": "OSM:531718966",
+          "name": "Terminal de Carros Públicos de Utuado",
+          "lat": 18.2661654,
+          "lng": -66.6973936
+        },
+        {
+          "code": "OSM:1072410589",
+          "name": "Terminal de Carros Públicos de Yabucoa",
+          "lat": 18.048894,
+          "lng": -65.8782797
+        },
+        {
+          "code": "OSM:72872243",
+          "name": "Terminal de Carros Públicos del Este",
+          "lat": 18.3972891,
+          "lng": -66.0470595
+        },
+        {
+          "code": "OSM:530513866",
+          "name": "Terminal de Carros Públicos Parque Urbano Dora Colón Clavell",
+          "lat": 18.0076756,
+          "lng": -66.6139977
+        },
+        {
+          "code": "OSM:338720289",
+          "name": "Terminal de Carros Públicos Tomás Kuilan",
+          "lat": 18.3974405,
+          "lng": -66.1574507
+        },
+        {
+          "code": "OSM:532302124",
+          "name": "Terminal de Carros Públicos Valeriano \"Nano\" Aulet Carrión",
+          "lat": 18.4290241,
+          "lng": -66.4934894
+        },
+        {
+          "code": "OSM:2057195276",
+          "name": "Terminal de Cataño",
+          "lat": 18.438888,
+          "lng": -66.1248262
+        },
+        {
+          "code": "OSM:4836988891",
+          "name": "Terminal de Ómnibus de Puerto Rico",
+          "lat": -26.8058832,
+          "lng": -55.0118063
+        },
+        {
+          "code": "OSM:388702844",
+          "name": "Terminal de Ómnibus de Puerto Rico",
+          "lat": -26.8084862,
+          "lng": -55.0210789
+        },
+        {
+          "code": "OSM:535759955",
+          "name": "Terminal de Transportación Pública de Comerío Antonio \"Toñín\" Pereira",
+          "lat": 18.2190296,
+          "lng": -66.2263459
+        },
+        {
+          "code": "OSM:528809275",
+          "name": "Terminal de Transportación Pública de Fajardo",
+          "lat": 18.3259343,
+          "lng": -65.654473
+        },
+        {
+          "code": "OSM:7691493",
+          "name": "Terminal de Transportación Pública Don Luis Angleró",
+          "lat": 18.3250231,
+          "lng": -66.4080789
+        },
+        {
+          "code": "OSM:1072443405",
+          "name": "Terminal de Transportación Pública Eurípides Díaz Alvarado",
+          "lat": 18.2563619,
+          "lng": -66.1027729
+        },
+        {
+          "code": "OSM:333926181",
+          "name": "Terminal de Transporte Colectivo de Vega Alta",
+          "lat": 18.4121837,
+          "lng": -66.3318331
+        },
+        {
+          "code": "OSM:532333892",
+          "name": "Terminal de Trolebuses Ángel Cintrón",
+          "lat": 18.4292029,
+          "lng": -66.493144
+        },
+        {
+          "code": "OSM:11212926971",
+          "name": "Terminal de Trolebuses de Vega Baja",
+          "lat": 18.4490094,
+          "lng": -66.3873501
+        },
+        {
+          "code": "OSM:528835051",
+          "name": "Terminal de Vehículos Públicos de Carolina",
+          "lat": 18.3797961,
+          "lng": -65.9573277
+        },
+        {
+          "code": "OSM:1071694997",
+          "name": "Terminal de Vehículos Públicos de Toa Baja",
+          "lat": 18.4393178,
+          "lng": -66.1955982
+        },
+        {
+          "code": "OSM:1075371724",
+          "name": "Terminal de Vehículos Públicos Don Francisco Flores Segarra",
+          "lat": 18.0842471,
+          "lng": -67.1466272
+        },
+        {
+          "code": "OSM:261325615",
+          "name": "Terminal Iturregui",
+          "lat": 18.4216955,
+          "lng": -65.9920506
+        },
+        {
+          "code": "OSM:387047023",
+          "name": "Terminal Martínez Nadal",
+          "lat": 18.3904829,
+          "lng": -66.1024144
+        },
+        {
+          "code": "OSM:4794344445",
+          "name": "Terminal Metro Urbano de Toa Baja",
+          "lat": 18.4230972,
+          "lng": -66.2471777
+        },
+        {
+          "code": "OSM:9777893793",
+          "name": "Terminal Multimodal de Bayamón",
+          "lat": 18.4007738,
+          "lng": -66.1542318
+        },
+        {
+          "code": "OSM:12896024703",
+          "name": "Terminal Multimodal SITUR",
+          "lat": 18.3775,
+          "lng": -65.9014213
+        },
+        {
+          "code": "OSM:528854668",
+          "name": "Terminal Norte de Carros Públicos de Humacao",
+          "lat": 18.1531232,
+          "lng": -65.8272705
+        },
+        {
+          "code": "OSM:1147987889",
+          "name": "Terminal Parada 18",
+          "lat": 18.4490683,
+          "lng": -66.075192
+        },
+        {
+          "code": "OSM:2326975482",
+          "name": "Terminal Piñero",
+          "lat": 18.4100823,
+          "lng": -66.055287
+        },
+        {
+          "code": "OSM:304248986",
+          "name": "Terminal Sagrado Corazón",
+          "lat": 18.435299,
+          "lng": -66.059924
+        },
+        {
+          "code": "OSM:528432261",
+          "name": "Terminal SITRAC de Barrazas",
+          "lat": 18.3022865,
+          "lng": -65.9385874
+        },
+        {
+          "code": "OSM:3401061738",
+          "name": "Terminal Sur",
+          "lat": 18.4699563,
+          "lng": -66.7156065
+        },
+        {
+          "code": "OSM:529579824",
+          "name": "Terminal Sur de Carros Públicos de Humacao",
+          "lat": 18.1473451,
+          "lng": -65.8273884
+        },
+        {
+          "code": "OSM:414536268",
+          "name": "Terminal Sur del Transporte Público",
+          "lat": 18.3959814,
+          "lng": -66.0492799
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:33:33.504Z"
+  }
+}

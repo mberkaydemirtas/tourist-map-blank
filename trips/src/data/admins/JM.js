@@ -1,0 +1,18 @@
+// AUTO-GENERATED admins for JM
+const ADMINS = [
+  "Clarendon",
+  "Hanover",
+  "Kingston",
+  "Manchester",
+  "Portland",
+  "Saint Andrew",
+  "Saint Ann",
+  "Saint Catherine",
+  "Saint Elizabeth",
+  "Saint James",
+  "Saint Mary",
+  "Saint Thomas",
+  "Trelawny",
+  "Westmoreland"
+];
+export default ADMINS;

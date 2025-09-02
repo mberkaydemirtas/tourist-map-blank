@@ -1,0 +1,73 @@
+{
+  "code": "SM",
+  "name": "San Marino",
+  "cities": {
+    "Serravalle": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Borgo Maggiore": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "San Marino Città": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:4167919194",
+          "name": "San Marino - Rimini",
+          "lat": 43.9349746,
+          "lng": 12.4467039
+        }
+      ]
+    },
+    "Domagnano": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Fiorentino": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Acquaviva": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Faetano": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:7160247746",
+          "name": "Città",
+          "lat": 43.934977,
+          "lng": 12.445803
+        }
+      ]
+    },
+    "Chiesanuova": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Montegiardino": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:51:36.844Z"
+  }
+}

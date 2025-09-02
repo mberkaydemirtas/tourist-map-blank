@@ -1,0 +1,45 @@
+{
+  "code": "AG",
+  "name": "Antigua and Barbuda",
+  "cities": {
+    "Saint John": {
+      "plane": [
+        {
+          "code": "BBQ",
+          "name": "Codrington Airport",
+          "lat": 17.635799,
+          "lng": -61.828602
+        },
+        {
+          "code": "ANU",
+          "name": "V C Bird International Airport",
+          "lat": 17.1367,
+          "lng": -61.792702
+        }
+      ],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:208524019",
+          "name": "East Bus Station",
+          "lat": 17.1212175,
+          "lng": -61.8393928
+        },
+        {
+          "code": "OSM:946514395",
+          "name": "West Bus Station",
+          "lat": 17.1171189,
+          "lng": -61.8444054
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:51:06.647Z"
+  }
+}

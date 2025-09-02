@@ -1,0 +1,378 @@
+{
+  "code": "MK",
+  "name": "North Macedonia",
+  "cities": {
+    "Skopje": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kumanovo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bitola": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Prilep": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tetovo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Štip": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Veles": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ohrid": {
+      "plane": [
+        {
+          "code": "OHD",
+          "name": "Ohrid St. Paul the Apostle Airport",
+          "lat": 41.18,
+          "lng": 20.7423
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Strumica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gostivar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kočani": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Struga": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Debar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Radoviš": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kriva Palanka": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Negotino": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sveti Nikole": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Probištip": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Delčevo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vinica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Aračinovo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kičevo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kavadarci": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Berovo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kratovo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gevgelija": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vrapčište": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kruševo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Makedonski Brod": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Demir Kapija": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tearce": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bogdanci": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Rosoman": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Demir Hisar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vevčani": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gradsko": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Valandovo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Krivogaštani": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Pehčevo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Plasnica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Zrnovci": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Novaci": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bosilovo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mogila": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Novo Selo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Konče": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Češinovo-Obleševo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mavrovo i Rostuše": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Jegunovce": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Rankovce": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sopište": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vasilevo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Karbinci": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lozovo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Staro Nagoričane": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Brvenica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Centar Župa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dolneni": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Debarca": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Čučer-Sandevo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Zelenikovo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Petrovec": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dojran": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Želino": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Studeničani": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bogovinje": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lipkovo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ilinden": {
+      "plane": [
+        {
+          "code": "SKP",
+          "name": "Skopje International Airport",
+          "lat": 41.958087,
+          "lng": 21.622581
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Resen": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Makedonska Kamenica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:45:02.172Z"
+  }
+}

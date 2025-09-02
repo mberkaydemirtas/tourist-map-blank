@@ -1,0 +1,122 @@
+{
+  "code": "DO",
+  "name": "Dominican Republic",
+  "cities": {
+    "Cibao Norte": {
+      "plane": [
+        {
+          "code": "POP",
+          "name": "Gregorio Luperon International Airport",
+          "lat": 19.7579,
+          "lng": -70.57
+        },
+        {
+          "code": "SDQ",
+          "name": "Las Américas International Airport",
+          "lat": 18.42970085144,
+          "lng": -69.668899536133
+        },
+        {
+          "code": "MDLL",
+          "name": "Los Llanos de Sabanatosa Airport",
+          "lat": 18.5964259778,
+          "lng": -69.5257759094
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ozama": {
+      "plane": [
+        {
+          "code": "LRM",
+          "name": "Casa De Campo International Airport",
+          "lat": 18.452222,
+          "lng": -68.911111
+        },
+        {
+          "code": "BRX",
+          "name": "Maria Montez International Airport",
+          "lat": 18.25149917602539,
+          "lng": -71.12039947509766
+        },
+        {
+          "code": "PUJ",
+          "name": "Punta Cana International Airport",
+          "lat": 18.5674,
+          "lng": -68.363403
+        },
+        {
+          "code": "AZS",
+          "name": "Samaná El Catey International Airport",
+          "lat": 19.269259,
+          "lng": -69.737405
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Yuma": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Valdesia": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Cibao Sur": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Higuamo": {
+      "plane": [
+        {
+          "code": "STI",
+          "name": "Cibao International Airport",
+          "lat": 19.406099319458008,
+          "lng": -70.60469818115234
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Cibao Nordeste": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "El Valle": {
+      "plane": [
+        {
+          "code": "JBQ",
+          "name": "La Isabela International Airport",
+          "lat": 18.572500228881836,
+          "lng": -69.98560333251953
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Enriquillo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Cibao Noroeste": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:37:36.261Z"
+  }
+}

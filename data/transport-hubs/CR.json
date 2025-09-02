@@ -1,0 +1,3085 @@
+{
+  "code": "CR",
+  "name": "Costa Rica",
+  "cities": {
+    "San José": {
+      "plane": [
+        {
+          "code": "SJO",
+          "name": "Juan Santamaría International Airport",
+          "lat": 9.99386,
+          "lng": -84.208801
+        },
+        {
+          "code": "SYQ",
+          "name": "Tobías Bolaños International Airport",
+          "lat": 9.95705,
+          "lng": -84.139801
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:4636012378",
+          "name": "La Corte",
+          "lat": 9.9313191,
+          "lng": -84.0724798
+        },
+        {
+          "code": "OSM:289555266",
+          "name": "La Salle",
+          "lat": 9.9334897,
+          "lng": -84.1099148
+        },
+        {
+          "code": "OSM:1950179942",
+          "name": "Los Ángeles",
+          "lat": 9.864183,
+          "lng": -83.9112393
+        },
+        {
+          "code": "OSM:4627531199",
+          "name": "Miraflores",
+          "lat": 9.9874725,
+          "lng": -84.1090264
+        },
+        {
+          "code": "OSM:10273542698",
+          "name": "Patio San Cristobal",
+          "lat": 10.3424939,
+          "lng": -83.8343046
+        },
+        {
+          "code": "OSM:6727793700",
+          "name": "Salinas",
+          "lat": 9.9298334,
+          "lng": -84.6920703
+        },
+        {
+          "code": "OSM:4627544910",
+          "name": "San Francisco",
+          "lat": 9.994821,
+          "lng": -84.12922
+        },
+        {
+          "code": "OSM:10267922999",
+          "name": "San Rafael",
+          "lat": 9.9722489,
+          "lng": -84.2145055
+        },
+        {
+          "code": "OSM:4628887533",
+          "name": "Santa Rosa",
+          "lat": 9.9720566,
+          "lng": -84.0981097
+        },
+        {
+          "code": "OSM:1122591988",
+          "name": "Santa Rosa",
+          "lat": 9.9720201,
+          "lng": -84.0981196
+        },
+        {
+          "code": "OSM:6757784437",
+          "name": "Siquirres",
+          "lat": 10.0981315,
+          "lng": -83.5037521
+        },
+        {
+          "code": "OSM:3332993893",
+          "name": "Tres Ríos",
+          "lat": 9.9105448,
+          "lng": -83.9869249
+        },
+        {
+          "code": "OSM:4638296440",
+          "name": "UACA (Cipreses)",
+          "lat": 9.9193222,
+          "lng": -84.0238639
+        },
+        {
+          "code": "OSM:4629031206",
+          "name": "UCR (San Pedro)",
+          "lat": 9.9342179,
+          "lng": -84.0529729
+        },
+        {
+          "code": "OSM:3333008585",
+          "name": "ULatina (Lourdes)",
+          "lat": 9.9323369,
+          "lng": -84.043285
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:471551755",
+          "name": "A Jesús",
+          "lat": 9.9784489,
+          "lng": -84.3815188
+        },
+        {
+          "code": "OSM:4951506833",
+          "name": "A Río Grande",
+          "lat": 9.9784465,
+          "lng": -84.3815768
+        },
+        {
+          "code": "OSM:4951506834",
+          "name": "A San Isidro",
+          "lat": 9.978448,
+          "lng": -84.381456
+        },
+        {
+          "code": "OSM:4951506836",
+          "name": "A San José Sur",
+          "lat": 9.9784494,
+          "lng": -84.3813552
+        },
+        {
+          "code": "OSM:7223869327",
+          "name": "Barrio San José / Calle Vargas",
+          "lat": 10.0147303,
+          "lng": -84.2161309
+        },
+        {
+          "code": "OSM:11435009070",
+          "name": "Bus a Jacó",
+          "lat": 9.9762815,
+          "lng": -84.8316729
+        },
+        {
+          "code": "OSM:11619047518",
+          "name": "Bus a La Cruz",
+          "lat": 10.6715786,
+          "lng": -84.8196135
+        },
+        {
+          "code": "OSM:11619047515",
+          "name": "Bus a La Fortuna",
+          "lat": 10.6714303,
+          "lng": -84.8196536
+        },
+        {
+          "code": "OSM:7935496915",
+          "name": "Bus a La Guinea y Bolsón",
+          "lat": 10.4452257,
+          "lng": -85.5514154
+        },
+        {
+          "code": "OSM:10861029190",
+          "name": "Bus a La Virgen",
+          "lat": 10.4547756,
+          "lng": -84.0091674
+        },
+        {
+          "code": "OSM:7935496907",
+          "name": "Bus a Liberia",
+          "lat": 10.4453066,
+          "lng": -85.5514296
+        },
+        {
+          "code": "OSM:7935452484",
+          "name": "Bus a San José",
+          "lat": 10.6296626,
+          "lng": -85.4429461
+        },
+        {
+          "code": "OSM:7935496914",
+          "name": "Bus a San José",
+          "lat": 10.4452518,
+          "lng": -85.5514208
+        },
+        {
+          "code": "OSM:7935621160",
+          "name": "Bus a San José",
+          "lat": 10.4548315,
+          "lng": -84.0091293
+        },
+        {
+          "code": "OSM:8917703065",
+          "name": "Bus a San José",
+          "lat": 10.3157148,
+          "lng": -84.8228098
+        },
+        {
+          "code": "OSM:11619047517",
+          "name": "Bus a San José",
+          "lat": 10.6713674,
+          "lng": -84.8197006
+        },
+        {
+          "code": "OSM:5501954527",
+          "name": "Bus Barrio Luján - San José",
+          "lat": 9.9225626,
+          "lng": -84.0647254
+        },
+        {
+          "code": "OSM:5898251385",
+          "name": "Bus to CD Neily",
+          "lat": 9.251815,
+          "lng": -83.864067
+        },
+        {
+          "code": "OSM:11847863891",
+          "name": "Bus to San Jose",
+          "lat": 9.6567677,
+          "lng": -82.7558186
+        },
+        {
+          "code": "OSM:5891751816",
+          "name": "Bus to Sanatorio",
+          "lat": 9.9282038,
+          "lng": -83.8833687
+        },
+        {
+          "code": "OSM:5427397830",
+          "name": "Buses a San José y San Isidro",
+          "lat": 8.5382847,
+          "lng": -83.3075294
+        },
+        {
+          "code": "OSM:8207364567",
+          "name": "Dulce Nombre",
+          "lat": 10.014357,
+          "lng": -84.2175086
+        },
+        {
+          "code": "OSM:442782735",
+          "name": "Empresarios Unidos , Esparza - San José",
+          "lat": 9.9949234,
+          "lng": -84.6649049
+        },
+        {
+          "code": "OSM:405199364",
+          "name": "Estación de buses Tracopa",
+          "lat": 9.1709845,
+          "lng": -83.7389041
+        },
+        {
+          "code": "OSM:408333341",
+          "name": "Estación de Buses Transplusa",
+          "lat": 9.9062726,
+          "lng": -83.9721179
+        },
+        {
+          "code": "OSM:12769402622",
+          "name": "Estanquillos",
+          "lat": 9.985133,
+          "lng": -84.4546157
+        },
+        {
+          "code": "OSM:7221626953",
+          "name": "Los Ángeles / Sabanilla",
+          "lat": 10.0147038,
+          "lng": -84.2162295
+        },
+        {
+          "code": "OSM:6775665127",
+          "name": "Naranjo/Zarcero",
+          "lat": 10.010082,
+          "lng": -84.2130551
+        },
+        {
+          "code": "OSM:5129428521",
+          "name": "Nica bus",
+          "lat": 9.9363963,
+          "lng": -84.0868597
+        },
+        {
+          "code": "OSM:6775665126",
+          "name": "Orotina/San Mateo",
+          "lat": 10.0097027,
+          "lng": -84.2130501
+        },
+        {
+          "code": "OSM:4321177007",
+          "name": "Pacayas",
+          "lat": 9.8663435,
+          "lng": -83.9183604
+        },
+        {
+          "code": "OSM:332232192",
+          "name": "Panaline",
+          "lat": 9.9370575,
+          "lng": -84.0851186
+        },
+        {
+          "code": "OSM:3774456613",
+          "name": "Parada Aeropuerto - San José",
+          "lat": 9.9986131,
+          "lng": -84.2046953
+        },
+        {
+          "code": "OSM:1438081590",
+          "name": "Parada Bus Tobosi",
+          "lat": 9.8584175,
+          "lng": -83.931845
+        },
+        {
+          "code": "OSM:4887949846",
+          "name": "Parada bus UCR",
+          "lat": 9.8888324,
+          "lng": -84.0706688
+        },
+        {
+          "code": "OSM:9552411304",
+          "name": "Parada de bus Grano de Oro",
+          "lat": 9.8177864,
+          "lng": -83.4563863
+        },
+        {
+          "code": "OSM:4033087445",
+          "name": "Parada de Bus, León 13",
+          "lat": 9.9359274,
+          "lng": -84.081578
+        },
+        {
+          "code": "OSM:4447222190",
+          "name": "Parada de buses",
+          "lat": 10.3061498,
+          "lng": -83.8718391
+        },
+        {
+          "code": "OSM:4447222389",
+          "name": "Parada de buses",
+          "lat": 10.302015,
+          "lng": -83.8752844
+        },
+        {
+          "code": "OSM:1712287252",
+          "name": "Parada de Buses",
+          "lat": 10.6203921,
+          "lng": -85.4579325
+        },
+        {
+          "code": "OSM:1712292481",
+          "name": "Parada de buses ",
+          "lat": 10.6237454,
+          "lng": -85.451345
+        },
+        {
+          "code": "OSM:427091877",
+          "name": "Plantel de Buses",
+          "lat": 10.6301541,
+          "lng": -85.4431585
+        },
+        {
+          "code": "OSM:1158508556",
+          "name": "Plantel de Buses",
+          "lat": 9.7589703,
+          "lng": -84.1081985
+        },
+        {
+          "code": "OSM:627618102",
+          "name": "Plantel de buses El Ruletero",
+          "lat": 9.9621567,
+          "lng": -84.0292315
+        },
+        {
+          "code": "OSM:4222200100",
+          "name": "Poasito / Volcán Poás",
+          "lat": 10.0149539,
+          "lng": -84.2161638
+        },
+        {
+          "code": "OSM:9870541160",
+          "name": "San José",
+          "lat": 10.4314314,
+          "lng": -85.0932115
+        },
+        {
+          "code": "OSM:6058846499",
+          "name": "San José - Loma Larga ruta 126",
+          "lat": 9.7688105,
+          "lng": -84.0690371
+        },
+        {
+          "code": "OSM:6775665131",
+          "name": "San Ramón",
+          "lat": 10.0098487,
+          "lng": -84.213052
+        },
+        {
+          "code": "OSM:1289740159",
+          "name": "Santa Rosa",
+          "lat": 9.8665737,
+          "lng": -83.9182559
+        },
+        {
+          "code": "OSM:380005785",
+          "name": "Swiss Travel",
+          "lat": 10.5750231,
+          "lng": -85.5825236
+        },
+        {
+          "code": "OSM:1287536194",
+          "name": "Terminal buses Buenos Aires-Pérez Zeledón",
+          "lat": 9.1716258,
+          "lng": -83.3376964
+        },
+        {
+          "code": "OSM:10856632419",
+          "name": "Terminal Colón de Mora",
+          "lat": 9.9357375,
+          "lng": -84.0869782
+        },
+        {
+          "code": "OSM:455569117",
+          "name": "Terminal de Bus (San José y Caribeños)",
+          "lat": 10.0952729,
+          "lng": -83.5061212
+        },
+        {
+          "code": "OSM:4885820333",
+          "name": "Terminal de bus Carmiol - San Pedro - San José",
+          "lat": 9.9392411,
+          "lng": -84.0419108
+        },
+        {
+          "code": "OSM:1625544682",
+          "name": "Terminal de Buses",
+          "lat": 10.0770287,
+          "lng": -84.2460368
+        },
+        {
+          "code": "OSM:369031066",
+          "name": "Terminal de Buses",
+          "lat": 8.6487779,
+          "lng": -82.9417543
+        },
+        {
+          "code": "OSM:622031996",
+          "name": "Terminal de Buses",
+          "lat": 9.6256676,
+          "lng": -82.8518706
+        },
+        {
+          "code": "OSM:232191923",
+          "name": "Terminal de Buses (San Ramón/San José)",
+          "lat": 9.9761269,
+          "lng": -84.8303193
+        },
+        {
+          "code": "OSM:392811402",
+          "name": "Terminal de Buses Barrio San José",
+          "lat": 10.0180968,
+          "lng": -84.2416494
+        },
+        {
+          "code": "OSM:5891751814",
+          "name": "Terminal de buses Cartago - San José",
+          "lat": 9.8671716,
+          "lng": -83.9224038
+        },
+        {
+          "code": "OSM:396088102",
+          "name": "Terminal de Buses de Quepos",
+          "lat": 9.430617,
+          "lng": -84.1634701
+        },
+        {
+          "code": "OSM:675453914",
+          "name": "Terminal de Buses Los Chiles",
+          "lat": 11.0336359,
+          "lng": -84.7141383
+        },
+        {
+          "code": "OSM:370776311",
+          "name": "Terminal de Buses MEPE",
+          "lat": 9.9908675,
+          "lng": -83.0303292
+        },
+        {
+          "code": "OSM:1076432993",
+          "name": "Terminal de Buses Pocosol",
+          "lat": 10.6223805,
+          "lng": -84.5305022
+        },
+        {
+          "code": "OSM:3980265886",
+          "name": "Terminal de San Joaquín de Flores",
+          "lat": 9.9336592,
+          "lng": -84.0838473
+        },
+        {
+          "code": "OSM:1020962795",
+          "name": "Terminal de San Rafael",
+          "lat": 9.9750137,
+          "lng": -84.2102577
+        },
+        {
+          "code": "OSM:1167408933",
+          "name": "Terminal del Atlántico Norte",
+          "lat": 9.9391882,
+          "lng": -84.0837708
+        },
+        {
+          "code": "OSM:4082235750",
+          "name": "Terminal El Roble",
+          "lat": 10.074021,
+          "lng": -84.1553742
+        },
+        {
+          "code": "OSM:15411580",
+          "name": "Terminal FECOSA",
+          "lat": 10.0146541,
+          "lng": -84.2168063
+        },
+        {
+          "code": "OSM:5503747521",
+          "name": "Terminal hacia Hospital México, Migración y Rositer Carballo",
+          "lat": 9.9337566,
+          "lng": -84.0840198
+        },
+        {
+          "code": "OSM:10857155833",
+          "name": "Terminal Jacó",
+          "lat": 9.9392464,
+          "lng": -84.0836573
+        },
+        {
+          "code": "OSM:1353498220",
+          "name": "Terminal Jacó - San José",
+          "lat": 9.6209674,
+          "lng": -84.6350877
+        },
+        {
+          "code": "OSM:11365511785",
+          "name": "Terminal Lomas",
+          "lat": 9.5200093,
+          "lng": -84.3274288
+        },
+        {
+          "code": "OSM:1155041996",
+          "name": "Terminal Lomas del Río",
+          "lat": 9.9603519,
+          "lng": -84.1640254
+        },
+        {
+          "code": "OSM:10857155838",
+          "name": "Terminal Los Chiles",
+          "lat": 9.9392338,
+          "lng": -84.0837148
+        },
+        {
+          "code": "OSM:209374740",
+          "name": "Terminal Lumaca (San José - Cartago)",
+          "lat": 9.9299031,
+          "lng": -84.076811
+        },
+        {
+          "code": "OSM:10857155832",
+          "name": "Terminal Monteverde",
+          "lat": 9.9391956,
+          "lng": -84.0838833
+        },
+        {
+          "code": "OSM:16632480",
+          "name": "Terminal MUSOC",
+          "lat": 9.9234854,
+          "lng": -84.0798066
+        },
+        {
+          "code": "OSM:1858199012",
+          "name": "Terminal Musoc SJ-PZ",
+          "lat": 9.3765472,
+          "lng": -83.7036751
+        },
+        {
+          "code": "OSM:12810845077",
+          "name": "Terminal Nosara",
+          "lat": 9.9352539,
+          "lng": -84.0891496
+        },
+        {
+          "code": "OSM:11365511783",
+          "name": "Terminal Pozo Azul",
+          "lat": 9.5200936,
+          "lng": -84.3274288
+        },
+        {
+          "code": "OSM:332230261",
+          "name": "Terminal Puerto Viejo",
+          "lat": 9.9390561,
+          "lng": -84.0838199
+        },
+        {
+          "code": "OSM:10860685635",
+          "name": "Terminal Puerto Viejo",
+          "lat": 9.5024439,
+          "lng": -82.6136535
+        },
+        {
+          "code": "OSM:10860699351",
+          "name": "Terminal Puerto Viejo",
+          "lat": 9.6255775,
+          "lng": -82.8517147
+        },
+        {
+          "code": "OSM:503309753",
+          "name": "Terminal San Carlos",
+          "lat": 10.3330199,
+          "lng": -84.4350391
+        },
+        {
+          "code": "OSM:10856515073",
+          "name": "Terminal San Isidro de El General",
+          "lat": 9.9236842,
+          "lng": -84.0799193
+        },
+        {
+          "code": "OSM:10942947999",
+          "name": "Terminal San Isidro de El General",
+          "lat": 9.4305774,
+          "lng": -84.1634506
+        },
+        {
+          "code": "OSM:10963653583",
+          "name": "Terminal San Joaquín",
+          "lat": 10.0156261,
+          "lng": -84.2173541
+        },
+        {
+          "code": "OSM:4729542285",
+          "name": "Terminal San José",
+          "lat": 10.0168255,
+          "lng": -84.0545991
+        },
+        {
+          "code": "OSM:11040468386",
+          "name": "Terminal San José",
+          "lat": 10.8227538,
+          "lng": -85.1702191
+        },
+        {
+          "code": "OSM:11365511786",
+          "name": "Terminal San José",
+          "lat": 9.520126,
+          "lng": -84.3275354
+        },
+        {
+          "code": "OSM:395904016",
+          "name": "Terminal San José",
+          "lat": 9.4317848,
+          "lng": -84.159283
+        },
+        {
+          "code": "OSM:5502003022",
+          "name": "Terminal San José - Curridabat por pista",
+          "lat": 9.9323668,
+          "lng": -84.076678
+        },
+        {
+          "code": "OSM:5502006921",
+          "name": "Terminal San José - Sabanilla",
+          "lat": 9.9335433,
+          "lng": -84.0756263
+        },
+        {
+          "code": "OSM:5502004923",
+          "name": "Terminal San José - Zapote por Corte (Casa Presidencial)",
+          "lat": 9.9326331,
+          "lng": -84.076658
+        },
+        {
+          "code": "OSM:10856515076",
+          "name": "Terminal San Marcos de Tarrazú",
+          "lat": 9.9236175,
+          "lng": -84.0797056
+        },
+        {
+          "code": "OSM:10856515074",
+          "name": "Terminal San Pablo de León Cortés",
+          "lat": 9.9236463,
+          "lng": -84.079569
+        },
+        {
+          "code": "OSM:10856632418",
+          "name": "Terminal San Pablo de Turrubares",
+          "lat": 9.9357935,
+          "lng": -84.0869675
+        },
+        {
+          "code": "OSM:11415034377",
+          "name": "Terminal San Rafael",
+          "lat": 10.0172155,
+          "lng": -84.0563689
+        },
+        {
+          "code": "OSM:10942947993",
+          "name": "Terminal San Rafael de Cerros",
+          "lat": 9.430577,
+          "lng": -84.1635205
+        },
+        {
+          "code": "OSM:10857135542",
+          "name": "Terminal San Ramón",
+          "lat": 9.9289485,
+          "lng": -84.0860724
+        },
+        {
+          "code": "OSM:12810845079",
+          "name": "Terminal Santa Cruz",
+          "lat": 9.9351496,
+          "lng": -84.0890882
+        },
+        {
+          "code": "OSM:10856515075",
+          "name": "Terminal Santa María de Dota",
+          "lat": 9.9235531,
+          "lng": -84.0795725
+        },
+        {
+          "code": "OSM:10856632420",
+          "name": "Terminal Santiago de Puriscal",
+          "lat": 9.9356657,
+          "lng": -84.0870166
+        },
+        {
+          "code": "OSM:10942947991",
+          "name": "Terminal Santo Domimgo",
+          "lat": 9.430577,
+          "lng": -84.1634908
+        },
+        {
+          "code": "OSM:10877070811",
+          "name": "Terminal Santo Domingo",
+          "lat": 9.9380336,
+          "lng": -84.0785308
+        },
+        {
+          "code": "OSM:11396793490",
+          "name": "Terminal Santo Domingo",
+          "lat": 10.0106292,
+          "lng": -84.054989
+        },
+        {
+          "code": "OSM:10876286056",
+          "name": "Terminal Sarapiquí - Río Frío",
+          "lat": 9.9409529,
+          "lng": -84.0785915
+        },
+        {
+          "code": "OSM:10860656495",
+          "name": "Terminal Shiroles - Bambú",
+          "lat": 9.625771,
+          "lng": -82.8520549
+        },
+        {
+          "code": "OSM:10860656496",
+          "name": "Terminal Shiroles - La Pera",
+          "lat": 9.6257604,
+          "lng": -82.85185
+        },
+        {
+          "code": "OSM:11365511781",
+          "name": "Terminal Tigre",
+          "lat": 9.5200112,
+          "lng": -84.3275234
+        },
+        {
+          "code": "OSM:11251547729",
+          "name": "TRACOPA Buenos Aires",
+          "lat": 9.1718034,
+          "lng": -83.3368506
+        },
+        {
+          "code": "OSM:1052516421",
+          "name": "Trans Cepúl",
+          "lat": 8.8222603,
+          "lng": -82.9727257
+        },
+        {
+          "code": "OSM:362871453",
+          "name": "TransNica",
+          "lat": 9.9376407,
+          "lng": -84.0876924
+        },
+        {
+          "code": "OSM:4446038495",
+          "name": "Transportes EGO",
+          "lat": 9.018188,
+          "lng": -83.1714881
+        },
+        {
+          "code": "OSM:288511432",
+          "name": "Transportes El Carmen",
+          "lat": 9.9537497,
+          "lng": -84.0190592
+        },
+        {
+          "code": "OSM:768961124",
+          "name": "Transportes La Pampa",
+          "lat": 10.144185,
+          "lng": -85.4518348
+        },
+        {
+          "code": "OSM:289066529",
+          "name": "Transportes La Soledad",
+          "lat": 10.2010314,
+          "lng": -83.7867804
+        },
+        {
+          "code": "OSM:3485644287",
+          "name": "Transportes San Gabriel",
+          "lat": 9.7944343,
+          "lng": -84.1637247
+        },
+        {
+          "code": "OSM:392485623",
+          "name": "Transportes Sky",
+          "lat": 10.0066002,
+          "lng": -84.1776694
+        },
+        {
+          "code": "OSM:7251534237",
+          "name": "Transportes TSD",
+          "lat": 10.0241589,
+          "lng": -84.0333092
+        },
+        {
+          "code": "OSM:11057523190",
+          "name": "Transtusa",
+          "lat": 9.8624854,
+          "lng": -83.9170148
+        },
+        {
+          "code": "OSM:6025339785",
+          "name": "Traroc - Bus to Samara",
+          "lat": 10.1428645,
+          "lng": -85.4495521
+        },
+        {
+          "code": "OSM:972387172",
+          "name": "Zarcero-San José",
+          "lat": 10.1844232,
+          "lng": -84.3924353
+        }
+      ]
+    },
+    "Alajuela": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:9879744980",
+          "name": "Alajuela",
+          "lat": 10.0085821,
+          "lng": -84.2090743
+        },
+        {
+          "code": "OSM:4628999924",
+          "name": "Atlántico",
+          "lat": 9.9348616,
+          "lng": -84.0689444
+        },
+        {
+          "code": "OSM:31420765",
+          "name": "Atlántico",
+          "lat": 9.9346751,
+          "lng": -84.0688812
+        },
+        {
+          "code": "OSM:1015728538",
+          "name": "Caldera",
+          "lat": 9.9367763,
+          "lng": -84.7240372
+        },
+        {
+          "code": "OSM:5824465670",
+          "name": "Calle Blancos",
+          "lat": 9.9459928,
+          "lng": -84.0728221
+        },
+        {
+          "code": "OSM:4636012388",
+          "name": "Demasa (Pueblo Nuevo)",
+          "lat": 9.9493497,
+          "lng": -84.1437941
+        },
+        {
+          "code": "OSM:10267938417",
+          "name": "El Futuro",
+          "lat": 9.9756841,
+          "lng": -84.2013904
+        },
+        {
+          "code": "OSM:9750029065",
+          "name": "Junta",
+          "lat": 10.1090361,
+          "lng": -83.524063
+        },
+        {
+          "code": "OSM:1942451366",
+          "name": "La Pequeña Helvecia",
+          "lat": 10.4757744,
+          "lng": -84.8301811
+        },
+        {
+          "code": "OSM:276524920",
+          "name": "Ojo de Agua",
+          "lat": 9.9724124,
+          "lng": -84.2231227
+        },
+        {
+          "code": "OSM:10267785799",
+          "name": "Plaza Paraíso (Llanos de Santa Lucía)",
+          "lat": 9.8505402,
+          "lng": -83.8900226
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:4951506837",
+          "name": "A Escobal",
+          "lat": 9.9784484,
+          "lng": -84.3813136
+        },
+        {
+          "code": "OSM:5898228387",
+          "name": "A Quepos",
+          "lat": 9.3959571,
+          "lng": -84.1528036
+        },
+        {
+          "code": "OSM:4951506838",
+          "name": "A Santa Eulalia",
+          "lat": 9.9784479,
+          "lng": -84.3812725
+        },
+        {
+          "code": "OSM:1596052585",
+          "name": "Antiguo Plantel de Buses de la Trinidad",
+          "lat": 9.9827394,
+          "lng": -84.029459
+        },
+        {
+          "code": "OSM:4894610827",
+          "name": "Aurora de Alajuelita",
+          "lat": 9.9326569,
+          "lng": -84.0825142
+        },
+        {
+          "code": "OSM:4975565121",
+          "name": "Autobuses hasta Liberia",
+          "lat": 10.5484677,
+          "lng": -85.6956622
+        },
+        {
+          "code": "OSM:169628481",
+          "name": "Autobuses La 400",
+          "lat": 9.9859426,
+          "lng": -84.1063754
+        },
+        {
+          "code": "OSM:7283869100",
+          "name": "Barrio La Cruz-San Cayetano",
+          "lat": 9.914754,
+          "lng": -84.075236
+        },
+        {
+          "code": "OSM:7935475585",
+          "name": "Bus a Aguas Claras",
+          "lat": 10.6294784,
+          "lng": -85.4428648
+        },
+        {
+          "code": "OSM:7935496911",
+          "name": "Bus a Chalaco y San Blas",
+          "lat": 10.4451944,
+          "lng": -85.5512049
+        },
+        {
+          "code": "OSM:10861029187",
+          "name": "Bus a Ciudad Quesada",
+          "lat": 10.4548335,
+          "lng": -84.0093552
+        },
+        {
+          "code": "OSM:11619047516",
+          "name": "Bus a Ciudad Quesada",
+          "lat": 10.6714867,
+          "lng": -84.8198271
+        },
+        {
+          "code": "OSM:8920748849",
+          "name": "Bus a Las Juntas",
+          "lat": 10.3157613,
+          "lng": -84.8228875
+        },
+        {
+          "code": "OSM:5288781530",
+          "name": "Bus a Paquera",
+          "lat": 9.8296434,
+          "lng": -84.9034928
+        },
+        {
+          "code": "OSM:7935496912",
+          "name": "Bus a Playa Panamá",
+          "lat": 10.4451718,
+          "lng": -85.5511987
+        },
+        {
+          "code": "OSM:3119790324",
+          "name": "Bus a Tilarán",
+          "lat": 10.6716221,
+          "lng": -84.8197922
+        },
+        {
+          "code": "OSM:9532907717",
+          "name": "Bus a Upala",
+          "lat": 10.629368,
+          "lng": -85.442822
+        },
+        {
+          "code": "OSM:11619047514",
+          "name": "Bus a Upala",
+          "lat": 10.6715077,
+          "lng": -84.8196301
+        },
+        {
+          "code": "OSM:3980265885",
+          "name": "Bus Barrio Luján y Quesada Durán",
+          "lat": 9.9336335,
+          "lng": -84.0835664
+        },
+        {
+          "code": "OSM:4921333004",
+          "name": "Calle Blancos",
+          "lat": 9.9363203,
+          "lng": -84.0774496
+        },
+        {
+          "code": "OSM:422469561",
+          "name": "Central Autobusera del Norte",
+          "lat": 10.0098226,
+          "lng": -84.2128517
+        },
+        {
+          "code": "OSM:7221626952",
+          "name": "Jaulares / Dulce Nombre / Laguna / Fraijanes",
+          "lat": 10.0149329,
+          "lng": -84.2162562
+        },
+        {
+          "code": "OSM:7117387428",
+          "name": "La Estrella",
+          "lat": 9.7768253,
+          "lng": -83.9599735
+        },
+        {
+          "code": "OSM:9870558450",
+          "name": "Las Juntas",
+          "lat": 10.4313467,
+          "lng": -85.0932732
+        },
+        {
+          "code": "OSM:7223869328",
+          "name": "Monserrat / La Pradera",
+          "lat": 10.0149707,
+          "lng": -84.2160527
+        },
+        {
+          "code": "OSM:5267172193",
+          "name": "Nacascolo - Puerto Culebra",
+          "lat": 10.6268525,
+          "lng": -85.6770337
+        },
+        {
+          "code": "OSM:3774456611",
+          "name": "Parada Aeropuerto - Alajuela",
+          "lat": 9.9986298,
+          "lng": -84.2046378
+        },
+        {
+          "code": "OSM:1438081589",
+          "name": "Parada Bus Molino",
+          "lat": 9.8612234,
+          "lng": -83.9304747
+        },
+        {
+          "code": "OSM:1712287949",
+          "name": "Parada de buses del INA",
+          "lat": 10.6202392,
+          "lng": -85.4575141
+        },
+        {
+          "code": "OSM:7314026906",
+          "name": "Parada de buses Palermo",
+          "lat": 10.370093,
+          "lng": -83.73364
+        },
+        {
+          "code": "OSM:1673071361",
+          "name": "Parada de Buses UCR Limón",
+          "lat": 9.9847492,
+          "lng": -83.0614178
+        },
+        {
+          "code": "OSM:1712285406",
+          "name": "Parada de Buses Urbanos",
+          "lat": 10.6189738,
+          "lng": -85.4614086
+        },
+        {
+          "code": "OSM:11021342604",
+          "name": "Parada de busetas",
+          "lat": 10.0146766,
+          "lng": -84.2137766
+        },
+        {
+          "code": "OSM:11021370405",
+          "name": "Parada de busetas",
+          "lat": 10.0150941,
+          "lng": -84.2130484
+        },
+        {
+          "code": "OSM:2539344198",
+          "name": "Parada de Palmira",
+          "lat": 10.550229,
+          "lng": -85.1042993
+        },
+        {
+          "code": "OSM:3899144631",
+          "name": "Parada La Hacienda",
+          "lat": 10.4962475,
+          "lng": -85.571524
+        },
+        {
+          "code": "OSM:4093368329",
+          "name": "Parada Rotonda Manuel Antonio",
+          "lat": 9.3893561,
+          "lng": -84.1473371
+        },
+        {
+          "code": "OSM:6775665130",
+          "name": "Peñas Blancas/La Cruz",
+          "lat": 10.0098989,
+          "lng": -84.2130527
+        },
+        {
+          "code": "OSM:4000060097",
+          "name": "Plantel de buses La Fortaleza",
+          "lat": 10.0364713,
+          "lng": -84.1315633
+        },
+        {
+          "code": "OSM:1452192271",
+          "name": "Terminal a Quepos",
+          "lat": 9.3897199,
+          "lng": -84.1475388
+        },
+        {
+          "code": "OSM:11282458404",
+          "name": "Terminal Agua Buena",
+          "lat": 9.9255823,
+          "lng": -84.0772307
+        },
+        {
+          "code": "OSM:10857167090",
+          "name": "Terminal Aguas Claras",
+          "lat": 9.9390637,
+          "lng": -84.0887494
+        },
+        {
+          "code": "OSM:371515205",
+          "name": "Terminal Alajuela",
+          "lat": 9.9341216,
+          "lng": -84.0843828
+        },
+        {
+          "code": "OSM:10860656497",
+          "name": "Terminal Amubri",
+          "lat": 9.5654163,
+          "lng": -82.9356213
+        },
+        {
+          "code": "OSM:11365511782",
+          "name": "Terminal Bijagual",
+          "lat": 9.5201283,
+          "lng": -84.3274315
+        },
+        {
+          "code": "OSM:1444078863",
+          "name": "Terminal Buses Lourdes",
+          "lat": 9.8511251,
+          "lng": -84.1008057
+        },
+        {
+          "code": "OSM:10856463145",
+          "name": "Terminal Cahuita",
+          "lat": 9.9391111,
+          "lng": -84.0836927
+        },
+        {
+          "code": "OSM:10857155831",
+          "name": "Terminal Ciudad Quesada",
+          "lat": 9.9392203,
+          "lng": -84.0837724
+        },
+        {
+          "code": "OSM:12810845070",
+          "name": "Terminal Cóbano y Paquera",
+          "lat": 9.9354234,
+          "lng": -84.0888924
+        },
+        {
+          "code": "OSM:371517712",
+          "name": "Terminal Coca Cola",
+          "lat": 9.9362645,
+          "lng": -84.0861254
+        },
+        {
+          "code": "OSM:1276583680",
+          "name": "Terminal Cruce Río Frío",
+          "lat": 10.2112709,
+          "lng": -83.898603
+        },
+        {
+          "code": "OSM:341258920",
+          "name": "Terminal de Autobuses La Fortuna",
+          "lat": 10.4704188,
+          "lng": -84.6454973
+        },
+        {
+          "code": "OSM:1428563292",
+          "name": "Terminal de Bus (Cairo)",
+          "lat": 10.096882,
+          "lng": -83.5056056
+        },
+        {
+          "code": "OSM:455569118",
+          "name": "Terminal de Bus (Turrialba)",
+          "lat": 10.0968153,
+          "lng": -83.5059883
+        },
+        {
+          "code": "OSM:1189004882",
+          "name": "Terminal de Buses Aguas Claras",
+          "lat": 10.8228222,
+          "lng": -85.1701571
+        },
+        {
+          "code": "OSM:5636205225",
+          "name": "Terminal de Buses Cahuita",
+          "lat": 9.7357734,
+          "lng": -82.8415793
+        },
+        {
+          "code": "OSM:320333080",
+          "name": "Terminal de Buses Carbachez",
+          "lat": 10.0534343,
+          "lng": -84.4330516
+        },
+        {
+          "code": "OSM:501504264",
+          "name": "Terminal de Buses Cóbano",
+          "lat": 9.6876744,
+          "lng": -85.1049762
+        },
+        {
+          "code": "OSM:1178666884",
+          "name": "Terminal de Buses Comtrasuli",
+          "lat": 9.8453898,
+          "lng": -84.3170514
+        },
+        {
+          "code": "OSM:4121393890",
+          "name": "Terminal de Buses Coopetraca",
+          "lat": 10.3616723,
+          "lng": -83.7342249
+        },
+        {
+          "code": "OSM:367342402",
+          "name": "Terminal de buses de Belén",
+          "lat": 9.9784613,
+          "lng": -84.1851732
+        },
+        {
+          "code": "OSM:1304353126",
+          "name": "Terminal de Buses de Las Juntas",
+          "lat": 10.2814727,
+          "lng": -84.958063
+        },
+        {
+          "code": "OSM:106943625",
+          "name": "Terminal de Buses de Liberia",
+          "lat": 10.6306379,
+          "lng": -85.4442433
+        },
+        {
+          "code": "OSM:394469184",
+          "name": "Terminal de Buses de Vázquez de Coronado",
+          "lat": 9.9780531,
+          "lng": -84.0068668
+        },
+        {
+          "code": "OSM:434177937",
+          "name": "Terminal de Buses Filadelfia",
+          "lat": 10.4452236,
+          "lng": -85.5513061
+        },
+        {
+          "code": "OSM:772440139",
+          "name": "Terminal de Buses Grecia",
+          "lat": 10.072279,
+          "lng": -84.3134859
+        },
+        {
+          "code": "OSM:368189066",
+          "name": "Terminal de Buses Guácimo",
+          "lat": 10.2135455,
+          "lng": -83.6812886
+        },
+        {
+          "code": "OSM:513449342",
+          "name": "Terminal de Buses Guápiles",
+          "lat": 10.210536,
+          "lng": -83.790076
+        },
+        {
+          "code": "OSM:1249964279",
+          "name": "Terminal de Buses Guatuso",
+          "lat": 10.6715021,
+          "lng": -84.8197249
+        },
+        {
+          "code": "OSM:1076369337",
+          "name": "Terminal de Buses La Cañera",
+          "lat": 10.4312975,
+          "lng": -85.0931751
+        },
+        {
+          "code": "OSM:1046630707",
+          "name": "Terminal de Buses Laurel",
+          "lat": 8.442011,
+          "lng": -82.9066425
+        },
+        {
+          "code": "OSM:3567411036",
+          "name": "Terminal de Buses Los Santos",
+          "lat": 9.6546511,
+          "lng": -83.9709956
+        },
+        {
+          "code": "OSM:381159310",
+          "name": "Terminal de Buses Municipal",
+          "lat": 11.0745733,
+          "lng": -85.6346847
+        },
+        {
+          "code": "OSM:1239129986",
+          "name": "Terminal de Buses Nicoya",
+          "lat": 10.1414685,
+          "lng": -85.4511175
+        },
+        {
+          "code": "OSM:100401038",
+          "name": "Terminal de Buses Orotina",
+          "lat": 9.9102181,
+          "lng": -84.5240293
+        },
+        {
+          "code": "OSM:1410617187",
+          "name": "Terminal de Buses Palmar Norte",
+          "lat": 8.9615565,
+          "lng": -83.4590361
+        },
+        {
+          "code": "OSM:1225557586",
+          "name": "Terminal de Buses Parrita",
+          "lat": 9.520061,
+          "lng": -84.3275271
+        },
+        {
+          "code": "OSM:1396453757",
+          "name": "Terminal de Buses Pocora",
+          "lat": 10.1713114,
+          "lng": -83.6053498
+        },
+        {
+          "code": "OSM:1055233177",
+          "name": "Terminal de Buses Principal",
+          "lat": 9.8560501,
+          "lng": -83.913624
+        },
+        {
+          "code": "OSM:1241229050",
+          "name": "Terminal de Buses Sámara",
+          "lat": 9.8839938,
+          "lng": -85.5274762
+        },
+        {
+          "code": "OSM:10790698697",
+          "name": "Terminal de buses San Rafael Arriba",
+          "lat": 9.8754474,
+          "lng": -84.0771404
+        },
+        {
+          "code": "OSM:106664217",
+          "name": "Terminal de Buses Santa Cruz",
+          "lat": 10.2618511,
+          "lng": -85.5822104
+        },
+        {
+          "code": "OSM:527668003",
+          "name": "Terminal de Buses Sarapiquí",
+          "lat": 10.4547736,
+          "lng": -84.0091275
+        },
+        {
+          "code": "OSM:1167776615",
+          "name": "Terminal de Buses Siaxola",
+          "lat": 9.5024764,
+          "lng": -82.6137177
+        },
+        {
+          "code": "OSM:499536630",
+          "name": "Terminal de Buses Tilarán",
+          "lat": 10.4711724,
+          "lng": -84.9689113
+        },
+        {
+          "code": "OSM:129800787",
+          "name": "Terminal de Buses Transtusa",
+          "lat": 9.9045262,
+          "lng": -83.6875339
+        },
+        {
+          "code": "OSM:549440696",
+          "name": "Terminal de Carrillos",
+          "lat": 10.0161861,
+          "lng": -84.2175953
+        },
+        {
+          "code": "OSM:172471745",
+          "name": "Terminal de El Alto",
+          "lat": 9.9575841,
+          "lng": -84.0385218
+        },
+        {
+          "code": "OSM:2139734192",
+          "name": "Terminal de Mata de Plátano",
+          "lat": 9.9577219,
+          "lng": -83.9917571
+        },
+        {
+          "code": "OSM:1173716163",
+          "name": "Terminal de Turrialba",
+          "lat": 9.9308232,
+          "lng": -84.0729659
+        },
+        {
+          "code": "OSM:80016925",
+          "name": "Terminal EUPSA",
+          "lat": 9.9288861,
+          "lng": -84.0858991
+        },
+        {
+          "code": "OSM:10856515077",
+          "name": "Terminal Frailes de Desamparados",
+          "lat": 9.9234922,
+          "lng": -84.0797079
+        },
+        {
+          "code": "OSM:10876286057",
+          "name": "Terminal Guápiles",
+          "lat": 9.9409581,
+          "lng": -84.07866
+        },
+        {
+          "code": "OSM:12810845073",
+          "name": "Terminal Hojancha",
+          "lat": 9.9352373,
+          "lng": -84.0889102
+        },
+        {
+          "code": "OSM:4293788863",
+          "name": "Terminal INVU Las Cañas",
+          "lat": 10.014549,
+          "lng": -84.2168048
+        },
+        {
+          "code": "OSM:5604510721",
+          "name": "Terminal La Fortuna",
+          "lat": 10.4712479,
+          "lng": -84.9690463
+        },
+        {
+          "code": "OSM:10857155839",
+          "name": "Terminal La Fortuna",
+          "lat": 9.9392086,
+          "lng": -84.0838296
+        },
+        {
+          "code": "OSM:8207338639",
+          "name": "Terminal La Giralda",
+          "lat": 10.0145188,
+          "lng": -84.2169136
+        },
+        {
+          "code": "OSM:106665259",
+          "name": "Terminal La Pampa",
+          "lat": 10.2634313,
+          "lng": -85.5860715
+        },
+        {
+          "code": "OSM:10857167095",
+          "name": "Terminal Las Juntas",
+          "lat": 9.9393064,
+          "lng": -84.088757
+        },
+        {
+          "code": "OSM:1189075306",
+          "name": "Terminal Las Tablillas",
+          "lat": 11.0730844,
+          "lng": -84.6971622
+        },
+        {
+          "code": "OSM:116268222",
+          "name": "Terminal LUMACA",
+          "lat": 9.8672028,
+          "lng": -83.9221065
+        },
+        {
+          "code": "OSM:10942947997",
+          "name": "Terminal Manuel Antonio",
+          "lat": 9.4305806,
+          "lng": -84.1635865
+        },
+        {
+          "code": "OSM:11282458403",
+          "name": "Terminal Manuel Antonio",
+          "lat": 9.9255936,
+          "lng": -84.0773856
+        },
+        {
+          "code": "OSM:10856463147",
+          "name": "Terminal Manzanillo",
+          "lat": 9.9391396,
+          "lng": -84.0836304
+        },
+        {
+          "code": "OSM:10942947994",
+          "name": "Terminal Marítima",
+          "lat": 9.4306015,
+          "lng": -84.1635331
+        },
+        {
+          "code": "OSM:10942947995",
+          "name": "Terminal Matapalo",
+          "lat": 9.4305783,
+          "lng": -84.1635518
+        },
+        {
+          "code": "OSM:10876286062",
+          "name": "Terminal Matina - Batán",
+          "lat": 9.9412633,
+          "lng": -84.0788446
+        },
+        {
+          "code": "OSM:391473686",
+          "name": "Terminal Municipal de Buses Pérez Zeledón",
+          "lat": 9.372443,
+          "lng": -83.7045631
+        },
+        {
+          "code": "OSM:550751418",
+          "name": "Terminal Municipal Upala",
+          "lat": 10.8992581,
+          "lng": -85.0182804
+        },
+        {
+          "code": "OSM:12810823902",
+          "name": "Terminal Nicabus (Managua)",
+          "lat": 9.9356883,
+          "lng": -84.0868358
+        },
+        {
+          "code": "OSM:10942947996",
+          "name": "Terminal Parrita",
+          "lat": 9.4306031,
+          "lng": -84.1635696
+        },
+        {
+          "code": "OSM:10876286064",
+          "name": "Terminal Peñas Blancas",
+          "lat": 9.9414375,
+          "lng": -84.0788233
+        },
+        {
+          "code": "OSM:4384701092",
+          "name": "Terminal Piedades",
+          "lat": 9.936885,
+          "lng": -84.085384
+        },
+        {
+          "code": "OSM:10857167091",
+          "name": "Terminal Playas del Coco",
+          "lat": 9.9394799,
+          "lng": -84.0890971
+        },
+        {
+          "code": "OSM:184494063",
+          "name": "Terminal Pulmitan",
+          "lat": 9.9392687,
+          "lng": -84.0888982
+        },
+        {
+          "code": "OSM:379968390",
+          "name": "Terminal Pulmitan de Liberia",
+          "lat": 10.6293758,
+          "lng": -85.4429535
+        },
+        {
+          "code": "OSM:11365511784",
+          "name": "Terminal Puriscal",
+          "lat": 9.5200807,
+          "lng": -84.3276313
+        },
+        {
+          "code": "OSM:11282458402",
+          "name": "Terminal Quepos",
+          "lat": 9.9256032,
+          "lng": -84.0775032
+        },
+        {
+          "code": "OSM:11365511779",
+          "name": "Terminal Quepos",
+          "lat": 9.5200375,
+          "lng": -84.3276311
+        },
+        {
+          "code": "OSM:11580919669",
+          "name": "Terminal Quepos",
+          "lat": 9.4306215,
+          "lng": -84.1635192
+        },
+        {
+          "code": "OSM:10876286060",
+          "name": "Terminal Río Jiménez - Pocora",
+          "lat": 9.941065,
+          "lng": -84.0788588
+        },
+        {
+          "code": "OSM:5502015321",
+          "name": "Terminal Sabana Estadio",
+          "lat": 9.9329312,
+          "lng": -84.0775798
+        },
+        {
+          "code": "OSM:12810845075",
+          "name": "Terminal Sámara",
+          "lat": 9.9351184,
+          "lng": -84.0889221
+        },
+        {
+          "code": "OSM:10963737911",
+          "name": "Terminal San Juan de Santa Bárbara",
+          "lat": 10.0157248,
+          "lng": -84.2173828
+        },
+        {
+          "code": "OSM:10857167093",
+          "name": "Terminal Santa Cecilia",
+          "lat": 9.9393359,
+          "lng": -84.0890124
+        },
+        {
+          "code": "OSM:5353790422",
+          "name": "Terminal Sixaola",
+          "lat": 9.9390391,
+          "lng": -84.0838731
+        },
+        {
+          "code": "OSM:10860699352",
+          "name": "Terminal Sixaola",
+          "lat": 9.6255103,
+          "lng": -82.8517741
+        },
+        {
+          "code": "OSM:454298010",
+          "name": "Terminal Tralapa",
+          "lat": 9.9378466,
+          "lng": -84.0875903
+        },
+        {
+          "code": "OSM:422468382",
+          "name": "Terminal Transcambal",
+          "lat": 10.0138861,
+          "lng": -84.2141574
+        },
+        {
+          "code": "OSM:12810823903",
+          "name": "Terminal Transportes del sol (San Salvador - Cdad. de Guatemala)",
+          "lat": 9.9361747,
+          "lng": -84.0868335
+        },
+        {
+          "code": "OSM:512385533",
+          "name": "Terminal TUAN R.L.",
+          "lat": 10.074558,
+          "lng": -84.3120871
+        },
+        {
+          "code": "OSM:1124855384",
+          "name": "Terminal TUAN S.A.",
+          "lat": 9.9382411,
+          "lng": -84.0865555
+        },
+        {
+          "code": "OSM:1180470737",
+          "name": "Terminal Tuasa",
+          "lat": 10.0156588,
+          "lng": -84.2172166
+        },
+        {
+          "code": "OSM:10857167089",
+          "name": "Terminal Upala",
+          "lat": 9.9392419,
+          "lng": -84.0886437
+        },
+        {
+          "code": "OSM:11040468385",
+          "name": "Terminal Upala",
+          "lat": 10.8228106,
+          "lng": -85.1702076
+        },
+        {
+          "code": "OSM:10856463146",
+          "name": "Terminal Valle la Estrella",
+          "lat": 9.939019,
+          "lng": -84.0839263
+        },
+        {
+          "code": "OSM:10876286065",
+          "name": "Terminal Varablanca",
+          "lat": 9.9414892,
+          "lng": -84.078676
+        },
+        {
+          "code": "OSM:372627883",
+          "name": "Terminal Vásquez de Coronado",
+          "lat": 9.9378022,
+          "lng": -84.0790892
+        },
+        {
+          "code": "OSM:4636475169",
+          "name": "Tracopa",
+          "lat": 8.8195177,
+          "lng": -82.9690386
+        },
+        {
+          "code": "OSM:7278363885",
+          "name": "Tracopa",
+          "lat": 8.6256804,
+          "lng": -83.1543634
+        },
+        {
+          "code": "OSM:8391072658",
+          "name": "Tracopa",
+          "lat": 8.5348325,
+          "lng": -82.8396365
+        },
+        {
+          "code": "OSM:379443177",
+          "name": "Tralapa",
+          "lat": 10.4451708,
+          "lng": -85.5517278
+        },
+        {
+          "code": "OSM:379236156",
+          "name": "Transgolfo - Ciudad Neily",
+          "lat": 8.5342192,
+          "lng": -82.8400458
+        },
+        {
+          "code": "OSM:6775665125",
+          "name": "Upala",
+          "lat": 10.009605,
+          "lng": -84.2130488
+        },
+        {
+          "code": "OSM:9870541159",
+          "name": "Upala",
+          "lat": 10.4313154,
+          "lng": -85.0932583
+        },
+        {
+          "code": "OSM:4222200102",
+          "name": "Urbano/Las Vegas/La Lucha",
+          "lat": 10.0148837,
+          "lng": -84.2164706
+        }
+      ]
+    },
+    "Heredia": {
+      "plane": [
+        {
+          "code": "LIR",
+          "name": "Guanacaste Airport",
+          "lat": 10.5933,
+          "lng": -85.544403
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:10273254416",
+          "name": "Estrada",
+          "lat": 10.0608359,
+          "lng": -83.2803797
+        },
+        {
+          "code": "OSM:6732454580",
+          "name": "Heredia",
+          "lat": 9.9947539,
+          "lng": -84.1170167
+        },
+        {
+          "code": "OSM:276525196",
+          "name": "Metrópoli",
+          "lat": 9.955766,
+          "lng": -84.1498934
+        },
+        {
+          "code": "OSM:4638172859",
+          "name": "Pedregal",
+          "lat": 9.974779,
+          "lng": -84.1788529
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:7935621159",
+          "name": "Bus a Varablanca y Heredia",
+          "lat": 10.4548677,
+          "lng": -84.0091158
+        },
+        {
+          "code": "OSM:3549248818",
+          "name": "Bus Cedral-Miramar",
+          "lat": 10.2147325,
+          "lng": -84.6726771
+        },
+        {
+          "code": "OSM:6775665133",
+          "name": "Esparza",
+          "lat": 10.0097485,
+          "lng": -84.2130507
+        },
+        {
+          "code": "OSM:4071056493",
+          "name": "Heredia El Roble",
+          "lat": 9.997662,
+          "lng": -84.115819
+        },
+        {
+          "code": "OSM:6775665129",
+          "name": "Liberia",
+          "lat": 10.0099481,
+          "lng": -84.2130534
+        },
+        {
+          "code": "OSM:9870558449",
+          "name": "Liberia",
+          "lat": 10.431196,
+          "lng": -85.0931977
+        },
+        {
+          "code": "OSM:1169780348",
+          "name": "Microbuses Rápidos Heredianos",
+          "lat": 9.937917,
+          "lng": -84.0783579
+        },
+        {
+          "code": "OSM:830642824",
+          "name": "Parada",
+          "lat": 10.4007162,
+          "lng": -85.7961818
+        },
+        {
+          "code": "OSM:3774456612",
+          "name": "Parada Aeropuerto - Heredia",
+          "lat": 9.9987224,
+          "lng": -84.204416
+        },
+        {
+          "code": "OSM:162259323",
+          "name": "Periferica",
+          "lat": 9.9154256,
+          "lng": -84.0401825
+        },
+        {
+          "code": "OSM:10856463144",
+          "name": "Terminal Bribri",
+          "lat": 9.9390895,
+          "lng": -84.0837602
+        },
+        {
+          "code": "OSM:10860685634",
+          "name": "Terminal Bribri",
+          "lat": 9.5024243,
+          "lng": -82.6137081
+        },
+        {
+          "code": "OSM:10876286058",
+          "name": "Terminal Cariari",
+          "lat": 9.9409651,
+          "lng": -84.0787434
+        },
+        {
+          "code": "OSM:11282458406",
+          "name": "Terminal David",
+          "lat": 9.9257095,
+          "lng": -84.0776006
+        },
+        {
+          "code": "OSM:10846826792",
+          "name": "Terminal de buses de Ipís",
+          "lat": 9.9674407,
+          "lng": -84.0064436
+        },
+        {
+          "code": "OSM:1373987407",
+          "name": "Terminal de Buses de Jicaral",
+          "lat": 9.9629059,
+          "lng": -85.1119697
+        },
+        {
+          "code": "OSM:5305768221",
+          "name": "Terminal de Buses de Pital",
+          "lat": 10.4560862,
+          "lng": -84.2722688
+        },
+        {
+          "code": "OSM:1040756498",
+          "name": "Terminal de Buses de Río Frío",
+          "lat": 10.3202086,
+          "lng": -83.8879735
+        },
+        {
+          "code": "OSM:130853016",
+          "name": "Terminal de Buses Distrital",
+          "lat": 10.0884342,
+          "lng": -84.4709618
+        },
+        {
+          "code": "OSM:973355830",
+          "name": "Terminal de Miramar",
+          "lat": 10.0924647,
+          "lng": -84.7302528
+        },
+        {
+          "code": "OSM:8207338640",
+          "name": "Terminal El Erizo",
+          "lat": 10.0144918,
+          "lng": -84.2170015
+        },
+        {
+          "code": "OSM:10857087776",
+          "name": "Terminal Escazú",
+          "lat": 9.9351031,
+          "lng": -84.0855879
+        },
+        {
+          "code": "OSM:10857135543",
+          "name": "Terminal Esparza",
+          "lat": 9.9286984,
+          "lng": -84.0858366
+        },
+        {
+          "code": "OSM:8207338641",
+          "name": "Terminal Fátima",
+          "lat": 10.0144623,
+          "lng": -84.2170929
+        },
+        {
+          "code": "OSM:10857127482",
+          "name": "Terminal Grecia",
+          "lat": 9.9383277,
+          "lng": -84.0867216
+        },
+        {
+          "code": "OSM:4729542286",
+          "name": "Terminal Heredia",
+          "lat": 10.017376,
+          "lng": -84.0563817
+        },
+        {
+          "code": "OSM:10877070810",
+          "name": "Terminal Heredia",
+          "lat": 9.9380354,
+          "lng": -84.0786122
+        },
+        {
+          "code": "OSM:10963737912",
+          "name": "Terminal Heredia",
+          "lat": 10.0156428,
+          "lng": -84.216678
+        },
+        {
+          "code": "OSM:2632168712",
+          "name": "Terminal Liberia",
+          "lat": 10.8228584,
+          "lng": -85.1702034
+        },
+        {
+          "code": "OSM:10857167088",
+          "name": "Terminal Liberia",
+          "lat": 9.939357,
+          "lng": -84.0888937
+        },
+        {
+          "code": "OSM:10856470385",
+          "name": "Terminal Miramar",
+          "lat": 9.9391848,
+          "lng": -84.0835962
+        },
+        {
+          "code": "OSM:12810845078",
+          "name": "Terminal Nicoya",
+          "lat": 9.9352139,
+          "lng": -84.0891525
+        },
+        {
+          "code": "OSM:12629502123",
+          "name": "Terminal San Isidro de Heredia",
+          "lat": 9.9381478,
+          "lng": -84.0796662
+        },
+        {
+          "code": "OSM:10877070812",
+          "name": "Terminal Tibás",
+          "lat": 9.9380278,
+          "lng": -84.0784402
+        },
+        {
+          "code": "OSM:10857167094",
+          "name": "Terminal Tilarán",
+          "lat": 9.9391347,
+          "lng": -84.088871
+        },
+        {
+          "code": "OSM:422467953",
+          "name": "Terminal TUASA - Heredia",
+          "lat": 10.015698,
+          "lng": -84.2164871
+        },
+        {
+          "code": "OSM:10942947992",
+          "name": "Terminal Uvita",
+          "lat": 9.4306005,
+          "lng": -84.1634979
+        },
+        {
+          "code": "OSM:11365511780",
+          "name": "Terminal Uvita",
+          "lat": 9.5200491,
+          "lng": -84.3274301
+        },
+        {
+          "code": "OSM:10857155835",
+          "name": "Terminal Venecia",
+          "lat": 9.9391881,
+          "lng": -84.0839296
+        },
+        {
+          "code": "OSM:391100185",
+          "name": "Terminales Unidas",
+          "lat": 10.0005498,
+          "lng": -84.1967585
+        },
+        {
+          "code": "OSM:1289740155",
+          "name": "Tierra Blanca",
+          "lat": 9.8664046,
+          "lng": -83.9190767
+        }
+      ]
+    },
+    "Guanacaste": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:4386029998",
+          "name": "CFIA (Curridabat)",
+          "lat": 9.9252722,
+          "lng": -84.037171
+        },
+        {
+          "code": "OSM:4636012379",
+          "name": "Plaza Cleto González Víquez",
+          "lat": 9.9250247,
+          "lng": -84.074327
+        },
+        {
+          "code": "OSM:4636012384",
+          "name": "Tubo Tico (AyA)",
+          "lat": 9.937967,
+          "lng": -84.1194802
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:109887537",
+          "name": "Autotransportes Zapote",
+          "lat": 9.9338261,
+          "lng": -84.0118552
+        },
+        {
+          "code": "OSM:10861029189",
+          "name": "Bus a Fátima",
+          "lat": 10.4547886,
+          "lng": -84.0092211
+        },
+        {
+          "code": "OSM:7935621161",
+          "name": "Bus a Guápiles",
+          "lat": 10.4548004,
+          "lng": -84.0091445
+        },
+        {
+          "code": "OSM:10861029188",
+          "name": "Bus a La Aldea",
+          "lat": 10.454811,
+          "lng": -84.0092727
+        },
+        {
+          "code": "OSM:7935496910",
+          "name": "Bus a Playa Tamarindo",
+          "lat": 10.4452196,
+          "lng": -85.5512102
+        },
+        {
+          "code": "OSM:7935496909",
+          "name": "Bus a Playas del Coco",
+          "lat": 10.4452483,
+          "lng": -85.5512173
+        },
+        {
+          "code": "OSM:8929391118",
+          "name": "bus to Ciudad Quesada through Upala, El Tanque (for La Fortuna). Transporte de Upala",
+          "lat": 11.2114034,
+          "lng": -85.6112994
+        },
+        {
+          "code": "OSM:4192567317",
+          "name": "Estación de buses hacia Cartago Centro",
+          "lat": 9.8550937,
+          "lng": -83.9105741
+        },
+        {
+          "code": "OSM:4904509121",
+          "name": "Ferry Playa Naranjo",
+          "lat": 9.9423389,
+          "lng": -84.9707911
+        },
+        {
+          "code": "OSM:31442686",
+          "name": "Gran Terminal del Caribe",
+          "lat": 9.9407608,
+          "lng": -84.079106
+        },
+        {
+          "code": "OSM:370775570",
+          "name": "Gran Terminal del Caribe",
+          "lat": 9.9907515,
+          "lng": -83.0320957
+        },
+        {
+          "code": "OSM:4222200097",
+          "name": "Guácima Abajo/Rincón Herrera",
+          "lat": 10.0149094,
+          "lng": -84.2163552
+        },
+        {
+          "code": "OSM:6139223285",
+          "name": "Guadalupe",
+          "lat": 9.9357691,
+          "lng": -84.078467
+        },
+        {
+          "code": "OSM:1520255759",
+          "name": "Jimenez - Carate",
+          "lat": 8.5376891,
+          "lng": -83.3072096
+        },
+        {
+          "code": "OSM:4565735089",
+          "name": "La Fortuna/Venecia/Quesada",
+          "lat": 10.0101254,
+          "lng": -84.2130557
+        },
+        {
+          "code": "OSM:3957038225",
+          "name": "Las Vueltas/Guácima Arriba/Calle Sánchez",
+          "lat": 10.014654,
+          "lng": -84.2164258
+        },
+        {
+          "code": "OSM:566781168",
+          "name": "Montezuma Bus Station",
+          "lat": 9.6543147,
+          "lng": -85.068514
+        },
+        {
+          "code": "OSM:5267177963",
+          "name": "Puerto Culebra - Nacascolo",
+          "lat": 10.6492544,
+          "lng": -85.6507953
+        },
+        {
+          "code": "OSM:2196002896",
+          "name": "Terminal Acosta y San Gabriel",
+          "lat": 9.9288541,
+          "lng": -84.0762894
+        },
+        {
+          "code": "OSM:10857062854",
+          "name": "Terminal Aserrí",
+          "lat": 9.9305106,
+          "lng": -84.0826516
+        },
+        {
+          "code": "OSM:4323732510",
+          "name": "Terminal Bagaces",
+          "lat": 10.5266231,
+          "lng": -85.2556656
+        },
+        {
+          "code": "OSM:10857167096",
+          "name": "Terminal Bagaces",
+          "lat": 9.9391658,
+          "lng": -84.0886926
+        },
+        {
+          "code": "OSM:391274650",
+          "name": "Terminal Brasilito",
+          "lat": 10.4078627,
+          "lng": -85.7966486
+        },
+        {
+          "code": "OSM:10857167092",
+          "name": "Terminal Cañas",
+          "lat": 9.9393726,
+          "lng": -84.0891539
+        },
+        {
+          "code": "OSM:362871005",
+          "name": "Terminal Comtrasuli",
+          "lat": 9.9359407,
+          "lng": -84.087061
+        },
+        {
+          "code": "OSM:1364844678",
+          "name": "Terminal Coopetransasi",
+          "lat": 10.1501782,
+          "lng": -84.1941792
+        },
+        {
+          "code": "OSM:423243325",
+          "name": "Terminal Coopetransatenas",
+          "lat": 9.9788529,
+          "lng": -84.3819636
+        },
+        {
+          "code": "OSM:2514653100",
+          "name": "Terminal de Buses Ciudad Cortés",
+          "lat": 8.9564531,
+          "lng": -83.5252919
+        },
+        {
+          "code": "OSM:11283716328",
+          "name": "Terminal Frailes",
+          "lat": 9.9293424,
+          "lng": -84.0772211
+        },
+        {
+          "code": "OSM:10942947989",
+          "name": "Terminal Imacaulada - Hospital",
+          "lat": 9.4305806,
+          "lng": -84.163622
+        },
+        {
+          "code": "OSM:12810845071",
+          "name": "Terminal Lepanto",
+          "lat": 9.9353571,
+          "lng": -84.0888984
+        },
+        {
+          "code": "OSM:10942947990",
+          "name": "Terminal Londres - Naranjito",
+          "lat": 9.430599,
+          "lng": -84.1634648
+        },
+        {
+          "code": "OSM:12810845074",
+          "name": "Terminal Nandayure",
+          "lat": 9.9351749,
+          "lng": -84.0889162
+        },
+        {
+          "code": "OSM:503624689",
+          "name": "Terminal Naranjo",
+          "lat": 10.0979664,
+          "lng": -84.3779943
+        },
+        {
+          "code": "OSM:3841341870",
+          "name": "Terminal Palmares",
+          "lat": 9.9361172,
+          "lng": -84.0855781
+        },
+        {
+          "code": "OSM:10856632417",
+          "name": "Terminal Palmichal de Acosta",
+          "lat": 9.9358549,
+          "lng": -84.0869549
+        },
+        {
+          "code": "OSM:10876286061",
+          "name": "Terminal Siquirres",
+          "lat": 9.9411682,
+          "lng": -84.0788548
+        },
+        {
+          "code": "OSM:395135639",
+          "name": "Terminal TIG - Transporte Inteligente de Guanacaste",
+          "lat": 9.9352848,
+          "lng": -84.0890233
+        },
+        {
+          "code": "OSM:3640081699",
+          "name": "Terminal Tracopa SJ-PZ",
+          "lat": 9.3733702,
+          "lng": -83.7015702
+        },
+        {
+          "code": "OSM:8502083846",
+          "name": "Terminal TUPSA Poasito",
+          "lat": 10.1650708,
+          "lng": -84.1931436
+        },
+        {
+          "code": "OSM:9761900917",
+          "name": "Tuasa aeropuerto",
+          "lat": 9.9359062,
+          "lng": -84.0840446
+        }
+      ]
+    },
+    "Puntarenas": {
+      "plane": [
+        {
+          "code": "PJM",
+          "name": "Puerto Jimenez Airport",
+          "lat": 8.533329963684082,
+          "lng": -83.30000305175781
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:4636012387",
+          "name": "Pecosa (María Reina)",
+          "lat": 9.9463192,
+          "lng": -84.1380366
+        },
+        {
+          "code": "OSM:1942451523",
+          "name": "Rondorama",
+          "lat": 10.480259,
+          "lng": -84.8227655
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:4951506835",
+          "name": "A Palmares",
+          "lat": 9.9784508,
+          "lng": -84.381403
+        },
+        {
+          "code": "OSM:420863407",
+          "name": "Autotransportes Los Santos",
+          "lat": 9.684167,
+          "lng": -84.0429194
+        },
+        {
+          "code": "OSM:232290818",
+          "name": "Autotransportes Quepos",
+          "lat": 9.977866,
+          "lng": -84.7472212
+        },
+        {
+          "code": "OSM:1634923047",
+          "name": "Autotransportes San Antonio",
+          "lat": 9.8975268,
+          "lng": -84.0451763
+        },
+        {
+          "code": "OSM:7935621158",
+          "name": "Bus a Horquetas y Río Frío",
+          "lat": 10.4549067,
+          "lng": -84.0091017
+        },
+        {
+          "code": "OSM:7174949285",
+          "name": "Bus a Puntarenas",
+          "lat": 10.3156748,
+          "lng": -84.8228282
+        },
+        {
+          "code": "OSM:7935496908",
+          "name": "Bus a Santa Cruz y Nicoya",
+          "lat": 10.4452797,
+          "lng": -85.5514252
+        },
+        {
+          "code": "OSM:7935496913",
+          "name": "Bus a Sardinal",
+          "lat": 10.4451465,
+          "lng": -85.5511934
+        },
+        {
+          "code": "OSM:5891751815",
+          "name": "Bus al Sanatorio Durán",
+          "lat": 9.8666335,
+          "lng": -83.9190577
+        },
+        {
+          "code": "OSM:7120693285",
+          "name": "Bus to Monte Verde 8:00-2:15",
+          "lat": 9.9759182,
+          "lng": -84.8294697
+        },
+        {
+          "code": "OSM:5898228386",
+          "name": "Bus to Quepos",
+          "lat": 9.251749,
+          "lng": -83.8639488
+        },
+        {
+          "code": "OSM:459462702",
+          "name": "Buses Empresa CESMAG",
+          "lat": 9.9436024,
+          "lng": -84.0223213
+        },
+        {
+          "code": "OSM:7880203851",
+          "name": "Compañia Red Star",
+          "lat": 9.9014127,
+          "lng": -83.9999452
+        },
+        {
+          "code": "OSM:12497252",
+          "name": "Coopetransasi R. L.",
+          "lat": 10.0706929,
+          "lng": -84.2164504
+        },
+        {
+          "code": "OSM:391677299",
+          "name": "Corporacion Terminales del Caribe",
+          "lat": 10.2029196,
+          "lng": -83.788297
+        },
+        {
+          "code": "OSM:6775665124",
+          "name": "Las Juntas (Abangares)",
+          "lat": 10.010038,
+          "lng": -84.2130545
+        },
+        {
+          "code": "OSM:5034735577",
+          "name": "Llorente x el cruce (Ruta 20)",
+          "lat": 9.9369779,
+          "lng": -84.0797265
+        },
+        {
+          "code": "OSM:187247072",
+          "name": "Longo Mai - to Buenos Aires",
+          "lat": 9.2507417,
+          "lng": -83.4987333
+        },
+        {
+          "code": "OSM:187247074",
+          "name": "Longo Mai - to San Isidro de El General",
+          "lat": 9.2510217,
+          "lng": -83.4986948
+        },
+        {
+          "code": "OSM:4222200104",
+          "name": "Montecillos",
+          "lat": 10.0142412,
+          "lng": -84.2176533
+        },
+        {
+          "code": "OSM:6775665132",
+          "name": "Palmares",
+          "lat": 10.0098012,
+          "lng": -84.2130514
+        },
+        {
+          "code": "OSM:1436069769",
+          "name": "Parada CoopeCoronado",
+          "lat": 9.9682665,
+          "lng": -84.0192702
+        },
+        {
+          "code": "OSM:832354954",
+          "name": "Parada de autobus",
+          "lat": 9.8381413,
+          "lng": -83.8016042
+        },
+        {
+          "code": "OSM:3886977594",
+          "name": "Parada de Bus",
+          "lat": 10.449413,
+          "lng": -85.5549598
+        },
+        {
+          "code": "OSM:6286188636",
+          "name": "Parada de bus Santa Cruz & Liberia",
+          "lat": 10.2977814,
+          "lng": -85.8410787
+        },
+        {
+          "code": "OSM:1712291685",
+          "name": "Parada de buses frente a UTN",
+          "lat": 10.6232709,
+          "lng": -85.4513825
+        },
+        {
+          "code": "OSM:5952570803",
+          "name": "Parada de Buses Puntarenas-San José",
+          "lat": 9.977743,
+          "lng": -84.7372755
+        },
+        {
+          "code": "OSM:12530067002",
+          "name": "Parada para Boca Tapada (terminal es cerrado)",
+          "lat": 10.4555669,
+          "lng": -84.2728489
+        },
+        {
+          "code": "OSM:772399156",
+          "name": "Predio Buses Rincon de Salas Sur",
+          "lat": 10.014271,
+          "lng": -84.3426103
+        },
+        {
+          "code": "OSM:476690350",
+          "name": "Predio Guapileños",
+          "lat": 10.4519125,
+          "lng": -84.0263406
+        },
+        {
+          "code": "OSM:9587221017",
+          "name": "puerto Jimenez",
+          "lat": 9.5262536,
+          "lng": -84.3501044
+        },
+        {
+          "code": "OSM:378782797",
+          "name": "Pulmitán El Coco",
+          "lat": 10.5438756,
+          "lng": -85.6931266
+        },
+        {
+          "code": "OSM:6775665134",
+          "name": "Puntarenas",
+          "lat": 10.0096534,
+          "lng": -84.2130494
+        },
+        {
+          "code": "OSM:2407371972",
+          "name": "Puntarenas - El Roble - Barraca - San Miguel",
+          "lat": 9.9797686,
+          "lng": -84.8309293
+        },
+        {
+          "code": "OSM:2407425600",
+          "name": "Puntarenas-Esparza (por Cruce de Barranca)",
+          "lat": 9.9770448,
+          "lng": -84.8362122
+        },
+        {
+          "code": "OSM:1054137915",
+          "name": "Terminal Arenal",
+          "lat": 10.545023,
+          "lng": -84.8943087
+        },
+        {
+          "code": "OSM:939109003",
+          "name": "Terminal Autotransportes Matineños",
+          "lat": 10.0764848,
+          "lng": -83.2902768
+        },
+        {
+          "code": "OSM:1444078861",
+          "name": "Terminal Buses Cinco Esquinas",
+          "lat": 9.8570796,
+          "lng": -84.0945874
+        },
+        {
+          "code": "OSM:723238609",
+          "name": "Terminal Caribeños",
+          "lat": 10.8948332,
+          "lng": -85.0277495
+        },
+        {
+          "code": "OSM:11272380769",
+          "name": "Terminal de Buses Quepos - Puntarenas",
+          "lat": 9.9763334,
+          "lng": -84.8313243
+        },
+        {
+          "code": "OSM:130853014",
+          "name": "Terminal Empresarios Unidos",
+          "lat": 10.0889531,
+          "lng": -84.4719229
+        },
+        {
+          "code": "OSM:11282458401",
+          "name": "Terminal Paso Canoas",
+          "lat": 9.9256319,
+          "lng": -84.077605
+        },
+        {
+          "code": "OSM:5336870850",
+          "name": "Terminal Puerto Jiménez",
+          "lat": 9.9392546,
+          "lng": -84.0836051
+        },
+        {
+          "code": "OSM:5474015625",
+          "name": "Terminal Puntarenas",
+          "lat": 9.9288926,
+          "lng": -84.0858349
+        },
+        {
+          "code": "OSM:10942947998",
+          "name": "Terminal Puntarenas",
+          "lat": 9.4306035,
+          "lng": -84.1636059
+        },
+        {
+          "code": "OSM:11365511778",
+          "name": "Terminal Puntarenas",
+          "lat": 9.520118,
+          "lng": -84.3276289
+        },
+        {
+          "code": "OSM:545107727",
+          "name": "Terminal Puntarenas - Quepos",
+          "lat": 9.9761166,
+          "lng": -84.8324695
+        },
+        {
+          "code": "OSM:1155645702",
+          "name": "Terminal Puntarenas - Quepos",
+          "lat": 9.9763269,
+          "lng": -84.831362
+        },
+        {
+          "code": "OSM:11218652782",
+          "name": "Terminal Santa Bárbara/Desamparados",
+          "lat": 10.0148333,
+          "lng": -84.2166972
+        },
+        {
+          "code": "OSM:12810845072",
+          "name": "Terminal Tamarindo",
+          "lat": 9.9352987,
+          "lng": -84.0889053
+        },
+        {
+          "code": "OSM:4729495591",
+          "name": "Terminal Transportes Blancos",
+          "lat": 9.3722069,
+          "lng": -83.7012604
+        },
+        {
+          "code": "OSM:1519859936",
+          "name": "Tracopa Terminal",
+          "lat": 8.6376078,
+          "lng": -83.1659062
+        },
+        {
+          "code": "OSM:6482953485",
+          "name": "Tracopa- Bus Terminal",
+          "lat": 8.678145,
+          "lng": -83.0680285
+        },
+        {
+          "code": "OSM:405706068",
+          "name": "Transmonteverde S.A.",
+          "lat": 10.3156538,
+          "lng": -84.8228979
+        }
+      ]
+    },
+    "Limón": {
+      "plane": [
+        {
+          "code": "MRAO",
+          "name": "Aerotortuguero Airport",
+          "lat": 10.42,
+          "lng": -83.6095
+        },
+        {
+          "code": "GLF",
+          "name": "Golfito Airport",
+          "lat": 8.65401,
+          "lng": -83.182198
+        },
+        {
+          "code": "LIO",
+          "name": "Limon International Airport",
+          "lat": 9.95796012878418,
+          "lng": -83.02200317382812
+        },
+        {
+          "code": "NOB",
+          "name": "Nosara Airport",
+          "lat": 9.976490020750001,
+          "lng": -85.65299987790002
+        },
+        {
+          "code": "XQP",
+          "name": "Quepos Managua Airport",
+          "lat": 9.44316,
+          "lng": -84.129799
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:10273259134",
+          "name": "Batán",
+          "lat": 10.0845975,
+          "lng": -83.3415505
+        },
+        {
+          "code": "OSM:4638218346",
+          "name": "Belén",
+          "lat": 9.9784607,
+          "lng": -84.1849399
+        },
+        {
+          "code": "OSM:4629001928",
+          "name": "Colima",
+          "lat": 9.9554726,
+          "lng": -84.0866106
+        },
+        {
+          "code": "OSM:4636012381",
+          "name": "Cuba",
+          "lat": 9.9269455,
+          "lng": -84.0917904
+        },
+        {
+          "code": "OSM:5571341451",
+          "name": "Fátima",
+          "lat": 10.0015726,
+          "lng": -84.1952254
+        },
+        {
+          "code": "OSM:4627535655",
+          "name": "Flores",
+          "lat": 10.0031458,
+          "lng": -84.1524507
+        },
+        {
+          "code": "OSM:3250310191",
+          "name": "Guácimo",
+          "lat": 10.209334,
+          "lng": -83.680093
+        },
+        {
+          "code": "OSM:4636012385",
+          "name": "Jacks",
+          "lat": 9.9402901,
+          "lng": -84.1237139
+        },
+        {
+          "code": "OSM:5031275125",
+          "name": "Lesville",
+          "lat": 10.2634289,
+          "lng": -83.7581363
+        },
+        {
+          "code": "OSM:701330795",
+          "name": "Limón",
+          "lat": 9.9900826,
+          "lng": -83.0327033
+        },
+        {
+          "code": "OSM:1015728539",
+          "name": "Mata de Limón",
+          "lat": 9.9296231,
+          "lng": -84.7112606
+        },
+        {
+          "code": "OSM:10273263611",
+          "name": "Matina",
+          "lat": 10.0764554,
+          "lng": -83.2929614
+        },
+        {
+          "code": "OSM:8878362477",
+          "name": "Oreamuno",
+          "lat": 9.8612817,
+          "lng": -83.905203
+        },
+        {
+          "code": "OSM:4636012386",
+          "name": "Pavas",
+          "lat": 9.9399761,
+          "lng": -84.1335334
+        },
+        {
+          "code": "OSM:10269243066",
+          "name": "Quircot",
+          "lat": 9.8874781,
+          "lng": -83.9295807
+        },
+        {
+          "code": "OSM:1436030709",
+          "name": "Río Segundo",
+          "lat": 10.0027082,
+          "lng": -84.1841648
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:3480692203",
+          "name": "Bus",
+          "lat": 9.9116612,
+          "lng": -84.0601913
+        },
+        {
+          "code": "OSM:1289740163",
+          "name": "Cot",
+          "lat": 9.8665367,
+          "lng": -83.9190695
+        },
+        {
+          "code": "OSM:4222200105",
+          "name": "El Coyol",
+          "lat": 10.014452,
+          "lng": -84.2175242
+        },
+        {
+          "code": "OSM:6775700312",
+          "name": "Miramar",
+          "lat": 10.0095583,
+          "lng": -84.2130482
+        },
+        {
+          "code": "OSM:130927574",
+          "name": "MUSOC",
+          "lat": 9.6589728,
+          "lng": -84.0216243
+        },
+        {
+          "code": "OSM:4222200106",
+          "name": "Plywood",
+          "lat": 10.0143195,
+          "lng": -84.2176095
+        },
+        {
+          "code": "OSM:4222200103",
+          "name": "Poás",
+          "lat": 10.0143977,
+          "lng": -84.2176092
+        },
+        {
+          "code": "OSM:3119818043",
+          "name": "Terminal Limón",
+          "lat": 9.502406,
+          "lng": -82.6137711
+        },
+        {
+          "code": "OSM:10860699350",
+          "name": "Terminal Limón",
+          "lat": 9.6256523,
+          "lng": -82.8516726
+        },
+        {
+          "code": "OSM:10876286063",
+          "name": "Terminal Limón",
+          "lat": 9.9413594,
+          "lng": -84.0788334
+        },
+        {
+          "code": "OSM:1010130067",
+          "name": "Ticabus",
+          "lat": 8.9658234,
+          "lng": -83.4659338
+        },
+        {
+          "code": "OSM:419336451",
+          "name": "TicaBus",
+          "lat": 9.937043,
+          "lng": -84.0906566
+        },
+        {
+          "code": "OSM:5604510621",
+          "name": "Tilarán",
+          "lat": 10.4311581,
+          "lng": -85.0931866
+        },
+        {
+          "code": "OSM:6775700314",
+          "name": "Tilarán",
+          "lat": 10.0095066,
+          "lng": -84.2130475
+        },
+        {
+          "code": "OSM:1026498958",
+          "name": "TUPSA",
+          "lat": 10.0868048,
+          "lng": -84.2449783
+        }
+      ]
+    },
+    "Cartago": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:1226582149",
+          "name": "Barranca",
+          "lat": 9.9902875,
+          "lng": -84.7107664
+        },
+        {
+          "code": "OSM:4638296442",
+          "name": "Cartago",
+          "lat": 9.8666082,
+          "lng": -83.9220243
+        },
+        {
+          "code": "OSM:278449879",
+          "name": "Contraloría",
+          "lat": 9.9326573,
+          "lng": -84.1014187
+        },
+        {
+          "code": "OSM:1272105604",
+          "name": "Estación Santiago",
+          "lat": 9.8716984,
+          "lng": -83.7964844
+        },
+        {
+          "code": "OSM:1758597219",
+          "name": "Ochomogo",
+          "lat": 9.9018361,
+          "lng": -83.9517318
+        },
+        {
+          "code": "OSM:4636012380",
+          "name": "Pacífico",
+          "lat": 9.9254769,
+          "lng": -84.0810605
+        },
+        {
+          "code": "OSM:10267039826",
+          "name": "Paraíso",
+          "lat": 9.8431029,
+          "lng": -83.8694132
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5891751813",
+          "name": "Bus to Cartago",
+          "lat": 9.9282081,
+          "lng": -83.8835446
+        },
+        {
+          "code": "OSM:6775665128",
+          "name": "Cañas",
+          "lat": 10.0099958,
+          "lng": -84.213054
+        },
+        {
+          "code": "OSM:4093647051",
+          "name": "Cartago-Cervantes",
+          "lat": 9.8626474,
+          "lng": -83.9196004
+        },
+        {
+          "code": "OSM:4553122581",
+          "name": "CESMAG",
+          "lat": 9.9436741,
+          "lng": -84.0223935
+        },
+        {
+          "code": "OSM:380827247",
+          "name": "Nica Expreso",
+          "lat": 9.9364217,
+          "lng": -84.0853144
+        },
+        {
+          "code": "OSM:4094554641",
+          "name": "Parada Cervantes - Cartago",
+          "lat": 9.8866581,
+          "lng": -83.8076104
+        },
+        {
+          "code": "OSM:4886542015",
+          "name": "Santa Cruz- Cartago",
+          "lat": 9.7327718,
+          "lng": -84.0229935
+        },
+        {
+          "code": "OSM:12810845076",
+          "name": "Terminal Flamingo",
+          "lat": 9.9352957,
+          "lng": -84.0891466
+        },
+        {
+          "code": "OSM:392877030",
+          "name": "Terminal Gafeso",
+          "lat": 9.3725629,
+          "lng": -83.7014891
+        },
+        {
+          "code": "OSM:11282458405",
+          "name": "Terminal Golfito",
+          "lat": 9.9257879,
+          "lng": -84.077597
+        },
+        {
+          "code": "OSM:10876286059",
+          "name": "Terminal Guácimo",
+          "lat": 9.940969,
+          "lng": -84.0788248
+        },
+        {
+          "code": "OSM:172560879",
+          "name": "Terminal Paraíso - Cartago",
+          "lat": 9.8396397,
+          "lng": -83.8648439
+        },
+        {
+          "code": "OSM:31487701",
+          "name": "Terminal TRACOPA",
+          "lat": 9.9256075,
+          "lng": -84.0773958
+        },
+        {
+          "code": "OSM:1010091109",
+          "name": "Transportes Blanco",
+          "lat": 8.9603578,
+          "lng": -83.4576527
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:35:40.506Z"
+  }
+}

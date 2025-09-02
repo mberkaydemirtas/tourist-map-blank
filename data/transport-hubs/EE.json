@@ -1,0 +1,156 @@
+{
+  "code": "EE",
+  "name": "Estonia",
+  "cities": {
+    "Tallinn": {
+      "plane": [
+        {
+          "code": "TLL",
+          "name": "Lennart Meri Tallinn Airport",
+          "lat": 59.413246,
+          "lng": 24.83264
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Tartu": {
+      "plane": [
+        {
+          "code": "EERU",
+          "name": "Ruhnu Airfield",
+          "lat": 57.78559,
+          "lng": 23.262377
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Narva": {
+      "plane": [
+        {
+          "code": "KDL",
+          "name": "Kärdla Airport",
+          "lat": 58.99079895019531,
+          "lng": 22.830699920654297
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Pärnu": {
+      "plane": [
+        {
+          "code": "EPU",
+          "name": "Pärnu Airport",
+          "lat": 58.41899871826172,
+          "lng": 24.47279930114746
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kohtla-Järve": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Viljandi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Maardu": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Rakvere": {
+      "plane": [
+        {
+          "code": "URE",
+          "name": "Kuressaare Airport",
+          "lat": 58.22990036010742,
+          "lng": 22.50950050354004
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Saaremaa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sillamäe": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Võru": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Valga": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Keila": {
+      "plane": [
+        {
+          "code": "TAY",
+          "name": "Tartu Airport",
+          "lat": 58.307438,
+          "lng": 26.686473
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Jõhvi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Haapsalu": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Paide": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Põlva": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Rapla": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Jõgeva": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hiiumaa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:43:20.474Z"
+  }
+}

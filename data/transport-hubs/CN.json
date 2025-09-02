@@ -1,0 +1,1573 @@
+{
+  "code": "CN",
+  "name": "China",
+  "cities": {
+    "Guangdong": {
+      "plane": [
+        {
+          "code": "CWJ",
+          "name": "Cangyuan Washan Airport",
+          "lat": 23.276331,
+          "lng": 99.373169
+        },
+        {
+          "code": "CHG",
+          "name": "Chaoyang Airport",
+          "lat": 41.538101,
+          "lng": 120.434998
+        },
+        {
+          "code": "DCY",
+          "name": "Daocheng Yading Airport",
+          "lat": 29.31632,
+          "lng": 100.060317
+        },
+        {
+          "code": "GZG",
+          "name": "Garze Gesar Airport",
+          "lat": 31.7575,
+          "lng": 99.554167
+        },
+        {
+          "code": "GMQ",
+          "name": "Golog Maqên Airport",
+          "lat": 34.418066,
+          "lng": 100.301144
+        },
+        {
+          "code": "CAN",
+          "name": "Guangzhou Baiyun International Airport",
+          "lat": 23.392401,
+          "lng": 113.299004
+        },
+        {
+          "code": "KWL",
+          "name": "Guilin Liangjiang International Airport",
+          "lat": 25.219828,
+          "lng": 110.039553
+        },
+        {
+          "code": "SWA",
+          "name": "Jieyang Chaoshan International Airport",
+          "lat": 23.552,
+          "lng": 116.5033
+        },
+        {
+          "code": "JZH",
+          "name": "Jiuzhai Huanglong Airport",
+          "lat": 32.853333,
+          "lng": 103.682222
+        },
+        {
+          "code": "KJH",
+          "name": "Kaili Huangping Airport",
+          "lat": 26.972,
+          "lng": 107.988
+        },
+        {
+          "code": "KGT",
+          "name": "Kangding Airport",
+          "lat": 30.142464,
+          "lng": 101.73872
+        },
+        {
+          "code": "JMJ",
+          "name": "Lancang Jingmai Airport",
+          "lat": 22.417733,
+          "lng": 99.784012
+        },
+        {
+          "code": "LZG",
+          "name": "Langzhong Gucheng Airport",
+          "lat": 31.50191,
+          "lng": 106.034417
+        },
+        {
+          "code": "LNL",
+          "name": "Longnan Chengzhou Airport",
+          "lat": 33.789918,
+          "lng": 105.790014
+        },
+        {
+          "code": "LYA",
+          "name": "Luoyang Beijiao Airport",
+          "lat": 34.7411,
+          "lng": 112.388
+        },
+        {
+          "code": "MIG",
+          "name": "Mianyang Nanjiao Airport",
+          "lat": 31.428101,
+          "lng": 104.740997
+        },
+        {
+          "code": "NTG",
+          "name": "Nantong Xingdong International Airport",
+          "lat": 32.073566,
+          "lng": 120.980076
+        },
+        {
+          "code": "NNY",
+          "name": "Nanyang Jiangying Airport",
+          "lat": 32.982696,
+          "lng": 112.617467
+        },
+        {
+          "code": "BPE",
+          "name": "Qinhuangdao Beidaihe Airport",
+          "lat": 39.666384,
+          "lng": 119.061384
+        },
+        {
+          "code": "RQA",
+          "name": "Ruoqiang Loulan Airport",
+          "lat": 38.974722,
+          "lng": 88.008333
+        },
+        {
+          "code": "SHE",
+          "name": "Shenyang Taoxian International Airport",
+          "lat": 41.639801,
+          "lng": 123.483002
+        },
+        {
+          "code": "TEN",
+          "name": "Tongren Fenghuang Airport",
+          "lat": 27.883333,
+          "lng": 109.308889
+        },
+        {
+          "code": "YYA",
+          "name": "Yueyang Sanhe Airport",
+          "lat": 29.311699,
+          "lng": 113.281574
+        },
+        {
+          "code": "DYG",
+          "name": "Zhangjiajie Hehua International Airport",
+          "lat": 29.1028,
+          "lng": 110.443001
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Shanghai": {
+      "plane": [
+        {
+          "code": "AKA",
+          "name": "Ankang Fuqiang Airport",
+          "lat": 32.75696,
+          "lng": 108.87338
+        },
+        {
+          "code": "BHY",
+          "name": "Beihai Fucheng Airport",
+          "lat": 21.5394,
+          "lng": 109.293999
+        },
+        {
+          "code": "CGQ",
+          "name": "Changchun Longjia International Airport",
+          "lat": 43.996201,
+          "lng": 125.684998
+        },
+        {
+          "code": "CNI",
+          "name": "Changhai Airport",
+          "lat": 39.266667,
+          "lng": 122.666944
+        },
+        {
+          "code": "CSX",
+          "name": "Changsha Huanghua International Airport",
+          "lat": 28.189199,
+          "lng": 113.220001
+        },
+        {
+          "code": "CIH",
+          "name": "Changzhi Wangcun Airport",
+          "lat": 36.247501,
+          "lng": 113.125999
+        },
+        {
+          "code": "CZX",
+          "name": "Changzhou Benniu International Airport",
+          "lat": 31.920485,
+          "lng": 119.77546
+        },
+        {
+          "code": "CTU",
+          "name": "Chengdu Shuangliu International Airport",
+          "lat": 30.558257,
+          "lng": 103.945966
+        },
+        {
+          "code": "ENH",
+          "name": "Enshi Xujiaping Airport",
+          "lat": 30.320299,
+          "lng": 109.485001
+        },
+        {
+          "code": "HGH",
+          "name": "Hangzhou Xiaoshan International Airport",
+          "lat": 30.23609,
+          "lng": 120.428865
+        },
+        {
+          "code": "JNZ",
+          "name": "Jinzhou Bay Airport",
+          "lat": 40.936032,
+          "lng": 121.277114
+        },
+        {
+          "code": "BPX",
+          "name": "Qamdo Bangda Airport",
+          "lat": 30.553600311279297,
+          "lng": 97.1082992553711
+        },
+        {
+          "code": "SQJ",
+          "name": "Sanming Shaxian Airport",
+          "lat": 26.4263,
+          "lng": 117.8336
+        },
+        {
+          "code": "SHA",
+          "name": "Shanghai Hongqiao International Airport",
+          "lat": 31.198104,
+          "lng": 121.33426
+        },
+        {
+          "code": "PVG",
+          "name": "Shanghai Pudong International Airport",
+          "lat": 31.1434,
+          "lng": 121.805
+        },
+        {
+          "code": "WGN",
+          "name": "Shaoyang Wugang Airport",
+          "lat": 26.806123,
+          "lng": 110.641042
+        },
+        {
+          "code": "SZX",
+          "name": "Shenzhen Bao'an International Airport",
+          "lat": 22.639299,
+          "lng": 113.810997
+        },
+        {
+          "code": "WDS",
+          "name": "Shiyan Wudangshan Airport",
+          "lat": 32.592889,
+          "lng": 110.906296
+        },
+        {
+          "code": "TXN",
+          "name": "Tunxi International Airport",
+          "lat": 29.733299255371094,
+          "lng": 118.25599670410156
+        },
+        {
+          "code": "UCB",
+          "name": "Ulanqab Jining Airport",
+          "lat": 41.130266,
+          "lng": 113.107274
+        },
+        {
+          "code": "WUH",
+          "name": "Wuhan Tianhe International Airport",
+          "lat": 30.774798,
+          "lng": 114.213723
+        },
+        {
+          "code": "CGO",
+          "name": "Zhengzhou Xinzheng International Airport",
+          "lat": 34.526497,
+          "lng": 113.849165
+        },
+        {
+          "code": "ZHY",
+          "name": "Zhongwei Shapotou Airport",
+          "lat": 37.573125,
+          "lng": 105.154454
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Beijing": {
+      "plane": [
+        {
+          "code": "DBC",
+          "name": "Baicheng Chang'an Airport",
+          "lat": 45.505278,
+          "lng": 123.019722
+        },
+        {
+          "code": "PEK",
+          "name": "Beijing Capital International Airport",
+          "lat": 40.080101013183594,
+          "lng": 116.58499908447266
+        },
+        {
+          "code": "PKX",
+          "name": "Beijing Daxing International Airport",
+          "lat": 39.509945,
+          "lng": 116.41092
+        },
+        {
+          "code": "BFJ",
+          "name": "Bijie Feixiong Airport",
+          "lat": 27.267066,
+          "lng": 105.472097
+        },
+        {
+          "code": "KJI",
+          "name": "Burqin Kanas Airport",
+          "lat": 48.2223,
+          "lng": 86.9959
+        },
+        {
+          "code": "CIF",
+          "name": "Chifeng Yulong Airport",
+          "lat": 42.159723,
+          "lng": 118.840971
+        },
+        {
+          "code": "DQA",
+          "name": "Daqing Sartu Airport",
+          "lat": 46.750883,
+          "lng": 125.138642
+        },
+        {
+          "code": "HJB",
+          "name": "Hejing Bayinbuluke Airport",
+          "lat": 42.976395,
+          "lng": 83.995543
+        },
+        {
+          "code": "HZA",
+          "name": "Heze Mudan Airport",
+          "lat": 35.212972,
+          "lng": 115.736748
+        },
+        {
+          "code": "KMG",
+          "name": "Kunming Changshui International Airport",
+          "lat": 25.110313,
+          "lng": 102.936743
+        },
+        {
+          "code": "HZH",
+          "name": "Liping Airport",
+          "lat": 26.32217,
+          "lng": 109.1499
+        },
+        {
+          "code": "NKG",
+          "name": "Nanjing Lukou International Airport",
+          "lat": 31.735032,
+          "lng": 118.865949
+        },
+        {
+          "code": "TCG",
+          "name": "Tacheng Qianquan Airport",
+          "lat": 46.672501,
+          "lng": 83.340797
+        },
+        {
+          "code": "YBP",
+          "name": "Yibin Wuliangye Airport",
+          "lat": 28.858431,
+          "lng": 104.526157
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Sichuan": {
+      "plane": [
+        {
+          "code": "DZH",
+          "name": "Dazhou Jinya Airport",
+          "lat": 31.048815,
+          "lng": 107.435646
+        },
+        {
+          "code": "DNH",
+          "name": "Dunhuang Mogao International Airport",
+          "lat": 40.161098,
+          "lng": 94.809196
+        },
+        {
+          "code": "FUG",
+          "name": "Fuyang Xiguan Airport",
+          "lat": 32.882157,
+          "lng": 115.734364
+        },
+        {
+          "code": "JGN",
+          "name": "Jiayuguan Airport",
+          "lat": 39.856899,
+          "lng": 98.3414
+        },
+        {
+          "code": "KHG",
+          "name": "Kashgar Laining International Airport",
+          "lat": 39.5429,
+          "lng": 76.019997
+        },
+        {
+          "code": "NGQ",
+          "name": "Ngari Gunsa Airport",
+          "lat": 32.09794,
+          "lng": 80.053971
+        },
+        {
+          "code": "SJW",
+          "name": "Shijiazhuang Zhengding International Airport",
+          "lat": 38.280701,
+          "lng": 114.696999
+        },
+        {
+          "code": "HQL",
+          "name": "Tashikuergan Hongqilafu Airport",
+          "lat": 37.661333,
+          "lng": 75.288877
+        },
+        {
+          "code": "NLT",
+          "name": "Xinyuan Nalati Airport",
+          "lat": 43.4318,
+          "lng": 83.3786
+        },
+        {
+          "code": "LDS",
+          "name": "Yichun Lindu Airport",
+          "lat": 47.752056,
+          "lng": 129.019125
+        },
+        {
+          "code": "YIC",
+          "name": "Yichun Mingyueshan Airport",
+          "lat": 27.8025,
+          "lng": 114.3062
+        },
+        {
+          "code": "INC",
+          "name": "Yinchuan Hedong International Airport",
+          "lat": 38.322758,
+          "lng": 106.393214
+        },
+        {
+          "code": "YIW",
+          "name": "Yiwu Airport",
+          "lat": 29.342095,
+          "lng": 120.03116
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Shaanxi": {
+      "plane": [
+        {
+          "code": "LLB",
+          "name": "Libo Airport",
+          "lat": 25.4525,
+          "lng": 107.961667
+        },
+        {
+          "code": "SYX",
+          "name": "Sanya Phoenix International Airport",
+          "lat": 18.3029,
+          "lng": 109.412003
+        },
+        {
+          "code": "SHF",
+          "name": "Shihezi Huayuan Airport",
+          "lat": 44.2421,
+          "lng": 85.8905
+        },
+        {
+          "code": "YUS",
+          "name": "Yushu Batang Airport",
+          "lat": 32.836389,
+          "lng": 97.036389
+        },
+        {
+          "code": "NZL",
+          "name": "Zhalantun Genghis Khan Airport",
+          "lat": 47.865942,
+          "lng": 122.768662
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Chongqing": {
+      "plane": [
+        {
+          "code": "BZX",
+          "name": "Bazhong Enyang Airport",
+          "lat": 31.73842,
+          "lng": 106.644872
+        },
+        {
+          "code": "CGD",
+          "name": "Changde Taohuayuan Airport",
+          "lat": 28.9189,
+          "lng": 111.639999
+        },
+        {
+          "code": "TFU",
+          "name": "Chengdu Tianfu International Airport",
+          "lat": 30.31252,
+          "lng": 104.441284
+        },
+        {
+          "code": "CKG",
+          "name": "Chongqing Jiangbei International Airport",
+          "lat": 29.712254,
+          "lng": 106.651895
+        },
+        {
+          "code": "DDG",
+          "name": "Dandong Langtou Airport",
+          "lat": 40.025453,
+          "lng": 124.28669
+        },
+        {
+          "code": "LUM",
+          "name": "Dehong Mangshi Airport",
+          "lat": 24.4011,
+          "lng": 98.5317
+        },
+        {
+          "code": "HZG",
+          "name": "Hanzhong Chenggu Airport",
+          "lat": 33.133527,
+          "lng": 107.203817
+        },
+        {
+          "code": "NAO",
+          "name": "Nanchong Gaoping Airport",
+          "lat": 30.798104,
+          "lng": 106.16415
+        },
+        {
+          "code": "RIZ",
+          "name": "Rizhao Shanzihe Airport",
+          "lat": 35.405033,
+          "lng": 119.324403
+        },
+        {
+          "code": "ZBUT",
+          "name": "Ruad Zhongqi Hailiutu Airport",
+          "lat": 41.694354,
+          "lng": 108.378439
+        },
+        {
+          "code": "YNZ",
+          "name": "Yancheng Nanyang International Airport",
+          "lat": 33.425833,
+          "lng": 120.203056
+        },
+        {
+          "code": "YIH",
+          "name": "Yichang Sanxia Airport",
+          "lat": 30.554132,
+          "lng": 111.482563
+        },
+        {
+          "code": "YTW",
+          "name": "Yutian Wanfang Airport",
+          "lat": 36.8085,
+          "lng": 81.7827
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Shandong": {
+      "plane": [
+        {
+          "code": "HQQ",
+          "name": "Anyang Hongqiqu Airport",
+          "lat": 35.870833,
+          "lng": 114.461944
+        },
+        {
+          "code": "BSD",
+          "name": "Baoshan Yunrui Airport",
+          "lat": 25.053301,
+          "lng": 99.168297
+        },
+        {
+          "code": "DAT",
+          "name": "Datong Yungang Airport",
+          "lat": 40.061614,
+          "lng": 113.480032
+        },
+        {
+          "code": "LXA",
+          "name": "Lhasa Gonggar Airport",
+          "lat": 29.298001,
+          "lng": 90.911951
+        },
+        {
+          "code": "LZO",
+          "name": "Luzhou Yunlong Airport",
+          "lat": 29.030357,
+          "lng": 105.468407
+        },
+        {
+          "code": "SQD",
+          "name": "Shangrao Sanqingshan Airport",
+          "lat": 28.3797,
+          "lng": 117.9643
+        },
+        {
+          "code": "TCZ",
+          "name": "Tengchong Tuofeng Airport",
+          "lat": 24.938056,
+          "lng": 98.485833
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Hebei": {
+      "plane": [
+        {
+          "code": "BPL",
+          "name": "Bole Alashankou Airport",
+          "lat": 44.895461,
+          "lng": 82.30007
+        },
+        {
+          "code": "HMI",
+          "name": "Hami Airport",
+          "lat": 42.8414,
+          "lng": 93.669197
+        },
+        {
+          "code": "HFE",
+          "name": "Hefei Xinqiao International Airport",
+          "lat": 31.98779,
+          "lng": 116.9769
+        },
+        {
+          "code": "HEK",
+          "name": "Heihe Aihui Airport",
+          "lat": 50.171621,
+          "lng": 127.308884
+        },
+        {
+          "code": "HET",
+          "name": "Hohhot Baita International Airport",
+          "lat": 40.849658,
+          "lng": 111.824598
+        },
+        {
+          "code": "KRL",
+          "name": "Korla Licheng Airport",
+          "lat": 41.614979,
+          "lng": 86.140817
+        },
+        {
+          "code": "OHE",
+          "name": "Mohe Gulian Airport",
+          "lat": 52.916871,
+          "lng": 122.422759
+        },
+        {
+          "code": "DSN",
+          "name": "Ordos Ejin Horo Airport",
+          "lat": 39.493514,
+          "lng": 109.8599
+        },
+        {
+          "code": "DTU",
+          "name": "Wudalianchi Dedu Airport",
+          "lat": 48.441037,
+          "lng": 126.128374
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Tianjin": {
+      "plane": [
+        {
+          "code": "RHT",
+          "name": "Alxa Right Banner Badanjilin Airport",
+          "lat": 39.225,
+          "lng": 101.546
+        },
+        {
+          "code": "TNA",
+          "name": "Jinan Yaoqiang International Airport",
+          "lat": 36.857201,
+          "lng": 117.216003
+        },
+        {
+          "code": "TSN",
+          "name": "Tianjin Binhai International Airport",
+          "lat": 39.124401092499994,
+          "lng": 117.346000671
+        },
+        {
+          "code": "XMN",
+          "name": "Xiamen Gaoqi International Airport",
+          "lat": 24.54400062561035,
+          "lng": 118.12799835205078
+        },
+        {
+          "code": "YNJ",
+          "name": "Yanji Chaoyangchuan Airport",
+          "lat": 42.8828010559,
+          "lng": 129.451004028
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Hubei": {
+      "plane": [
+        {
+          "code": "SYM",
+          "name": "Pu'er Simao Airport",
+          "lat": 22.793301,
+          "lng": 100.959
+        },
+        {
+          "code": "WUX",
+          "name": "Sunan Shuofang International Airport",
+          "lat": 31.494400024399997,
+          "lng": 120.429000854
+        },
+        {
+          "code": "TWC",
+          "name": "Tumxuk Tangwangcheng Airport",
+          "lat": 39.886663,
+          "lng": 79.233408
+        },
+        {
+          "code": "URC",
+          "name": "Ürümqi Tianshan International Airport",
+          "lat": 43.907101,
+          "lng": 87.474197
+        },
+        {
+          "code": "WUA",
+          "name": "Wuhai Airport",
+          "lat": 39.7934,
+          "lng": 106.7993
+        },
+        {
+          "code": "WMT",
+          "name": "Zunyi Maotai Airport",
+          "lat": 27.961837,
+          "lng": 106.435416
+        },
+        {
+          "code": "ZYI",
+          "name": "Zunyi Xinzhou Airport",
+          "lat": 27.810723,
+          "lng": 107.247189
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Henan": {
+      "plane": [
+        {
+          "code": "ACF",
+          "name": "Aral Tarim Airport",
+          "lat": 40.434748,
+          "lng": 81.26206
+        },
+        {
+          "code": "YIE",
+          "name": "Arxan Yi'ershi Airport",
+          "lat": 47.3106,
+          "lng": 119.9117
+        },
+        {
+          "code": "CDE",
+          "name": "Chengde Puning Airport",
+          "lat": 41.1225,
+          "lng": 118.073889
+        },
+        {
+          "code": "ERL",
+          "name": "Erenhot Saiwusu International Airport",
+          "lat": 43.4225,
+          "lng": 112.096667
+        },
+        {
+          "code": "HDG",
+          "name": "Handan Airport",
+          "lat": 36.525833,
+          "lng": 114.425556
+        },
+        {
+          "code": "HNY",
+          "name": "Hengyang Nanyue Airport",
+          "lat": 26.72208,
+          "lng": 112.617958
+        },
+        {
+          "code": "WNH",
+          "name": "Wenshan Puzhehei Airport",
+          "lat": 23.5583,
+          "lng": 104.3255
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Zhejiang": {
+      "plane": [
+        {
+          "code": "DAX",
+          "name": "Dachuan Airport",
+          "lat": 31.1302,
+          "lng": 107.4295
+        },
+        {
+          "code": "FOC",
+          "name": "Fuzhou Changle International Airport",
+          "lat": 25.934669,
+          "lng": 119.66318
+        },
+        {
+          "code": "MXZ",
+          "name": "Meizhou Meixian Changgangji International Airport",
+          "lat": 24.263425,
+          "lng": 116.097857
+        },
+        {
+          "code": "JUZ",
+          "name": "Quzhou Airport",
+          "lat": 28.96613,
+          "lng": 118.898793
+        },
+        {
+          "code": "ZHA",
+          "name": "Zhanjiang Wuchuan Airport",
+          "lat": 21.481667,
+          "lng": 110.590278
+        },
+        {
+          "code": "ZUH",
+          "name": "Zhuhai Jinwan Airport",
+          "lat": 22.006399,
+          "lng": 113.375999
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Jiangsu": {
+      "plane": [
+        {
+          "code": "JMU",
+          "name": "Jiamusi Dongjiao Airport",
+          "lat": 46.843399,
+          "lng": 130.464996
+        },
+        {
+          "code": "WUZ",
+          "name": "Wuzhou Xijiang Airport",
+          "lat": 23.40316,
+          "lng": 111.09331
+        },
+        {
+          "code": "JHG",
+          "name": "Xishuangbanna Gasa International Airport",
+          "lat": 21.974648,
+          "lng": 100.762224
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Liaoning": {
+      "plane": [
+        {
+          "code": "LYG",
+          "name": "Lianyungang Huaguoshan International Airport",
+          "lat": 34.41406,
+          "lng": 119.17899
+        },
+        {
+          "code": "LZY",
+          "name": "Nyingchi Mainling Airport",
+          "lat": 29.303301,
+          "lng": 94.335297
+        },
+        {
+          "code": "DDR",
+          "name": "Rikaze Dingri Airport",
+          "lat": 28.604567,
+          "lng": 86.798
+        },
+        {
+          "code": "XIY",
+          "name": "Xi'an Xianyang International Airport",
+          "lat": 34.447102,
+          "lng": 108.751999
+        },
+        {
+          "code": "XIC",
+          "name": "Xichang Qingshan Airport",
+          "lat": 27.9891,
+          "lng": 102.183998
+        },
+        {
+          "code": "YKH",
+          "name": "Yingkou Lanqi Airport",
+          "lat": 40.542524,
+          "lng": 122.3586
+        },
+        {
+          "code": "YIN",
+          "name": "Yining Airport",
+          "lat": 43.955799,
+          "lng": 81.330299
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Anhui": {
+      "plane": [
+        {
+          "code": "AXF",
+          "name": "Alxa Left Banner Bayanhot Airport",
+          "lat": 38.74831,
+          "lng": 105.58858
+        },
+        {
+          "code": "AVA",
+          "name": "Anshun Huangguoshu Airport",
+          "lat": 26.260556,
+          "lng": 105.873333
+        },
+        {
+          "code": "RLK",
+          "name": "Bayannur Tianjitai Airport",
+          "lat": 40.926,
+          "lng": 107.7428
+        },
+        {
+          "code": "HJJ",
+          "name": "Huaihua Zhijiang Airport",
+          "lat": 27.443087,
+          "lng": 109.704666
+        },
+        {
+          "code": "NZH",
+          "name": "Manzhouli Xijiao Airport",
+          "lat": 49.566667,
+          "lng": 117.33
+        },
+        {
+          "code": "TNH",
+          "name": "Tonghua Sanyuanpu Airport",
+          "lat": 42.048435,
+          "lng": 125.733963
+        },
+        {
+          "code": "HLH",
+          "name": "Ulanhot Yilelite Airport",
+          "lat": 46.195333,
+          "lng": 122.008333
+        },
+        {
+          "code": "WHA",
+          "name": "Wuhu Xuanzhou Airport",
+          "lat": 31.1045,
+          "lng": 118.66687
+        },
+        {
+          "code": "YNT",
+          "name": "Yantai Penglai International Airport",
+          "lat": 37.659724,
+          "lng": 120.978124
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Jiangxi": {
+      "plane": [
+        {
+          "code": "JGD",
+          "name": "Daxing'anling Elunchun Airport",
+          "lat": 50.371389,
+          "lng": 124.1175
+        },
+        {
+          "code": "DXJ",
+          "name": "Xiangxi Biancheng Airport",
+          "lat": 28.4972,
+          "lng": 109.5218
+        },
+        {
+          "code": "ACX",
+          "name": "Xingyi Wanfenglin Airport",
+          "lat": 25.083423,
+          "lng": 104.960804
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Guizhou": {
+      "plane": [
+        {
+          "code": "HCZ",
+          "name": "Chenzhou Beihu Airport",
+          "lat": 25.753419,
+          "lng": 112.845404
+        },
+        {
+          "code": "JUH",
+          "name": "Chizhou Jiuhuashan Airport",
+          "lat": 30.7403,
+          "lng": 117.6856
+        },
+        {
+          "code": "EHU",
+          "name": "Ezhou Huahu Airport",
+          "lat": 30.341178,
+          "lng": 115.03926
+        },
+        {
+          "code": "KOW",
+          "name": "Ganzhou Huangjin Airport",
+          "lat": 25.853333,
+          "lng": 114.778889
+        },
+        {
+          "code": "GYS",
+          "name": "Guangyuan Panlong Airport",
+          "lat": 32.390254,
+          "lng": 105.694571
+        },
+        {
+          "code": "GYU",
+          "name": "Guyuan Liupanshan Airport",
+          "lat": 36.078889,
+          "lng": 106.216944
+        },
+        {
+          "code": "TAO",
+          "name": "Qingdao Jiaodong International Airport",
+          "lat": 36.361953,
+          "lng": 120.088171
+        },
+        {
+          "code": "HYN",
+          "name": "Taizhou Luqiao Airport",
+          "lat": 28.562201,
+          "lng": 121.429001
+        },
+        {
+          "code": "WXN",
+          "name": "Wanzhou Wuqiao Airport",
+          "lat": 30.8017,
+          "lng": 108.433
+        },
+        {
+          "code": "WUT",
+          "name": "Xinzhou Wutaishan Airport",
+          "lat": 38.597456,
+          "lng": 112.969173
+        },
+        {
+          "code": "XUZ",
+          "name": "Xuzhou Guanyin International Airport",
+          "lat": 34.059056,
+          "lng": 117.555278
+        },
+        {
+          "code": "YTY",
+          "name": "Yangzhou Taizhou Airport",
+          "lat": 32.5634,
+          "lng": 119.7198
+        },
+        {
+          "code": "LLF",
+          "name": "Yongzhou Lingling Airport",
+          "lat": 26.338661,
+          "lng": 111.610043
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Hunan": {
+      "plane": [
+        {
+          "code": "WSK",
+          "name": "Chongqing Wushan Airport",
+          "lat": 31.06896,
+          "lng": 109.708958
+        },
+        {
+          "code": "CQW",
+          "name": "Chongqing Xiannüshan Airport",
+          "lat": 29.465658,
+          "lng": 107.693664
+        },
+        {
+          "code": "FYN",
+          "name": "Fuyun Koktokay Airport",
+          "lat": 46.804169,
+          "lng": 89.512006
+        },
+        {
+          "code": "KCA",
+          "name": "Kuqa Qiuci Airport",
+          "lat": 41.677856,
+          "lng": 82.872917
+        },
+        {
+          "code": "TLQ",
+          "name": "Turpan Jiaohe Airport",
+          "lat": 43.0308,
+          "lng": 89.0987
+        },
+        {
+          "code": "HSN",
+          "name": "Zhoushan Putuoshan Airport",
+          "lat": 29.9342,
+          "lng": 122.362
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Fujian": {
+      "plane": [
+        {
+          "code": "FYJ",
+          "name": "Fuyuan Dongji Airport",
+          "lat": 48.197219,
+          "lng": 134.36298
+        },
+        {
+          "code": "LLV",
+          "name": "Lüliang Dawu Airport",
+          "lat": 37.683333,
+          "lng": 111.142778
+        },
+        {
+          "code": "WUS",
+          "name": "Nanping Wuyishan Airport",
+          "lat": 27.7019,
+          "lng": 118.000999
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Guangxi": {
+      "plane": [
+        {
+          "code": "GXH",
+          "name": "Gannan Xiahe Airport",
+          "lat": 34.819014,
+          "lng": 102.622261
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Yunnan": {
+      "plane": [
+        {
+          "code": "ENY",
+          "name": "Yan'an Nanniwan Airport",
+          "lat": 36.479413,
+          "lng": 109.464083
+        },
+        {
+          "code": "YCU",
+          "name": "Yuncheng Zhangxiao Airport",
+          "lat": 35.116391,
+          "lng": 111.031389
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Shanxi": {
+      "plane": [
+        {
+          "code": "QSZ",
+          "name": "Shache Airport",
+          "lat": 38.24542,
+          "lng": 77.056149
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Jilin": {
+      "plane": [
+        {
+          "code": "HUO",
+          "name": "Holingol Huolinhe Airport",
+          "lat": 45.487222,
+          "lng": 119.407222
+        },
+        {
+          "code": "JNG",
+          "name": "Jining Da'an Airport",
+          "lat": 35.647358,
+          "lng": 116.743269
+        },
+        {
+          "code": "CN-0446",
+          "name": "Jining Qufu Airport",
+          "lat": 35.292778,
+          "lng": 116.346667
+        },
+        {
+          "code": "JXA",
+          "name": "Jixi Xingkaihu Airport",
+          "lat": 45.293,
+          "lng": 131.193
+        },
+        {
+          "code": "IQM",
+          "name": "Qiemo Yudu Airport",
+          "lat": 38.234516,
+          "lng": 85.465462
+        },
+        {
+          "code": "XIL",
+          "name": "Xilinhot Airport",
+          "lat": 43.91559982299805,
+          "lng": 115.96399688720703
+        },
+        {
+          "code": "YLX",
+          "name": "Yulin Fumian Airport",
+          "lat": 22.438056,
+          "lng": 110.120833
+        },
+        {
+          "code": "UYN",
+          "name": "Yulin Yuyang Airport",
+          "lat": 38.35971,
+          "lng": 109.590927
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Xinjiang": {
+      "plane": [
+        {
+          "code": "JSJ",
+          "name": "Jiansanjiang Shidi Airport",
+          "lat": 47.108248,
+          "lng": 132.65792
+        },
+        {
+          "code": "JIC",
+          "name": "Jinchang Jinchuan Airport",
+          "lat": 38.542222,
+          "lng": 102.348333
+        },
+        {
+          "code": "LNJ",
+          "name": "Lincang Boshang Airport",
+          "lat": 23.7381,
+          "lng": 100.025002
+        },
+        {
+          "code": "LYI",
+          "name": "Linyi Qiyang Airport",
+          "lat": 35.052918,
+          "lng": 118.411828
+        },
+        {
+          "code": "MDG",
+          "name": "Mudanjiang Hailang International Airport",
+          "lat": 44.5241012573,
+          "lng": 129.569000244
+        },
+        {
+          "code": "KHN",
+          "name": "Nanchang Changbei International Airport",
+          "lat": 28.864815,
+          "lng": 115.90271
+        },
+        {
+          "code": "NLH",
+          "name": "Ninglang Luguhu Airport",
+          "lat": 27.5403,
+          "lng": 100.7593
+        },
+        {
+          "code": "JIQ",
+          "name": "Qianjiang Wulingshan Airport",
+          "lat": 29.5133333333,
+          "lng": 108.831111111
+        },
+        {
+          "code": "XFN",
+          "name": "Xiangyang Liuji Airport",
+          "lat": 32.152222,
+          "lng": 112.291666
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Heilongjiang": {
+      "plane": [
+        {
+          "code": "HBQ",
+          "name": "Haibei Qilian Airport",
+          "lat": 38.008068,
+          "lng": 100.645065
+        },
+        {
+          "code": "HAK",
+          "name": "Haikou Meilan International Airport",
+          "lat": 19.9349,
+          "lng": 110.459
+        },
+        {
+          "code": "HCJ",
+          "name": "Hechi Jinchengjiang Airport",
+          "lat": 24.804344,
+          "lng": 107.710819
+        },
+        {
+          "code": "LPF",
+          "name": "Liupanshui Yuezhao Airport",
+          "lat": 26.609417,
+          "lng": 104.979
+        },
+        {
+          "code": "XRQ",
+          "name": "New Barag Right Banner Baogede Airport",
+          "lat": 48.575585,
+          "lng": 116.939382
+        },
+        {
+          "code": "HPG",
+          "name": "Shennongjia Hongping Airport",
+          "lat": 31.626,
+          "lng": 110.34
+        },
+        {
+          "code": "WEF",
+          "name": "Weifang Nanyuan Airport",
+          "lat": 36.646702,
+          "lng": 119.119003
+        },
+        {
+          "code": "WNZ",
+          "name": "Wenzhou Longwan International Airport",
+          "lat": 27.910572,
+          "lng": 120.853465
+        },
+        {
+          "code": "XNN",
+          "name": "Xining Caojiabao International Airport",
+          "lat": 36.530093,
+          "lng": 102.040062
+        },
+        {
+          "code": "ZAT",
+          "name": "Zhaotong Airport",
+          "lat": 27.327549,
+          "lng": 103.75617
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Inner Mongolia": {
+      "plane": [
+        {
+          "code": "LFQ",
+          "name": "Linfen Yaodu Airport",
+          "lat": 36.132629,
+          "lng": 111.641236
+        },
+        {
+          "code": "YSQ",
+          "name": "Songyuan Chaganhu Airport",
+          "lat": 44.938114,
+          "lng": 124.550178
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Gansu": {
+      "plane": [
+        {
+          "code": "BAV",
+          "name": "Baotou Donghe Airport",
+          "lat": 40.560001,
+          "lng": 109.997002
+        },
+        {
+          "code": "GOQ",
+          "name": "Golmud Airport",
+          "lat": 36.4006,
+          "lng": 94.786102
+        },
+        {
+          "code": "ZFL",
+          "name": "Zhaosu Tianma Airport",
+          "lat": 43.088477,
+          "lng": 81.223013
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Hainan": {
+      "plane": [
+        {
+          "code": "NBS",
+          "name": "Changbaishan Airport",
+          "lat": 42.066944,
+          "lng": 127.602222
+        },
+        {
+          "code": "HRB",
+          "name": "Harbin Taiping International Airport",
+          "lat": 45.623402,
+          "lng": 126.25
+        },
+        {
+          "code": "HIA",
+          "name": "Huai'an Lianshui International Airport",
+          "lat": 33.790833,
+          "lng": 119.125
+        },
+        {
+          "code": "HLD",
+          "name": "Hulunbuir Hailar Airport",
+          "lat": 49.205002,
+          "lng": 119.824997
+        },
+        {
+          "code": "KRY",
+          "name": "Karamay Airport",
+          "lat": 45.46655,
+          "lng": 84.9527
+        },
+        {
+          "code": "LGZ",
+          "name": "Shannan Longzi Airport",
+          "lat": 28.422422,
+          "lng": 92.348082
+        },
+        {
+          "code": "TYN",
+          "name": "Taiyuan Wusu International Airport",
+          "lat": 37.746899,
+          "lng": 112.627998
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Qinghai": {
+      "plane": [
+        {
+          "code": "HXD",
+          "name": "Delingha Airport",
+          "lat": 37.125286,
+          "lng": 97.268658
+        },
+        {
+          "code": "DIG",
+          "name": "Diqing Shangri-La Airport",
+          "lat": 27.7936,
+          "lng": 99.6772
+        },
+        {
+          "code": "HTT",
+          "name": "Huatugou Airport",
+          "lat": 38.201645,
+          "lng": 90.837843
+        },
+        {
+          "code": "SHS",
+          "name": "Jingzhou Shashi Airport",
+          "lat": 30.29281,
+          "lng": 112.44854
+        },
+        {
+          "code": "BAR",
+          "name": "Qionghai Bo'ao Airport",
+          "lat": 19.140951,
+          "lng": 110.452766
+        },
+        {
+          "code": "NDG",
+          "name": "Qiqihar Sanjiazi Airport",
+          "lat": 47.239601135253906,
+          "lng": 123.91799926757812
+        },
+        {
+          "code": "JBK",
+          "name": "Qitai Jiangbulake Airport",
+          "lat": 44.166086,
+          "lng": 89.55014
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Ningxia": {
+      "plane": [
+        {
+          "code": "NGB",
+          "name": "Ningbo Lishe International Airport",
+          "lat": 29.82670021057129,
+          "lng": 121.46199798583984
+        },
+        {
+          "code": "TGO",
+          "name": "Tongliao Airport",
+          "lat": 43.556702,
+          "lng": 122.199997
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Tibet": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:15:10.312Z"
+  }
+}

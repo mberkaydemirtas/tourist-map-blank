@@ -1,0 +1,1315 @@
+{
+  "code": "GT",
+  "name": "Guatemala",
+  "cities": {
+    "Guatemala": {
+      "plane": [
+        {
+          "code": "GUA",
+          "name": "La Aurora Airport",
+          "lat": 14.5833,
+          "lng": -90.527496
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:1417648951",
+          "name": "Antigua Estación de Tren",
+          "lat": 14.4752751,
+          "lng": -90.6209491
+        },
+        {
+          "code": "OSM:726943256",
+          "name": "Guatemala",
+          "lat": 14.6297388,
+          "lng": -90.5112998
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5161507553",
+          "name": "A la Antigua Guatemala",
+          "lat": 14.6625457,
+          "lng": -90.8152614
+        },
+        {
+          "code": "OSM:4249554892",
+          "name": "Antigua Terminal de Buses",
+          "lat": 15.6433547,
+          "lng": -91.9853369
+        },
+        {
+          "code": "OSM:4560578394",
+          "name": "Bus Terminal",
+          "lat": 14.9072849,
+          "lng": -92.063189
+        },
+        {
+          "code": "OSM:5370667821",
+          "name": "Bus Terminal ",
+          "lat": 14.8488473,
+          "lng": -91.5318252
+        },
+        {
+          "code": "OSM:5161490811",
+          "name": "Bus to Antigua",
+          "lat": 14.6582847,
+          "lng": -90.8156049
+        },
+        {
+          "code": "OSM:5859958885",
+          "name": "Bus to Guatemala City",
+          "lat": 14.5568518,
+          "lng": -90.7397975
+        },
+        {
+          "code": "OSM:5873558588",
+          "name": "Bus to Tikal (Q30)",
+          "lat": 16.9934045,
+          "lng": -89.6914964
+        },
+        {
+          "code": "OSM:4650086133",
+          "name": "Buses a Chamelco",
+          "lat": 15.4650893,
+          "lng": -90.3721608
+        },
+        {
+          "code": "OSM:5043435524",
+          "name": "Buses Álamo",
+          "lat": 14.8453541,
+          "lng": -91.5139954
+        },
+        {
+          "code": "OSM:4926800521",
+          "name": "Buses Monja Blanca",
+          "lat": 15.4713718,
+          "lng": -90.3705229
+        },
+        {
+          "code": "OSM:5161398445",
+          "name": "Buses Zaragoza y Comalapa",
+          "lat": 14.6631526,
+          "lng": -90.8149048
+        },
+        {
+          "code": "OSM:4296802492",
+          "name": "Cruce de Morales Bus Station",
+          "lat": 15.5017642,
+          "lng": -88.8378124
+        },
+        {
+          "code": "OSM:2405514711",
+          "name": "Cuatro Caminos El Pajon",
+          "lat": 14.558173,
+          "lng": -90.4370401
+        },
+        {
+          "code": "OSM:5080803021",
+          "name": "King Quality (from El Salvador)",
+          "lat": 14.6148628,
+          "lng": -90.5214204
+        },
+        {
+          "code": "OSM:4616537989",
+          "name": "Litegua oriente",
+          "lat": 14.6476058,
+          "lng": -90.443964
+        },
+        {
+          "code": "OSM:9537225817",
+          "name": "Local buses (Lankin)",
+          "lat": 15.4583216,
+          "lng": -90.385753
+        },
+        {
+          "code": "OSM:7078842186",
+          "name": "Los Encuentros - to Guatemala, to Quiché, to Xela, to Sololá",
+          "lat": 14.8546965,
+          "lng": -91.1485326
+        },
+        {
+          "code": "OSM:5460810521",
+          "name": "Microbuses to Terminal Minerva",
+          "lat": 14.835078,
+          "lng": -91.5195183
+        },
+        {
+          "code": "OSM:4561972189",
+          "name": "Minerva bus terminal",
+          "lat": 14.8489092,
+          "lng": -91.5303006
+        },
+        {
+          "code": "OSM:4874768721",
+          "name": "Rutas Nacionales (Estación Guatemala)",
+          "lat": 14.5939384,
+          "lng": -90.5590884
+        },
+        {
+          "code": "OSM:5891401554",
+          "name": "Rutas Orientales",
+          "lat": 14.5626871,
+          "lng": -89.3526115
+        },
+        {
+          "code": "OSM:3330564793",
+          "name": "TERMINAL DE BUSES PARTE ALTA",
+          "lat": 14.6196431,
+          "lng": -89.6191828
+        },
+        {
+          "code": "OSM:3287918161",
+          "name": "Transportes LITEGUA",
+          "lat": 14.8186048,
+          "lng": -89.3899987
+        },
+        {
+          "code": "OSM:10276550789",
+          "name": "Transportes Michelita",
+          "lat": 14.5415644,
+          "lng": -90.5969963
+        },
+        {
+          "code": "OSM:10726014705",
+          "name": "Transurbano Extremo Valle del Norte",
+          "lat": 14.668812,
+          "lng": -90.4278087
+        }
+      ]
+    },
+    "Alta Verapaz": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:326368201",
+          "name": "Estación del Ferrocaril, Zacapa",
+          "lat": 14.9693639,
+          "lng": -89.5443044
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:5139740237",
+          "name": "Colectivos para Panyebar y Pasajqim",
+          "lat": 14.713586,
+          "lng": -91.3042439
+        },
+        {
+          "code": "OSM:10254644206",
+          "name": "Cootrauvin R.L",
+          "lat": 14.5244709,
+          "lng": -90.5880789
+        },
+        {
+          "code": "OSM:6350580315",
+          "name": "entrada para calzada mopan",
+          "lat": 16.593511,
+          "lng": -89.5094588
+        },
+        {
+          "code": "OSM:1417648945",
+          "name": "Estación de Bus Extraurbano",
+          "lat": 14.478609,
+          "lng": -90.6191518
+        },
+        {
+          "code": "OSM:2189969097",
+          "name": "Estacion de Buses ¨La Galera¨",
+          "lat": 14.5378257,
+          "lng": -91.6743244
+        },
+        {
+          "code": "OSM:8436807976",
+          "name": "La Esperanza",
+          "lat": 14.542638,
+          "lng": -90.564319
+        },
+        {
+          "code": "OSM:8436807967",
+          "name": "Parque Central",
+          "lat": 14.5263175,
+          "lng": -90.5891257
+        },
+        {
+          "code": "OSM:8436807968",
+          "name": "Parque Central",
+          "lat": 14.5249416,
+          "lng": -90.5882748
+        },
+        {
+          "code": "OSM:4812591424",
+          "name": "Parqueo turitran",
+          "lat": 14.6063211,
+          "lng": -90.5239499
+        },
+        {
+          "code": "OSM:697014659",
+          "name": "Platinum Centro Amėrica",
+          "lat": 14.598381,
+          "lng": -90.512963
+        },
+        {
+          "code": "OSM:8436807969",
+          "name": "Plaza Villa Nueva",
+          "lat": 14.5325072,
+          "lng": -90.5857195
+        },
+        {
+          "code": "OSM:7024677817",
+          "name": "Rápidos de la Frontera Nentón a Gracias",
+          "lat": 15.8003471,
+          "lng": -91.7573314
+        },
+        {
+          "code": "OSM:1747651416",
+          "name": "ruta 10 urbana la comunidad",
+          "lat": 14.6129138,
+          "lng": -90.5769322
+        },
+        {
+          "code": "OSM:2487099262",
+          "name": "Rutas de San Juan",
+          "lat": 14.7434559,
+          "lng": -90.8877923
+        },
+        {
+          "code": "OSM:2403871860",
+          "name": "Rutas Josefinas",
+          "lat": 14.5455597,
+          "lng": -90.4092107
+        },
+        {
+          "code": "OSM:4642378102",
+          "name": "Salida de minibus",
+          "lat": 15.405035,
+          "lng": -91.1466289
+        },
+        {
+          "code": "OSM:4884707222",
+          "name": "Terminal de buses de Raxruhá",
+          "lat": 15.8661689,
+          "lng": -90.041772
+        },
+        {
+          "code": "OSM:1080930645",
+          "name": "Terminal de Buses de Sanarate",
+          "lat": 14.7842486,
+          "lng": -90.2064965
+        },
+        {
+          "code": "OSM:4630205628",
+          "name": "Terminal de Buses extra urbanos",
+          "lat": 14.9691368,
+          "lng": -91.7928355
+        },
+        {
+          "code": "OSM:625113647",
+          "name": "Terminal de Buses Extraurbanos",
+          "lat": 14.2938377,
+          "lng": -89.9010015
+        },
+        {
+          "code": "OSM:1315810929",
+          "name": "Terminal de buses extraurbanos Barillas",
+          "lat": 15.8041019,
+          "lng": -91.3216255
+        },
+        {
+          "code": "OSM:258038382",
+          "name": "Terminal de Buses San Pedro Sac.",
+          "lat": 14.971933,
+          "lng": -91.7842506
+        },
+        {
+          "code": "OSM:326259349",
+          "name": "Terminal de Buses Zacapa",
+          "lat": 14.9661812,
+          "lng": -89.5275883
+        },
+        {
+          "code": "OSM:404290542",
+          "name": "Terminal Galgos Internacional",
+          "lat": 14.6297406,
+          "lng": -90.5143245
+        },
+        {
+          "code": "OSM:11105004805",
+          "name": "Terminal Talpetate (Nebaj)",
+          "lat": 15.4583064,
+          "lng": -90.3854814
+        },
+        {
+          "code": "OSM:4578281705",
+          "name": "Tikal 8:30 de la mañana",
+          "lat": 16.920083,
+          "lng": -89.8939863
+        },
+        {
+          "code": "OSM:58682121",
+          "name": "Transmetro: Centra Sur",
+          "lat": 14.5645164,
+          "lng": -90.5637209
+        },
+        {
+          "code": "OSM:8436807974",
+          "name": "Villas del Frutal",
+          "lat": 14.5291839,
+          "lng": -90.5630493
+        }
+      ]
+    },
+    "Quetzaltenango": {
+      "plane": [
+        {
+          "code": "AAZ",
+          "name": "Quezaltenango Airport",
+          "lat": 14.8656,
+          "lng": -91.501999
+        }
+      ],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:7078842187",
+          "name": "Bus to Los Encuentros, to Panajachel",
+          "lat": 14.7705081,
+          "lng": -91.182668
+        },
+        {
+          "code": "OSM:8542063018",
+          "name": "bus to quetzaltenango (Xela)",
+          "lat": 14.9738209,
+          "lng": -91.7789848
+        },
+        {
+          "code": "OSM:6584228351",
+          "name": "Buses a Quetzaltenango, San Marcos (30 Q y 40 Q)",
+          "lat": 14.610026,
+          "lng": -90.5320128
+        },
+        {
+          "code": "OSM:9068889417",
+          "name": "Pickup to San Antonio",
+          "lat": 14.7417792,
+          "lng": -91.1528242
+        },
+        {
+          "code": "OSM:4874771621",
+          "name": "Rutas Nacionales (Estación Mazatenango)",
+          "lat": 14.5356183,
+          "lng": -91.5219136
+        },
+        {
+          "code": "OSM:5455401622",
+          "name": "Transportes Marquensita (a Los Encuentros)",
+          "lat": 14.6288256,
+          "lng": -90.5214515
+        }
+      ]
+    },
+    "Jalapa": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:4517244590",
+          "name": "Alamo",
+          "lat": 14.6228605,
+          "lng": -90.5488345
+        },
+        {
+          "code": "OSM:8436807984",
+          "name": "Catalina",
+          "lat": 14.5392757,
+          "lng": -90.5844808
+        },
+        {
+          "code": "OSM:4324586489",
+          "name": "Cayalá",
+          "lat": 14.6079748,
+          "lng": -90.4872428
+        },
+        {
+          "code": "OSM:8436807964",
+          "name": "Maxi Despensa",
+          "lat": 14.5089077,
+          "lng": -90.5702636
+        },
+        {
+          "code": "OSM:1434405746",
+          "name": "Monja Blanca",
+          "lat": 14.6328437,
+          "lng": -90.512787
+        },
+        {
+          "code": "OSM:1376071511",
+          "name": "Xelabus",
+          "lat": 14.8441343,
+          "lng": -91.5146383
+        },
+        {
+          "code": "OSM:4580507989",
+          "name": "xela来的车下来的地方",
+          "lat": 14.6913546,
+          "lng": -91.271992
+        }
+      ]
+    },
+    "Escuintla": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:2360604280",
+          "name": "Estación Tecún Umán",
+          "lat": 14.6745098,
+          "lng": -92.1355255
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:7430708069",
+          "name": "El Frutal",
+          "lat": 14.5218183,
+          "lng": -90.5635084
+        },
+        {
+          "code": "OSM:10167278344",
+          "name": "El Frutal",
+          "lat": 14.5183875,
+          "lng": -90.5639387
+        },
+        {
+          "code": "OSM:7024713887",
+          "name": "Estación de Camionetillas",
+          "lat": 15.6539456,
+          "lng": -91.7692479
+        },
+        {
+          "code": "OSM:1748793040",
+          "name": "Estación TicaBus",
+          "lat": 14.6000265,
+          "lng": -90.5503806
+        },
+        {
+          "code": "OSM:4867291721",
+          "name": "Estacion y Restaurante Villa del Sol",
+          "lat": 14.9254409,
+          "lng": -90.0527533
+        },
+        {
+          "code": "OSM:5893746586",
+          "name": "La Cuchilla",
+          "lat": 14.8425954,
+          "lng": -91.1725676
+        },
+        {
+          "code": "OSM:8436807966",
+          "name": "Mercado de Villa Nueva",
+          "lat": 14.5108241,
+          "lng": -90.5800471
+        },
+        {
+          "code": "OSM:10004905837",
+          "name": "Mercado de Villa Nueva",
+          "lat": 14.509754,
+          "lng": -90.5784752
+        },
+        {
+          "code": "OSM:8436807977",
+          "name": "Mesquital",
+          "lat": 14.5463091,
+          "lng": -90.5663897
+        },
+        {
+          "code": "OSM:8436807978",
+          "name": "Mesquital",
+          "lat": 14.5505876,
+          "lng": -90.5654509
+        },
+        {
+          "code": "OSM:375016282",
+          "name": "Terminal Ayutla",
+          "lat": 14.6826803,
+          "lng": -92.1356256
+        },
+        {
+          "code": "OSM:403940739",
+          "name": "Terminal de Buses Escuintla",
+          "lat": 14.2958972,
+          "lng": -90.7852688
+        },
+        {
+          "code": "OSM:4477191195",
+          "name": "Terminal Minerva",
+          "lat": 14.848807,
+          "lng": -91.531824
+        }
+      ]
+    },
+    "Jutiapa": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:6040361586",
+          "name": "litegua",
+          "lat": 14.5573682,
+          "lng": -90.7302419
+        },
+        {
+          "code": "OSM:1457029747",
+          "name": "Litegua",
+          "lat": 15.7324403,
+          "lng": -88.5998455
+        },
+        {
+          "code": "OSM:2163845046",
+          "name": "Litegua",
+          "lat": 15.6590116,
+          "lng": -89.0029322
+        },
+        {
+          "code": "OSM:2340083837",
+          "name": "Litegua",
+          "lat": 15.1149206,
+          "lng": -89.3581711
+        },
+        {
+          "code": "OSM:4601883690",
+          "name": "Litegua",
+          "lat": 14.6328221,
+          "lng": -90.5100957
+        },
+        {
+          "code": "OSM:4702824090",
+          "name": "Litegua",
+          "lat": 14.6328006,
+          "lng": -90.5101734
+        },
+        {
+          "code": "OSM:5298645922",
+          "name": "Litegua",
+          "lat": 15.640464,
+          "lng": -88.5465886
+        },
+        {
+          "code": "OSM:5298668921",
+          "name": "Litegua",
+          "lat": 15.4750706,
+          "lng": -88.8266434
+        },
+        {
+          "code": "OSM:9503016097",
+          "name": "Litegua",
+          "lat": 15.2555063,
+          "lng": -89.0956514
+        },
+        {
+          "code": "OSM:9825211139",
+          "name": "Litegua",
+          "lat": 15.0382163,
+          "lng": -89.5948542
+        },
+        {
+          "code": "OSM:1996537733",
+          "name": "Ruta 1",
+          "lat": 14.9646895,
+          "lng": -91.7948811
+        },
+        {
+          "code": "OSM:1996537751",
+          "name": "Ruta 1",
+          "lat": 14.9642619,
+          "lng": -91.7946907
+        }
+      ]
+    },
+    "Quiché": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:2523409542",
+          "name": "ISC",
+          "lat": 15.4713446,
+          "lng": -90.3703777
+        },
+        {
+          "code": "OSM:5444026623",
+          "name": "Micro buses",
+          "lat": 14.9417519,
+          "lng": -91.1104187
+        }
+      ]
+    },
+    "Totonicapán": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:4010177890",
+          "name": "Bus station Uspantan",
+          "lat": 15.3470446,
+          "lng": -90.8724022
+        },
+        {
+          "code": "OSM:8677727317",
+          "name": "bus to Cobán",
+          "lat": 14.9264989,
+          "lng": -90.0150902
+        },
+        {
+          "code": "OSM:5893751485",
+          "name": "Bus to Tecpan",
+          "lat": 14.737809,
+          "lng": -90.9980047
+        },
+        {
+          "code": "OSM:8436807965",
+          "name": "Metrocentro Villa Nueva",
+          "lat": 14.5153509,
+          "lng": -90.5768963
+        },
+        {
+          "code": "OSM:4054787661",
+          "name": "Minibus to Lanquín, Company Martinez",
+          "lat": 15.4749938,
+          "lng": -90.3698143
+        },
+        {
+          "code": "OSM:604693027",
+          "name": "terminal de totonicapán",
+          "lat": 14.9110266,
+          "lng": -91.3671849
+        },
+        {
+          "code": "OSM:5456853821",
+          "name": "Transportes REBOLI (a Panajachel Q30)",
+          "lat": 14.6290027,
+          "lng": -90.5210641
+        }
+      ]
+    },
+    "Huehuetenango": {
+      "plane": [
+        {
+          "code": "HUG",
+          "name": "Huehuetenango Airport",
+          "lat": 15.316667,
+          "lng": -91.505556
+        }
+      ],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5738525321",
+          "name": "ADN Autobuses del Norte",
+          "lat": 14.631778,
+          "lng": -90.5129507
+        },
+        {
+          "code": "OSM:2443552168",
+          "name": "Estación de Buses El Caminero",
+          "lat": 14.5579925,
+          "lng": -90.5057553
+        },
+        {
+          "code": "OSM:4584196120",
+          "name": "Fuente del Norte",
+          "lat": 14.6312545,
+          "lng": -90.512471
+        },
+        {
+          "code": "OSM:4797458421",
+          "name": "Fuente del Norte",
+          "lat": 15.6591043,
+          "lng": -89.002927
+        },
+        {
+          "code": "OSM:1068070189",
+          "name": "Fuente del Norte",
+          "lat": 16.6447566,
+          "lng": -89.6547446
+        },
+        {
+          "code": "OSM:8436807972",
+          "name": "Parqueo de buses Enriqueta",
+          "lat": 14.5211512,
+          "lng": -90.5734522
+        },
+        {
+          "code": "OSM:1231242315",
+          "name": "Plaza de Buses de Huehuetenango",
+          "lat": 15.309834,
+          "lng": -91.4824291
+        },
+        {
+          "code": "OSM:7024678000",
+          "name": "Terminal de Buses Huehue-Mesilla",
+          "lat": 15.6382979,
+          "lng": -91.9781181
+        }
+      ]
+    },
+    "Chimaltenango": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:7078842185",
+          "name": "Bus to Chichicastenango",
+          "lat": 14.8548597,
+          "lng": -91.1485612
+        },
+        {
+          "code": "OSM:6835692085",
+          "name": "Buses a Chimaltenango-Guatemala",
+          "lat": 14.6500243,
+          "lng": -90.8893861
+        },
+        {
+          "code": "OSM:7024678091",
+          "name": "Camoja a Nentón",
+          "lat": 15.6371578,
+          "lng": -91.9197606
+        },
+        {
+          "code": "OSM:3524717582",
+          "name": "Chamac-San Pedro",
+          "lat": 14.9724338,
+          "lng": -91.7461764
+        },
+        {
+          "code": "OSM:11910241769",
+          "name": "Combis para Nentón",
+          "lat": 16.0384113,
+          "lng": -91.7450738
+        },
+        {
+          "code": "OSM:8436807971",
+          "name": "Hospital de Villa Nueva",
+          "lat": 14.5095989,
+          "lng": -90.6190899
+        },
+        {
+          "code": "OSM:747874317",
+          "name": "Terminal Buses y Taxis",
+          "lat": 14.5702688,
+          "lng": -90.4968378
+        },
+        {
+          "code": "OSM:4242432891",
+          "name": "Terminal Central",
+          "lat": 14.8019615,
+          "lng": -89.5413135
+        },
+        {
+          "code": "OSM:11638804469",
+          "name": "Terminal de Transporte",
+          "lat": 14.8579561,
+          "lng": -90.0706532
+        },
+        {
+          "code": "OSM:404099336",
+          "name": "Terminal Galgos S.A.",
+          "lat": 14.840099,
+          "lng": -91.5227761
+        }
+      ]
+    },
+    "Chiquimula": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Izabal": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:8436807981",
+          "name": "Ciudad Real",
+          "lat": 14.5537113,
+          "lng": -90.5554772
+        },
+        {
+          "code": "OSM:5893583985",
+          "name": "Microbus a Flores",
+          "lat": 17.0575301,
+          "lng": -89.1534022
+        },
+        {
+          "code": "OSM:4692681390",
+          "name": "Tica Bus 2017",
+          "lat": 14.6025723,
+          "lng": -90.5474507
+        },
+        {
+          "code": "OSM:8436807979",
+          "name": "Villa Lobos",
+          "lat": 14.5603595,
+          "lng": -90.5656119
+        },
+        {
+          "code": "OSM:8436807982",
+          "name": "Villa Lobos",
+          "lat": 14.5540012,
+          "lng": -90.5770597
+        }
+      ]
+    },
+    "Retalhuleu": {
+      "plane": [
+        {
+          "code": "RER",
+          "name": "Retalhuleu Airport",
+          "lat": 14.521431,
+          "lng": -91.697001
+        }
+      ],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5500020921",
+          "name": "Colectivo a Flores",
+          "lat": 17.063269,
+          "lng": -89.153521
+        },
+        {
+          "code": "OSM:6441895185",
+          "name": "Cristóbal Colón",
+          "lat": 14.6318509,
+          "lng": -90.5106651
+        },
+        {
+          "code": "OSM:2077821928",
+          "name": "Terminal de buses",
+          "lat": 15.309924,
+          "lng": -91.480671
+        },
+        {
+          "code": "OSM:4630205618",
+          "name": "Terminal de buses",
+          "lat": 15.2376528,
+          "lng": -92.0698352
+        },
+        {
+          "code": "OSM:8331695020",
+          "name": "Terminal de buses",
+          "lat": 15.4344163,
+          "lng": -91.0358749
+        },
+        {
+          "code": "OSM:9281262341",
+          "name": "Terminal de buses",
+          "lat": 16.3322063,
+          "lng": -90.1672247
+        },
+        {
+          "code": "OSM:169482242",
+          "name": "Terminal de buses",
+          "lat": 16.9135227,
+          "lng": -89.8930898
+        },
+        {
+          "code": "OSM:550781137",
+          "name": "Terminal de buses",
+          "lat": 15.9908926,
+          "lng": -90.780679
+        },
+        {
+          "code": "OSM:1979429142",
+          "name": "Terminal de Buses",
+          "lat": 14.6338029,
+          "lng": -89.9876667
+        },
+        {
+          "code": "OSM:3330573216",
+          "name": "Terminal de Buses",
+          "lat": 14.620947,
+          "lng": -89.6241733
+        },
+        {
+          "code": "OSM:4453793603",
+          "name": "Terminal de Buses",
+          "lat": 15.0444055,
+          "lng": -91.4088614
+        },
+        {
+          "code": "OSM:25924710",
+          "name": "Terminal de Buses",
+          "lat": 14.5586497,
+          "lng": -90.740218
+        },
+        {
+          "code": "OSM:403686057",
+          "name": "Terminal de Buses",
+          "lat": 14.479143,
+          "lng": -90.5350846
+        },
+        {
+          "code": "OSM:747874316",
+          "name": "Terminal de Buses",
+          "lat": 14.5704421,
+          "lng": -90.4967016
+        },
+        {
+          "code": "OSM:12691255873",
+          "name": "Terminal de Buses de Chisec",
+          "lat": 15.8118727,
+          "lng": -90.2913421
+        },
+        {
+          "code": "OSM:5902232498",
+          "name": "Terminal de buses Quesada",
+          "lat": 14.2722361,
+          "lng": -90.0375447
+        },
+        {
+          "code": "OSM:2271219117",
+          "name": "Terminal del Sur",
+          "lat": 14.3288253,
+          "lng": -91.0240516
+        },
+        {
+          "code": "OSM:4327597891",
+          "name": "Tourist Shuttle",
+          "lat": 16.9209039,
+          "lng": -89.8894914
+        }
+      ]
+    },
+    "San Marcos": {
+      "plane": [
+        {
+          "code": "FRS",
+          "name": "Mundo Maya International Airport",
+          "lat": 16.913799,
+          "lng": -89.866402
+        },
+        {
+          "code": "PBR",
+          "name": "Puerto Barrios Airport",
+          "lat": 15.7309,
+          "lng": -88.583801
+        }
+      ],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:4883706725",
+          "name": "Autobuses a San Marcos",
+          "lat": 15.123002,
+          "lng": -91.8064717
+        },
+        {
+          "code": "OSM:2523409714",
+          "name": "Buses a Carcha",
+          "lat": 15.4709737,
+          "lng": -90.3705301
+        },
+        {
+          "code": "OSM:8541546318",
+          "name": "Buses a Gracias a Dios",
+          "lat": 15.8018787,
+          "lng": -91.753383
+        },
+        {
+          "code": "OSM:4830180621",
+          "name": "Cuatro Caminos",
+          "lat": 14.9087051,
+          "lng": -91.4417919
+        },
+        {
+          "code": "OSM:442463350",
+          "name": "Estación Carchá-Cobán",
+          "lat": 15.4785374,
+          "lng": -90.3121349
+        },
+        {
+          "code": "OSM:6659441737",
+          "name": "Estación Parque",
+          "lat": 14.6588731,
+          "lng": -90.8196297
+        },
+        {
+          "code": "OSM:1747652577",
+          "name": "extraurbana la comunidad",
+          "lat": 14.6115824,
+          "lng": -90.5755776
+        },
+        {
+          "code": "OSM:9054865117",
+          "name": "Main Bus Station",
+          "lat": 15.4585389,
+          "lng": -90.3854682
+        },
+        {
+          "code": "OSM:4341705089",
+          "name": "San Gaspar",
+          "lat": 14.6015969,
+          "lng": -90.474871
+        },
+        {
+          "code": "OSM:4253699861",
+          "name": "San Pedro-Chamac",
+          "lat": 14.9675778,
+          "lng": -91.7764117
+        },
+        {
+          "code": "OSM:7064395486",
+          "name": "Taxis a San José caben Centro y molinos",
+          "lat": 14.9664324,
+          "lng": -91.7780269
+        },
+        {
+          "code": "OSM:8756812217",
+          "name": "Transportes los Halcones",
+          "lat": 14.6315275,
+          "lng": -90.5687503
+        },
+        {
+          "code": "OSM:621293991",
+          "name": "Transportes Los Halcones",
+          "lat": 15.3126998,
+          "lng": -91.4753638
+        },
+        {
+          "code": "OSM:9287336517",
+          "name": "Vans to Flores",
+          "lat": 16.8289063,
+          "lng": -90.8953699
+        }
+      ]
+    },
+    "Sololá": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5873558589",
+          "name": "A Flores",
+          "lat": 17.2239388,
+          "lng": -89.6120558
+        },
+        {
+          "code": "OSM:7078842285",
+          "name": "Bus to Sololá",
+          "lat": 14.7434845,
+          "lng": -91.1605186
+        },
+        {
+          "code": "OSM:1246242908",
+          "name": "Flores",
+          "lat": 16.9135161,
+          "lng": -89.8925255
+        }
+      ]
+    },
+    "Petén": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:5996800386",
+          "name": "tuk",
+          "lat": 14.7244115,
+          "lng": -91.2591793
+        }
+      ]
+    },
+    "Suchitepéquez": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Baja Verapaz": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:6456984488",
+          "name": "Bus a Cobán 50Q",
+          "lat": 14.6329136,
+          "lng": -90.5128917
+        },
+        {
+          "code": "OSM:6233167385",
+          "name": "Para Frontera - Valle Nuevo",
+          "lat": 14.6136501,
+          "lng": -90.5201547
+        }
+      ]
+    },
+    "Zacapa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Santa Rosa": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:6240577585",
+          "name": "Bus to Antigua @15:00",
+          "lat": 13.8906151,
+          "lng": -90.4822848
+        },
+        {
+          "code": "OSM:10313852814",
+          "name": "Buses para Antiguas (10Q)",
+          "lat": 14.4944483,
+          "lng": -90.7096387
+        },
+        {
+          "code": "OSM:5161403002",
+          "name": "Buses Urbanos Buena Vista",
+          "lat": 14.6630975,
+          "lng": -90.814356
+        },
+        {
+          "code": "OSM:832425205",
+          "name": "Centra Atlántida",
+          "lat": 14.6508373,
+          "lng": -90.4780529
+        },
+        {
+          "code": "OSM:2316045758",
+          "name": "CENTRA NORTE",
+          "lat": 14.6470519,
+          "lng": -90.4510726
+        },
+        {
+          "code": "OSM:8436807980",
+          "name": "Centra Sur",
+          "lat": 14.5620105,
+          "lng": -90.5630584
+        },
+        {
+          "code": "OSM:5537253521",
+          "name": "Hedman Alas Bus station.",
+          "lat": 14.6056364,
+          "lng": -90.5142546
+        },
+        {
+          "code": "OSM:5178618421",
+          "name": "Linea dorada",
+          "lat": 15.3124405,
+          "lng": -91.4808998
+        },
+        {
+          "code": "OSM:404277830",
+          "name": "Linea Dorada",
+          "lat": 14.631883,
+          "lng": -90.5105887
+        },
+        {
+          "code": "OSM:8436807983",
+          "name": "San José",
+          "lat": 14.5417124,
+          "lng": -90.5841116
+        },
+        {
+          "code": "OSM:8436807970",
+          "name": "Santa Clara",
+          "lat": 14.5324999,
+          "lng": -90.5975045
+        },
+        {
+          "code": "OSM:2273085930",
+          "name": "Transportes Belmont",
+          "lat": 14.5045854,
+          "lng": -90.9491453
+        },
+        {
+          "code": "OSM:4866789222",
+          "name": "Transportes yascam",
+          "lat": 14.547918,
+          "lng": -90.6232942
+        },
+        {
+          "code": "OSM:8436807973",
+          "name": "Villa Hermosa",
+          "lat": 14.5250764,
+          "lng": -90.5518144
+        }
+      ]
+    },
+    "Sacatepéquez": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:6584290994",
+          "name": "Buses a Santa Cruz del Quiché (35 Q)",
+          "lat": 14.6097788,
+          "lng": -90.5318662
+        },
+        {
+          "code": "OSM:243570418",
+          "name": "Estación de Buses",
+          "lat": 16.9706548,
+          "lng": -89.9114061
+        },
+        {
+          "code": "OSM:875375039",
+          "name": "Estacionamiento Buses Express Minerva",
+          "lat": 14.6806779,
+          "lng": -90.535472
+        },
+        {
+          "code": "OSM:496697736",
+          "name": "Estacionamiento de autobuses",
+          "lat": 15.1226699,
+          "lng": -91.8048531
+        },
+        {
+          "code": "OSM:2521205332",
+          "name": "Parada del tequila",
+          "lat": 14.5201849,
+          "lng": -90.5830744
+        },
+        {
+          "code": "OSM:6456806987",
+          "name": "Transporte Velásquez Plus",
+          "lat": 14.6193177,
+          "lng": -90.5455721
+        }
+      ]
+    },
+    "El Progreso": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:8436807975",
+          "name": "El Búcaro",
+          "lat": 14.5376552,
+          "lng": -90.5644824
+        },
+        {
+          "code": "OSM:2405529701",
+          "name": "Los Tres Reyes",
+          "lat": 14.5477985,
+          "lng": -90.4383903
+        },
+        {
+          "code": "OSM:12215140229",
+          "name": "Terminal de microbuses",
+          "lat": 13.9239889,
+          "lng": -90.8190223
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:30:04.529Z"
+  }
+}

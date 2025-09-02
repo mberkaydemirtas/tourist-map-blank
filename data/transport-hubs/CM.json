@@ -1,0 +1,98 @@
+{
+  "code": "CM",
+  "name": "Cameroon",
+  "cities": {
+    "Littoral": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Centre": {
+      "plane": [
+        {
+          "code": "NGE",
+          "name": "N'Gaoundéré Airport",
+          "lat": 7.3570098876953125,
+          "lng": 13.559200286865234
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Nord": {
+      "plane": [
+        {
+          "code": "NSI",
+          "name": "Yaoundé Nsimalen International Airport",
+          "lat": 3.72256,
+          "lng": 11.5533
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "North-West": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ouest": {
+      "plane": [
+        {
+          "code": "DLA",
+          "name": "Douala International Airport",
+          "lat": 4.0060801506,
+          "lng": 9.719479560849999
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Extrême-Nord": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Adamaoua": {
+      "plane": [
+        {
+          "code": "GOU",
+          "name": "Garoua International Airport",
+          "lat": 9.33588981628418,
+          "lng": 13.370100021362305
+        },
+        {
+          "code": "MVR",
+          "name": "Salak Airport",
+          "lat": 10.451399803161621,
+          "lng": 14.257399559020996
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "South-West": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Est": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sud": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:25:54.697Z"
+  }
+}

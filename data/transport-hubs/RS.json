@@ -1,0 +1,760 @@
+{
+  "code": "RS",
+  "name": "Serbia",
+  "cities": {
+    "Beograd": {
+      "plane": [
+        {
+          "code": "BEG",
+          "name": "Belgrade Nikola Tesla Airport",
+          "lat": 44.818401,
+          "lng": 20.309099
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Novi Sad": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Niš": {
+      "plane": [
+        {
+          "code": "INI",
+          "name": "Niš Constantine the Great Airport",
+          "lat": 43.337009,
+          "lng": 21.85451
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Kragujevac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Šabac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Smederevo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Valjevo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Loznica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Pančevo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sremska Mitrovica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Stara Pazova": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Čačak": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Požarevac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Zrenjanin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kraljevo": {
+      "plane": [
+        {
+          "code": "KVO",
+          "name": "Morava Airport",
+          "lat": 43.817519,
+          "lng": 20.586662
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Novi Pazar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Užice": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kruševac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vranje": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ruma": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Paraćin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sombor": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Pirot": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Zaječar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Inđija": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Aranđelovac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Aleksinac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Smederevska Palanka": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bujanovac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Velika Plana": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gornji Milanovac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Prokuplje": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Prijepolje": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vršac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kula": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Negotin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Jagodina": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Šid": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bor": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kovin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tutin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Knjaževac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Petrovac na Mlavi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bečej": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Subotica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vlasotince": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kikinda": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ivanjica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Aleksandrovac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bajina Bašta": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Temerin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bačka Palanka": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Raška": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vrbas": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Svilajnac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Apatin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Despotovac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Topola": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Surdulica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lebane": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vladičin Han": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Leskovac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lučani": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kladovo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Senta": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Pećinci": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Arilje": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Majdanpek": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Varvarin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Veliko Gradište": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vladimirci": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Krupanj": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Trstenik": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Žitorađa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Brus": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kuršumlija": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Titel": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kučevo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lajkovac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Čajetina": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Srbobran": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mionica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Svrljig": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Knić": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sjenica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Merošina": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nova Varoš": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Žitište": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Novi Bečej": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Osečina": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bela Palanka": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kosjerić": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bačka Topola": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Batočina": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Blace": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Rača": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Malo Crniće": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Rekovac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bela Crkva": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ada": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sečanj": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Vrnjačka Banja": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kanjiža": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ćuprija": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ćićevac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Žabalj": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ražanj": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sremski Karlovci": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gadžin Han": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Golubac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nova Crnja": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Beočin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dimitrovgrad": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sokobanja": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Odžaci": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bački Petrovac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lapovo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bogatić": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Medveđa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ub": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bač": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Novi Kneževac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mali Iđoš": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kovačica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Irig": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Čoka": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Opovo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Plandište": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Alibunar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Crna Trava": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bosilegrad": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Žagubica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Požega": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Doljevac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Boljevac": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ljubovija": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Babušnica": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Preševo": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ljig": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mali Zvornik": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Priboj": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bojnik": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Koceljeva": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Žabari": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Trgovište": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:38:07.367Z"
+  }
+}

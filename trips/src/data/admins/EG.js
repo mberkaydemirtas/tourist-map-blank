@@ -1,0 +1,31 @@
+// AUTO-GENERATED admins for EG
+const ADMINS = [
+  "Ad Daqahliyah",
+  "Al Bahr al Ahmar",
+  "Al Buhayrah",
+  "Al Fayyum",
+  "Al Gharbiyah",
+  "Al Iskandariyah",
+  "Al Isma‘iliyah",
+  "Al Jizah",
+  "Al Minufiyah",
+  "Al Minya",
+  "Al Qahirah",
+  "Al Qalyubiyah",
+  "Al Uqsur",
+  "Al Wadi al Jadid",
+  "As Suways",
+  "Ash Sharqiyah",
+  "Aswan",
+  "Asyut",
+  "Bani Suwayf",
+  "Bur Sa‘id",
+  "Dumyat",
+  "Janub Sina’",
+  "Kafr ash Shaykh",
+  "Matruh",
+  "Qina",
+  "Shamal Sina’",
+  "Suhaj"
+];
+export default ADMINS;

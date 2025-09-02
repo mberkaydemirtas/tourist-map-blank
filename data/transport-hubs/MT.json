@@ -1,0 +1,423 @@
+{
+  "code": "MT",
+  "name": "Malta",
+  "cities": {
+    "Valletta": {
+      "plane": [
+        {
+          "code": "MLA",
+          "name": "Malta International Airport",
+          "lat": 35.857498,
+          "lng": 14.4775
+        }
+      ],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:697854496",
+          "name": "Valletta Bus Terminal",
+          "lat": 35.8945748,
+          "lng": 14.5094966
+        }
+      ]
+    },
+    "Qormi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "San Pawl il-Baħar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Birkirkara": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:15800376",
+          "name": "Victoria (Ir-Rabat) Bus Terminal",
+          "lat": 36.043168,
+          "lng": 14.2411952
+        }
+      ]
+    },
+    "Sliema": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:464517677",
+          "name": "Sliema",
+          "lat": 35.9089312,
+          "lng": 14.5046414
+        }
+      ]
+    },
+    "Mosta": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:1652977642",
+          "name": "Malta",
+          "lat": -6.9032064,
+          "lng": -37.5168828
+        },
+        {
+          "code": "OSM:7018100631",
+          "name": "Malta",
+          "lat": 48.3604213,
+          "lng": -107.8719449
+        }
+      ],
+      "bus": []
+    },
+    "Marsaskala": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:1428107652",
+          "name": "Marsa Park & Ride",
+          "lat": 35.8783136,
+          "lng": 14.4841191
+        }
+      ]
+    },
+    "Żabbar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Naxxar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "San Ġwann": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "San Ġiljan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Żebbuġ": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Fgura": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Żejtun": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Rabat": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Attard": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Żurrieq": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Mellieħa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Swieqi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ħamrun": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Birżebbuġa": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:24446740",
+          "name": "Il-Venda ta' Birżebbuġa",
+          "lat": 35.8235748,
+          "lng": 14.5290885
+        }
+      ]
+    },
+    "Siġġiewi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Paola": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Tarxien": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Imsida": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:1972799476",
+          "name": "Università",
+          "lat": 35.9013417,
+          "lng": 14.4803051
+        }
+      ]
+    },
+    "Gżira": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Santa Venera": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Rabat (Ghawdex)": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Luqa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Bormla": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Xagħra": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Għaxaq": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nadur": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Marsa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Pietà": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Balzan": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Pembroke": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Imġarr": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Dingli": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Marsaxlokk": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Imqabba": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:33512480",
+          "name": "Buġibba",
+          "lat": 35.9544939,
+          "lng": 14.4196152
+        }
+      ]
+    },
+    "Xewkija": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Għajnsielem": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Iklin": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Lija": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kalkara": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Gudja": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Żebbuġ (Ghawdex)": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Isla": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Għargħur": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Qrendi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Birgu": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Imtarfa": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Qala": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Floriana": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kirkop": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Safi": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Sannat": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Kerċem": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Ta’ Xbiex": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Xgħajra": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Għarb": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Munxar": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Fontana": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "San Lawrenz": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Għasri": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Imdina": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Santa Luċija": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:44:14.358Z"
+  }
+}

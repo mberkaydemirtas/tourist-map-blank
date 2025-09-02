@@ -1,0 +1,868 @@
+{
+  "code": "ZM",
+  "name": "Zambia",
+  "cities": {
+    "Lusaka": {
+      "plane": [
+        {
+          "code": "LVI",
+          "name": "Harry Mwanga Nkumbula International Airport",
+          "lat": -17.8218,
+          "lng": 25.822701
+        },
+        {
+          "code": "KAA",
+          "name": "Kasama Airport",
+          "lat": -10.210169,
+          "lng": 31.123045
+        },
+        {
+          "code": "LUN",
+          "name": "Kenneth Kaunda International Airport",
+          "lat": -15.330833,
+          "lng": 28.452722
+        },
+        {
+          "code": "MFU",
+          "name": "Mfuwe Airport",
+          "lat": -13.258899688720703,
+          "lng": 31.936599731445312
+        },
+        {
+          "code": "NLA",
+          "name": "Simon Mwansa Kapwepwe International Airport",
+          "lat": -12.961667,
+          "lng": 28.516667
+        }
+      ],
+      "train": [
+        {
+          "code": "OSM:4146942914",
+          "name": "Batoka",
+          "lat": -16.7767578,
+          "lng": 27.2466374
+        },
+        {
+          "code": "OSM:4149593418",
+          "name": "Chililabombwe",
+          "lat": -12.3874158,
+          "lng": 27.8484998
+        },
+        {
+          "code": "OSM:2688274474",
+          "name": "Chipata",
+          "lat": -13.6714984,
+          "lng": 32.6416205
+        },
+        {
+          "code": "OSM:918272302",
+          "name": "Chisamba",
+          "lat": -14.9807677,
+          "lng": 28.3796338
+        },
+        {
+          "code": "OSM:918274005",
+          "name": "Choma",
+          "lat": -16.8116987,
+          "lng": 26.9844071
+        },
+        {
+          "code": "OSM:2781211910",
+          "name": "Chozi",
+          "lat": -9.3971468,
+          "lng": 32.2488296
+        },
+        {
+          "code": "OSM:3816695048",
+          "name": "Kabuka",
+          "lat": -11.5515319,
+          "lng": 31.2755331
+        },
+        {
+          "code": "OSM:2713789833",
+          "name": "Kalomo",
+          "lat": -17.0216099,
+          "lng": 26.4882932
+        },
+        {
+          "code": "OSM:11465792208",
+          "name": "Kaniki",
+          "lat": -12.8907205,
+          "lng": 28.55899
+        },
+        {
+          "code": "OSM:4155841284",
+          "name": "Kanona",
+          "lat": -13.0488588,
+          "lng": 30.6550049
+        },
+        {
+          "code": "OSM:918097757",
+          "name": "Kasama",
+          "lat": -10.2434633,
+          "lng": 31.2067054
+        },
+        {
+          "code": "OSM:5197984788",
+          "name": "Kasavasa",
+          "lat": -14.5775747,
+          "lng": 28.3793665
+        },
+        {
+          "code": "OSM:2779241448",
+          "name": "Kayaya",
+          "lat": -9.7990601,
+          "lng": 31.6402908
+        },
+        {
+          "code": "OSM:435630432",
+          "name": "Kitwe",
+          "lat": -12.8224898,
+          "lng": 28.2065864
+        },
+        {
+          "code": "OSM:4148773867",
+          "name": "Lilayi",
+          "lat": -15.5127094,
+          "lng": 28.2975983
+        },
+        {
+          "code": "OSM:237638170",
+          "name": "Livingstone",
+          "lat": -17.8592652,
+          "lng": 25.8567828
+        },
+        {
+          "code": "OSM:918273107",
+          "name": "Lubombo",
+          "lat": -15.8660953,
+          "lng": 27.8725951
+        },
+        {
+          "code": "OSM:4126647002",
+          "name": "Luchewe",
+          "lat": -9.4596234,
+          "lng": 32.0231636
+        },
+        {
+          "code": "OSM:918269446",
+          "name": "Lusaka",
+          "lat": -15.4195196,
+          "lng": 28.2839361
+        },
+        {
+          "code": "OSM:2715080014",
+          "name": "Lusiwasi",
+          "lat": -12.9505068,
+          "lng": 30.6863449
+        },
+        {
+          "code": "OSM:4147009668",
+          "name": "Magoye",
+          "lat": -16.0055693,
+          "lng": 27.6092261
+        },
+        {
+          "code": "OSM:2779248279",
+          "name": "Makasa",
+          "lat": -9.6655677,
+          "lng": 31.8977674
+        },
+        {
+          "code": "OSM:918272259",
+          "name": "Mazabuka",
+          "lat": -15.8564759,
+          "lng": 27.7629914
+        },
+        {
+          "code": "OSM:918163923",
+          "name": "Mikunku",
+          "lat": -13.7897636,
+          "lng": 29.0507341
+        },
+        {
+          "code": "OSM:918163919",
+          "name": "Mkushi",
+          "lat": -13.6400118,
+          "lng": 29.4035701
+        },
+        {
+          "code": "OSM:918272119",
+          "name": "Monze",
+          "lat": -16.269913,
+          "lng": 27.4785269
+        },
+        {
+          "code": "OSM:3818586682",
+          "name": "Mpepo",
+          "lat": -11.0821805,
+          "lng": 31.1069598
+        },
+        {
+          "code": "OSM:918124685",
+          "name": "Mpika",
+          "lat": -11.8476271,
+          "lng": 31.3908452
+        },
+        {
+          "code": "OSM:2781211928",
+          "name": "Msanza",
+          "lat": -9.3130367,
+          "lng": 32.6110862
+        },
+        {
+          "code": "OSM:2732710668",
+          "name": "Mwenzo",
+          "lat": -9.3304875,
+          "lng": 32.6712123
+        },
+        {
+          "code": "OSM:315429655",
+          "name": "Ndola",
+          "lat": -12.9636057,
+          "lng": 28.6542704
+        },
+        {
+          "code": "OSM:918163598",
+          "name": "New Kapiri Mposhi",
+          "lat": -13.9549148,
+          "lng": 28.6811822
+        },
+        {
+          "code": "OSM:4146660994",
+          "name": "Ngwezi",
+          "lat": -17.455711,
+          "lng": 25.4738168
+        },
+        {
+          "code": "OSM:2774731229",
+          "name": "Nseluka",
+          "lat": -9.9432724,
+          "lng": 31.2602389
+        },
+        {
+          "code": "OSM:4146974586",
+          "name": "Pemba",
+          "lat": -16.5207291,
+          "lng": 27.3598111
+        },
+        {
+          "code": "OSM:918124065",
+          "name": "Sabwa",
+          "lat": -11.7574072,
+          "lng": 31.3472517
+        },
+        {
+          "code": "OSM:315815917",
+          "name": "Walamba",
+          "lat": -13.48219,
+          "lng": 28.7481383
+        },
+        {
+          "code": "OSM:2713781506",
+          "name": "Zimba",
+          "lat": -17.3167523,
+          "lng": 26.1961703
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:900922642",
+          "name": "Bus station",
+          "lat": -14.7961396,
+          "lng": 24.7958043
+        },
+        {
+          "code": "OSM:243297039",
+          "name": "Bus Station",
+          "lat": -15.272062,
+          "lng": 23.1354864
+        },
+        {
+          "code": "OSM:11377554169",
+          "name": "four road",
+          "lat": -14.1702049,
+          "lng": 28.9268956
+        },
+        {
+          "code": "OSM:4181224736",
+          "name": "Ikelenge Bus Station",
+          "lat": -11.2427694,
+          "lng": 24.2707958
+        },
+        {
+          "code": "OSM:5370754023",
+          "name": "Kalulushi Makeni",
+          "lat": -12.8490671,
+          "lng": 28.0663226
+        },
+        {
+          "code": "OSM:4620909592",
+          "name": "KMB Bus Station",
+          "lat": -12.8161956,
+          "lng": 28.202526
+        },
+        {
+          "code": "OSM:7169160888",
+          "name": "Likili Bus Station",
+          "lat": -10.2054937,
+          "lng": 31.1840261
+        },
+        {
+          "code": "OSM:11793294979",
+          "name": "Lunkhwakwa Bus Station",
+          "lat": -13.6352751,
+          "lng": 32.6468301
+        },
+        {
+          "code": "OSM:13110668902",
+          "name": "Masala bus station",
+          "lat": -12.9973932,
+          "lng": 28.6429534
+        },
+        {
+          "code": "OSM:6911034985",
+          "name": "Mbala Bus Station",
+          "lat": -8.8434876,
+          "lng": 31.3708818
+        },
+        {
+          "code": "OSM:5774976057",
+          "name": "Millennium Bus Station",
+          "lat": -15.4140833,
+          "lng": 28.279356
+        },
+        {
+          "code": "OSM:5863048050",
+          "name": "Minibus Station",
+          "lat": -13.6201676,
+          "lng": 29.3945284
+        },
+        {
+          "code": "OSM:5324161824",
+          "name": "Star Snacks",
+          "lat": -16.8097177,
+          "lng": 26.9841571
+        },
+        {
+          "code": "OSM:5087935333",
+          "name": "Vwalika Bus Station",
+          "lat": -14.4430086,
+          "lng": 28.4444165
+        }
+      ]
+    },
+    "Copperbelt": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:5197937722",
+          "name": "Chikonkomene",
+          "lat": -14.758534,
+          "lng": 28.3621736
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:4643939191",
+          "name": "Euro Bus Service Station",
+          "lat": -12.8194169,
+          "lng": 28.2075753
+        },
+        {
+          "code": "OSM:11868211284",
+          "name": "Power tools",
+          "lat": -12.8180343,
+          "lng": 28.2118676
+        },
+        {
+          "code": "OSM:3783832916",
+          "name": "Power Tools Bus",
+          "lat": -12.821994,
+          "lng": 28.2091187
+        }
+      ]
+    },
+    "Eastern": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:2743361310",
+          "name": "Chambeshi",
+          "lat": -10.962957,
+          "lng": 31.0713883
+        },
+        {
+          "code": "OSM:4150955003",
+          "name": "Chambeshi",
+          "lat": -12.6609754,
+          "lng": 28.0758779
+        },
+        {
+          "code": "OSM:315812213",
+          "name": "Kabwe",
+          "lat": -14.4478099,
+          "lng": 28.4407439
+        },
+        {
+          "code": "OSM:11394060294",
+          "name": "Kabwe North",
+          "lat": -14.3783796,
+          "lng": 28.4545384
+        },
+        {
+          "code": "OSM:918271098",
+          "name": "Kafue",
+          "lat": -15.7713758,
+          "lng": 28.1773279
+        },
+        {
+          "code": "OSM:918146618",
+          "name": "Kalonje",
+          "lat": -12.3758008,
+          "lng": 31.1018586
+        },
+        {
+          "code": "OSM:315814978",
+          "name": "Kashitu",
+          "lat": -13.7096552,
+          "lng": 28.6659117
+        },
+        {
+          "code": "OSM:3817081144",
+          "name": "Kasongo",
+          "lat": -11.3129754,
+          "lng": 31.2332536
+        },
+        {
+          "code": "OSM:2104442890",
+          "name": "Nakonde",
+          "lat": -9.3094307,
+          "lng": 32.7578947
+        },
+        {
+          "code": "OSM:4147040785",
+          "name": "Nega Nega",
+          "lat": -15.8320082,
+          "lng": 28.03008
+        },
+        {
+          "code": "OSM:918146361",
+          "name": "Serenje",
+          "lat": -13.2334954,
+          "lng": 30.2160665
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:11793294980",
+          "name": "Comesa Bus Station",
+          "lat": -13.6360206,
+          "lng": 32.6488632
+        },
+        {
+          "code": "OSM:2546465866",
+          "name": "Kapata Bus Station",
+          "lat": -13.6323374,
+          "lng": 32.6477535
+        },
+        {
+          "code": "OSM:11301085280",
+          "name": "Katete Stores",
+          "lat": -14.054,
+          "lng": 32.04538
+        },
+        {
+          "code": "OSM:11301085282",
+          "name": "Katete Stores",
+          "lat": -14.0542,
+          "lng": 32.04675
+        },
+        {
+          "code": "OSM:10749968838",
+          "name": "Katete Town Council",
+          "lat": -14.0598364,
+          "lng": 32.0350993
+        },
+        {
+          "code": "OSM:6312180385",
+          "name": "Kawama Turn",
+          "lat": -12.7739365,
+          "lng": 28.1887133
+        },
+        {
+          "code": "OSM:283146355",
+          "name": "Kulima Tower Bus Station",
+          "lat": -15.4235332,
+          "lng": 28.2803601
+        },
+        {
+          "code": "OSM:7664006787",
+          "name": "Looma Station",
+          "lat": -15.1364449,
+          "lng": 23.6540716
+        },
+        {
+          "code": "OSM:1042173485",
+          "name": "Main Bus Station",
+          "lat": -17.0315812,
+          "lng": 26.4951296
+        },
+        {
+          "code": "OSM:11792928086",
+          "name": "Mbanyane Bus Station",
+          "lat": -13.6360988,
+          "lng": 32.6468783
+        },
+        {
+          "code": "OSM:4881752821",
+          "name": "Mitech",
+          "lat": -12.1888895,
+          "lng": 26.4228872
+        },
+        {
+          "code": "OSM:11301085281",
+          "name": "Mtenguleni",
+          "lat": -13.7484,
+          "lng": 32.46496
+        },
+        {
+          "code": "OSM:6308606787",
+          "name": "NFCA Turn",
+          "lat": -12.6584446,
+          "lng": 28.0695751
+        },
+        {
+          "code": "OSM:4542544791",
+          "name": "Nyimba Bus Station",
+          "lat": -14.5581691,
+          "lng": 30.8210847
+        },
+        {
+          "code": "OSM:435022847",
+          "name": "Wada Chovu bus terminal",
+          "lat": -13.1305432,
+          "lng": 28.420493
+        }
+      ]
+    },
+    "Central": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:2601430766",
+          "name": "Senkobo",
+          "lat": -17.6249719,
+          "lng": 25.9404515
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:3746426275",
+          "name": "Big Tree",
+          "lat": -17.8457924,
+          "lng": 25.8609284
+        },
+        {
+          "code": "OSM:6311168486",
+          "name": "Epiroc NFCA Office",
+          "lat": -12.6587932,
+          "lng": 28.0588448
+        },
+        {
+          "code": "OSM:10821863805",
+          "name": "Mboole Tarmac",
+          "lat": -16.9026035,
+          "lng": 27.280497
+        },
+        {
+          "code": "OSM:6311168485",
+          "name": "NFCA Main Entrance",
+          "lat": -12.6601224,
+          "lng": 28.0615021
+        }
+      ]
+    },
+    "Western": {
+      "plane": [],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:4845761521",
+          "name": "Solwezi Bus Station",
+          "lat": -12.1806597,
+          "lng": 26.3976335
+        }
+      ]
+    },
+    "Luapula": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:4155824759",
+          "name": "Chakalamo",
+          "lat": -13.0429446,
+          "lng": 30.485831
+        },
+        {
+          "code": "OSM:918147815",
+          "name": "Finkuli",
+          "lat": -12.7189839,
+          "lng": 30.9840352
+        },
+        {
+          "code": "OSM:435602587",
+          "name": "Kafulafuta",
+          "lat": -13.3115123,
+          "lng": 28.7515132
+        },
+        {
+          "code": "OSM:2732684717",
+          "name": "Kawila",
+          "lat": -9.3095369,
+          "lng": 32.475526
+        },
+        {
+          "code": "OSM:4150967500",
+          "name": "Mufulira",
+          "lat": -12.5394953,
+          "lng": 28.2572655
+        },
+        {
+          "code": "OSM:918163730",
+          "name": "Ndabala",
+          "lat": -13.4924621,
+          "lng": 29.8190912
+        },
+        {
+          "code": "OSM:918124799",
+          "name": "Nkolemfumu",
+          "lat": -10.5367055,
+          "lng": 31.202778
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:6311143185",
+          "name": "Mukulumpe Mine",
+          "lat": -12.691926,
+          "lng": 28.0983974
+        },
+        {
+          "code": "OSM:4681234989",
+          "name": "Mwinilunga Bus Station",
+          "lat": -11.735784,
+          "lng": 24.4312144
+        },
+        {
+          "code": "OSM:4809786533",
+          "name": "New Eucalyptus Avenue",
+          "lat": -12.8458883,
+          "lng": 28.0905069
+        }
+      ]
+    },
+    "Southern": {
+      "plane": [
+        {
+          "code": "SLI",
+          "name": "Solwesi Airport",
+          "lat": -12.173700332641602,
+          "lng": 26.365100860595703
+        }
+      ],
+      "train": [],
+      "bus": [
+        {
+          "code": "OSM:487762369",
+          "name": "Banda Masauko Bus Station",
+          "lat": -15.4379167,
+          "lng": 28.244071
+        }
+      ]
+    },
+    "North-Western": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:5963670511",
+          "name": "Ngwerere Train Station",
+          "lat": -15.3078601,
+          "lng": 28.3258572
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:1210163935",
+          "name": "Chikumanino Main Bus Station",
+          "lat": -10.2004979,
+          "lng": 31.1942136
+        },
+        {
+          "code": "OSM:6311143285",
+          "name": "China Civil Engineering",
+          "lat": -12.684536,
+          "lng": 28.0923415
+        },
+        {
+          "code": "OSM:4881750223",
+          "name": "Chingola bus station",
+          "lat": -12.5476997,
+          "lng": 27.8513653
+        },
+        {
+          "code": "OSM:669069151",
+          "name": "Harry Mwanga Nkhumbula Bus station",
+          "lat": -16.2716488,
+          "lng": 27.4733343
+        },
+        {
+          "code": "OSM:99296406",
+          "name": "Intercity Bus Terminal",
+          "lat": -15.4213665,
+          "lng": 28.2860765
+        },
+        {
+          "code": "OSM:6472253619",
+          "name": "Itezhi tezhi Bus Station",
+          "lat": -15.7385682,
+          "lng": 26.0339862
+        },
+        {
+          "code": "OSM:2162271333",
+          "name": "Kapiri Mposhi Main Bus Station",
+          "lat": -13.9678426,
+          "lng": 28.6761031
+        },
+        {
+          "code": "OSM:11412133670",
+          "name": "Livingstone Intercity Bus Terminal",
+          "lat": -17.8554927,
+          "lng": 25.8495911
+        },
+        {
+          "code": "OSM:11428482669",
+          "name": "Livingstone intercity bus terminus",
+          "lat": -17.855384,
+          "lng": 25.849822
+        },
+        {
+          "code": "OSM:7696012466",
+          "name": "Nakonde Bus Station",
+          "lat": -9.3242583,
+          "lng": 32.7621248
+        },
+        {
+          "code": "OSM:13102889601",
+          "name": "Nakonde bus station - local buses",
+          "lat": -9.3206947,
+          "lng": 32.7609939
+        },
+        {
+          "code": "OSM:13110668903",
+          "name": "Ndola bus station",
+          "lat": -12.9686005,
+          "lng": 28.6495389
+        },
+        {
+          "code": "OSM:7249253586",
+          "name": "Ndondo Station",
+          "lat": -15.0915232,
+          "lng": 23.7733207
+        },
+        {
+          "code": "OSM:7117064687",
+          "name": "Power Tools Bus Station",
+          "lat": -10.2053183,
+          "lng": 31.1832378
+        }
+      ]
+    },
+    "Northern": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Muchinga": {
+      "plane": [],
+      "train": [
+        {
+          "code": "OSM:3041481296",
+          "name": "Achitende",
+          "lat": -10.1838187,
+          "lng": 31.2400016
+        },
+        {
+          "code": "OSM:918147390",
+          "name": "Chilonga",
+          "lat": -12.0258698,
+          "lng": 31.2756645
+        },
+        {
+          "code": "OSM:2777688866",
+          "name": "Chimba",
+          "lat": -9.8847877,
+          "lng": 31.5380463
+        },
+        {
+          "code": "OSM:3097110710",
+          "name": "Chingola",
+          "lat": -12.5408959,
+          "lng": 27.8534658
+        },
+        {
+          "code": "OSM:4146443606",
+          "name": "Mulobezi",
+          "lat": -16.7772154,
+          "lng": 25.1725964
+        },
+        {
+          "code": "OSM:11283644310",
+          "name": "Mununga",
+          "lat": -12.648361,
+          "lng": 31.0165655
+        }
+      ],
+      "bus": [
+        {
+          "code": "OSM:11497547762",
+          "name": "Chimwansa",
+          "lat": -15.3848418,
+          "lng": 28.2976236
+        },
+        {
+          "code": "OSM:11497547763",
+          "name": "Chimwansa",
+          "lat": -15.3851319,
+          "lng": 28.2974204
+        },
+        {
+          "code": "OSM:4181209674",
+          "name": "Manyinga Bus Station",
+          "lat": -13.4164828,
+          "lng": 24.3320021
+        },
+        {
+          "code": "OSM:8679561017",
+          "name": "Mazabuka main bus station",
+          "lat": -15.8550423,
+          "lng": 27.7605077
+        },
+        {
+          "code": "OSM:7682193285",
+          "name": "Mukunkiki Station",
+          "lat": -14.7816226,
+          "lng": 24.6069277
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:33:51.088Z"
+  }
+}

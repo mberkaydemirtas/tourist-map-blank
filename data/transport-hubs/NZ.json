@@ -1,0 +1,284 @@
+{
+  "code": "NZ",
+  "name": "New Zealand",
+  "cities": {
+    "Auckland": {
+      "plane": [
+        {
+          "code": "AKL",
+          "name": "Auckland International Airport",
+          "lat": -37.01199,
+          "lng": 174.786331
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Canterbury": {
+      "plane": [
+        {
+          "code": "CHC",
+          "name": "Christchurch International Airport",
+          "lat": -43.489029,
+          "lng": 172.532065
+        },
+        {
+          "code": "IVC",
+          "name": "Invercargill Airport",
+          "lat": -46.41239929199219,
+          "lng": 168.31300354003906
+        },
+        {
+          "code": "WHK",
+          "name": "Whakatane Airport",
+          "lat": -37.92060089111328,
+          "lng": 176.91400146484375
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Wellington": {
+      "plane": [
+        {
+          "code": "WLG",
+          "name": "Wellington International Airport",
+          "lat": -41.327202,
+          "lng": 174.804993
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Waikato": {
+      "plane": [
+        {
+          "code": "HLZ",
+          "name": "Hamilton International Airport",
+          "lat": -37.8666992188,
+          "lng": 175.332000732
+        },
+        {
+          "code": "KKE",
+          "name": "Kerikeri Airport",
+          "lat": -35.259148,
+          "lng": 173.913317
+        },
+        {
+          "code": "WKA",
+          "name": "Wanaka Airport",
+          "lat": -44.722954,
+          "lng": 169.248419
+        },
+        {
+          "code": "WAG",
+          "name": "Wanganui Airport",
+          "lat": -39.963467,
+          "lng": 175.02444
+        },
+        {
+          "code": "WRE",
+          "name": "Whangarei Airport",
+          "lat": -35.769253,
+          "lng": 174.363713
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Bay of Plenty": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Manawatu-Wanganui": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Hawke’s Bay": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Taranaki": {
+      "plane": [
+        {
+          "code": "HKK",
+          "name": "Hokitika Airfield",
+          "lat": -42.713600158691406,
+          "lng": 170.98500061035156
+        },
+        {
+          "code": "KAT",
+          "name": "Kaitaia Airport",
+          "lat": -35.069837,
+          "lng": 173.287053
+        },
+        {
+          "code": "PCN",
+          "name": "Picton Aerodrome",
+          "lat": -41.346099853516,
+          "lng": 173.95599365234
+        },
+        {
+          "code": "TRG",
+          "name": "Tauranga Airport",
+          "lat": -37.67190170288086,
+          "lng": 176.1959991455078
+        },
+        {
+          "code": "TIU",
+          "name": "Timaru Airport",
+          "lat": -44.302799224853516,
+          "lng": 171.22500610351562
+        },
+        {
+          "code": "BHE",
+          "name": "Woodbourne Airport",
+          "lat": -41.5182991027832,
+          "lng": 173.8699951171875
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Northland": {
+      "plane": [
+        {
+          "code": "NZ-0026",
+          "name": "Pitt Island Aerodrome",
+          "lat": -44.293167,
+          "lng": -176.203476
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Southland": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "Nelson": {
+      "plane": [
+        {
+          "code": "CHT",
+          "name": "Chatham Islands / Tuuta Airport",
+          "lat": -43.81189,
+          "lng": -176.46514
+        },
+        {
+          "code": "DUD",
+          "name": "Dunedin International Airport",
+          "lat": -45.928101,
+          "lng": 170.197998
+        },
+        {
+          "code": "NPE",
+          "name": "Hawke's Bay Airport",
+          "lat": -39.465801,
+          "lng": 176.869995
+        },
+        {
+          "code": "NSN",
+          "name": "Nelson Airport",
+          "lat": -41.298302,
+          "lng": 173.220993
+        },
+        {
+          "code": "NPL",
+          "name": "New Plymouth Airport",
+          "lat": -39.00859832763672,
+          "lng": 174.1790008544922
+        },
+        {
+          "code": "ZQN",
+          "name": "Queenstown International Airport",
+          "lat": -45.021099,
+          "lng": 168.738998
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Otago": {
+      "plane": [
+        {
+          "code": "NZOT",
+          "name": "Otaki Airport",
+          "lat": -40.785582,
+          "lng": 175.1513
+        },
+        {
+          "code": "ROT",
+          "name": "Rotorua Regional Airport",
+          "lat": -38.1092,
+          "lng": 176.317001
+        },
+        {
+          "code": "TUO",
+          "name": "Taupo Airport",
+          "lat": -38.73970031738281,
+          "lng": 176.08399963378906
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Gisborne": {
+      "plane": [
+        {
+          "code": "GIS",
+          "name": "Gisborne Airport",
+          "lat": -38.6633,
+          "lng": 177.977997
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Marlborough": {
+      "plane": [
+        {
+          "code": "PMR",
+          "name": "Palmerston North Airport",
+          "lat": -40.320599,
+          "lng": 175.617004
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Tasman": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    },
+    "West Coast": {
+      "plane": [
+        {
+          "code": "WSZ",
+          "name": "Westport Airport",
+          "lat": -41.737111,
+          "lng": 171.579033
+        }
+      ],
+      "train": [],
+      "bus": []
+    },
+    "Chatham Islands": {
+      "plane": [],
+      "train": [],
+      "bus": []
+    }
+  },
+  "meta": {
+    "source": {
+      "airports": "OurAirports (airports.csv, filtered: scheduled_service=yes, civil)",
+      "train": "OpenStreetMap (railway=station/public_transport=station train=yes)",
+      "bus": "OpenStreetMap (amenity=bus_station/public_transport=station bus=yes)"
+    },
+    "generatedAt": "2025-09-02T08:36:29.174Z"
+  }
+}
