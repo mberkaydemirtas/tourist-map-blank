@@ -10,16 +10,21 @@
 import { COUNTRY_LIST } from '../src/data/countryList.js';   // mevcut ülke listesi (sync)
 
 // İsim-önce adaptör (transport-hubs kaynaklı)
-import {
-  listCityNames,
-} from '../../scripts/services/tripsGeoNamesAdapter.js';
+import { listCityNames } from '../src/services/tripsGeoNamesAdapter.js';
 
 /* -------------------------------- helpers -------------------------------- */
 
 const hasNormalize = typeof String.prototype.normalize === 'function';
 const stripAccents = (s) =>
   (hasNormalize ? String(s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '') : String(s || ''));
-const norm = (s) => stripAccents(String(s || '').toLowerCase()).replace(/\s+/g, ' ').trim();
+const lowerTr = (s) => {
+  const str = String(s || '');
+  if (typeof str.toLocaleLowerCase === 'function') {
+    try { return str.toLocaleLowerCase('tr'); } catch { /* fallback */ }
+  }
+  return str.toLowerCase();
+};
+const norm = (s) => stripAccents(lowerTr(s)).replace(/\s+/g, ' ').trim();
 
 // Hermes/Android kararlılığı için basit kıyas
 function safeCmp(a, b) {
@@ -51,8 +56,9 @@ const CITY_POOL = {};   // { CC: [{id,name,countryName}] }
 const COUNTRY_NAME = {};
 for (const c of COUNTRY_LIST) COUNTRY_NAME[c.code] = c.name;
 
-// basit cache bayrağı
-const LOADED = {}; // { CC: true }
+// Yükleme durumu
+const LOADED = {};            // { CC: true }
+const INFLIGHT = {};          // { CC: Promise<void> }
 
 /* --------------------------- CC resolve/alias --------------------------- */
 
@@ -82,10 +88,13 @@ function resolveCountryCode(input) {
 
 async function ensureCountryLoaded(isoLike) {
   const cc = resolveCountryCode(isoLike);
-  if (!cc || LOADED[cc]) return;
+   if (!cc || LOADED[cc]) return;
+   if (INFLIGHT[cc]) { await INFLIGHT[cc]; return; 
+   }
 
-  try {
-    const names = await listCityNames(cc); // ['Ankara','İstanbul',...]
+   INFLIGHT[cc] = (async () => {
+     try {
+       const names = await listCityNames(cc); // ['Ankara','İstanbul',...]
     const cname = COUNTRY_NAME[cc] || cc;
     const seen = new Set();
     const items = new Array(names.length);
@@ -100,7 +109,7 @@ async function ensureCountryLoaded(isoLike) {
     }
 
     if (items.length > 1 && items.length <= 500) {
-      items.sort((a, b) => safeCmp(a.name, b.name));
+      items.sort((a, b) => String(a.name).localeCompare(String(b.name), 'tr'));
     }
 
     CITY_POOL[cc] = items;
@@ -109,8 +118,9 @@ async function ensureCountryLoaded(isoLike) {
     CITY_POOL[cc] = CITY_POOL[cc] || [];
   } finally {
     LOADED[cc] = true;
-  }
-}
+     }
+   })();
+   try { await INFLIGHT[cc]; } finally { delete INFLIGHT[cc]; }}
 
 /* --------------------------------- API --------------------------------- */
 

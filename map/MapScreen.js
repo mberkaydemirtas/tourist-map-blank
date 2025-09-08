@@ -237,6 +237,24 @@ export default function MapScreen() {
      if (!userMovedSincePickerRef.current) centerOnceForPicker(); // mapReady guard’lı
    }, [picker?.center, picker?.enabled, centerOnceForPicker]);
 
+   // MapScreen.js
+useEffect(() => {
+  if (!picker?.enabled) return;
+
+  // Otomatik kategori aç
+  if (picker?.which === 'lodging' || picker?.presetCategory === 'lodging') {
+    try { map.handleCategorySelect?.('lodging'); } catch {}
+  } else if (picker?.presetCategory) {
+    try { map.handleCategorySelect?.(picker.presetCategory); } catch {}
+  }
+
+  // Arama kutusunu önceden doldur
+  if (picker?.search) {
+    try { map.setQuery?.(picker.search); } catch {}
+  }
+}, [picker?.enabled, picker?.which, picker?.presetCategory, picker?.search, map]);
+
+
   const { recalcRoute, prefetchMissingModes } = useRouteCompute({
     map, mapRef, normalizeCoord, presentRouteSheet,
   });

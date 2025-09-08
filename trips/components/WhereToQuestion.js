@@ -20,6 +20,16 @@ function debounce(fn, ms = 120) {
 export default function WhereToQuestion({ initialMode = 'single', onChange }) {
   const [mode, setMode] = useState(initialMode);
 
+  // Her zaman dizi döndür (geoService ne döndürürse döndürsün)
+  const safeCities = useCallback((countryCode, q) => {
+    try {
+      const arr = getCitiesForCountry(countryCode, q);
+      return Array.isArray(arr) ? arr : [];
+    } catch {
+      return [];
+    }
+  }, []);
+
   // Ülkeler
   const rawCountries = useMemo(() => listCountries(), []);
   const countryOptions = useMemo(
@@ -36,7 +46,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
   const [singleCountryCode, setSingleCountryCode] = useState(defaultCountry);
   const [singleCityQuery, setSingleCityQuery] = useState('');
   const [singleCityOptions, setSingleCityOptions] = useState(() =>
-    getCitiesForCountry(defaultCountry, '')
+    safeCities(defaultCountry, '')
   );
   const [singleCity, setSingleCity] = useState(null);
 
@@ -62,17 +72,17 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
     () =>
       debounce(async (q) => {
         setSingleCityQuery(q);
-        setSingleCityOptions(getCitiesForCountry(singleCountryCode, q));
+        setSingleCityOptions(safeCities(singleCountryCode, q));
         // Etkileşim sonrası preload (UI bloklanmasın)
         InteractionManager.runAfterInteractions(async () => {
           try {
             await searchCities({ countryCode: singleCountryCode, query: q, sessionToken: sessionTokenRef.current });
           } finally {
-            setSingleCityOptions(getCitiesForCountry(singleCountryCode, q));
+            setSingleCityOptions(safeCities(singleCountryCode, q));
           }
         });
       }, 120),
-    [singleCountryCode]
+    [singleCountryCode, safeCities]
   );
 
   async function selectSingleCity(opt) {
@@ -84,14 +94,14 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
     };
     setSingleCity(city);
     setSingleCityQuery(city.name || '');
-    setSingleCityOptions(getCitiesForCountry(singleCountryCode, city.name || ''));
+    setSingleCityOptions(safeCities(singleCountryCode, city.name || ''));
   }
 
   // İlk açılış: default ülkeyi preload et (etkileşim sonrası)
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(async () => {
       await searchCities({ countryCode: defaultCountry, query: '', sessionToken: sessionTokenRef.current });
-      setSingleCityOptions(getCitiesForCountry(defaultCountry, ''));
+      setSingleCityOptions(safeCities(defaultCountry, ''));
     });
     return () => { task?.cancel?.(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -101,24 +111,24 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
   useEffect(() => {
     setSingleCity(null);
     setSingleCityQuery('');
-    setSingleCityOptions(getCitiesForCountry(singleCountryCode, ''));
+    setSingleCityOptions(safeCities(singleCountryCode, ''));
     const task = InteractionManager.runAfterInteractions(async () => {
       try {
         await searchCities({ countryCode: singleCountryCode, query: '', sessionToken: sessionTokenRef.current });
       } finally {
-        setSingleCityOptions(getCitiesForCountry(singleCountryCode, ''));
+        setSingleCityOptions(safeCities(singleCountryCode, ''));
       }
     });
     return () => { task?.cancel?.(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [singleCountryCode]);
+  }, [singleCountryCode, safeCities]);
 
   /** ───── Çoklu: ülke/şehir ───── */
   function pickRowCountry(rowId, code, label) {
     setRows((prev) =>
       prev.map((r) =>
         r.id === rowId
-          ? { ...r, countryCode: code, countryLabel: label, city: null, cityQuery: '', cityOptions: getCitiesForCountry(code, '') }
+          ? { ...r, countryCode: code, countryLabel: label, city: null, cityQuery: '', cityOptions: safeCities(code, '') }
           : r
       )
     );
@@ -127,7 +137,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
         await searchCities({ countryCode: code, query: '', sessionToken: sessionTokenRef.current });
       } finally {
         setRows((prev) =>
-          prev.map((r) => (r.id === rowId ? { ...r, cityOptions: getCitiesForCountry(code, '') } : r))
+          prev.map((r) => (r.id === rowId ? { ...r, cityOptions: safeCities(code, '') } : r))
         );
       }
     });
@@ -139,7 +149,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
         setRows((prev) =>
           prev.map((r) =>
             r.id === rowId
-              ? { ...r, cityQuery: q, cityOptions: getCitiesForCountry(r.countryCode, q) }
+              ? { ...r, cityQuery: q, cityOptions: safeCities(r.countryCode, q) }
               : r
           )
         );
@@ -151,13 +161,13 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
           } finally {
             setRows((prev) =>
               prev.map((r) =>
-                r.id === rowId ? { ...r, cityOptions: getCitiesForCountry(r.countryCode, q) } : r
+                r.id === rowId ? { ...r, cityOptions: safeCities(r.countryCode, q) } : r
               )
             );
           }
         });
       }, 120),
-    [rows]
+    [rows, safeCities]
   );
 
   async function pickRowCity(rowId, opt) {
@@ -223,11 +233,11 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
               value={singleCityQuery}
               onChangeText={runSingleCitySearch}
             />
-            {!!singleCityOptions.length && (
+            {Array.isArray(singleCityOptions) && singleCityOptions.length > 0 && (
               <View style={styles.dropdown}>
                 <FlatList
                   data={singleCityOptions}
-                  keyExtractor={(item) => String(item.place_id)}
+                  keyExtractor={(item, idx) => `city-${String(item?.place_id ?? idx)}`}
                   renderItem={({ item }) => (
                     <TouchableOpacity style={styles.dropItem} onPress={() => selectSingleCity(item)}>
                       <Text style={styles.dropText}>{item.description}</Text>
@@ -277,7 +287,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                   <View style={styles.dropdown}>
                     <FlatList
                       data={row.cityOptions}
-                      keyExtractor={(item) => String(item.place_id)}
+                      keyExtractor={(item, idx) => `city-${String(item?.place_id ?? idx)}`}
                       renderItem={({ item }) => (
                         <TouchableOpacity style={styles.dropItem} onPress={() => pickRowCity(row.id, item)}>
                           <Text style={styles.dropText}>{item.description}</Text>
@@ -350,7 +360,7 @@ function CountrySelect({ value, label, options, onPick }) {
           <Text style={styles.modalTitle}>Ülke Seçin</Text>
           <FlatList
             data={options}
-            keyExtractor={(it) => String(it.key)}
+            keyExtractor={(it, idx) => (it?.key ? `cc-${it.key}` : `cc-${idx}`)}
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.optionRow}

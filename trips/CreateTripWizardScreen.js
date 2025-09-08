@@ -205,8 +205,10 @@ export default function CreateTripWizardScreen() {
   function openLodgingPicker() {
     bridge.openLodgingPicker({
       cityKey: activeCityKey,
-      cityObj: activeCityObj,
+      cityObj: activeCityObj,          // { name, center:{lat,lng}, ... }
+      // search: 'otel adı'            // istersen arama
     });
+
   }
 
   // --- Render
