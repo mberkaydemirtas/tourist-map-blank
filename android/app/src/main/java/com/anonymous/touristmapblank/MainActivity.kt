@@ -2,60 +2,52 @@ package com.anonymous.touristmapblank
 
 import android.os.Build
 import android.os.Bundle
-
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
-import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
-
 import expo.modules.ReactActivityDelegateWrapper
 
+// R referansı için (paketinizle aynı isimde)
+import com.anonymous.touristmapblank.R
+
 class MainActivity : ReactActivity() {
+
   override fun onCreate(savedInstanceState: Bundle?) {
-    // Set the theme to AppTheme BEFORE onCreate to support
-    // coloring the background, status bar, and navigation bar.
-    // This is required for expo-splash-screen.
-    setTheme(R.style.AppTheme);
+    // expo-splash-screen için onCreate'ten ÖNCE tema ayarı
+    setTheme(R.style.AppTheme)
     super.onCreate(null)
   }
 
-  /**
-   * Returns the name of the main component registered from JavaScript. This is used to schedule
-   * rendering of the component.
-   */
+  /** JS tarafında AppRegistry.registerComponent ile verilen ana bileşen adı */
   override fun getMainComponentName(): String = "main"
 
   /**
-   * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]
-   * which allows you to enable New Architecture with a single boolean flags [fabricEnabled]
+   * New Architecture bayraklarını DefaultReactActivityDelegate ile kontrol eder.
+   * ReactActivityDelegateWrapper (expo) ile sarmalayıp döndürüyoruz.
    */
   override fun createReactActivityDelegate(): ReactActivityDelegate {
     return ReactActivityDelegateWrapper(
-          this,
-          BuildConfig.IS_NEW_ARCHITECTURE_ENABLED,
-          object : DefaultReactActivityDelegate(
-              this,
-              mainComponentName,
-              fabricEnabled
-          ){})
+      this,
+      BuildConfig.IS_NEW_ARCHITECTURE_ENABLED,
+      object : DefaultReactActivityDelegate(
+        this,
+        mainComponentName,
+        // ⬇⬇ import karmaşasına girmemek için tam nitelikli çağrı
+        com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled()
+      ) {}
+    )
   }
 
   /**
-    * Align the back button behavior with Android S
-    * where moving root activities to background instead of finishing activities.
-    * @see <a href="https://developer.android.com/reference/android/app/Activity#onBackPressed()">onBackPressed</a>
-    */
+   * Android S (API 31) geri tuşu davranışı ile hizalama.
+   */
   override fun invokeDefaultOnBackPressed() {
-      if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
-          if (!moveTaskToBack(false)) {
-              // For non-root activities, use the default implementation to finish them.
-              super.invokeDefaultOnBackPressed()
-          }
-          return
+    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+      if (!moveTaskToBack(false)) {
+        super.invokeDefaultOnBackPressed()
       }
-
-      // Use the default back button implementation on Android S
-      // because it's doing more than [Activity.moveTaskToBack] in fact.
-      super.invokeDefaultOnBackPressed()
+      return
+    }
+    super.invokeDefaultOnBackPressed()
   }
 }

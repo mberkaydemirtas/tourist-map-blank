@@ -2,7 +2,7 @@
 // Şehir merkezine göre en iyi otelleri döndürür (Google Places Nearby Search tabanlı).
 // Geri dönüş: [{ name, place_id, rating, user_ratings_total, address, location:{lat,lng}, photoRef? }]
 
-import { getNearbyPlaces } from '../maps'; // projendeki services/maps.js içinden
+import { getNearbyPlaces } from '../../../map/maps'; // projendeki services/maps.js içinden
 
 /**
  * @param {{lat:number,lng:number}} center - Şehir merkezi (WhereToQuestion’dan geliyor)

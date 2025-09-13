@@ -1,7 +1,18 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<?xml version="1.0" encoding="utf-8"?>
+<manifest
+  package="com.anonymous.touristmapblank"
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+  <!-- NOT: Buraya SYSTEM_ALERT_WINDOW KOYMADIK; kopya uyarısını kaldırmak için main'e taşıdık -->
 
-    <application android:usesCleartextTraffic="true" tools:targetApi="28" tools:ignore="GoogleAppIndexingWarning" tools:replace="android:usesCleartextTraffic" />
+  <application
+    tools:replace="android:allowBackup"
+    android:allowBackup="false">
+    <!-- Debug build’e özel ek ayarlarınız varsa buraya ekleyin -->
+  </application>
+
+  <queries>
+    <!-- Gerekirse debug araçları için ek <intent> sorguları -->
+  </queries>
 </manifest>

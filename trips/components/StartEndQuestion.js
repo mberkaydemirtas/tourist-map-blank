@@ -1,3 +1,4 @@
+// trips/trips/components/StartEndQuestion.js
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
@@ -11,7 +12,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { listHubsForCity } from '../../scripts/services/tripsHubsAdapter';
+
+// ❗ Değişti: city’ye özel adapter yerine birleşik katalog kullanıyoruz
+import { getHubs } from '../src/services/hubsCatalog';
 
 const BORDER = '#23262F';
 const BTN = '#2563EB';
@@ -60,6 +63,7 @@ export default function StartEndQuestion({
       <Card title={`${cityName} • Başlangıç`}>
         <PointPicker
           label="Nereden?"
+          countryCode={countryCode}
           cityName={cityName}
           cityCenter={cityCenter}
           selectedType={start.type}
@@ -91,6 +95,7 @@ export default function StartEndQuestion({
       <Card title={`${cityName} • Bitiş`}>
         <PointPicker
           label="Nerede bitecek?"
+          countryCode={countryCode}
           cityName={cityName}
           cityCenter={cityCenter}
           selectedType={end.type}
@@ -128,40 +133,58 @@ function Card({ title, children }) {
 }
 function Row({ children }) { return <View style={{ flexDirection: 'row', gap: 10 }}>{children}</View>; }
 
-function PointPicker({ label, cityName, cityCenter, selectedType, selectedHub, onSelectType, onSelectHub, onClear }) {
+function PointPicker({ label, countryCode, cityName, cityCenter, selectedType, selectedHub, onSelectType, onSelectHub, onClear }) {
   const [openHubModal, setOpenHubModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [hubs, setHubs] = useState([]);
   const [filter, setFilter] = useState('');
 
-  // basit cache: key = `${lat},${lng}:${type}`
+  // basit cache: key = `${country}|${adminOrCity}|${type}`
   const cacheRef = useRef(new Map());
-  const cityKey = useMemo(() => {
-    const lat = Number(cityCenter?.lat);
-    const lng = Number(cityCenter?.lng);
-    return Number.isFinite(lat) && Number.isFinite(lng) ? `${lat.toFixed(4)},${lng.toFixed(4)}` : 'no-city';
-  }, [cityCenter]);
+  const keyBase = useMemo(() => {
+    const cc = String(countryCode || '').toUpperCase();
+    // TR'de cityName aslında "il" (admin) — WhereToQuestion fake city atıyor
+    const adminOrCity = cityName || 'unknown';
+    return `${cc}|${adminOrCity}`;
+  }, [countryCode, cityName]);
 
   async function ensureHubs(typeKey) {
-    const mode = TYPE_MAP[typeKey]?.mode;
-    if (!mode || mode === 'custom') { setHubs([]); return; }
-    const cacheKey = `${cityKey}:${typeKey}`;
+    const modeKey = TYPE_MAP[typeKey]?.mode;
+    if (!modeKey || modeKey === 'custom') { setHubs([]); return; }
+
+    const cacheKey = `${keyBase}|${typeKey}`;
     if (cacheRef.current.has(cacheKey)) {
       setHubs(cacheRef.current.get(cacheKey));
       return;
     }
+
     setLoading(true);
     try {
-       // Trips akışında city bazlı veri: sadece isim göstereceğiz, mesafe filtresi gerekmiyor.
-       const res = await listHubsForCity({ countryCode, cityName, mode });
-       // normalizeHubsForType mesafe/isim filtresi yapıyorsa bırakabilirsin; ama gerekmez.
-       const filtered = (res || []).map(h => ({
-         name: h.name,
-         place_id: h.place_id,
-         location: h.location,
-       }));
+      // 1) Tekleştirici servis: TR → admin-level, diğerleri → city-level
+      //    TR’de admin parametresi olarak cityName’i geçiyoruz (fake city aslında il adı)
+      const cc = String(countryCode || '').toUpperCase();
+      const rawAll = getHubs({
+        country: cc,
+        admin: cc === 'TR' ? cityName : null,
+        city:   cc === 'TR' ? null     : cityName,
+      });
+
+      const raw = Array.isArray(rawAll?.[modeKey]) ? rawAll[modeKey] : [];
+
+      // 2) UI formatına çevir
+      const mapped = (raw || []).map((h, idx) => ({
+        name: h.name,
+        place_id: `${cc}|${cityName}|${modeKey}|${idx}|${Math.round(Number(h.lat)*1e6)}|${Math.round(Number(h.lng)*1e6)}`,
+        location: { lat: Number(h.lat), lng: Number(h.lng) },
+      }));
+
+      // 3) Tip’e göre filtre/sıralama (mevcut helper’ı kullanıyoruz)
+      const filtered = normalizeHubsForType(typeKey, mapped, cityName, cityCenter);
+
       cacheRef.current.set(cacheKey, filtered);
       setHubs(filtered);
+
+      // Tek aday varsa otomatik seç
       if (filtered.length === 1) onSelectHub?.(toHubShape(filtered[0]));
     } finally {
       setLoading(false);
@@ -175,7 +198,7 @@ function PointPicker({ label, cityName, cityCenter, selectedType, selectedHub, o
       ensureHubs(selectedType);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedType, cityKey]);
+  }, [selectedType, keyBase]);
 
   // Modal içi arama: başlayan > içeren
   const filteredHubs = useMemo(() => {
@@ -204,7 +227,7 @@ function PointPicker({ label, cityName, cityCenter, selectedType, selectedHub, o
         ))}
       </View>
 
-      {/* “Haritadan Seç” seçiliyken: seçili yer adı yaz ve tekrar açılabilsin */}
+      {/* “Haritadan Seç” seçiliyken */}
       {selectedType === 'map' && (
         <TouchableOpacity onPress={() => onSelectType('map')} style={styles.selectShell}>
           <Text style={styles.selectShellText}>{selectedHub?.name || 'Haritadan seç'}</Text>
@@ -254,6 +277,8 @@ function PointPicker({ label, cityName, cityCenter, selectedType, selectedHub, o
             <FlatList
               data={filteredHubs}
               keyExtractor={(it) => it.place_id}
+              removeClippedSubviews={false}
+              keyboardShouldPersistTaps="always"
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.optionRow}
@@ -335,6 +360,8 @@ function TimeDropdown({ label, value, onChange }) {
           <FlatList
             data={TIME_SLOTS}
             keyExtractor={(it) => it}
+            removeClippedSubviews={false}
+            keyboardShouldPersistTaps="always"
             renderItem={({ item }) => (
               <TouchableOpacity style={styles.optionRow} onPress={() => { onChange(item); setOpen(false); }}>
                 <Text style={styles.optionText}>{item}</Text>
@@ -359,7 +386,7 @@ function normalizeHubsForType(typeKey, hubs, cityName, cityCenter) {
   const withDistance = hubs.map(h => ({
     ...h,
     _d: h?.location && cityCenter ? haversine(cityCenter, h.location) : null, // km
-    _name: nameLC(h.name),
+    _name: nameLC(h.name || ''),
   }));
 
   let inc = [], exc = [], maxKm = 30;
@@ -377,20 +404,26 @@ function normalizeHubsForType(typeKey, hubs, cityName, cityCenter) {
     maxKm = 20;
   }
 
-  let filtered = withDistance.filter(h => {
-    const n = h._name;
-    const okInc = inc.some(k => n.includes(k));
-    const bad = exc.some(k => n.includes(k));
-    return okInc && !bad;
-  });
+  const isBad = (n) => exc.some(k => n.includes(k));
+  const matchesInc = (n) => inc.some(k => n.includes(k));
 
+  // 1) Sıkı filtre
+  let filtered = withDistance.filter(h => matchesInc(h._name) && !isBad(h._name));
   filtered = filtered.filter(h => (h._d == null) || h._d <= maxKm);
 
+  // 2) Gerekirse gevşet
+  if (filtered.length === 0) {
+    filtered = withDistance
+      .filter(h => !isBad(h._name))
+      .filter(h => (h._d == null) || h._d <= maxKm);
+  }
+
+  // 3) Skorla
   filtered.forEach(h => {
     let score = 0;
     if (cityToken && h._name.includes(cityToken)) score += 5;
     if (h._d != null) score += Math.max(0, (maxKm - h._d) / maxKm) * 4;
-    if (typeKey === 'airport' && (h._name.includes('intl') || h._name.includes('international'))) score += 1.5;
+    if (matchesInc(h._name)) score += 1.5;
     h._score = score;
   });
 

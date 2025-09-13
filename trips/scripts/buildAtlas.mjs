@@ -1,5 +1,5 @@
-// scripts/buildAtlas.mjs
-// Node 18+ (ESM). Çalıştır:  node scripts/buildAtlas.mjs --countries=TR,DE  (boşsa tüm ülkeler)
+// trips/scripts/buildAtlas.mjs
+// Node 18+ (ESM). Çalıştır:  node trips/scripts/buildAtlas.mjs --countries=TR,DE
 // .env içinde: CSC_API_KEY=xxxxx  ve  AVIATIONSTACK_KEY=yyyyy
 import 'dotenv/config';
 import fs from 'node:fs';
@@ -7,6 +7,7 @@ import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import pLimit from 'p-limit';
+// 🔧 ücretli API (şehir bazlı havalimanı eşlemesi için ülke toplamını kullanıyoruz)
 import { fetchAirportsAviationstack } from './airports.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -21,9 +22,6 @@ if (!CSC_KEY) { console.error('CSC_API_KEY yok (.env)'); process.exit(1); }
 
 const HEADERS = { 'X-CSCAPI-KEY': CSC_KEY };
 const CSC_BASE = 'https://api.countrystatecity.in/v1';
-
-// Overpass (tren/otogar)
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 
 ensureDir(OUT_DIR);
 
@@ -44,7 +42,7 @@ async function jget(url, {headers={}, retry=3, backoff=700, method='GET', body=n
   throw new Error(`Fetch failed after ${retry}: ${url}`);
 }
 
-// ----------------------- 1) CSC: Ülke & Eyalet(İl) & Şehirler
+// ----------------------- CSC: Ülke/State/City
 async function fetchCountries(){
   const res = await jget(`${CSC_BASE}/countries`, { headers: HEADERS });
   /** @type {{name:string, iso2:string}[]} */
@@ -62,7 +60,7 @@ async function fetchStatesForCountry(cc){
     .map(s => ({ code: (s.iso2||'').toUpperCase(), name: s.name }))
     .filter(s => s.name);
   states.sort((a,b)=> safeCmp(a.name,b.name));
-  return states;
+  return states; // [{code,name}]
 }
 
 async function fetchCitiesForState(cc, stateCode){
@@ -73,10 +71,10 @@ async function fetchCitiesForState(cc, stateCode){
   return names;
 }
 
+// (Eski toplu yol — fallback)
 async function fetchCitiesForCountry(cc){
   const states = await fetchStatesForCountry(cc);
   if (states.length === 0) return [];
-
   const limit = pLimit(6);
   const allSets = await Promise.all(states.map(st => limit(async () => {
     if (!st.code) return new Set();
@@ -88,123 +86,9 @@ async function fetchCitiesForCountry(cc){
       return new Set();
     }
   })));
-
   const merged = new Set();
   for (const s of allSets){ for (const name of s) merged.add(name); }
   return Array.from(merged).sort(safeCmp);
-}
-
-// ----------------------- 2) Overpass: tren & otogar (gelişmiş)
-
-// ülke alanını ISO + isim fallback ile bul
-function buildCountryAreaClause({ code, name }) {
-  const cc = String(code || '').toUpperCase();
-  const safeName = String(name || '').replace(/"/g, '\\"');
-  return `
-    (
-      area["boundary"="administrative"]["ISO3166-1"="${cc}"];
-      area["boundary"="administrative"]["ISO3166-1:alpha2"="${cc}"];
-      area["boundary"="administrative"]["name"="${safeName}"];
-    )->.country;
-  `;
-}
-
-function overpassQueryCountry({ code, name }) {
-  // şehir içi raylı sistemi/platf./halt/stop dışarıda bırak
-  return `
-  [out:json][timeout:180];
-  ${buildCountryAreaClause({ code, name })}
-  (
-    // TRAIN (garlar)
-    nwr["railway"="station"]["station"!~"^(subway|light_rail|tram)$"](area.country);
-    nwr["public_transport"="station"]["train"="yes"](area.country);
-
-    // BUS (otogarlar)
-    nwr["amenity"="bus_station"](area.country);
-    nwr["public_transport"="station"]["bus"="yes"](area.country);
-  );
-  out center tags;`;
-}
-
-async function overpassFetch(body, { retry = 3, backoff = 800 } = {}) {
-  for (let i = 0; i < retry; i++) {
-    const res = await fetch(OVERPASS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-      body: 'data=' + encodeURIComponent(body),
-    });
-    if (res.ok) return res.json();
-    if (res.status === 429 || res.status >= 500) await sleep(backoff * (i + 1));
-    else throw new Error(`Overpass ${res.status} ${res.statusText}`);
-  }
-  throw new Error('Overpass fetch failed after retries');
-}
-
-function isIntercityCandidate(tags = {}) {
-  const t = tags || {};
-  const name = (t.name || t['name:en'] || t['official_name'] || '').toString();
-
-  // şehir içi ve küçük durakları ele
-  const BAD_NAME = /(metro|subway|tram|light\s*rail|banliyö|suburban|halte|halt|peron|platform|durak|stop)/i;
-  if (BAD_NAME.test(name)) return false;
-
-  if (t.railway === 'station') {
-    const s = (t.station || '').toString().toLowerCase();
-    if (s === 'subway' || s === 'light_rail' || s === 'tram') return false;
-  }
-
-  if ((t.public_transport || '').match(/^(platform|stop|stop_position)$/i)) return false;
-
-  // şehirlerarası aday koşulları
-  if (t.amenity === 'bus_station') return true;
-  if (t.public_transport === 'station' && t.bus === 'yes') return true;
-  if (t.railway === 'station') return true;
-  if (t.public_transport === 'station' && t.train === 'yes') return true;
-
-  return false;
-}
-
-function toPlace(e = {}) {
-  const t = e.tags || {};
-  const name = t.name || t['name:en'] || t['official_name'] || null;
-  const lat = Number.isFinite(e.lat) ? e.lat : e.center?.lat;
-  const lng = Number.isFinite(e.lon) ? e.lon : e.center?.lon;
-  let kind = null;
-  if (t.amenity === 'bus_station' || t.bus === 'yes') kind = 'bus';
-  if (t.railway === 'station' || t.train === 'yes') kind = kind || 'train';
-  if (!name || !Number.isFinite(lat) || !Number.isFinite(lng) || !kind) return null;
-  return { name, lat, lng, type: kind };
-}
-
-// ~11m toleransla dedupe (1e-4 derece)
-function dedupePlaces(arr = []) {
-  const seen = new Set();
-  const out = [];
-  for (const p of arr) {
-    const k = `${Math.round(p.lat * 1e4)}|${Math.round(p.lng * 1e4)}|${p.type}`;
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(p);
-  }
-  return out;
-}
-
-async function fetchStations(meta) {
-  const m = typeof meta === 'string' ? { code: '', name: meta } : (meta || {});
-  try {
-    const json = await overpassFetch(overpassQueryCountry({ code: m.code, name: m.name }), { retry: 3, backoff: 900 });
-    const els = Array.isArray(json?.elements) ? json.elements : [];
-    const cleaned = [];
-    for (const e of els) {
-      if (!isIntercityCandidate(e.tags)) continue;
-      const p = toPlace(e);
-      if (p) cleaned.push(p);
-    }
-    return dedupePlaces(cleaned);
-  } catch (e) {
-    console.warn('Overpass hata:', e.message);
-    return [];
-  }
 }
 
 // ----------------------- eşleştirme helper’ı
@@ -222,7 +106,7 @@ function bestCityForPlace(placeName, cityNames){
   return best;
 }
 
-// ----------------------- ana akış
+// ----------------------- ana akış (şehir bazlı)
 (async function main(){
   console.log('→ Ülkeler çekiliyor (CSC)…');
   const countries = await fetchCountries(); // [{code,name}]
@@ -233,35 +117,50 @@ function bestCityForPlace(placeName, cityNames){
   for (const c of countries){
     console.log(`\n=== ${c.code} • ${c.name} ===`);
 
-    // 1) states -> cities (toplanmış)
-    const cities = await fetchCitiesForCountry(c.code);
-    console.log('Şehir sayısı:', cities.length);
+    // 1) states ve stateCitiesMap
+    const states = await fetchStatesForCountry(c.code); // [{code,name}]
+    const stateCitiesMap = {};
+    const allCitySet = new Set();
 
-    // 2) HAVAALANLARI (Aviationstack) — ülke bazlı çek
+    if (states.length > 0) {
+      const limit = pLimit(6);
+      await Promise.all(states.map(st => limit(async () => {
+        if (!st.code) return;
+        try {
+          const cities = await fetchCitiesForState(c.code, st.code);
+          if (cities.length) {
+            stateCitiesMap[st.name] = cities.slice();        // state -> [cityName,...]
+            for (const nm of cities) allCitySet.add(nm);
+          }
+        } catch (e) {
+          console.warn(`⚠️  ${c.code}/${st.code} şehirleri alınamadı: ${e.message}`);
+        }
+      })));
+    }
+
+    if (states.length === 0 || allCitySet.size === 0) {
+      console.warn(`ℹ️  ${c.code}: state bazlı şehir bulunamadı, ülke toplamından türetilecek.`);
+      const mergedCities = await fetchCitiesForCountry(c.code);
+      for (const nm of mergedCities) allCitySet.add(nm);
+    }
+
+    const cities = Array.from(allCitySet).sort(safeCmp);
+    console.log('State sayısı:', states.length, ' • Şehir sayısı:', cities.length);
+
+    // 3) HAVAALANLARI (Aviationstack) — ülke bazlı çek
     const airports = await fetchAirportsAviationstack({
       countryIso2: c.code,
       limitPerPage: 100,
       sleepMs: 150,
-      // maxPages: Infinity, // provider'ına eklersen bütçe koruması için kullan
     });
 
-    // 3) tren/otogar
-    await sleep(400); // Overpass’e nazik ol
-    const stations = await fetchStations({ code: c.code, name: c.name });
-
-    // şehre bağla
-    const citySet = new Set(cities);
+    // 4) şehre bağla (bus/train burada yok; bu script şehir bazında havalimanı odaklı)
     const cityGroups = {};
-    for (const name of citySet) cityGroups[name] = { plane:[], train:[], bus:[] };
+    for (const name of cities) cityGroups[name] = { plane:[], train:[], bus:[] };
 
-    // Aviationstack: municipality yok → isim tabanlı eşleştirme
     for (const ap of airports){
       const city = bestCityForPlace(ap.name, cities);
       if (city) cityGroups[city].plane.push({ name: ap.name, lat: ap.lat, lng: ap.lng });
-    }
-    for (const st of stations){
-      const city = bestCityForPlace(st.name, cities);
-      if (city) cityGroups[city][st.type].push({ name: st.name, lat: st.lat, lng: st.lng });
     }
 
     // temizlik ve sıralama
@@ -276,7 +175,15 @@ function bestCityForPlace(placeName, cityNames){
       }
     }
 
-    const doc = { code: c.code, name: c.name, cities: cityGroups };
+    // 6) Ülke dokümanı: states + stateCitiesMap + cities (şehir bazlı)
+    const doc = {
+      code: c.code,
+      name: c.name,
+      states: states.map(s => s.name),
+      stateCitiesMap: Object.keys(stateCitiesMap).length ? stateCitiesMap : null,
+      cities: cityGroups
+    };
+
     const outPath = path.join(OUT_DIR, 'countries', `${c.code}.json`);
     ensureDir(path.dirname(outPath));
     fs.writeFileSync(outPath, JSON.stringify(doc, null, 2), 'utf8');

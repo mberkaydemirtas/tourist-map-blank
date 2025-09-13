@@ -203,12 +203,11 @@ export default function CreateTripWizardScreen() {
 
   /** KONAKLAMA için haritadan seçim — köprü üzerinden */
   function openLodgingPicker() {
-    bridge.openLodgingPicker({
-      cityKey: activeCityKey,
-      cityObj: activeCityObj,          // { name, center:{lat,lng}, ... }
-      // search: 'otel adı'            // istersen arama
-    });
-
+bridge.openLodgingPicker({
+  cityKey: activeCityKey,
+  cityObj: activeCityObj,          // { name, center:{lat,lng}, ... }
+  // search: 'otel adı'            // istersen arama
+});
   }
 
   // --- Render

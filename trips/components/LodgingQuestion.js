@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, ActivityIndicator, FlatList } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { getTopLodgingsByCity } from '../../services/hotelSuggest';
+import { getTopLodgingsByCity } from '../src/services/hotelSuggest';
 
 const BORDER = '#23262F';
 const BTN = '#2563EB';

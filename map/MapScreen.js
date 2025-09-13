@@ -49,11 +49,17 @@ import { useRouteCancel } from './hooks/useRouteCancel';
 
 const xlog = (...a) => console.log('%c[XRAY] ', 'color:#ff3b30', ...a);
 
+const useMountedRef = () => {
+  const r = React.useRef(true);
+  useEffect(() => () => { r.current = false; }, []);
+  return r;
+};
+
 export default function MapScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const picker = route.params?.picker?.enabled ? route.params.picker : null; // { enabled, which, center, cityName, sheetInitial, version }
-
+  const mountedRef = useMountedRef();
   const mapRef = useRef(null);
   const map = useMapLogic(mapRef);
   const { coords, available, refreshLocation } = useLocation();
@@ -78,6 +84,24 @@ export default function MapScreen() {
     presentedRef: routeSheetPresentedRef,
     resumeAfterNavRef: resumeSheetAfterNavRef,
   } = useRouteSheetController(sheetRefRoute);
+
+  // Aynı anda birden çok present/dismiss’i engelle
+  const presentingRef = useRef(false);
+  const safePresentRouteSheet = useCallback(() => {
+    if (presentingRef.current || routeSheetPresentedRef.current) return;
+    presentingRef.current = true;
+    InteractionManager.runAfterInteractions(() => {
+      requestAnimationFrame(() => {
+        if (!mountedRef.current) { presentingRef.current = false; return; }
+        if (!routeSheetPresentedRef.current) {
+          try { presentRouteSheet(); } finally { presentingRef.current = false; }
+        } else {
+          presentingRef.current = false;
+        }
+      });
+    });
+  }, [presentRouteSheet]);
+ 
 
   const [mode, setMode] = useState('explore');
   const [canShowScan, setCanShowScan] = useState(false);
@@ -443,7 +467,7 @@ useEffect(() => {
         m => Array.isArray(map.routeOptions?.[m]) && map.routeOptions[m].length > 0
       );
       if (routeSheetAutoOpenRef.current && (allReady || routeSheetPresentedRef.current)) {
-        requestAnimationFrame(presentRouteSheet);
+        safePresentRouteSheet();
       }
     }
   }, [mode, map.selectedMode, map.routeOptions, presentRouteSheet]);
@@ -456,7 +480,7 @@ useEffect(() => {
       m => Array.isArray(map.routeOptions?.[m]) && map.routeOptions[m].length > 0
     );
     if (routeSheetAutoOpenRef.current && (allReady || routeSheetPresentedRef.current)) {
-      const id = setTimeout(() => presentRouteSheet(), 0);
+      const id = setTimeout(() => safePresentRouteSheet(), 0);
       return () => clearTimeout(id);
     }
   }, [mode, routeCoords, map.routeOptions, presentRouteSheet]);
@@ -756,7 +780,7 @@ useEffect(() => {
           }}
           onStart={() => {
             resumeSheetAfterNavRef.current = true;
-            dismissRouteSheet();
+            safeDismissRouteSheet();
 
             const f = normalizeCoord(map.fromLocation?.coords);
             const t = normalizeCoord(map.toLocation?.coords);

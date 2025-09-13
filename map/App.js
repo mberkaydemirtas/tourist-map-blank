@@ -1,16 +1,17 @@
 // map/App.js
+import 'react-native-reanimated';            // ⬅️ Reanimated EN ÜSTTE olmalı
 import 'react-native-gesture-handler';
-import 'react-native-reanimated';
+
 import React, { useEffect } from 'react';
-import { Platform, StatusBar } from 'react-native';
+import { Platform, StatusBar, Alert, SafeAreaView, Text } from 'react-native'; // ⬅️ SafeAreaView ve Text eklendi
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'; // ✅ sadece bu
-import Ionicons from '@expo/vector-icons/Ionicons';
-// map/App.js
+import { Ionicons } from '@expo/vector-icons';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+
 import NavigationScreen from './screens/NavigationScreen';
 
 // Ekranlar
@@ -28,14 +29,44 @@ const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
 const TripsStack = createNativeStackNavigator();
 
+/** ───────── Error Boundary ───────── */
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { err: null }; }
+  static getDerivedStateFromError(err) { return { err }; }
+  componentDidCatch(err, info) {
+    console.error('Wizard crash:', err, info);
+    try {
+      Alert.alert('Bir şeyler ters gitti', String(err?.message ?? err));
+    } catch {}
+  }
+  render() {
+    if (this.state.err) {
+      return (
+        <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#101014' }}>
+          <Text style={{ color: 'white' }}>Bir hata oluştu</Text>
+        </SafeAreaView>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// Sadece Wizard’ı sarmalayan bir wrapper
+function WizardWithBoundary(props) {
+  return (
+    <ErrorBoundary>
+      <CreateTripWizardScreen {...props} />
+    </ErrorBoundary>
+  );
+}
+
 function HomeNavigator() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
       <HomeStack.Screen name="Home" component={HomePage} />
       <HomeStack.Screen name="Map" component={MapScreen} />
-      {/* ⬇️ Bunu ekleyin */}
       <HomeStack.Screen
-        name="NavigationScreen"      // Route adı navigate ile aynı olsun
+        name="NavigationScreen"
         component={NavigationScreen}
         options={{ headerShown: false }}
       />
@@ -53,7 +84,7 @@ function TripsNavigator() {
       />
       <TripsStack.Screen
         name="CreateTripWizard"
-        component={CreateTripWizardScreen}
+        component={WizardWithBoundary}   // wrapper
         options={{ title: 'Yeni Gezi' }}
       />
       <TripsStack.Screen
@@ -84,7 +115,6 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {/* ✅ BottomSheetModalProvider en üstte; portal çakışması yok */}
       <BottomSheetModalProvider>
         <SafeAreaProvider>
           <NavigationContainer theme={navTheme}>
@@ -92,7 +122,6 @@ export default function App() {
               barStyle="light-content"
               backgroundColor={Platform.OS === 'android' ? '#000' : undefined}
             />
-
             <Tab.Navigator
               screenOptions={({ route }) => ({
                 headerShown: false,
@@ -112,9 +141,7 @@ export default function App() {
                 },
               })}
             >
-              {/* 1) Keşfet: Home + Map aynı stack içinde */}
               <Tab.Screen name="Keşfet" component={HomeNavigator} />
-              {/* 2) Gezilerim: Liste + Wizard + Editor */}
               <Tab.Screen name="Gezilerim" component={TripsNavigator} />
             </Tab.Navigator>
           </NavigationContainer>

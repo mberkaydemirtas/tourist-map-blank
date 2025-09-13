@@ -1,38 +1,34 @@
-// src/services/geoService.js
-// TRIPS (isim-önce) — transport-hubs tabanlı
-// - API imzaları öncekiyle uyumlu:
+// trips/services/geoService.js 
+// Local atlas tabanlı, senkron şehir listesi
+// Public API:
 //   listCountries(): {code,name}[]
+//   listAdminsForCountry(code): {key,label}[]
+//   listCitiesForCountryAndAdmin(code, admin): option[]
 //   getCitiesForCountry(code, query): option[]
-//   searchCities({countryCode, query}): Promise<option[]>
+//   searchCities({countryCode, query, adminName}): Promise<option[]>
 
-// Ülke listesini stabil tutmak için mevcut COUNTRY_LIST'i kullanıyoruz.
-// Şehir isimleri ise transport-hubs'tan (all-hubs.json ya da <CC>.json) yükleniyor.
-import { COUNTRY_LIST } from '../src/data/countryList.js';   // mevcut ülke listesi (sync)
+import {
+  COUNTRY_INDEX as COUNTRY_INDEX_CITY,
+  getCountryDoc as getCityCountryDoc,
+} from '../src/data/atlas/index.js';
 
-// İsim-önce adaptör (transport-hubs kaynaklı)
-import { listCityNames } from '../src/services/tripsGeoNamesAdapter.js';
+import {
+  COUNTRY_INDEX as COUNTRY_INDEX_ADMIN,
+  getCountryDoc as getAdminCountryDoc,
+} from '../src/data/atlas-state/index.js';
 
-/* -------------------------------- helpers -------------------------------- */
-
+// ───────── helpers ─────────
 const hasNormalize = typeof String.prototype.normalize === 'function';
 const stripAccents = (s) =>
   (hasNormalize ? String(s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '') : String(s || ''));
 const lowerTr = (s) => {
   const str = String(s || '');
   if (typeof str.toLocaleLowerCase === 'function') {
-    try { return str.toLocaleLowerCase('tr'); } catch { /* fallback */ }
+    try { return str.toLocaleLowerCase('tr'); } catch {}
   }
   return str.toLowerCase();
 };
 const norm = (s) => stripAccents(lowerTr(s)).replace(/\s+/g, ' ').trim();
-
-// Hermes/Android kararlılığı için basit kıyas
-function safeCmp(a, b) {
-  const sa = String(a || '');
-  const sb = String(b || '');
-  if (sa === sb) return 0;
-  return sa < sb ? -1 : 1;
-}
 
 function scoreName(q, name) {
   const n = norm(name);
@@ -42,158 +38,166 @@ function scoreName(q, name) {
   const i = n.indexOf(q);
   return i >= 0 ? 700 - Math.min(i, 300) : -1;
 }
-
 const slug = (s) =>
   stripAccents(String(s || ''))
     .replace(/[^a-zA-Z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .toLowerCase();
 
-/* ------------------------------- STATE -------------------------------- */
+const safeCmp = (a,b)=> String(a||'').localeCompare(String(b||''), 'tr', {sensitivity:'base'});
 
-// CITY_POOL, transport-hubs kaynaklı şehir isimlerini option'a çevrilmiş halde tutar.
-const CITY_POOL = {};   // { CC: [{id,name,countryName}] }
+// ───────── country lists & names (admin > city öncelik) ─────────
 const COUNTRY_NAME = {};
-for (const c of COUNTRY_LIST) COUNTRY_NAME[c.code] = c.name;
-
-// Yükleme durumu
-const LOADED = {};            // { CC: true }
-const INFLIGHT = {};          // { CC: Promise<void> }
-
-/* --------------------------- CC resolve/alias --------------------------- */
-
-const COUNTRY_ALIASES = {
-  TR: ['tr', 'turkey', 'türkiye', 'turkiye', 'tc', 't.c.', 'türkiye cumhuriyeti', 'turkiye cumhuriyeti'],
-  US: ['us', 'usa', 'united states', 'america', 'united states of america'],
-  GB: ['uk', 'gb', 'great britain', 'united kingdom', 'england'],
-  DK: ['dk', 'denmark', 'danmark', 'danimarka'],
-};
-
-function resolveCountryCode(input) {
-  if (!input) return '';
-  const raw = String(input).trim();
-  const up = raw.length === 2 ? raw.toUpperCase() : raw;
-  if (/^[A-Za-z]{2}$/.test(up)) return up.toUpperCase();
-
-  const lower = norm(raw);
-  for (const [cc, aliases] of Object.entries(COUNTRY_ALIASES)) {
-    if (aliases.some((a) => norm(a) === lower)) return cc;
+const COUNTRY_LIST = (() => {
+  const out = [];
+  const pushUnique = (arr) => {
+    for (const c of (arr || [])) {
+      if (!out.find(x => x.code === c.code)) out.push({ code: c.code, name: c.name });
+      COUNTRY_NAME[c.code] = c.name; // isim haritasını da besle
+    }
+  };
+  // Önce city atlas (genel)
+  pushUnique(COUNTRY_INDEX_CITY);
+  // Üzerine admin atlas (TR gibi) — isim önceliği burada
+  for (const c of (COUNTRY_INDEX_ADMIN || [])) {
+    const i = out.findIndex(x => x.code === c.code);
+    if (i >= 0) out[i] = { code: c.code, name: c.name };
+    else out.push({ code: c.code, name: c.name });
+    COUNTRY_NAME[c.code] = c.name;
   }
+  return out.sort((a,b)=> safeCmp(a.name,b.name));
+})();
 
-  const hit = COUNTRY_LIST.find((c) => norm(c.name) === lower);
-  return hit ? hit.code : up.toUpperCase();
+function countryLabel(code){
+  const cc = String(code||'').toUpperCase();
+  return COUNTRY_NAME[cc] || cc;
 }
 
-/* ----------------------------- loaders ----------------------------- */
+// ───────── düşük seviye okuma yardımcıları ─────────
+// Admin (il/eyalet) isimleri — ŞU AN İŞ KURALI: SADECE TR için anlamlı.
+function _listStates(cc){
+  const docA = getAdminCountryDoc(cc);
+  if (docA?.admins?.length) return docA.admins.map(a => a.name);
+  // City atlas içinde states alanı varsa onu kullan (opsiyonel)
+  const docC = getCityCountryDoc(cc);
+  if (Array.isArray(docC?.states)) return docC.states.slice();
+  return [];
+}
 
-async function ensureCountryLoaded(isoLike) {
-  const cc = resolveCountryCode(isoLike);
-   if (!cc || LOADED[cc]) return;
-   if (INFLIGHT[cc]) { await INFLIGHT[cc]; return; 
-   }
+// City atlas: ülke → tüm şehir adları
+function _listCityNames(cc){
+  const docC = getCityCountryDoc(cc);
+  if (!docC?.cities) return [];
+  return Object.keys(docC.cities);
+}
 
-   INFLIGHT[cc] = (async () => {
-     try {
-       const names = await listCityNames(cc); // ['Ankara','İstanbul',...]
-    const cname = COUNTRY_NAME[cc] || cc;
-    const seen = new Set();
-    const items = new Array(names.length);
+// City atlas: ülke + admin → şehir adları (stateCitiesMap varsa)
+function _listCitiesForState(cc, adminName){
+  const docC = getCityCountryDoc(cc);
+  const map = docC?.stateCitiesMap;
+  if (!map) return [];
+  const names = map[adminName] || map[String(adminName||'')] || [];
+  return Array.isArray(names) ? names.slice() : [];
+}
 
-    for (let i = 0; i < names.length; i++) {
-      const name = names[i];
-      const base = `${cc}-${slug(name) || 'x'}`;
-      let id = base, n = 1;
-      while (seen.has(id)) { n += 1; id = `${base}-${n}`; }
-      seen.add(id);
-      items[i] = { id, name, countryName: cname };
-    }
+// ───────── public API ─────────
 
-    if (items.length > 1 && items.length <= 500) {
-      items.sort((a, b) => String(a.name).localeCompare(String(b.name), 'tr'));
-    }
-
-    CITY_POOL[cc] = items;
-  } catch (e) {
-    console.warn('[geoService] city load failed', isoLike, e?.message);
-    CITY_POOL[cc] = CITY_POOL[cc] || [];
-  } finally {
-    LOADED[cc] = true;
-     }
-   })();
-   try { await INFLIGHT[cc]; } finally { delete INFLIGHT[cc]; }}
-
-/* --------------------------------- API --------------------------------- */
-
+// Ülke listesi (admin atlas varsa onu, yoksa city atlas’ı gösterir)
 export function listCountries() {
-  // Sync, mevcut COUNTRY_LIST üstünden
-  return COUNTRY_LIST
-    .map((c) => ({ code: c.code, name: c.name }))
-    .sort((a, b) => safeCmp(a.name, b.name));
+  return COUNTRY_LIST.slice();
 }
 
-const DEFAULT_EMPTY_QUERY_LIMIT = 100;  // boş aramada
-const DEFAULT_SEARCH_LIMIT = 200;       // aramada
-
-export function listAdminsForCountry() {
-  // Trips akışında admin ayrımı yok; API uyumluluğu için boş.
-  return [];
+/**
+ * Ülke → admin listesi (US: state, TR: il).
+ * İŞ KURALI: Şu an SADECE TÜRKİYE için admin gösteriyoruz.
+ * TR dışı ülkelerde boş dizi döner.
+ */
+export function listAdminsForCountry(countryLike) {
+  const cc = String(countryLike || '').toUpperCase();
+  if (cc !== 'TR') return [];
+  const states = _listStates(cc) || [];
+  return states.map(name => ({ key: name, label: name }));
 }
 
-export function listCitiesForCountryAndAdmin() {
-  // admins-only senaryosu için boş
-  return [];
+/**
+ * Ülke + admin → şehir listesi
+ * (Genel amaçlı; TR’de UI’da şehir seçimi yok ama fonksiyon korunuyor.)
+ */
+export function listCitiesForCountryAndAdmin(countryLike, adminName) {
+  const cc = String(countryLike || '').toUpperCase();
+  const cities = _listCitiesForState(cc, adminName) || [];
+  return cities.map((name, i) => ({
+    place_id: `${cc}-${slug(adminName)}-${i}`,
+    main_text: name,
+    description: `${name}, ${countryLabel(cc)}`,
+  }));
 }
 
+/**
+ * “Tek alan” şehir listesi.
+ * İŞ KURALI:
+ *  - TR için: state (il) listesini “şehir gibi” sun.
+ *  - TR dışı için: gerçek şehir listesini (city atlas’tan) sun.
+ */
 export function getCitiesForCountry(countryLike, query = '') {
-  // Sync görünür; ensureCountryLoaded async çalıştığında WhereToQuestion zaten
-  // InteractionManager ile searchCities çağırarak cache'i tazeler.
-  const cc = resolveCountryCode(countryLike);
-  const all = CITY_POOL[cc] || [];
-  if (!query) return all.slice(0, DEFAULT_EMPTY_QUERY_LIMIT).map(toOption);
+  const cc = String(countryLike||'').toUpperCase();
+  const states = _listStates(cc) || [];
+  const hasStates = states.length > 0;
 
-  const q = norm(query);
-  const scored = [];
-  for (let i = 0; i < all.length; i++) {
-    const item = all[i];
-    const s = Math.max(
-      scoreName(q, item.name),
-      scoreName(q, `${item.name}, ${item.countryName}`)
-    );
-    if (s >= 0) scored.push({ item, s });
+  if (cc === 'TR' && hasStates) {
+    const source = query ? fuzzyFilter(states, query) : states.slice(0, 100);
+    return source.map((name, i) => toOption({
+      id: `${cc}-st-${i}`,
+      name,
+      countryName: countryLabel(cc),
+    }));
   }
-  scored.sort((a, b) => b.s - a.s || safeCmp(a.item.name, b.item.name));
-  return scored.slice(0, DEFAULT_SEARCH_LIMIT).map((x) => toOption(x.item));
+
+  const allCityNames = _listCityNames(cc) || [];
+  if (!query) {
+    return allCityNames.slice(0, 100).map((name, i) =>
+      toOption({ id: `${cc}-${i}`, name, countryName: countryLabel(cc) })
+    );
+  }
+  const scored = fuzzyScore(allCityNames, query)
+    .slice(0, 200)
+    .map((x, i) => toOption({ id: `${cc}-${i}`, name: x.name, countryName: countryLabel(cc) }));
+  return scored;
 }
 
-export async function searchCities({ countryCode, query }) {
-  const cc = resolveCountryCode(countryCode);
-  await ensureCountryLoaded(cc);
+// Senkron sonucu Promise ile sar
+export async function searchCities({ countryCode, query, adminName }) {
+  const cc = String(countryCode || '').toUpperCase();
+  // TR'de admin seçilmişse admin'e göre getir (ileride gerekebilir)
+  if (cc === 'TR' && adminName) {
+    return listCitiesForCountryAndAdmin(cc, adminName);
+  }
   return getCitiesForCountry(cc, query);
 }
 
-export async function getCityCenter() {
-  // Trips'te şehir merkezi, gerektiğinde StartEnd/Trips tarafında hub ortalamasıyla çözümleniyor.
-  return null;
-}
+// Gerek yok
+export async function getCityCenter() { return null; }
 
-export function getCountryCities() {
-  // Debug/araç fonksiyonu
-  return Object.keys(CITY_POOL).map((cc) => ({
-    code: cc,
-    name: COUNTRY_NAME[cc] || cc,
-    cities: CITY_POOL[cc],
-    admins: [],
-  }));
-}
-export const COUNTRY_CITIES = getCountryCities();
-
-/* ------------------------------- helpers ------------------------------- */
-
-function toOption(obj) {
-  const { id, name, countryName } = obj || {};
+// ── küçük yardımcılar ─────────────────────────────────────────────────────
+function toOption({ id, name, countryName }){
   return {
     place_id: id,
     main_text: name || '',
     description: [name, countryName].filter(Boolean).join(', '),
   };
+}
+function fuzzyFilter(list, query){
+  const q = norm(query);
+  if (!q) return list.slice();
+  return list.filter(n => norm(n).includes(q));
+}
+function fuzzyScore(list, query){
+  const q = norm(query);
+  const scored = [];
+  for (const name of list) {
+    const s = scoreName(q, name);
+    if (s >= 0) scored.push({ name, s });
+  }
+  scored.sort((a,b)=> b.s - a.s || a.name.localeCompare(b.name, 'tr'));
+  return scored;
 }

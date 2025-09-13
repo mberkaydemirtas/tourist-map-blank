@@ -4,17 +4,14 @@
     "slug": "tourist-map-blank",
     "version": "1.0.0",
     "orientation": "portrait",
-    "plugins": [
-      "expo-dev-client"
-    ],
+    "plugins": ["expo-dev-client"],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "jsEngine": "jsc",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff",
-      "jsengine": "jsc"
+      "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
@@ -23,7 +20,7 @@
         "googleMapsApiKey": "AIzaSyBP0UQMQsLeyJNQLfGrmEEWkoB8QhWY4V8"
       }
     },
-    "android": {
+    "android": {"edgeToEdgeEnabled": true, "jsEngine": "jsc",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
@@ -32,8 +29,6 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "jsEngine": "jsc",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyD3J8FFJDqPymAs1vW-bbsmBMQp4ModVeU"

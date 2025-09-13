@@ -1,51 +1,20 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
+// Root build.gradle (Groovy)
 
-buildscript {
-   ext {
-    googlePlayServicesLocationVersion = "21.0.1"
-  }
-  repositories {
-    google()
-    mavenCentral()
-  }
-  dependencies {
-    classpath('com.android.tools.build:gradle')
-    classpath('com.facebook.react:react-native-gradle-plugin')
-    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
-  }
+plugins {
+  id("com.android.application")      version "8.5.2" apply false
+  id("com.android.library")          version "8.5.2" apply false
+  id("org.jetbrains.kotlin.android") version "2.0.21" apply false
+  id("com.facebook.react")           version "0.76.3" apply false
 }
 
-def reactNativeAndroidDir = new File(
-  providers.exec {
-    workingDir(rootDir)
-    commandLine("node", "--print", "require.resolve('react-native/package.json')")
-  }.standardOutput.asText.get().trim(),
-  "../android"
-)
+ext {
+  buildToolsVersion = "35.0.0"
+  minSdkVersion     = 24
+  compileSdkVersion = 35
+  targetSdkVersion  = 35
+  ndkVersion        = "27.1.12297006"
 
-allprojects {
-  repositories {
-    maven {
-      // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
-      url(reactNativeAndroidDir)
-    }
-
-    google()
-    mavenCentral()
-    
-    // ✅ Mapbox lisanslı kütüphaneler için gerekli
-    maven {
-      url 'https://api.mapbox.com/downloads/v2/releases/maven'
-      credentials {
-        username = "mapbox"
-        password = project.findProperty("MAPBOX_DOWNLOADS_TOKEN") ?: ""
-      }
-    }
-
-    maven { url 'https://www.jitpack.io' }
-  }
+  googlePlayServicesLocationVersion = "21.0.1"
 }
 
-
-apply plugin: "expo-root-project"
-apply plugin: "com.facebook.react.rootproject"
+// NOT: repositories burada değil, settings.gradle yönetiyor.

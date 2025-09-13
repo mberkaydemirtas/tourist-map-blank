@@ -1,16 +1,34 @@
+// android/settings.gradle
+
 pluginManagement {
-  def reactNativeGradlePlugin = new File(
+  repositories {
+    google()
+    mavenCentral()
+    gradlePluginPortal()
+  }
+
+  // RN Gradle plugin'i node_modules'tan çöz
+  def rnPluginPath = new File(
     providers.exec {
       workingDir(rootDir)
-      commandLine("node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })")
+      commandLine(
+        "node",
+        "--print",
+        "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"
+      )
     }.standardOutput.asText.get().trim()
   ).getParentFile().absolutePath
-  includeBuild(reactNativeGradlePlugin)
-  
+  includeBuild(rnPluginPath)
+
+  // 🔧 Expo autolinking plugin’inin yolunu çöz ve includeBuild et
   def expoPluginsPath = new File(
     providers.exec {
       workingDir(rootDir)
-      commandLine("node", "--print", "require.resolve('expo-modules-autolinking/package.json', { paths: [require.resolve('expo/package.json')] })")
+      commandLine(
+        "node",
+        "--print",
+        "require.resolve('expo-modules-autolinking/package.json', { paths: [require.resolve('expo/package.json')] })"
+      )
     }.standardOutput.asText.get().trim(),
     "../android/expo-gradle-plugin"
   ).absolutePath
@@ -19,21 +37,36 @@ pluginManagement {
 
 plugins {
   id("com.facebook.react.settings")
+  // ⬇️ Geri eklendi
   id("expo-autolinking-settings")
 }
 
 extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
-  if (System.getenv('EXPO_USE_COMMUNITY_AUTOLINKING') == '1') {
-    ex.autolinkLibrariesFromCommand()
-  } else {
-    ex.autolinkLibrariesFromCommand(expoAutolinking.rnConfigCommand)
+  // RN tarafı
+  ex.autolinkLibrariesFromCommand()
+}
+
+dependencyResolutionManagement {
+  // EAS init.gradle ile kavga çıkmasın diye proje depolarını tercih edelim
+  repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
+  repositories {
+    google()
+    mavenCentral()
+    maven { url "https://www.jitpack.io" }
+
+    // (Kullanıyorsan) Mapbox
+    maven {
+      url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
+      credentials {
+        username = "mapbox"
+        def tokenProp = providers.gradleProperty("MAPBOX_DOWNLOADS_TOKEN").orNull
+        def tokenEnv  = System.getenv("MAPBOX_DOWNLOADS_TOKEN")
+        password = tokenProp ?: tokenEnv ?: ""
+      }
+      authentication { basic(BasicAuthentication) }
+    }
   }
 }
-expoAutolinking.useExpoModules()
 
-rootProject.name = 'tourist-map-blank'
-
-expoAutolinking.useExpoVersionCatalog()
-
-include ':app'
-includeBuild(expoAutolinking.reactNativeGradlePlugin)
+rootProject.name = "tourist-map-blank"
+include(":app")
