@@ -4,7 +4,8 @@
   xmlns:android="http://schemas.android.com/apk/res/android"
   xmlns:tools="http://schemas.android.com/tools">
 
-  <!-- Geliştirme menüsü ve overlay için -->
+  <!-- Metro / ağ erişimi ve dev overlay -->
+  <uses-permission android:name="android.permission.INTERNET" />
   <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
   <application
@@ -25,10 +26,30 @@
       android:windowSoftInputMode="adjustResize"
       android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode"
       tools:replace="android:configChanges">
+
+      <!-- Launcher -->
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
+
+      <!-- 🔗 Dev Client deep link (app.json'daki "scheme": "touristmap" ise exp+touristmap) -->
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="exp+touristmap" />
+      </intent-filter>
+
+      <!-- (İsteğe bağlı) Uygulama içi custom scheme için
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="touristmap" />
+      </intent-filter>
+      -->
+
     </activity>
 
   </application>

@@ -3,8 +3,12 @@
     "name": "tourist-map-blank",
     "slug": "tourist-map-blank",
     "version": "1.0.0",
+    "scheme": "touristmap",
     "orientation": "portrait",
-    "plugins": ["expo-dev-client"],
+    "plugins": [
+      "expo-dev-client",
+      "expo-asset"
+    ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "jsEngine": "jsc",
@@ -20,7 +24,9 @@
         "googleMapsApiKey": "AIzaSyBP0UQMQsLeyJNQLfGrmEEWkoB8QhWY4V8"
       }
     },
-    "android": {"edgeToEdgeEnabled": true, "jsEngine": "jsc",
+    "android": {
+      "edgeToEdgeEnabled": true,
+      "jsEngine": "jsc",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
