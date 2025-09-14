@@ -1,4 +1,4 @@
-// android/settings.gradle — SAFE & robust includeBuild
+// android/settings.gradle — stable includeBuild for RN 0.76 + Expo (AGP 8.x)
 
 pluginManagement {
   repositories {
@@ -7,7 +7,7 @@ pluginManagement {
     gradlePluginPortal()
   }
 
-  // --- React Native Gradle Plugin'i node_modules'tan çöz ve include et ---
+  // ── React Native Gradle Plugin (RN 0.76)
   def rnPluginPath = new File(
     providers.exec {
       workingDir(rootDir)
@@ -20,76 +20,76 @@ pluginManagement {
   ).getParentFile().absolutePath
   includeBuild(rnPluginPath)
 
-  // =========================
-  // Expo Gradle Plugin (id: "expo")
-  // =========================
-  // Olası dizin adaylarını sırayla dene:
+  // ── Expo Gradle Plugin (id: "expo") — birden fazla olası yol
+  // 1) expo-modules-autolinking üzerinden (yaygın)
+  def autoLinkPkgJson = providers.exec {
+    workingDir(rootDir)
+    commandLine(
+      "node",
+      "--print",
+      "require.resolve('expo-modules-autolinking/package.json', { paths: [require.resolve('expo/package.json')] })"
+    )
+  }.standardOutput.asText.get().trim()
+  def autoLinkDir = new File(autoLinkPkgJson).getParentFile()
+
+  def expoFromAutoParent = new File(autoLinkDir, "../android/expo-gradle-plugin").getCanonicalFile()
+  def expoFromAuto      = new File(autoLinkDir, "android/expo-gradle-plugin").getCanonicalFile()
+
+  // 2) expo paketinin içinden (monorepo veya düz dağıtım)
   def expoPkgJson = providers.exec {
     workingDir(rootDir)
     commandLine("node", "--print", "require.resolve('expo/package.json')")
   }.standardOutput.asText.get().trim()
-
   def expoDir = new File(expoPkgJson).getParentFile()
-  def expoGradlePluginCandidates = [
-    new File(expoDir, "packages/expo-gradle-plugin"), // SDK 52+ yayınlarında sık görülen
-    new File(expoDir, "expo-gradle-plugin")          // bazı dağıtımlarda düz kök
-  ].collect { it.getCanonicalFile() }
 
-  ext.EXPO_GRADLE_PLUGIN_DIR = expoGradlePluginCandidates.find { it.exists() }
-  ext.EXPO_GRADLE_PLUGIN_AVAILABLE = ext.EXPO_GRADLE_PLUGIN_DIR != null
-  if (ext.EXPO_GRADLE_PLUGIN_AVAILABLE) {
-    includeBuild(ext.EXPO_GRADLE_PLUGIN_DIR.absolutePath)
-  }
+  def expoFromExpoMonorepo = new File(expoDir, "packages/expo-gradle-plugin").getCanonicalFile()
+  def expoFromExpoFlat     = new File(expoDir, "expo-gradle-plugin").getCanonicalFile()
+  def expoFromExpoAndroid  = new File(expoDir, "android/expo-gradle-plugin").getCanonicalFile()
 
-  // ======================================
-  // Expo Autolinking Settings Plugin (id: "expo-autolinking-settings")
-  // ======================================
-  // expo-modules-autolinking paketinden türetilen olası yollar:
-  def autoLinkPkgJson = providers.exec {
-    workingDir(rootDir)
-    commandLine("node", "--print", "require.resolve('expo-modules-autolinking/package.json')")
-  }.standardOutput.asText.get().trim()
+  def expoCandidates = [
+    expoFromAutoParent,
+    expoFromAuto,
+    expoFromExpoMonorepo,
+    expoFromExpoFlat,
+    expoFromExpoAndroid
+  ]
+  def expoPluginDir = expoCandidates.find { it != null && it.exists() }
 
-  def autoLinkDir = new File(autoLinkPkgJson).getParentFile()
-  def expoAutolinkingPluginCandidates = [
-    new File(autoLinkDir, "../android/expo-gradle-plugin"), // eski yollar
-    new File(autoLinkDir, "../expo-gradle-plugin"),         // alternatif
-    new File(autoLinkDir, "android/expo-gradle-plugin"),    // paket içi
-    new File(autoLinkDir, "expo-gradle-plugin")             // paket kökü
-  ].collect { it.getCanonicalFile() }
-
-  ext.EXPO_AUTOLINKING_SETTINGS_DIR = expoAutolinkingPluginCandidates.find { it.exists() }
-  ext.EXPO_AUTOLINKING_SETTINGS_AVAILABLE = ext.EXPO_AUTOLINKING_SETTINGS_DIR != null
-  if (ext.EXPO_AUTOLINKING_SETTINGS_AVAILABLE) {
-    includeBuild(ext.EXPO_AUTOLINKING_SETTINGS_DIR.absolutePath)
+  if (expoPluginDir != null) {
+    includeBuild(expoPluginDir.absolutePath)
+    logger.lifecycle("✅ Expo Gradle plugin included from: ${expoPluginDir}")
+    settings.ext.set("EXPO_PLUGIN_AVAILABLE", true)
+  } else {
+    logger.lifecycle("⚠️ Expo Gradle plugin path not found. Continuing without it.")
+    settings.ext.set("EXPO_PLUGIN_AVAILABLE", false)
   }
 }
 
-// RN settings plugin sabit
+// RN settings plugin (gerekli)
 plugins {
   id("com.facebook.react.settings")
 }
 
-// RN tarafı autolinking'i CLI ile tetikle
+// RN autolinking — RN 0.76’da doğru çağrı bu
 extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
   ex.autolinkLibrariesFromCommand()
 }
 
-// Expo Autolinking Settings plugin'i bulunduysa uygula (bulunmazsa sessizce geç)
-if (ext.has("EXPO_AUTOLINKING_SETTINGS_AVAILABLE") && ext.EXPO_AUTOLINKING_SETTINGS_AVAILABLE) {
+// Expo autolinking settings plugin'ini yalnızca bulunduysa uygula
+if (settings.ext.has("EXPO_PLUGIN_AVAILABLE") && settings.ext.get("EXPO_PLUGIN_AVAILABLE")) {
   apply plugin: "expo-autolinking-settings"
 } else {
-  logger.lifecycle("⚠️ 'expo-autolinking-settings' bulunamadı; Expo modülleri Maven'da aranabilir ve derleme AAR çözümünde düşebilir.")
+  logger.lifecycle("ℹ️ Skipping 'expo-autolinking-settings' (plugin not available).")
 }
 
-// Repositories — proje depolarını tercih ediyoruz (init.gradle ile kavga etmesin)
+// Repositories — init.gradle ile kavga etmesin diye projeyi tercih et
 dependencyResolutionManagement {
   repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
   repositories {
     google()
     mavenCentral()
     maven { url "https://www.jitpack.io" }
-    // (Kullanıyorsan) Mapbox
+    // (opsiyonel) Mapbox
     maven {
       url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
       credentials {

@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl, Platform } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { listTrips, deleteTrip, duplicateTrip } from './services/tripsService';
 import { formatDate } from './shared/types';

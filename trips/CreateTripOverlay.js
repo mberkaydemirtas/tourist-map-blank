@@ -1,7 +1,7 @@
 // src/trips/CreateTripOverlay.js
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons';
 
 export default function CreateTripOverlay({ visible, onClose, onStartScratch, onStartTemplate, onStartAI, online = true }) {
   return (

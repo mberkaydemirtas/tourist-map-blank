@@ -3,30 +3,49 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
-// ❌ KALDIRILDI: apply plugin: "expo"
+
+// 'expo' plugin'i yalnızca varsa uygula
+if (gradle.ext.has("EXPO_PLUGIN_AVAILABLE") && gradle.ext.EXPO_PLUGIN_AVAILABLE) {
+  apply plugin: "expo"
+} else {
+  logger.lifecycle("ℹ️ Skipping 'expo' plugin: not available.")
+}
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
 react {
-  entryFile = file(["node", "-e", "require('expo/scripts/resolveAppEntry')", projectRoot, "android", "absolute"].execute(null, rootDir).text.trim())
-  reactNativeDir = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim()).getParentFile().getAbsoluteFile()
-  hermesCommand = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath() + "/sdks/hermesc/%OS-BIN%/hermesc"
-  codegenDir = new File(["node", "--print", "require.resolve('@react-native/codegen/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsoluteFile()
-  // ❌ enableBundleCompression zaten kaldırılmış olmalı
-  cliFile = new File(["node", "--print", "require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })"].execute(null, rootDir).text.trim())
+  entryFile = file(new File(projectRoot, "index.js"))
+
+  reactNativeDir = new File(["node", "--print", "require.resolve('react-native/package.json')"]
+    .execute(null, rootDir).text.trim()).getParentFile().getAbsoluteFile()
+
+  hermesCommand = new File(["node", "--print", "require.resolve('react-native/package.json')"]
+    .execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath() + "/sdks/hermesc/%OS-BIN%/hermesc"
+
+  codegenDir = new File(["node", "--print", "require.resolve('@react-native/codegen/package.json', { paths: [require.resolve('react-native/package.json')] })"]
+    .execute(null, rootDir).text.trim()).getParentFile().getAbsoluteFile()
+
+  cliFile = new File(["node", "--print", "require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })"]
+    .execute(null, rootDir).text.trim())
+
   bundleCommand = "export:embed"
   autolinkLibrariesWithApp()
 }
 
+
 def enableProguardInReleaseBuilds = (findProperty('android.enableProguardInReleaseBuilds') ?: false).toBoolean()
-def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
+
+// JSC (Hermes kapalıysa kullanılacak)
+def jscFlavor = 'org.webkit:android-jsc:+'
+
 def FRESCO_VERSION = (findProperty('expo.fresco.version') ?: "3.3.0")
 def HERMES_ENABLED = (findProperty('hermesEnabled') ?: "true").toBoolean()
 
 android {
-  // 🔧 AGP 8+ için app modülünde AÇIKÇA tanımlıyoruz
   namespace "com.anonymous.touristmapblank"
-  compileSdk 35
+
+  // 🔧 compileSdkVersion'ı açıkça yazıyoruz (AGP 8 mesajını susturur)
+  compileSdkVersion 35
 
   defaultConfig {
     applicationId "com.anonymous.touristmapblank"
@@ -34,6 +53,9 @@ android {
     targetSdkVersion 35
     versionCode 1
     versionName "1.0.0"
+
+    // Emülatör için ABI kısıtlamak istersen aç:
+    // ndk { abiFilters "arm64-v8a", "x86_64" }
   }
 
   signingConfigs {
@@ -46,7 +68,9 @@ android {
   }
 
   buildTypes {
-    debug { signingConfig signingConfigs.debug }
+    debug {
+      signingConfig signingConfigs.debug
+    }
     release {
       signingConfig signingConfigs.debug
       shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
@@ -78,8 +102,7 @@ dependencies {
   implementation("com.google.android.material:material:1.12.0")
   implementation("androidx.activity:activity:1.9.2")
 
-  // ❌ ELLE eklenen expo.modules:expo-modules-core bağımlılığı OLMAYACAK.
-  // Expo modülleri settings.gradle’daki autolinking settings plugin ile include edilir.
+  // Expo modülleri autolinking ile gelir; 'expo-modules-core'ı elle ekleme
 
   if (HERMES_ENABLED) {
     implementation("com.facebook.react:hermes-android")

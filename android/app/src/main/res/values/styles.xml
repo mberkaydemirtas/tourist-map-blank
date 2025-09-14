@@ -1,24 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-  <!-- Uygulama Ana Teması: Material 3 + kenardan-kenara -->
+  <!-- Uygulama Ana Teması (Material 3, kenardan-kenara) -->
   <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
-    <!-- Kenardan-kenara görünüm -->
     <item name="android:statusBarColor">@android:color/transparent</item>
     <item name="android:navigationBarColor">@android:color/transparent</item>
     <item name="android:windowDrawsSystemBarBackgrounds">true</item>
 
-    <!-- Işık/Dark ikon davranışları (uygun API seviyelerinde) -->
+    <!-- Uyumlu API seviyelerinde açık ikonlar -->
     <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
     <item name="android:windowLightNavigationBar" tools:targetApi="26">true</item>
-
-    <!-- (İsteğe bağlı) Renk örnekleri; projenizde colorPrimary varsa bırakılabilir -->
-    <item name="colorPrimary">@color/colorPrimary</item>
   </style>
 
-  <!-- (Opsiyonel) Splash teması: Expo/Android 12+ kullanıyorsanız SplashScreen kütüphanesi ile uyumlu -->
+  <!-- (Opsiyonel) Splash teması; kullanmıyorsan silebilirsin -->
   <style name="Theme.App.SplashScreen" parent="AppTheme">
-    <item name="android:windowBackground">@drawable/ic_launcher_background</item>
+    <item name="android:windowBackground">@android:color/black</item>
   </style>
 
 </resources>
