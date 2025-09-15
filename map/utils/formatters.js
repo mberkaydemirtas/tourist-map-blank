@@ -30,3 +30,4 @@ export function formatRouteSummary(distanceMeters, durationSeconds) {
   if (d && t) return `${d} • ${t}`;
   return d || t || '';
 }
+

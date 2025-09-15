@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl, Platform } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { listTrips, deleteTrip, duplicateTrip } from './services/tripsService';
 import { formatDate } from './shared/types';
@@ -86,7 +86,7 @@ export default function TripsListScreen() {
         keyExtractor={(it) => it.id}
         renderItem={renderItem}
         ListHeaderComponent={Header}
-        stickyHeaderIndices={[0]}                 // 👈 Header sabit
+        stickyHeaderIndices={[0]}
         refreshControl={<RefreshControl tintColor="#fff" refreshing={loading} onRefresh={load} />}
         ListEmptyComponent={!loading ? (
           <View style={styles.empty}>
@@ -119,12 +119,12 @@ const styles = StyleSheet.create({
 
   tableHeader: {
     flexDirection: 'row', paddingVertical: 10, paddingHorizontal: 12,
-    borderTopWidth: 1, borderBottomWidth: 1, borderColor: BORDER, backgroundColor: '#0D0F14',
+    borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#23262F', backgroundColor: '#0D0F14',
   },
   hCell: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
   row: {
     flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 12,
-    borderBottomWidth: 1, borderColor: BORDER, gap: 8,
+    borderBottomWidth: 1, borderColor: '#23262F', gap: 8,
   },
 
   cell: { paddingHorizontal: 6 },
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   badge: {
     color: '#fff', fontWeight: '800', textAlign: 'center',
     paddingHorizontal: 10, paddingVertical: Platform.select({ ios: 4, android: 6 }),
-    borderWidth: 1, borderColor: BORDER, borderRadius: 10, minWidth: 42,
+    borderWidth: 1, borderColor: '#23262F', borderRadius: 10, minWidth: 42,
   },
 
   flex3: { flex: 3 }, flex1: { flex: 1 }, center: { textAlign: 'center' },
@@ -144,4 +144,6 @@ const styles = StyleSheet.create({
 
   empty: { alignItems: 'center', padding: 24, gap: 8 },
   emptyText: { color: '#A8A8B3' },
+  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: '#23262F', borderRadius: 10 },
+  newBtnText: { color: '#fff', fontWeight: '700' },
 });

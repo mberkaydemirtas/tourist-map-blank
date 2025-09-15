@@ -345,6 +345,9 @@ export default function RoutePlannerCard() {
   const [pickerVisible, setPickerVisible] = useState(false);
   const targetIndexRef = useRef(null);
 
+  // 🔹 EKLENDİ: aksiyon modu ('insert' | 'replace')
+  const actionRef = useRef('replace');
+
   const openPickerForIndex = (index) => {
     const n = Number(index);
     if (!Number.isFinite(n)) { dlog('openPickerForIndex ignored (invalid index)', index); return; }
@@ -356,9 +359,10 @@ export default function RoutePlannerCard() {
     dlog('closePicker()');
     setPickerVisible(false);
     targetIndexRef.current = null; // manuel kapama
+    actionRef.current = 'replace';
   };
 
-  // Optimistic satır doldurma
+  // Optimistic satır doldurma (REPLACE senaryosu için)
   const fillRowOptimistic = (idx, base) => {
     dlog('fillRowOptimistic', { idx, baseHasCoords: !!base.coords, base });
     if (isLast(idx)) {
@@ -382,9 +386,10 @@ export default function RoutePlannerCard() {
     });
   };
 
-  const resolveCoordsLater = async (idx, base) => {
+  // Koordinat çözme (INSERT/REPLACE moduna göre)
+  const resolveCoordsLater = async (idx, base, mode = 'replace') => {
     if (base.coords || !base.place_id) {
-      dlog('resolveCoordsLater skipped', { hasCoords: !!base.coords, hasPlaceId: !!base.place_id });
+      dlog('resolveCoordsLater skipped', { hasCoords: !!base.coords, hasPlaceId: !!base.place_id, mode });
       return;
     }
     try {
@@ -394,6 +399,7 @@ export default function RoutePlannerCard() {
         name: det?.name,
         hasCoords: !!coordsResolved,
         geometryType: det?.geometry && typeof det?.geometry?.location,
+        mode,
       });
       const patch = {
         name: base.name || det?.name || null,
@@ -403,11 +409,24 @@ export default function RoutePlannerCard() {
         user_ratings_total: base.user_ratings_total ?? det?.user_ratings_total ?? null,
       };
 
-       if (isLast(idx)) {
-         setTo((prev) => ({ ...(prev || { id: 'to' }), ...patch }));
-         await saveToHistory({ ...(base || {}), ...patch }); // coords olmasa da upsert
-         return;
-       }
+      if (mode === 'insert') {
+        const wpIndex = Math.max(0, idx - 1);
+        setWaypoints((prev) => {
+          const arr = [...prev];
+          if (!arr[wpIndex]) arr.splice(wpIndex, 0, makeStop());
+          arr[wpIndex] = { ...(arr[wpIndex] || makeStop()), ...patch };
+          return arr;
+        });
+        await saveToHistory({ ...(base || {}), ...patch });
+        return;
+      }
+
+      // replace modu (mevcut davranış)
+      if (isLast(idx)) {
+        setTo((prev) => ({ ...(prev || { id: 'to' }), ...patch }));
+        await saveToHistory({ ...(base || {}), ...patch }); // coords olmasa da upsert
+        return;
+      }
 
       const wpIndex = idx - 1;
       setWaypoints((prev) => {
@@ -425,7 +444,8 @@ export default function RoutePlannerCard() {
   // Seçim uygulanması
   const applyPickedPlace = async (picked) => {
     const idx = targetIndexRef.current;
-    dlog('applyPickedPlace called', { idx, picked });
+    const mode = actionRef.current || 'replace';
+    dlog('applyPickedPlace called', { idx, picked, mode });
     setPickerVisible(false);
 
     const base = {
@@ -438,28 +458,45 @@ export default function RoutePlannerCard() {
     };
     dlog('normalized base', base);
 
-    if (!Number.isFinite(idx)) { dlog('applyPickedPlace: idx invalid → bail'); targetIndexRef.current = null; return; }
-    if (isFirst(idx)) { dlog('applyPickedPlace: first row (start) is fixed → ignore'); targetIndexRef.current = null; return; }
+    if (!Number.isFinite(idx)) { dlog('applyPickedPlace: idx invalid → bail'); targetIndexRef.current = null; actionRef.current = 'replace'; return; }
+    if (isFirst(idx)) { dlog('applyPickedPlace: first row (start) is fixed → ignore'); targetIndexRef.current = null; actionRef.current = 'replace'; return; }
 
-    // 1) Optimistic yaz
+    if (mode === 'insert') {
+      // ➕ İNCE NOKTA: her durumda waypoint olarak EKLE (bitişi asla değiştirme)
+      const wpIndex = Math.max(0, idx - 1);
+      setWaypoints((prev) => {
+        const arr = [...prev];
+        const newStop = makeStop(base);
+        arr.splice(wpIndex, 0, newStop);
+        return arr;
+      });
+      if (base.place_id) saveToHistory(base);
+      // Koordinat yoksa detaydan tamamla (insert modu ile)
+      await resolveCoordsLater(idx, base, 'insert');
+
+      targetIndexRef.current = null;
+      actionRef.current = 'replace';
+      return;
+    }
+
+    // REPLACE akışı (eski davranış)
     fillRowOptimistic(idx, base);
-    // 1.b) HEMEN geçmişe yaz (coords olmasa da)
-   if (base.place_id) {
-     saveToHistory(base);
-   }
-    // 2) Koordinat eksikse detaydan tamamla
-    resolveCoordsLater(idx, base);
+    if (base.place_id) {
+      saveToHistory(base);
+    }
+    resolveCoordsLater(idx, base, 'replace');
 
     targetIndexRef.current = null;
+    actionRef.current = 'replace';
   };
 
   /* --------- ekleme/silme/yer değiştir --------- */
-   const insertAt = (index) => {
-     // Hiçbir şey ekleme; sadece picker’ı aç.
-     // Kullanıcı bir yer seçerse applyPickedPlace içinde eklenecek.
-     dlog('insertAt (deferred)', { index });
-     openPickerForIndex(index);
-   };
+  const insertAt = (index) => {
+    // Kullanıcı bir yer seçerse applyPickedPlace içinde waypoint olarak EKLENECEK.
+    dlog('insertAt (deferred)', { index });
+    actionRef.current = 'insert'; // 🔹 EKLENDİ
+    openPickerForIndex(index);
+  };
 
   const deleteAt = (index) => {
     if (isFirst(index) || isLast(index)) return;
@@ -471,6 +508,7 @@ export default function RoutePlannerCard() {
   const replaceAt = (index) => {
     if (isFirst(index)) { dlog('replaceAt ignored (start row)'); return; }
     dlog('replaceAt', index);
+    actionRef.current = 'replace'; // 🔹 netleştir
     openPickerForIndex(index);
   };
 
@@ -496,57 +534,56 @@ export default function RoutePlannerCard() {
   };
 
   const createRoute = async () => {
-  dlog('createRoute click', {
-    fromHas: !!from.coords,
-    toHas: !!to?.coords,
-    wps: waypoints.map((w, i) => ({ i, has: !!w?.coords, name: w?.name })),
-  });
+    dlog('createRoute click', {
+      fromHas: !!from.coords,
+      toHas: !!to?.coords,
+      wps: waypoints.map((w, i) => ({ i, has: !!w?.coords, name: w?.name })),
+    });
 
-  if (!from.coords || !(to?.coords || to?.place_id)) {
-    console.warn('Lütfen başlangıç (otomatik) ve bitiş seçin.');
-    return;
-  }
+    if (!from.coords || !(to?.coords || to?.place_id)) {
+      console.warn('Lütfen başlangıç (otomatik) ve bitiş seçin.');
+      return;
+    }
 
-  // ⤵️ Tüm eksik koordinatları senkron çöz
-  const { fromR, wpsR, toR } = await resolveAllStops({
-    from,
-    waypoints,
-    to,
-  });
+    // ⤵️ Tüm eksik koordinatları senkron çöz
+    const { fromR, wpsR, toR } = await resolveAllStops({
+      from,
+      waypoints,
+      to,
+    });
 
-  if (!fromR?.coords || !toR?.coords) {
-    console.warn('Konum ayrıntıları alınamadı. Lütfen tekrar deneyin.');
-    return;
-  }
+    if (!fromR?.coords || !toR?.coords) {
+      console.warn('Konum ayrıntıları alınamadı. Lütfen tekrar deneyin.');
+      return;
+    }
 
-  const cleanWps = wpsR
-    .filter(w => w && w.coords) // coords’u çözülebilmiş olanları al
-    .map(w => ({
-      lat: w.coords.latitude,
-      lng: w.coords.longitude,
-      name: w.name,
-      place_id: w.place_id || null,
-      address: w.address,
-    }));
+    const cleanWps = wpsR
+      .filter(w => w && w.coords) // coords’u çözülebilmiş olanları al
+      .map(w => ({
+        lat: w.coords.latitude,
+        lng: w.coords.longitude,
+        name: w.name,
+        place_id: w.place_id || null,
+        address: w.address,
+      }));
 
-  dlog('createRoute → resolved', {
-    from: fromR.coords,
-    to: toR.coords,
-    wpCount: cleanWps.length,
-  });
+    dlog('createRoute → resolved', {
+      from: fromR.coords,
+      to: toR.coords,
+      wpCount: cleanWps.length,
+    });
 
-  navigation.navigate('Map', {
-    entryPoint: 'route-planner',
-    routeRequest: {
-      from: { lat: fromR.coords.latitude, lng: fromR.coords.longitude, place_id: fromR.place_id || null, name: fromR.name || 'Başlangıç' },
-      to:   { lat: toR.coords.latitude,   lng: toR.coords.longitude,   place_id: toR.place_id   || null, name: toR.name   || 'Bitiş' },
-      waypoints: cleanWps,
-      mode: 'driving',
-      autoDraw: true,
-    },
-  });
-};
-
+    navigation.navigate('Map', {
+      entryPoint: 'route-planner',
+      routeRequest: {
+        from: { lat: fromR.coords.latitude, lng: fromR.coords.longitude, place_id: fromR.place_id || null, name: fromR.name || 'Başlangıç' },
+        to:   { lat: toR.coords.latitude,   lng: toR.coords.longitude,   place_id: toR.place_id   || null, name: toR.name   || 'Bitiş' },
+        waypoints: cleanWps,
+        mode: 'driving',
+        autoDraw: true,
+      },
+    });
+  };
 
   /* --------- debug watchers --------- */
   useEffect(() => {
