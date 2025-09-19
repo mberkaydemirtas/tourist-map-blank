@@ -1,8 +1,9 @@
 
 // trips/src/data/atlas-state/index.js
 // atlas-state/all.json'dan hafif bir indeks üretir (state/il bazlı)
-
+import { enableScreens } from 'react-native-screens';
 import RAW from './all.json';
+enableScreens(false); // sadece test için. Crash kesilirse sebep screens.
 
 
 // Küçük ülke listesi: [{code, name}]

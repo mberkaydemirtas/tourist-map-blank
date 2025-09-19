@@ -1,6 +1,7 @@
 // map/App.js
-import 'react-native-gesture-handler';
-import 'react-native-reanimated';
+import 'react-native-gesture-handler';     // ✅ 1) EN ÜSTTE
+import 'react-native-reanimated';          // ✅ 2) Hemen ardından
+import { enableScreens } from 'react-native-screens';
 import React, { useEffect } from 'react';
 import { Platform, StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -23,7 +24,7 @@ import CreateTripWizardScreen from '../trips/CreateTripWizardScreen';
 // Veri sürücüsü (local-first)
 import { setTripsDriver } from '../trips/shared/tripsRepo';
 import createAsyncStorageDriver from '../trips/shared/localDrivers/asyncStorageDriver';
-
+enableScreens(false); // ✅ sadece teşhis için (crash kesiliyorsa screens kaynaklı)
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
 const TripsStack = createNativeStackNavigator();

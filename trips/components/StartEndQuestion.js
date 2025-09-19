@@ -1,4 +1,3 @@
-// trips/trips/components/StartEndQuestion.js
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
@@ -10,6 +9,8 @@ import {
   Pressable,
   TextInput,
   ActivityIndicator,
+  InteractionManager,
+  DeviceEventEmitter,
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 
@@ -18,6 +19,9 @@ import { getHubs } from '../src/services/hubsCatalog';
 
 const BORDER = '#23262F';
 const BTN = '#2563EB';
+const EVT_CLOSE_DROPDOWNS = 'CLOSE_ALL_DROPDOWNS';
+// Tek sonuçta otomatik seçim yarışı tetikleyebiliyor; istersen aç.
+const AUTO_SELECT_SINGLE = false;
 
 const TYPE_MAP = {
   airport: { mode: 'plane', label: 'Havalimanı' },
@@ -35,7 +39,7 @@ const TIME_SLOTS = (() => {
 })();
 
 export default function StartEndQuestion({
-  countryCode, 
+  countryCode,
   cityName,
   cityCenter,
   value,
@@ -139,6 +143,22 @@ function PointPicker({ label, countryCode, cityName, cityCenter, selectedType, s
   const [hubs, setHubs] = useState([]);
   const [filter, setFilter] = useState('');
 
+  const mountedRef = useRef(true);
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
+
+  // “tüm dropdownları kapat” yayını
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(EVT_CLOSE_DROPDOWNS, () => {
+      if (mountedRef.current) setOpenHubModal(false);
+    });
+    return () => sub.remove();
+  }, []);
+
+  // tip 'map' olursa veya temizlenirse modalı kapat
+  useEffect(() => {
+    if (selectedType === 'map' || !selectedType) setOpenHubModal(false);
+  }, [selectedType]);
+
   // basit cache: key = `${country}|${adminOrCity}|${type}`
   const cacheRef = useRef(new Map());
   const keyBase = useMemo(() => {
@@ -148,54 +168,84 @@ function PointPicker({ label, countryCode, cityName, cityCenter, selectedType, s
     return `${cc}|${adminOrCity}`;
   }, [countryCode, cityName]);
 
+  function normStr(v) { return (v ?? '').toString().trim(); }
+
   async function ensureHubs(typeKey) {
     const modeKey = TYPE_MAP[typeKey]?.mode;
     if (!modeKey || modeKey === 'custom') { setHubs([]); return; }
 
     const cacheKey = `${keyBase}|${typeKey}`;
     if (cacheRef.current.has(cacheKey)) {
-      setHubs(cacheRef.current.get(cacheKey));
+      const cached = cacheRef.current.get(cacheKey);
+      if (mountedRef.current) setHubs(cached);
       return;
     }
 
     setLoading(true);
     try {
-      // 1) Tekleştirici servis: TR → admin-level, diğerleri → city-level
-      //    TR’de admin parametresi olarak cityName’i geçiyoruz (fake city aslında il adı)
       const cc = String(countryCode || '').toUpperCase();
-      const rawAll = getHubs({
-        country: cc,
-        admin: cc === 'TR' ? cityName : null,
-        city:   cc === 'TR' ? null     : cityName,
-      });
+      // TR için admin=il adı, diğer ülkeler için city adı kullanacağız
+      const admin = cc === 'TR' ? normStr(cityName) || null : null;
+      const city  = cc === 'TR' ? null : (normStr(cityName) || null);
 
-      const raw = Array.isArray(rawAll?.[modeKey]) ? rawAll[modeKey] : [];
+      // --- getHubs çağrısını tamamen güvenli hale getir
+      let rawAll = null;
+      try {
+        if (typeof getHubs === 'function') {
+          rawAll = getHubs({ country: cc, admin, city });
+        }
+      } catch (e) {
+        console.error('[getHubs] threw:', e?.message || e);
+      }
+      if (!rawAll || typeof rawAll !== 'object') {
+        rawAll = { plane: [], train: [], bus: [] };
+      }
 
-      // 2) UI formatına çevir
-      const mapped = (raw || []).map((h, idx) => ({
-        name: h.name,
-        place_id: `${cc}|${cityName}|${modeKey}|${idx}|${Math.round(Number(h.lat)*1e6)}|${Math.round(Number(h.lng)*1e6)}`,
-        location: { lat: Number(h.lat), lng: Number(h.lng) },
-      }));
+      // Beklenen dizi:
+      const sourceArr = Array.isArray(rawAll?.[modeKey]) ? rawAll[modeKey] : [];
 
-      // 3) Tip’e göre filtre/sıralama (mevcut helper’ı kullanıyoruz)
-      const filtered = normalizeHubsForType(typeKey, mapped, cityName, cityCenter);
+      // Map + sıkı tip kontrolü
+      let mapped = (sourceArr || [])
+        .map((h, idx) => {
+          const lat = Number(h?.lat ?? h?.latitude);
+          const lng = Number(h?.lng ?? h?.longitude);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+          const name = normStr(h?.name) || `#${idx}`;
+          const pid  = normStr(h?.place_id) || `${cc}|${normStr(cityName)}|${modeKey}|${idx}`;
+          return { name, place_id: pid, location: { lat, lng } };
+        })
+        .filter(Boolean);
+
+      // Filtrele / sırala (hata fırlatmasın diye try-catch)
+      let filtered = [];
+      try {
+        filtered = normalizeHubsForType(typeKey, mapped, cityName, cityCenter);
+      } catch (e) {
+        console.error('[normalizeHubsForType] error:', e?.message || e);
+        filtered = mapped; // en azından ham listeyi göster
+      }
 
       cacheRef.current.set(cacheKey, filtered);
-      setHubs(filtered);
-
-      // Tek aday varsa otomatik seç
-      if (filtered.length === 1) onSelectHub?.(toHubShape(filtered[0]));
+      if (mountedRef.current) {
+        setHubs(filtered);
+        if (filtered.length === 1 && AUTO_SELECT_SINGLE) onSelectHub?.(toHubShape(filtered[0]));
+      }
+    } catch (e) {
+      console.error('[PointPicker.ensureHubs] error:', e);
+      if (mountedRef.current) setHubs([]); // UI ayakta kalsın
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }
 
+  // TIP değiştiğinde: filtreyi sıfırla + veri çekmeyi etkileşimlerden sonra çalıştır
   useEffect(() => {
     setFilter('');
     setHubs([]);
     if (selectedType && selectedType !== 'map') {
-      ensureHubs(selectedType);
+      InteractionManager.runAfterInteractions(() => {
+        if (mountedRef.current) ensureHubs(selectedType);
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedType, keyBase]);
@@ -213,6 +263,9 @@ function PointPicker({ label, countryCode, cityName, cityCenter, selectedType, s
     });
     return [...starts, ...contains];
   }, [hubs, filter]);
+
+  // Güvenli kapanış (unmount sonrası setState yok)
+  const closeHub = () => { if (mountedRef.current) setOpenHubModal(false); };
 
   return (
     <View style={{ gap: 8 }}>
@@ -254,62 +307,89 @@ function PointPicker({ label, countryCode, cityName, cityCenter, selectedType, s
         </View>
       )}
 
-      <Modal visible={openHubModal} transparent animationType="fade" onRequestClose={() => setOpenHubModal(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setOpenHubModal(false)} />
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>{TYPE_MAP[selectedType || 'airport']?.label} Seçin</Text>
+      {openHubModal && (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          presentationStyle="overFullScreen"
+          hardwareAccelerated
+          onRequestClose={closeHub}
+          onDismiss={closeHub}
+        >
+          <Pressable style={styles.modalBackdrop} onPress={closeHub} />
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{TYPE_MAP[selectedType || 'airport']?.label} Seçin</Text>
 
-          {/* Arama kutusu */}
-          <TextInput
-            placeholder="İsimle ara (örn. Esenboğa)"
-            placeholderTextColor="#6B7280"
-            value={filter}
-            onChangeText={setFilter}
-            style={styles.searchInput}
-          />
-
-          {loading ? (
-            <View style={{ paddingVertical: 24, alignItems:'center' }}>
-              <ActivityIndicator />
-              <Text style={{ color:'#9AA0A6', marginTop:8 }}>Yükleniyor…</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={filteredHubs}
-              keyExtractor={(it) => it.place_id}
-              removeClippedSubviews={false}
-              keyboardShouldPersistTaps="always"
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.optionRow}
-                  onPress={() => { onSelectHub(toHubShape(item)); setOpenHubModal(false); }}
-                >
-                  <Text style={styles.optionText}>{item.name}</Text>
-                  {item.meta && <Text style={{ color:'#9AA0A6', fontSize:12 }}>{item.meta}</Text>}
-                </TouchableOpacity>
-              )}
-              ListEmptyComponent={
-                <View style={{ padding: 10, gap: 6 }}>
-                  <Text style={{ color: '#9AA0A6' }}>Uygun nokta bulunamadı.</Text>
-                  <Text style={{ color: '#9AA0A6' }}>“Haritadan Seç” ile manuel nokta belirleyebilirsiniz.</Text>
-                </View>
-              }
-              ItemSeparatorComponent={() => <View style={styles.separator} />}
+            {/* Arama kutusu */}
+            <TextInput
+              placeholder="İsimle ara (örn. Esenboğa)"
+              placeholderTextColor="#6B7280"
+              value={filter}
+              onChangeText={setFilter}
+              style={styles.searchInput}
             />
-          )}
 
-          <TouchableOpacity onPress={() => setOpenHubModal(false)} style={[styles.smallBtn, { marginTop: 8 }]}>
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Kapat</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+            {loading ? (
+              <View style={{ paddingVertical: 24, alignItems:'center' }}>
+                <ActivityIndicator />
+                <Text style={{ color:'#9AA0A6', marginTop:8 }}>Yükleniyor…</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={filteredHubs.slice(0, 300)}               // teşhis için üst sınır
+                keyExtractor={(it, i) => String(it?.place_id ?? i)}
+                removeClippedSubviews={true}
+                keyboardShouldPersistTaps="always"
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.optionRow}
+                    onPress={() => {
+                      // 1) önce parent state’i güvenle güncelle
+                      onSelectHub(toHubShape(item));
+                      // 2) modal’ı bir sonraki frame’de kapat (JSC yarışını önler)
+                      requestAnimationFrame(() => { if (mountedRef.current) setOpenHubModal(false); });
+                    }}>
+                    <Text style={styles.optionText}>{item.name}</Text>
+                    {item.meta && <Text style={{ color:'#9AA0A6', fontSize:12 }}>{item.meta}</Text>}
+                  </TouchableOpacity>
+                )}
+                ItemSeparatorComponent={() => <View style={styles.separator} />}
+                initialNumToRender={10}
+                maxToRenderPerBatch={10}
+                windowSize={5}
+                contentContainerStyle={{ paddingBottom: 12 }}
+              />
+            )}
+
+            <TouchableOpacity onPress={closeHub} style={[styles.smallBtn, { marginTop: 8 }]}>
+              <Text style={{ color: '#fff', fontWeight: '700' }}>Kapat</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
 
 function DatePicker({ label, value, onChange }) {
   const [open, setOpen] = useState(false);
-  const marked = useMemo(() => (value ? { [value]: { selected: true, selectedColor: BTN, selectedTextColor: '#fff' } } : {}), [value]);
+  const mountedRef = useRef(true);
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
+
+  const marked = useMemo(
+    () => (value ? { [value]: { selected: true, selectedColor: BTN, selectedTextColor: '#fff' } } : {}),
+    [value]
+  );
+
+  // global kapatma
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(EVT_CLOSE_DROPDOWNS, () => { if (mountedRef.current) setOpen(false); });
+    return () => sub.remove();
+  }, []);
+
+  const closeDate = () => { if (mountedRef.current) setOpen(false); };
 
   return (
     <View style={{ flex: 1 }}>
@@ -319,32 +399,58 @@ function DatePicker({ label, value, onChange }) {
         <Text style={styles.caret}>▾</Text>
       </TouchableOpacity>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)} />
-        <View style={[styles.modalCard, { top: '12%', bottom: '12%' }]}>
-          <Text style={styles.modalTitle}>Tarih Seçin</Text>
-          <Calendar
-            markedDates={marked}
-            onDayPress={(d) => { onChange(d.dateString); setOpen(false); }}
-            theme={{
-              calendarBackground: '#0D0F14',
-              dayTextColor: '#fff',
-              monthTextColor: '#fff',
-              textDisabledColor: '#6B7280',
-              arrowColor: '#fff',
-              selectedDayBackgroundColor: BTN,
-              todayTextColor: '#60A5FA',
-            }}
-            style={{ borderRadius: 12, overflow: 'hidden' }}
-          />
-        </View>
-      </Modal>
+      {open && (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          presentationStyle="overFullScreen"
+          hardwareAccelerated
+          onRequestClose={closeDate}
+          onDismiss={closeDate}
+        >
+          <Pressable style={styles.modalBackdrop} onPress={closeDate} />
+          <View style={[styles.modalCard, { top: '12%', bottom: '12%' }]}>
+            <Text style={styles.modalTitle}>Tarih Seçin</Text>
+            <Calendar
+              markedDates={marked}
+              onDayPress={(d) => { onChange(d.dateString); closeDate(); }}
+              theme={{
+                calendarBackground: '#0D0F14',
+                dayTextColor: '#fff',
+                monthTextColor: '#fff',
+                textDisabledColor: '#6B7280',
+                arrowColor: '#fff',
+                selectedDayBackgroundColor: BTN,
+                todayTextColor: '#60A5FA',
+              }}
+              style={{ borderRadius: 12, overflow: 'hidden' }}
+            />
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
 
 function TimeDropdown({ label, value, onChange }) {
   const [open, setOpen] = useState(false);
+  const mountedRef = useRef(true);
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(EVT_CLOSE_DROPDOWNS, () => { if (mountedRef.current) setOpen(false); });
+    return () => sub.remove();
+  }, []);
+
+  const closeTime = () => { if (mountedRef.current) setOpen(false); };
+
+  // Güvenli initialScrollIndex
+  const initialIndex = useMemo(() => {
+    const idx = TIME_SLOTS.indexOf(value);
+    return idx >= 0 ? idx : undefined;
+  }, [value]);
+
   return (
     <View style={{ flex: 1 }}>
       <Text style={styles.label}>{label}</Text>
@@ -353,39 +459,64 @@ function TimeDropdown({ label, value, onChange }) {
         <Text style={styles.caret}>▾</Text>
       </TouchableOpacity>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)} />
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>Saat Seçin</Text>
-          <FlatList
-            data={TIME_SLOTS}
-            keyExtractor={(it) => it}
-            removeClippedSubviews={false}
-            keyboardShouldPersistTaps="always"
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.optionRow} onPress={() => { onChange(item); setOpen(false); }}>
-                <Text style={styles.optionText}>{item}</Text>
-              </TouchableOpacity>
-            )}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-            initialScrollIndex={Math.max(0, TIME_SLOTS.findIndex(t => t === value))}
-            getItemLayout={(_, idx) => ({ length: 44, offset: 44 * idx, index: idx })}
-          />
-        </View>
-      </Modal>
+      {open && (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          presentationStyle="overFullScreen"
+          hardwareAccelerated
+          onRequestClose={closeTime}
+          onDismiss={closeTime}
+        >
+          <Pressable style={styles.modalBackdrop} onPress={closeTime} />
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Saat Seçin</Text>
+            <FlatList
+              data={TIME_SLOTS}
+              keyExtractor={(it, i) => String(it ?? i)}
+              removeClippedSubviews={true}
+              keyboardShouldPersistTaps="always"
+              renderItem={({ item }) => (
+                <TouchableOpacity style={styles.optionRow} onPress={() => { onChange(item); closeTime(); }}>
+                  <Text style={styles.optionText}>{item}</Text>
+                </TouchableOpacity>
+              )}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+              initialScrollIndex={initialIndex}
+              getItemLayout={(_, idx) => ({ length: 44, offset: 44 * idx, index: idx })}
+              initialNumToRender={20}
+              maxToRenderPerBatch={20}
+              windowSize={8}
+            />
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
 
 /* --------------------------------- Filtering logic --------------------------------- */
+// TR harflerini güvenle ASCII-fold eden yardımcı (normalize/Intl yok)
+function trFold(s) {
+  const map = {'İ':'i','I':'i','ı':'i','Ş':'s','ş':'s','Ğ':'g','ğ':'g','Ü':'u','ü':'u','Ö':'o','ö':'o','Ç':'c','ç':'c'};
+  return String(s ?? '').replace(/[İIıŞşĞğÜüÖöÇç]/g, ch => map[ch] || ch);
+}
+function norm(s) {
+  return trFold(s).toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
 function normalizeHubsForType(typeKey, hubs, cityName, cityCenter) {
   const nameLC = (s) => (s || '').toString().toLowerCase();
-  const strip = (s) => s?.normalize?.('NFD')?.replace(/[\u0300-\u036f]/g, '') || s || '';
-  const cityToken = nameLC(strip(cityName || ''));
+  const strip = (s) => trFold(String(s ?? ''));
+  const cityToken = nameLC(strip((cityName ?? '') + ''));
 
   const withDistance = hubs.map(h => ({
     ...h,
-    _d: h?.location && cityCenter ? haversine(cityCenter, h.location) : null, // km
+    _d: (h?.location?.lat != null && h?.location?.lng != null && cityCenter)
+          ? haversine(cityCenter, h.location)
+          : null,
     _name: nameLC(h.name || ''),
   }));
 
@@ -409,7 +540,7 @@ function normalizeHubsForType(typeKey, hubs, cityName, cityCenter) {
 
   // 1) Sıkı filtre
   let filtered = withDistance.filter(h => matchesInc(h._name) && !isBad(h._name));
-  filtered = filtered.filter(h => (h._d == null) || h._d <= maxKm);
+  filtered = filtered.filter(h => (h._d != null ? h._d <= maxKm : true));
 
   // 2) Gerekirse gevşet
   if (filtered.length === 0) {
@@ -451,9 +582,6 @@ function haversine(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 function toRad(deg) { return deg * Math.PI / 180; }
-
-// küçük yardımcı
-function norm(s){ return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
 
 /* --------------------------------- Styles --------------------------------- */
 const styles = StyleSheet.create({

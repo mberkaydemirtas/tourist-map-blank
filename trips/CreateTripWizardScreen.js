@@ -1,6 +1,9 @@
-// src/trips/CreateTripWizardScreen.js
 import React, { useMemo, useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, FlatList } from 'react-native';
+import {
+  Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, FlatList,
+  DeviceEventEmitter, InteractionManager,
+} from 'react-native';
+const EVT_CLOSE_DROPDOWNS = 'CLOSE_ALL_DROPDOWNS';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { createTrip } from './services/tripsService';
 import { buildInitialDailyPlan, outboundMustArriveBeforeMin } from './shared/types';
@@ -156,11 +159,25 @@ export default function CreateTripWizardScreen() {
     return true;
   }, [step, whereAnswer, step1Valid, lodgingSingle, lodgingByCity, activeRange, startEndByCity]);
 
+  const safeStepChange = (updater) => {
+    // 1) önce tüm modal/dropdown’lara "kapan" mesajı gönder
+    DeviceEventEmitter.emit(EVT_CLOSE_DROPDOWNS);
+    // 2) bir sonraki frame’e bırak
+    requestAnimationFrame(() => {
+      // 3) animasyonlar ve diğer etkileşimler bitsin
+      InteractionManager.runAfterInteractions(() => {
+        updater();
+      });
+    });
+  };
+
   const next = () => {
     if (!canNext) return Alert.alert('Eksik bilgi', 'Devam etmek için bu adımı tamamlayın.');
-    setStep(s => Math.min(3, s + 1));
+    safeStepChange(() => setStep(s => Math.min(3, s + 1)));
   };
-  const back = () => setStep(s => Math.max(0, s - 1));
+  const back = () => {
+    safeStepChange(() => setStep(s => Math.max(0, s - 1)));
+  };
 
   // Submit
   const submit = async () => {
@@ -203,11 +220,11 @@ export default function CreateTripWizardScreen() {
 
   /** KONAKLAMA için haritadan seçim — köprü üzerinden */
   function openLodgingPicker() {
-bridge.openLodgingPicker({
-  cityKey: activeCityKey,
-  cityObj: activeCityObj,          // { name, center:{lat,lng}, ... }
-  // search: 'otel adı'            // istersen arama
-});
+    bridge.openLodgingPicker({
+      cityKey: activeCityKey,
+      cityObj: activeCityObj,          // { name, center:{lat,lng}, ... }
+      // search: 'otel adı'            // istersen arama
+    });
   }
 
   // --- Render
@@ -235,7 +252,7 @@ bridge.openLodgingPicker({
                 {whereAnswer.mode === 'single' ? (
                   activeCityObj ? (
                     <StartEndQuestion
-                    countryCode={activeCityObj.country}
+                      countryCode={activeCityObj.country}
                       cityName={activeCityObj.name}
                       cityCenter={activeCityObj.center}
                       value={startEndSingle}
@@ -258,7 +275,7 @@ bridge.openLodgingPicker({
                           />
                           {activeCityObj ? (
                             <StartEndQuestion
-                            countryCode={activeCityObj.country}
+                              countryCode={activeCityObj.country}
                               cityName={activeCityObj.name}
                               cityCenter={activeCityObj.center}
                               value={startEndByCity[activeCityKey]}

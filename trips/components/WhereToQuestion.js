@@ -1,18 +1,18 @@
 // trips/trips/components/WhereToQuestion.js
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Modal,
-  FlatList, Pressable,
+  FlatList, Pressable, DeviceEventEmitter,
 } from 'react-native';
 import {
   listCountries,
   getCitiesForCountry,
   listAdminsForCountry,
-  listCitiesForCountryAndAdmin,
 } from '../services/geoService';
 
 const BORDER = '#23262F';
 const BTN = '#2563EB';
+const EVT_CLOSE_DROPDOWNS = 'CLOSE_ALL_DROPDOWNS';
 
 /* basit helper */
 function norm(s){
@@ -37,6 +37,8 @@ function toAdminOptions(arr) {
 
 export default function WhereToQuestion({ initialMode = 'single', onChange }) {
   const [mode, setMode] = useState(initialMode);
+  const mountedRef = useRef(true);
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
 
   // Ülkeler
   const rawCountries = useMemo(() => listCountries(), []);
@@ -50,7 +52,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
   );
 
   // Tek seçim (ülke)
-  const defaultCountry = 'TR'; // Türkiye öncelikli senaryo
+  const defaultCountry = 'TR';
   const [singleCountryCode, setSingleCountryCode] = useState(rawCountries[0]?.code || defaultCountry);
 
   // Admin (eyalet/il)
@@ -64,7 +66,6 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
   // Bu ekranda kural: TR → state-bazlı (admin göster, şehir gösterme)
   const isTR = singleCountryCode === 'TR';
   const hasAdmins = singleAdminOptions.length > 0;
-  const treatAdminAsCity = isTR && hasAdmins;
 
   // Çoklu satırlar
   const [rows, setRows] = useState([makeRow()]);
@@ -87,14 +88,12 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
     setSingleAdmin(null);
 
     if (isTR) {
-      // TR: admin (iller) göster, şehir gizle
       const adminsRaw = listAdminsForCountry('TR');
       const admins = toAdminOptions(adminsRaw);
       setSingleAdminOptions(admins);
       setSingleCityOptions([]);
       setSingleCity(null);
     } else {
-      // TR dışı: admin KULLANMA — direkt şehir listesi
       setSingleAdminOptions([]);
       const opts = getCitiesForCountry(singleCountryCode, '') || [];
       setSingleCityOptions(opts);
@@ -104,16 +103,12 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
 
   // Admin değişince (sadece TR’de anlamlı)
   useEffect(() => {
-    if (!isTR) return; // TR dışı admin yok
-
+    if (!isTR) return;
     if (!singleAdmin) {
-      // İl seçimi kaldırıldıysa şehir yine yok
       setSingleCityOptions([]);
       setSingleCity(null);
       return;
     }
-
-    // TR: il = final city (fake city)
     const fakeCity = {
       place_id: `${singleCountryCode}-st-${singleAdmin}`,
       description: `${singleAdmin}, ${findLabel(singleCountryCode)}`,
@@ -121,7 +116,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
       center: null,
     };
     setSingleCity(fakeCity);
-    setSingleCityOptions([]); // şehir seçimi yok
+    setSingleCityOptions([]);
   }, [singleAdmin, isTR, singleCountryCode, findLabel]);
 
   // Parent onChange
@@ -133,7 +128,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
           countryCode: singleCountryCode,
           countryLabel: findLabel(singleCountryCode),
           city: singleCity,
-          admin: isTR ? (singleAdmin || null) : null, // TR dışı için admin her zaman null
+          admin: isTR ? (singleAdmin || null) : null,
         },
       });
     } else {
@@ -181,7 +176,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
             </Field>
           )}
 
-          {/* TR dışı ülkelerde şehir seçimi göster; TR’de şehir seçimi yok */}
+          {/* TR dışı ülkelerde şehir seçimi */}
           {!isTR && (
             <Field label="Şehir">
               <CitySelect
@@ -218,7 +213,6 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                       setRows((prev) =>
                         prev.map((r) => {
                           if (r.id !== row.id) return r;
-
                           if (code === 'TR') {
                             const adminOpts = toAdminOptions(listAdminsForCountry('TR'));
                             return {
@@ -228,10 +222,9 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                               admin: null,
                               adminOptions: adminOpts,
                               city: null,
-                              cityOptions: [], // TR: şehir seçimi yok
+                              cityOptions: [],
                             };
                           } else {
-                            // TR dışı: admin tamamen boş; direkt şehir
                             return {
                               ...r,
                               countryCode: code,
@@ -248,7 +241,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                   />
                 </Field>
 
-                {/* TR ise admin (il) seçimi göster */}
+                {/* TR ise admin (il) seçimi */}
                 {!!row.countryCode && rowIsTR && rowHasAdmins && (
                   <Field label="İl">
                     <AdminSelect
@@ -259,7 +252,6 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                         setRows((prev) =>
                           prev.map((r) => {
                             if (r.id !== row.id) return r;
-                            // TR: il = final city (fake city)
                             const fakeCity = {
                               place_id: `${r.countryCode}-st-${label}`,
                               description: `${label}, ${findLabel(r.countryCode)}`,
@@ -328,8 +320,14 @@ function SegChip({ active, label, onPress }) {
     </TouchableOpacity>
   );
 }
+
 function CountrySelect({ value, label, options, onPick }) {
   const [open, setOpen] = useState(false);
+  // global kapat
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(EVT_CLOSE_DROPDOWNS, () => setOpen(false));
+    return () => sub.remove();
+  }, []);
   const text = label || (value ? value : 'Ülke seçin');
   return (
     <>
@@ -338,38 +336,51 @@ function CountrySelect({ value, label, options, onPick }) {
         <Text style={styles.caret}>▾</Text>
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)} />
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>Ülke Seçin</Text>
-          <View style={{ flex: 1 }}>
-            <FlatList
-              data={options}
-              keyExtractor={(it, idx) => (it?.key ? `cc-${it.key}` : `cc-${idx}`)}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.optionRow}
-                  onPress={() => { onPick(item.key, item.label); setOpen(false); }}
-                >
-                  <Text style={styles.optionText}>{item.label}</Text>
-                </TouchableOpacity>
-              )}
-              ItemSeparatorComponent={() => <View style={styles.separator} />}
-              keyboardShouldPersistTaps="always"
-              nestedScrollEnabled
-              removeClippedSubviews={false}
-              style={{ flex: 1 }}
-              contentContainerStyle={{ paddingBottom: 12 }}
-              initialNumToRender={20}
-              maxToRenderPerBatch={20}
-              windowSize={10}
-            />
+      {open && (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          presentationStyle="overFullScreen"
+          onRequestClose={() => setOpen(false)}
+          onDismiss={() => setOpen(false)}
+        >
+          <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)} />
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Ülke Seçin</Text>
+            <View style={{ flex: 1 }}>
+              <FlatList
+                data={options}
+                keyExtractor={(it, idx) => (it?.key ? `cc-${it.key}` : `cc-${idx}`)}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.optionRow}
+                    onPress={() => {
+                      onPick(item.key, item.label);
+                      requestAnimationFrame(() => setOpen(false));
+                    }}
+                  >
+                    <Text style={styles.optionText}>{item.label}</Text>
+                  </TouchableOpacity>
+                )}
+                ItemSeparatorComponent={() => <View style={styles.separator} />}
+                keyboardShouldPersistTaps="always"
+                nestedScrollEnabled
+                removeClippedSubviews={false}
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingBottom: 12 }}
+                initialNumToRender={20}
+                maxToRenderPerBatch={20}
+                windowSize={10}
+              />
+            </View>
+            <TouchableOpacity onPress={() => setOpen(false)} style={[styles.smallBtn, { marginTop: 8 }]}>
+              <Text style={{ color: '#fff', fontWeight: '700' }}>Kapat</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={() => setOpen(false)} style={[styles.smallBtn, { marginTop: 8 }]}>
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Kapat</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+        </Modal>
+      )}
     </>
   );
 }
@@ -377,6 +388,10 @@ function CountrySelect({ value, label, options, onPick }) {
 // Admin seçimi (state/il)
 function AdminSelect({ value, options, onPick, placeholder = 'İl seçin' }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(EVT_CLOSE_DROPDOWNS, () => setOpen(false));
+    return () => sub.remove();
+  }, []);
   const text = value || placeholder;
   return (
     <>
@@ -384,38 +399,51 @@ function AdminSelect({ value, options, onPick, placeholder = 'İl seçin' }) {
         <Text style={styles.selectShellText}>{text}</Text>
         <Text style={styles.caret}>▾</Text>
       </Pressable>
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)} />
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>{placeholder}</Text>
-          <View style={{ flex: 1 }}>
-            <FlatList
-              data={options}
-              keyExtractor={(it, idx) => (it?.key ? `ad-${it.key}` : `ad-${idx}`)}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.optionRow}
-                  onPress={() => { onPick(item.label || item.key); setOpen(false); }}
-                >
-                  <Text style={styles.optionText}>{item.label || item.key}</Text>
-                </TouchableOpacity>
-              )}
-              ItemSeparatorComponent={() => <View style={styles.separator} />}
-              keyboardShouldPersistTaps="always"
-              nestedScrollEnabled
-              removeClippedSubviews={false}
-              style={{ flex: 1 }}
-              contentContainerStyle={{ paddingBottom: 12 }}
-              initialNumToRender={20}
-              maxToRenderPerBatch={20}
-              windowSize={10}
-            />
+      {open && (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          presentationStyle="overFullScreen"
+          onRequestClose={() => setOpen(false)}
+          onDismiss={() => setOpen(false)}
+        >
+          <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)} />
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{placeholder}</Text>
+            <View style={{ flex: 1 }}>
+              <FlatList
+                data={options}
+                keyExtractor={(it, idx) => (it?.key ? `ad-${it.key}` : `ad-${idx}`)}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.optionRow}
+                    onPress={() => {
+                      onPick(item.label || item.key);
+                      requestAnimationFrame(() => setOpen(false));
+                    }}
+                  >
+                    <Text style={styles.optionText}>{item.label || item.key}</Text>
+                  </TouchableOpacity>
+                )}
+                ItemSeparatorComponent={() => <View style={styles.separator} />}
+                keyboardShouldPersistTaps="always"
+                nestedScrollEnabled
+                removeClippedSubviews={false}
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingBottom: 12 }}
+                initialNumToRender={20}
+                maxToRenderPerBatch={20}
+                windowSize={10}
+              />
+            </View>
+            <TouchableOpacity onPress={() => setOpen(false)} style={[styles.smallBtn, { marginTop: 8 }]}>
+              <Text style={{ color: '#fff', fontWeight: '700' }}>Kapat</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={() => setOpen(false)} style={[styles.smallBtn, { marginTop: 8 }]}>
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Kapat</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+        </Modal>
+      )}
     </>
   );
 }
@@ -423,6 +451,10 @@ function AdminSelect({ value, options, onPick, placeholder = 'İl seçin' }) {
 // Şehir seçimi — düz dropdown, arama YOK
 function CitySelect({ value, options, onPick, placeholder = 'Şehir seçin' }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(EVT_CLOSE_DROPDOWNS, () => setOpen(false));
+    return () => sub.remove();
+  }, []);
   const text = value || placeholder;
   return (
     <>
@@ -430,38 +462,51 @@ function CitySelect({ value, options, onPick, placeholder = 'Şehir seçin' }) {
         <Text style={styles.selectShellText}>{text}</Text>
         <Text style={styles.caret}>▾</Text>
       </Pressable>
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)} />
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>{placeholder}</Text>
-          <View style={{ flex: 1 }}>
-            <FlatList
-              data={options}
-              keyExtractor={(it, idx) => `city-${String(it?.place_id ?? idx)}`}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.optionRow}
-                  onPress={() => { onPick(item); setOpen(false); }}
-                >
-                  <Text style={styles.optionText}>{item.description || item.main_text}</Text>
-                </TouchableOpacity>
-              )}
-              ItemSeparatorComponent={() => <View style={styles.separator} />}
-              keyboardShouldPersistTaps="always"
-              nestedScrollEnabled
-              removeClippedSubviews={false}
-              style={{ flex: 1 }}
-              contentContainerStyle={{ paddingBottom: 12 }}
-              initialNumToRender={30}
-              maxToRenderPerBatch={30}
-              windowSize={12}
-            />
+      {open && (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          presentationStyle="overFullScreen"
+          onRequestClose={() => setOpen(false)}
+          onDismiss={() => setOpen(false)}
+        >
+          <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)} />
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{placeholder}</Text>
+            <View style={{ flex: 1 }}>
+              <FlatList
+                data={options}
+                keyExtractor={(it, idx) => `city-${String(it?.place_id ?? idx)}`}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.optionRow}
+                    onPress={() => {
+                      onPick(item);
+                      requestAnimationFrame(() => setOpen(false));
+                    }}
+                  >
+                    <Text style={styles.optionText}>{item.description || item.main_text}</Text>
+                  </TouchableOpacity>
+                )}
+                ItemSeparatorComponent={() => <View style={styles.separator} />}
+                keyboardShouldPersistTaps="always"
+                nestedScrollEnabled
+                removeClippedSubviews={false}
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingBottom: 12 }}
+                initialNumToRender={30}
+                maxToRenderPerBatch={30}
+                windowSize={12}
+              />
+            </View>
+            <TouchableOpacity onPress={() => setOpen(false)} style={[styles.smallBtn, { marginTop: 8 }]}>
+              <Text style={{ color: '#fff', fontWeight: '700' }}>Kapat</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={() => setOpen(false)} style={[styles.smallBtn, { marginTop: 8 }]}>
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Kapat</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+        </Modal>
+      )}
     </>
   );
 }

@@ -1,7 +1,8 @@
 // trips/src/data/atlas/index.js
-
+import { enableScreens } from 'react-native-screens';
 // all.json boş olabilir → güvenli fallback
 import RAW from './all.json';
+enableScreens(false); // sadece test için. Crash kesilirse sebep screens.
 
 // Eğer JSON boşsa, countries alanı yoksa varsayılan obje ata
 const safeCountries = RAW?.countries && Object.keys(RAW.countries).length > 0

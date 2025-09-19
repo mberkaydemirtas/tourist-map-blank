@@ -9,11 +9,16 @@ try {
   ALL = null;
 }
 
-const hasNormalize = typeof String.prototype.normalize === 'function';
-const stripAccents = (s) =>
-  (hasNormalize ? String(s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '') : String(s || ''));
-const norm = (s) => stripAccents(String(s || '').toLowerCase()).replace(/\s+/g, ' ').trim();
-const safeCmp = (a,b)=> String(a||'').localeCompare(String(b||''), 'tr', {sensitivity:'base'});
+// Intl/normalize yok: JSC-stabil
+const asciiFold = (s) => String(s ?? '').replace(
+  /[İIıŞşĞğÜüÖöÇç]/g,
+  (ch) => ({'İ':'i','I':'i','ı':'i','Ş':'s','ş':'s','Ğ':'g','ğ':'g','Ü':'u','ü':'u','Ö':'o','ö':'o','Ç':'c','ç':'c'}[ch] || ch)
+);
+const norm = (s) => asciiFold(s).toLowerCase().replace(/\s+/g, ' ').trim();
+const safeCmp = (a,b)=> {
+  const A = norm(a), B = norm(b);
+  if (A < B) return -1; if (A > B) return 1; return 0;
+};
 
 export function isAvailable(){ return !!ALL; }
 

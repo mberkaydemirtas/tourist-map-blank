@@ -44,7 +44,15 @@ const slug = (s) =>
     .replace(/^-+|-+$/g, '')
     .toLowerCase();
 
-const safeCmp = (a,b)=> String(a||'').localeCompare(String(b||''), 'tr', {sensitivity:'base'});
+const trFold = (s) => String(s ?? '').replace(
+  /[İIıŞşĞğÜüÖöÇç]/g,
+  (ch) => ({'İ':'i','I':'i','ı':'i','Ş':'s','ş':'s','Ğ':'g','ğ':'g','Ü':'u','ü':'u','Ö':'o','ö':'o','Ç':'c','ç':'c'}[ch] || ch)
+);
+const normNoLocale = (s) => trFold(String(s||'')).toLowerCase().replace(/\s+/g,' ').trim();
+const safeCmp = (a,b)=> {
+  const A = normNoLocale(a), B = normNoLocale(b);
+  if (A < B) return -1; if (A > B) return 1; return 0;
+};
 
 // ───────── country lists & names (admin > city öncelik) ─────────
 const COUNTRY_NAME = {};
@@ -198,6 +206,6 @@ function fuzzyScore(list, query){
     const s = scoreName(q, name);
     if (s >= 0) scored.push({ name, s });
   }
-  scored.sort((a,b)=> b.s - a.s || a.name.localeCompare(b.name, 'tr'));
+  scored.sort((a,b)=> b.s - a.s || safeCmp(a.name, b.name));
   return scored;
 }
