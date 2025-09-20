@@ -2,12 +2,25 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import * as Location from 'expo-location';
 import { AppState } from 'react-native';
 
+/**
+ * useLocation(
+ *   onLocationUpdate,
+ *   onLocationUnavailable,
+ *   onPermissionPermanentlyDenied,
+ *   onGPSAvailable,
+ *   options?: { enabled?: boolean }   // ⬅ yeni
+ * )
+ *
+ * options.enabled === false iken konum/izin/GPS istemez; pasif kalır.
+ */
 export function useLocation(
   onLocationUpdate,
   onLocationUnavailable,
   onPermissionPermanentlyDenied,
-  onGPSAvailable
+  onGPSAvailable,
+  options = {} // ⬅ yeni
 ) {
+  const { enabled = true } = options; // ⬅ varsayılan aktif
   const subscription = useRef(null);
   const [coords, setCoords] = useState(null);
   const [available, setAvailable] = useState(false);
@@ -24,12 +37,26 @@ export function useLocation(
     subscription.current = null;
   };
 
+  // ⬅ PASİF modda hiçbir şey yapma
+  const shortCircuitIfDisabled = () => {
+    if (!enabled) {
+      stopWatching();
+      setCoords(null);
+      setAvailable(false);
+      return true;
+    }
+    return false;
+  };
+
   const ensureServicesEnabled = async () => {
     const status = await Location.hasServicesEnabledAsync();
     if (status) {
       gpsPromptShown.current = false;
       return true;
     }
+
+    // ⬅ PASİF modda GPS açtırmaya çalışma
+    if (!enabled) return false;
 
     if (!gpsPromptShown.current) {
       gpsPromptShown.current = true;
@@ -53,12 +80,23 @@ export function useLocation(
   };
 
   const startWatching = useCallback(async () => {
+    // ⬅ PASİF modda tamamen çık
+    if (shortCircuitIfDisabled()) return;
+
     // Her seferde izin durumu kontrol edilmeli
     const { status, canAskAgain } = await Location.getForegroundPermissionsAsync();
 
     if (status !== 'granted') {
-      permissionAsked.current = true;
+      // ⬅ PASİF modda izin isteme
+      if (!enabled) {
+        stopWatching();
+        setCoords(null);
+        setAvailable(false);
+        onLocationUnavailable?.();
+        return;
+      }
 
+      permissionAsked.current = true;
       const { status: newStatus, canAskAgain: newCanAskAgain } = await Location.requestForegroundPermissionsAsync();
 
       if (newStatus !== 'granted') {
@@ -81,8 +119,8 @@ export function useLocation(
     lastServicesOn.current = servicesOn;
 
     if (!servicesOn) {
-      const enabled = await ensureServicesEnabled();
-      if (!enabled) {
+      const enabledServices = await ensureServicesEnabled();
+      if (!enabledServices) {
         stopWatching();
         setCoords(null);
         setAvailable(false);
@@ -129,54 +167,71 @@ export function useLocation(
         console.warn('Failed to start watching location:', error);
       }
     }
-  }, [onLocationUpdate, onLocationUnavailable, onPermissionPermanentlyDenied]);
+  }, [enabled, onLocationUpdate, onLocationUnavailable, onPermissionPermanentlyDenied]);
 
   useEffect(() => {
-    startWatching();
+    // ⬅ enabled değişimini dinle
+    if (enabled) {
+      startWatching();
+    } else {
+      stopWatching();
+      setCoords(null);
+      setAvailable(false);
+    }
 
     const appSub = AppState.addEventListener('change', state => {
+      if (!enabled) return; // ⬅ pasifken yok say
       if (state === 'active') {
         startWatching();
       }
     });
 
-    gpsCheckInterval.current = setInterval(async () => {
-      const servicesOn = await Location.hasServicesEnabledAsync();
+    // ⬅ pasifken interval kurma
+    if (enabled) {
+      gpsCheckInterval.current = setInterval(async () => {
+        const servicesOn = await Location.hasServicesEnabledAsync();
 
-      if (lastServicesOn.current !== servicesOn) {
-        lastServicesOn.current = servicesOn;
+        if (lastServicesOn.current !== servicesOn) {
+          lastServicesOn.current = servicesOn;
 
-        if (!servicesOn) {
-          stopWatching();
-          setCoords(null);
-          setAvailable(false);
-          gpsJustTurnedOn.current = false;
-          gpsPromptShown.current = false;
-          onLocationUnavailable?.();
-        } else {
-          if (!gpsJustTurnedOn.current) {
-            gpsJustTurnedOn.current = true;
-            await startWatching();
-            try {
-              const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-              const p = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-              setCoords(p);
-              setAvailable(true);
-              onGPSAvailable?.(p);
-            } catch {
-              console.warn('GPS turned on but failed to get location');
+          if (!servicesOn) {
+            stopWatching();
+            setCoords(null);
+            setAvailable(false);
+            gpsJustTurnedOn.current = false;
+            gpsPromptShown.current = false;
+            onLocationUnavailable?.();
+          } else {
+            if (!gpsJustTurnedOn.current) {
+              gpsJustTurnedOn.current = true;
+              await startWatching();
+              try {
+                const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+                const p = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+                setCoords(p);
+                setAvailable(true);
+                onGPSAvailable?.(p);
+              } catch {
+                console.warn('GPS turned on but failed to get location');
+              }
             }
           }
         }
-      }
-    }, 3000);
+      }, 3000);
+    }
 
     return () => {
       appSub.remove();
       stopWatching();
-      clearInterval(gpsCheckInterval.current);
+      if (gpsCheckInterval.current) clearInterval(gpsCheckInterval.current);
     };
-  }, [startWatching, onLocationUnavailable]);
+  }, [enabled, startWatching, onLocationUnavailable]);
 
-  return { coords, available, refreshLocation: startWatching };
+  // refreshLocation pasifte de mevcut olsun ama pasifken no-op kalsın
+  const refreshLocation = useCallback(() => {
+    if (!enabled) return;
+    return startWatching();
+  }, [enabled, startWatching]);
+
+  return { coords, available, refreshLocation };
 }

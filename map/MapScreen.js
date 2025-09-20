@@ -11,7 +11,7 @@ import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { InteractionManager } from 'react-native';
 
-import { useLocation } from './hooks/useLocation';
+import { useLocation, onUpdate,onUnavailable, onPermanentlyDenied, onGPSAvailable } from './hooks/useLocation';
 import { useMapLogic } from './hooks/useMapLogic';
 import MapHeaderControls from './components/MapHeaderControls';
 import MapOverlays from './components/MapOverlays';
@@ -86,7 +86,13 @@ export default function MapScreen() {
   const mountedRef = useMountedRef();
   const mapRef = useRef(null);
   const map = useMapLogic(mapRef);
-  const { coords, available, refreshLocation } = useLocation();
+const { coords, available, refreshLocation } = useLocation(
+  onUpdate,
+  onUnavailable,
+  onPermanentlyDenied,
+  onGPSAvailable,
+  { enabled: !picker?.enabled } // ⬅ picker açıkken konum kapalı
+);
   const isPlaceSheetOpenRef = useRef(false);
   const autoCategoryAppliedRef = useRef(false);
   const sheetHalfSnappedRef = useRef(false);
