@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'; 
 import {
   View,
   StyleSheet,
@@ -48,12 +48,28 @@ import { useStopsEditor } from './hooks/useStopsEditor';
 import { useRouteCancel } from './hooks/useRouteCancel';
 
 const xlog = (...a) => console.log('%c[XRAY] ', 'color:#ff3b30', ...a);
-
+const WIZARD_TAB   = 'Gezilerim';
+const WIZARD_ROUTE = 'CreateTripWizard';
 const useMountedRef = () => {
   const r = React.useRef(true);
   useEffect(() => () => { r.current = false; }, []);
   return r;
 };
+
+// Seçilen marker/POI'yi köprü formatına çevir
+function markerToHub(m) {
+  if (!m) return null;
+  const lat =
+    m?.coords?.latitude ?? m?.coordinate?.latitude ??
+    m?.geometry?.location?.lat ?? m?.latitude ?? m?.location?.lat;
+  const lng =
+    m?.coords?.longitude ?? m?.coordinate?.longitude ??
+    m?.geometry?.location?.lng ?? m?.longitude ?? m?.location?.lng;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const name = m?.name || m?.title || m?.description || 'Seçilen konum';
+  const place_id = m?.place_id || m?.id || null;
+  return { name, place_id, location: { lat, lng } };
+}
 
 export default function MapScreen() {
   const navigation = useNavigation();
@@ -64,14 +80,16 @@ export default function MapScreen() {
   const map = useMapLogic(mapRef);
   const { coords, available, refreshLocation } = useLocation();
   const isPlaceSheetOpenRef = useRef(false);
+  const autoCategoryAppliedRef = useRef(false);
+  const sheetHalfSnappedRef = useRef(false);
 
   const hasCenteredOnceRef = useRef(false);
   const isFollowingRef = useRef(true);
   const prevAvailableRef = useRef(available);
   const lastCenteredVersionRef = useRef(null);
   const userMovedSincePickerRef = useRef(false);
-   const lastUserRegionRef = useRef(null);     // 👈 harita her oynadığında güncellenecek
-   const prePickerRegionRef = useRef(null);    // 👈 picker’a girmeden önceki bölge
+  const lastUserRegionRef = useRef(null);
+  const prePickerRegionRef = useRef(null);
 
   const sheetRef = useRef(null);          // PlaceDetailSheet
   const sheetRefRoute = useRef(null);     // RouteInfoSheet
@@ -101,7 +119,7 @@ export default function MapScreen() {
       });
     });
   }, [presentRouteSheet]);
-   const dismissingRef = useRef(false);
+  const dismissingRef = useRef(false);
   const safeDismissRouteSheet = useCallback(() => {
     if (dismissingRef.current || !routeSheetPresentedRef.current) return;
     dismissingRef.current = true;
@@ -190,72 +208,64 @@ export default function MapScreen() {
   }, [picker?.center, mapReady, map]);
 
   // Her picker.version için sadece 1 kere odakla
-   const centerOnceForPicker = useCallback(() => {
-     const v = picker?.version ?? 'no-version';
-     if (!picker?.enabled) return;
-     if (!mapReady) return;                           // 👈 map hazır değilse hiç dokunma
-     if (lastCenteredVersionRef.current === v) return;
-     if (userMovedSincePickerRef.current) return;     // kullanıcı oynattıysa zorlama
-     // gerçekten odakla
-     focusToPickerCenter();
-     // başarıyla denedikten sonra versiyonu işaretle
-     lastCenteredVersionRef.current = v;              // 👈 buraya taşındı
-   }, [picker?.enabled, picker?.version, mapReady, focusToPickerCenter]);
+  const centerOnceForPicker = useCallback(() => {
+    const v = picker?.version ?? 'no-version';
+    if (!picker?.enabled) return;
+    if (!mapReady) return;
+    if (lastCenteredVersionRef.current === v) return;
+    if (userMovedSincePickerRef.current) return;
+    focusToPickerCenter();
+    lastCenteredVersionRef.current = v;
+  }, [picker?.enabled, picker?.version, mapReady, focusToPickerCenter]);
 
   /* -------------------------- Sheet açılış davranışları -------------------------- */
-  useEffect(() => {
-    // Lodging ya da 'half' talebinde sheet'i yarım aç
-    if (picker?.enabled && (picker?.which === 'lodging' || picker?.sheetInitial === 'half')) {
-      try { sheetRef.current?.snapToIndex?.(1); } catch {}
-    }
-  }, [picker]);
+   useEffect(() => {
+     if (!picker?.enabled) { sheetHalfSnappedRef.current = false; return; }
+     if (sheetHalfSnappedRef.current) return;
+     if (picker?.which === 'lodging' || picker?.sheetInitial === 'half') {
+       try { sheetRef.current?.snapToIndex?.(1); } catch {}
+     }
+     sheetHalfSnappedRef.current = true;
+   }, [picker?.enabled, picker?.which, picker?.sheetInitial]);
 
   // Picker açık — explore modda tut ve merkeze odakla
-   useEffect(() => {
-     if (picker?.enabled) {
-       setMode('explore');
-       userMovedSincePickerRef.current = false; // sadece bayrağı sıfırla
-       // 👇 picker’a girerken o anki bölgeyi snapshot al
-       if (!prePickerRegionRef.current && lastUserRegionRef.current) {
-         prePickerRegionRef.current = lastUserRegionRef.current;
-       }
-       // Odaklamayı mapReady olduğunda yapacağız
-     }
-   }, [picker?.enabled]);
+  useEffect(() => {
+    if (picker?.enabled) {
+      setMode('explore');
+      userMovedSincePickerRef.current = false;
+      if (!prePickerRegionRef.current && lastUserRegionRef.current) {
+        prePickerRegionRef.current = lastUserRegionRef.current;
+      }
+    }
+  }, [picker?.enabled]);
 
-   // 👇 haritayı eski haline döndüren yardımcı
-   const resetAfterPicker = useCallback(() => {
-     // picker paramını temizle ki auto-center davranışı dursun
-     try { navigation.setParams({ picker: undefined }); } catch {}
-     // marker ve arama state’ini temizle
-     try {
-       map.setMarker(null);
-       map.setQuery('');
-     } catch {}
-     // sheet kapat
-     try { sheetRef.current?.close?.(); } catch {}
-     // bir önceki bölgeye dön
-     const region = prePickerRegionRef.current || lastUserRegionRef.current;
-     if (region && mapRef.current) {
-       requestAnimationFrame(() => {
-         try { mapRef.current.animateToRegion(region, 500); }
-         catch { map.setRegion(region); }
-       });
-     }
-     // bayrakları ve snapshot’ı sıfırla
-     userMovedSincePickerRef.current = false;
-     prePickerRegionRef.current = null;
-   }, [navigation, map]);
+  // 👇 haritayı eski haline döndüren yardımcı
+  const resetAfterPicker = useCallback(() => {
+    try { navigation.setParams({ picker: undefined }); } catch {}
+    try {
+      map.setMarker(null);
+      map.setQuery('');
+    } catch {}
+    try { sheetRef.current?.close?.(); } catch {}
+    const region = prePickerRegionRef.current || lastUserRegionRef.current;
+    if (region && mapRef.current) {
+      requestAnimationFrame(() => {
+        try { mapRef.current.animateToRegion(region, 500); }
+        catch { map.setRegion(region); }
+      });
+    }
+    userMovedSincePickerRef.current = false;
+    prePickerRegionRef.current = null;
+  }, [navigation, map]);
 
   // Picker açıldığında explore’a geç
   useEffect(() => {
-     if (mapReady) centerOnceForPicker(); // 👈 artık odak burada garanti çalışır
-   }, [mapReady, centerOnceForPicker]);
-
+    if (mapReady) centerOnceForPicker();
+  }, [mapReady, centerOnceForPicker]);
 
   useFocusEffect(
     React.useCallback(() => {
-      if (picker?.enabled) requestAnimationFrame(centerOnceForPicker); // mapReady guard’lı
+      if (picker?.enabled) requestAnimationFrame(centerOnceForPicker);
 
       if (mode === 'route' && resumeSheetAfterNavRef.current) {
         const list = map.routeOptions?.[map.selectedMode] || [];
@@ -269,29 +279,31 @@ export default function MapScreen() {
     }, [picker?.enabled, centerOnceForPicker, mode, map.selectedMode, map.routeOptions, presentRouteSheet])
   );
 
-   // Picker center güncellenirse (örn. başka şehir seçimi) sadece hareket edilmediyse odakla
-   useEffect(() => {
-     if (!picker?.enabled) return;
-     if (!userMovedSincePickerRef.current) centerOnceForPicker(); // mapReady guard’lı
-   }, [picker?.center, picker?.enabled, centerOnceForPicker]);
+  // Picker center güncellenirse (örn. başka şehir seçimi) sadece hareket edilmediyse odakla
+  useEffect(() => {
+    if (!picker?.enabled) return;
+    if (!userMovedSincePickerRef.current) centerOnceForPicker();
+  }, [picker?.center, picker?.enabled, centerOnceForPicker]);
 
-   // MapScreen.js
-useEffect(() => {
-  if (!picker?.enabled) return;
+  const finishPickerSelection = useCallback((hub) => {
+    if (!picker?.enabled) return;
+    const payload = {
+      which: picker?.which || 'lodging',
+      cityKey: picker?.cityKey || null,
+      hub: hub || null,   // null = temizle, undefined = iptal
+    };
 
-  // Otomatik kategori aç
-  if (picker?.which === 'lodging' || picker?.presetCategory === 'lodging') {
-    try { map.handleCategorySelect?.('lodging'); } catch {}
-  } else if (picker?.presetCategory) {
-    try { map.handleCategorySelect?.(picker.presetCategory); } catch {}
-  }
-
-  // Arama kutusunu önceden doldur
-  if (picker?.search) {
-    try { map.setQuery?.(picker.search); } catch {}
-  }
-}, [picker?.enabled, picker?.which, picker?.presetCategory, picker?.search, map]);
-
+    try {
+      navigation.navigate(WIZARD_TAB, {
+        screen: WIZARD_ROUTE,
+        params: { pickFromMap: payload },
+        merge: true,
+      });
+    } catch {}
+    // 2) Picker UI'ını sıfırla ve Map'ten çık
+    try { resetAfterPicker(); } catch {}
+    try { navigation.goBack(); } catch {}
+  }, [picker?.enabled, picker?.which, picker?.cityKey, navigation, resetAfterPicker]);
 
   const { recalcRoute, prefetchMissingModes } = useRouteCompute({
     map, mapRef, normalizeCoord, presentRouteSheet,
@@ -374,6 +386,56 @@ useEffect(() => {
     handleCancelRoute,
   });
 
+  /* -------------------------- SAFE WRAPPERS (fallback) -------------------------- */
+  const handlePlaceSelectSafe = useCallback(async (placeId, description) => {
+    if (typeof map.handleSelectPlace === 'function') {
+      return map.handleSelectPlace(placeId, description);
+    }
+    try {
+      const details = await getPlaceDetails(placeId);
+      const loc = details?.geometry?.location;
+      if (loc && Number.isFinite(loc.lat) && Number.isFinite(loc.lng)) {
+        map.setMarker({
+          name: details?.name || description || 'Seçilen konum',
+          place_id: placeId,
+          coordinate: { latitude: loc.lat, longitude: loc.lng },
+          geometry: { location: loc },
+        });
+        requestAnimationFrame(() => sheetRef.current?.snapToIndex?.(0));
+        mapRef.current?.animateCamera?.(
+          { center: { latitude: loc.lat, longitude: loc.lng }, zoom: 15 },
+          { duration: 500 }
+        );
+      }
+    } catch (e) { console.warn('[fallback] getPlaceDetails error:', e?.message || e); }
+  }, [map, mapRef]);
+
+  const handleCategorySelectSafe = useCallback((key) => {
+    if (typeof map.handleCategorySelect === 'function') return map.handleCategorySelect(key);
+    // fallback: en azından query'yi set etsin
+    return map.setQuery?.(key);
+  }, [map]);
+
+  const handlePoiClickSafe = useCallback((evt) => {
+    if (typeof map.handlePoiClick === 'function') {
+      return map.handlePoiClick(evt, {
+        showOverlay,
+        showFromOverlay,
+        closeOverlays: () => { setShowOverlay(false); setShowFromOverlay(false); },
+      });
+    }
+    const p = evt?.nativeEvent;
+    const c = p?.coordinate;
+    if (c && Number.isFinite(c.latitude) && Number.isFinite(c.longitude)) {
+      map.setMarker({
+        name: p?.name || 'Seçilen konum',
+        place_id: p?.placeId || null,
+        coordinate: { latitude: c.latitude, longitude: c.longitude },
+      });
+      requestAnimationFrame(() => sheetRef.current?.snapToIndex?.(0));
+    }
+  }, [map, showOverlay, showFromOverlay]);
+
   /* -------------------------- UI davranışları -------------------------- */
   useEffect(() => {
     if (map.categoryMarkers.length > 0) {
@@ -454,8 +516,8 @@ useEffect(() => {
   const handleUserGesture = useCallback(() => {
     if (isFollowingRef.current) isFollowingRef.current = false;
     if (showSelectionHint) setShowSelectionHint(false);
-     // 👇 kullanıcı artık haritayı oynattı; picker kaynaklı otomatik odak devre dışı
-     userMovedSincePickerRef.current = true;
+    // kullanıcı artık haritayı oynattı; picker kaynaklı otomatik odak devre dışı
+    userMovedSincePickerRef.current = true;
   }, [showSelectionHint]);
 
   /* -------------------------- Route sheet auto-open -------------------------- */
@@ -561,7 +623,35 @@ useEffect(() => {
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         initialRegion={map.region}
-        onPress={(e) => { handleUserGesture(); handleMapPress(e); }}
+        onPress={(e) => {
+          handleUserGesture();
+          if (picker?.enabled && picker?.which === 'lodging') {
+            const c = e?.nativeEvent?.coordinate;
+            if (c && Number.isFinite(c.latitude) && Number.isFinite(c.longitude)) {
+              map.setMarker({
+                name: 'Seçilen konum',
+                coordinate: { latitude: c.latitude, longitude: c.longitude },
+                place_id: null,
+              });
+              requestAnimationFrame(() => sheetRef.current?.snapToIndex?.(0));
+            }
+            return; // route akışı ile çakışmasın
+          }
+          handleMapPress(e);
+        }}
+        onLongPress={(e) => {
+          if (picker?.enabled && picker?.which === 'lodging') {
+            const c = e?.nativeEvent?.coordinate;
+            if (c && Number.isFinite(c.latitude) && Number.isFinite(c.longitude)) {
+              map.setMarker({
+                name: 'Seçilen konum',
+                coordinate: { latitude: c.latitude, longitude: c.longitude },
+                place_id: null,
+              });
+              requestAnimationFrame(() => sheetRef.current?.snapToIndex?.(0));
+            }
+          }
+        }}
         onPanDrag={handleUserGesture}
         onRegionChangeComplete={onRegionChangeComplete}
         scrollEnabled
@@ -582,11 +672,7 @@ useEffect(() => {
             handleSelectDestinationOnMap(e.nativeEvent.coordinate);
             return;
           }
-          map.handlePoiClick(e, {
-            showOverlay: showOverlay,
-            showFromOverlay: showFromOverlay,
-            closeOverlays: () => { setShowOverlay(false); setShowFromOverlay(false); },
-          });
+          handlePoiClickSafe(e);
         }}
         // picker açıkken mavi noktayı göstermiyoruz (kafa karışmasın)
         showsUserLocation={available && !picker?.enabled}
@@ -630,17 +716,50 @@ useEffect(() => {
       )}
 
       <SafeAreaView pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-        {mode === 'explore' && (
+         {/* Üst sabit geri butonu */}
+         {mode === 'route' && (
+           <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+             <TouchableOpacity
+               onPress={handleCancelRoute}
+               style={styles.backFab}
+               activeOpacity={0.8}
+               hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}
+             >
+               <Text style={styles.backFabText}>← Geri Dön</Text>
+             </TouchableOpacity>
+           </View>
+         )}
+        {/* 👇 Picker modunda hızlı kaçış */}
+        {picker?.enabled && (
+          <TouchableOpacity
+            onPress={() => {
+              try { resetAfterPicker(); } catch {}
+              try { navigation.goBack(); } catch {}
+            }}
+            style={styles.pickerExitBtn}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.pickerExitText}>← Geri Dön</Text>
+          </TouchableOpacity>
+        )}
+
+        {(mode === 'explore' || picker?.enabled) && (
           <>
             <MapHeaderControls
               query={map.query}
               onQueryChange={map.setQuery}
-              onPlaceSelect={map.handleSelectPlace}
-              onCategorySelect={map.handleCategorySelect}
+              onPlaceSelect={handlePlaceSelectSafe}
+              onCategorySelect={handleCategorySelectSafe}
               mapMovedAfterDelay={mapMovedAfterDelay}
               loadingCategory={map.loadingCategory}
-              onSearchArea={map.handleSearchThisArea}
+              onSearchArea={map.handleSearchThisArea || (() => {})}
               activeCategory={map.activeCategory}
+
+              /* 👇 picker dostu ipuçları */
+              isPickerMode={!!picker?.enabled}
+              autoFocusSearch={!!picker?.enabled}
+              allowCategory={true}
+              allowSearch={true}
             />
 
             {map.activeCategory && map.categoryMarkers.length > 0 && (
@@ -649,7 +768,7 @@ useEffect(() => {
                 activePlaceId={map.marker?.place_id}
                 userCoords={coords}
                 onSelect={(placeId, description) => {
-                  map.handleSelectPlace(placeId, description);
+                  handlePlaceSelectSafe(placeId, description);
                   setTimeout(() => {
                     const ref = markerRefs.current.get(placeId);
                     ref?.showCallout?.();
@@ -666,7 +785,10 @@ useEffect(() => {
           map={map}
           picker={picker}
           navigation={navigation}
-          onPickerCompleteReset={resetAfterPicker}
+          onConfirmPicker={(hub) => {
+            if (!picker?.enabled) return;
+            if (hub) finishPickerSelection(hub);
+          }}
           onGetDirections={() => {
             sheetRef.current?.close?.();
             onGetDirectionsPress();
@@ -824,11 +946,6 @@ useEffect(() => {
             });
           }}
         >
-          <View style={styles.routeSheetHeader}>
-            <TouchableOpacity onPress={handleCancelRoute} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
         </RouteInfoSheetContainer>
 
         {mode === 'route' && (
@@ -917,9 +1034,20 @@ const styles = StyleSheet.create({
   selectionPromptContainer: { position: 'absolute', top: '40%', left: 0, right: 0, alignItems: 'center', paddingHorizontal: 20 },
   selectionPromptText: { backgroundColor: 'rgba(255,255,255,0.9)', padding: 12, borderRadius: 8, fontSize: 16, color: '#333', textAlign: 'center' },
 
-  routeSheetHeader: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 12, paddingTop: 8 },
-  closeButton: { padding: 8 },
-  closeButtonText: { fontSize: 18, fontWeight: 'bold', color: '#666' },
+   backFab: {
+     position: 'absolute',
+     top: Platform.OS === 'ios' ? 12 : 12,
+     left: 12,
+     backgroundColor: 'rgba(13,15,20,0.9)',
+     borderRadius: 22,
+     paddingVertical: 10,
+     paddingHorizontal: 14,
+     elevation: 8,
+     zIndex: 9999,
+     borderWidth: StyleSheet.hairlineWidth,
+     borderColor: '#23262F',
+   },
+   backFabText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 
   addStopFab: {
     position: 'absolute', right: 16, bottom: 300,
@@ -970,4 +1098,37 @@ const styles = StyleSheet.create({
   calloutSub: { marginTop: 4, fontSize: 12, color: '#555' },
   calloutCta: { marginTop: 8, alignSelf: 'flex-start', backgroundColor: '#E6F4EA', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10 },
   calloutCtaText: { fontSize: 13, fontWeight: '700', color: '#111' },
+  ctaBtn: {
+    backgroundColor: '#2563EB',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  ctaBtnText: { color:'#fff', fontWeight:'700', fontSize:16 },
+  cancelBtn: {
+    backgroundColor: '#0D0F14',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#23262F',
+  },
+  cancelBtnText: { color:'#fff', fontWeight:'700' },
+
+  /* 👇 yeni: picker hızlı çıkış butonu */
+  pickerExitBtn: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 52 : 20,
+    left: 12,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#333',
+    zIndex: 9999,
+  },
+  pickerExitText: { color: '#fff', fontWeight: '700' },
 });

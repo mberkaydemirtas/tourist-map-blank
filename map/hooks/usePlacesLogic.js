@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
-import { getPlaceDetails } from '../../services/placeService';
+import { getPlaceDetails } from '../../trips/services/placeService';
 import { normalizeCoord } from '../utils/coords';
 
 export function usePlacesLogic() {

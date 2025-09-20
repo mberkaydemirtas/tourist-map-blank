@@ -23,7 +23,7 @@ import CreateTripWizardScreen from '../trips/CreateTripWizardScreen';
 
 // Veri sürücüsü (local-first)
 import { setTripsDriver } from '../trips/shared/tripsRepo';
-import createAsyncStorageDriver from '../trips/shared/localDrivers/asyncStorageDriver';
+import AsyncStorageDriver from '../trips/localDrivers/asyncStorageDriver';
 enableScreens(false); // ✅ sadece teşhis için (crash kesiliyorsa screens kaynaklı)
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -80,7 +80,7 @@ const navTheme = {
 
 export default function App() {
   useEffect(() => {
-    setTripsDriver(createAsyncStorageDriver());
+    setTripsDriver(AsyncStorageDriver());
   }, []);
 
   return (

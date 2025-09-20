@@ -1,6 +1,6 @@
 // src/shared/localDrivers/asyncStorageDriver.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { emptyTrip, now } from '../types';
+import { emptyTrip, now } from '../shared/types';
 
 const STORAGE_KEY = 'TRIPS_V1';
 
