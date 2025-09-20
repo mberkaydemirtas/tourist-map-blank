@@ -1,4 +1,4 @@
-// trips/services/geoService.js 
+// trips/services/geoService.js
 // Local atlas tabanlı, senkron şehir listesi
 // Public API:
 //   listCountries(): {code,name}[]
@@ -6,6 +6,7 @@
 //   listCitiesForCountryAndAdmin(code, admin): option[]
 //   getCitiesForCountry(code, query): option[]
 //   searchCities({countryCode, query, adminName}): Promise<option[]>
+//   getCityCenter(countryLike, name, adminName?): {lat,lng}|null   ← (ekstra, opsiyonel)
 
 import {
   COUNTRY_INDEX as COUNTRY_INDEX_CITY,
@@ -82,11 +83,9 @@ function countryLabel(code){
 }
 
 // ───────── düşük seviye okuma yardımcıları ─────────
-// Admin (il/eyalet) isimleri — ŞU AN İŞ KURALI: SADECE TR için anlamlı.
 function _listStates(cc){
   const docA = getAdminCountryDoc(cc);
   if (docA?.admins?.length) return docA.admins.map(a => a.name);
-  // City atlas içinde states alanı varsa onu kullan (opsiyonel)
   const docC = getCityCountryDoc(cc);
   if (Array.isArray(docC?.states)) return docC.states.slice();
   return [];
@@ -108,9 +107,46 @@ function _listCitiesForState(cc, adminName){
   return Array.isArray(names) ? names.slice() : [];
 }
 
-// ───────── public API ─────────
+// ───────── center üreticileri ─────────
+function _centroid(points){
+  const arr = (points || []).filter(p => Number.isFinite(p?.lat) && Number.isFinite(p?.lng));
+  if (!arr.length) return null;
+  const s = arr.reduce((a,p)=>({ lat: a.lat + p.lat, lng: a.lng + p.lng }), {lat:0,lng:0});
+  return { lat: s.lat/arr.length, lng: s.lng/arr.length };
+}
 
-// Ülke listesi (admin atlas varsa onu, yoksa city atlas’ı gösterir)
+function _getAdminCenter(cc, adminName){
+  const docA = getAdminCountryDoc(cc);
+  if (!docA?.admins?.length) return null;
+  const a = docA.admins.find(x => x.name === adminName);
+  if (!a) return null;
+  // 1) doğrudan center
+  if (a.center && Number.isFinite(a.center.lat) && Number.isFinite(a.center.lng)) {
+    return { lat: a.center.lat, lng: a.center.lng };
+  }
+  // 2) hub’lardan centroid
+  const hubs = [
+    ...(a.hubs?.plane || []),
+    ...(a.hubs?.train || []),
+    ...(a.hubs?.bus   || []),
+  ].map(h => ({ lat: Number(h.lat), lng: Number(h.lng) }));
+  const c = _centroid(hubs);
+  return c || null;
+}
+
+function _getCityCenter(cc, cityName){
+  const doc = getCityCountryDoc(cc);
+  const raw = doc?.cities?.[cityName] ?? doc?.cities?.[String(cityName||'')];
+  if (!raw) return null;
+  // desteklediğimiz birkaç yaygın şekil
+  const cand = raw.center || raw.location || raw.coords || raw;
+  const lat = Number(cand?.lat ?? cand?.latitude);
+  const lng = Number(cand?.lng ?? cand?.longitude);
+  if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng };
+  return null;
+}
+
+// ───────── public API ─────────
 export function listCountries() {
   return COUNTRY_LIST.slice();
 }
@@ -118,18 +154,19 @@ export function listCountries() {
 /**
  * Ülke → admin listesi (US: state, TR: il).
  * İŞ KURALI: Şu an SADECE TÜRKİYE için admin gösteriyoruz.
- * TR dışı ülkelerde boş dizi döner.
  */
 export function listAdminsForCountry(countryLike) {
   const cc = String(countryLike || '').toUpperCase();
   if (cc !== 'TR') return [];
   const states = _listStates(cc) || [];
+  // Not: center’ı burada dönmüyoruz; asıl center şehir seçimine eklenecek.
   return states.map(name => ({ key: name, label: name }));
 }
 
 /**
  * Ülke + admin → şehir listesi
  * (Genel amaçlı; TR’de UI’da şehir seçimi yok ama fonksiyon korunuyor.)
+ * Artık center da dönüyor.
  */
 export function listCitiesForCountryAndAdmin(countryLike, adminName) {
   const cc = String(countryLike || '').toUpperCase();
@@ -138,14 +175,15 @@ export function listCitiesForCountryAndAdmin(countryLike, adminName) {
     place_id: `${cc}-${slug(adminName)}-${i}`,
     main_text: name,
     description: `${name}, ${countryLabel(cc)}`,
+    center: _getCityCenter(cc, name),            // ← eklendi
   }));
 }
 
 /**
  * “Tek alan” şehir listesi.
  * İŞ KURALI:
- *  - TR için: state (il) listesini “şehir gibi” sun.
- *  - TR dışı için: gerçek şehir listesini (city atlas’tan) sun.
+ *  - TR için: state (il) listesini “şehir gibi” sun (center ile).
+ *  - TR dışı için: gerçek şehir listesi (center ile).
  */
 export function getCitiesForCountry(countryLike, query = '') {
   const cc = String(countryLike||'').toUpperCase();
@@ -158,40 +196,54 @@ export function getCitiesForCountry(countryLike, query = '') {
       id: `${cc}-st-${i}`,
       name,
       countryName: countryLabel(cc),
+      center: _getAdminCenter(cc, name),         // ← eklendi
     }));
   }
 
   const allCityNames = _listCityNames(cc) || [];
   if (!query) {
     return allCityNames.slice(0, 100).map((name, i) =>
-      toOption({ id: `${cc}-${i}`, name, countryName: countryLabel(cc) })
+      toOption({ id: `${cc}-${i}`, name, countryName: countryLabel(cc), center: _getCityCenter(cc, name) })
     );
   }
   const scored = fuzzyScore(allCityNames, query)
     .slice(0, 200)
-    .map((x, i) => toOption({ id: `${cc}-${i}`, name: x.name, countryName: countryLabel(cc) }));
+    .map((x, i) => toOption({ id: `${cc}-${i}`, name: x.name, countryName: countryLabel(cc), center: _getCityCenter(cc, x.name) }));
   return scored;
 }
 
 // Senkron sonucu Promise ile sar
 export async function searchCities({ countryCode, query, adminName }) {
   const cc = String(countryCode || '').toUpperCase();
-  // TR'de admin seçilmişse admin'e göre getir (ileride gerekebilir)
   if (cc === 'TR' && adminName) {
     return listCitiesForCountryAndAdmin(cc, adminName);
   }
   return getCitiesForCountry(cc, query);
 }
 
-// Gerek yok
-export async function getCityCenter() { return null; }
+// İsteğe bağlı util (geri uyumlu tutmak için argümanları esnek yaptım)
+export function getCityCenter(countryLike, name, adminName) {
+  const cc = String(countryLike || '').toUpperCase();
+  if (!cc || !name) return null;
+  if (cc === 'TR' && adminName) {
+    return _getCityCenter(cc, name) || _getAdminCenter(cc, adminName);
+  }
+  return _getCityCenter(cc, name);
+}
 
+// Admin (il) merkezi; TR için kullanılır
+export function getAdminCenter(countryLike, adminName) {
+  const cc = String(countryLike || '').toUpperCase();
+  if (!cc || !adminName) return null;
+  return _getAdminCenter(cc, adminName);
+}
 // ── küçük yardımcılar ─────────────────────────────────────────────────────
-function toOption({ id, name, countryName }){
+function toOption({ id, name, countryName, center }){
   return {
     place_id: id,
     main_text: name || '',
     description: [name, countryName].filter(Boolean).join(', '),
+    center: center && Number.isFinite(center.lat) && Number.isFinite(center.lng) ? center : null, // ← eklendi
   };
 }
 function fuzzyFilter(list, query){

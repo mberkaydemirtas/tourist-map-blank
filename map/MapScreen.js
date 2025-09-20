@@ -71,6 +71,14 @@ function markerToHub(m) {
   return { name, place_id, location: { lat, lng } };
 }
 
+// ✅ küçük yardımcı: picker.center → initialRegion
+function centerToInitialRegion(center) {
+  const lat = Number(center?.lat ?? center?.latitude);
+  const lng = Number(center?.lng ?? center?.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { latitude: lat, longitude: lng, latitudeDelta: 0.08, longitudeDelta: 0.08 };
+}
+
 export default function MapScreen() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -219,14 +227,14 @@ export default function MapScreen() {
   }, [picker?.enabled, picker?.version, mapReady, focusToPickerCenter]);
 
   /* -------------------------- Sheet açılış davranışları -------------------------- */
-   useEffect(() => {
-     if (!picker?.enabled) { sheetHalfSnappedRef.current = false; return; }
-     if (sheetHalfSnappedRef.current) return;
-     if (picker?.which === 'lodging' || picker?.sheetInitial === 'half') {
-       try { sheetRef.current?.snapToIndex?.(1); } catch {}
-     }
-     sheetHalfSnappedRef.current = true;
-   }, [picker?.enabled, picker?.which, picker?.sheetInitial]);
+  useEffect(() => {
+    if (!picker?.enabled) { sheetHalfSnappedRef.current = false; return; }
+    if (sheetHalfSnappedRef.current) return;
+    if (picker?.which === 'lodging' || picker?.sheetInitial === 'half') {
+      try { sheetRef.current?.snapToIndex?.(1); } catch {}
+    }
+    sheetHalfSnappedRef.current = true;
+  }, [picker?.enabled, picker?.which, picker?.sheetInitial]);
 
   // Picker açık — explore modda tut ve merkeze odakla
   useEffect(() => {
@@ -615,6 +623,12 @@ export default function MapScreen() {
     navigation.setParams({ routeRequest: undefined });
   }, [route?.params?.routeRequest, navigation, recalcRoute, map.setFromLocation, map.setToLocation, map.setWaypoints, map.setSelectedMode]);
 
+  // ✅ picker.center varsa ilk frame'de initialRegion ondan gelsin
+  const pickerInitialRegion = useMemo(() => {
+    if (!picker?.enabled) return null;
+    return centerToInitialRegion(picker?.center);
+  }, [picker?.enabled, picker?.center]);
+
   return (
     <View style={styles.container}>
       <MapView
@@ -622,7 +636,8 @@ export default function MapScreen() {
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
-        initialRegion={map.region}
+        // ⬇️ ÖNEMLİ: Picker açık ve center geçerliyse, ilk kare doğrudan şehir merkezinde başlasın
+        initialRegion={pickerInitialRegion ?? map.region}
         onPress={(e) => {
           handleUserGesture();
           if (picker?.enabled && picker?.which === 'lodging') {

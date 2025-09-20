@@ -8,6 +8,8 @@ import {
   listCountries,
   getCitiesForCountry,
   listAdminsForCountry,
+  getAdminCenter,   // ✅
+  getCityCenter,    // ✅ EKLENDİ
 } from '../services/geoService';
 
 const BORDER = '#23262F';
@@ -113,7 +115,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
       place_id: `${singleCountryCode}-st-${singleAdmin}`,
       description: `${singleAdmin}, ${findLabel(singleCountryCode)}`,
       name: singleAdmin,
-      center: null,
+      center: getAdminCenter(singleCountryCode, singleAdmin) || null, // ✅ değişken geçti
     };
     setSingleCity(fakeCity);
     setSingleCityOptions([]);
@@ -184,11 +186,12 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                 options={singleCityOptions}
                 placeholder="Şehir seçin"
                 onPick={(opt) => {
+                  const name = opt.main_text || opt.description;
                   const city = {
                     place_id: opt.place_id,
                     description: opt.description,
-                    name: opt.main_text || opt.description,
-                    center: null,
+                    name,
+                    center: getCityCenter(singleCountryCode, name) || null, // ✅ şehir merkezi
                   };
                   setSingleCity(city);
                 }}
@@ -256,7 +259,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                               place_id: `${r.countryCode}-st-${label}`,
                               description: `${label}, ${findLabel(r.countryCode)}`,
                               name: label,
-                              center: null,
+                              center: getAdminCenter(r.countryCode, label) || null, // ✅ TR için admin merkezi
                             };
                             return { ...r, admin: label, city: fakeCity, cityOptions: [] };
                           })
@@ -274,11 +277,12 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                       options={row.cityOptions}
                       placeholder="Şehir seçin"
                       onPick={(opt) => {
+                        const name = opt.main_text || opt.description;
                         const city = {
                           place_id: opt.place_id,
                           description: opt.description,
-                          name: opt.main_text || opt.description,
-                          center: null,
+                          name,
+                          center: getCityCenter(row.countryCode, name) || null, // ✅ şehir merkezi
                         };
                         setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, city } : r)));
                       }}
