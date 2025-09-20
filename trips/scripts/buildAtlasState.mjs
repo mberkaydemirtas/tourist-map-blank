@@ -31,6 +31,7 @@ function ensureDir(d){ if(!fs.existsSync(d)) fs.mkdirSync(d, {recursive:true}); 
 const norm = s => s?.normalize?.('NFKD')?.replace(/[\u0300-\u036f]/g,'')?.toLowerCase()?.trim()
   ?? String(s||'').toLowerCase().trim();
 const safeCmp = (a,b)=> String(a||'').localeCompare(String(b||''), 'tr', {sensitivity:'base'});
+const isNum = (v) => Number.isFinite(Number(v));
 
 async function jget(url, {headers={}, retry=3, backoff=700, method='GET', body=null} = {}) {
   for (let i=0;i<retry;i++){
@@ -63,12 +64,26 @@ async function fetchStatesForCountry(cc){
   return states; // [{code,name}]
 }
 
+// ⬇️ DEĞİŞTİ: şehirleri isim + koordinatla döndürüyoruz
 async function fetchCitiesForState(cc, stateCode){
   const res = await jget(`${CSC_BASE}/countries/${cc}/states/${stateCode}/cities`, { headers: HEADERS, retry: 4 });
   /** @type {{name:string, latitude?:string|number, longitude?:string|number}[]} */
   const list = await res.json();
-  const names = Array.from(new Set(list.map(x => x.name).filter(Boolean))).sort(safeCmp);
-  return names;
+  // bazı ülkelerde lat/lon string gelebiliyor
+  const mapped = (list || [])
+    .filter(x => x?.name)
+    .map(x => ({
+      name: x.name,
+      lat: isNum(x.latitude) ? Number(x.latitude) : null,
+      lng: isNum(x.longitude) ? Number(x.longitude) : null,
+    }));
+  // aynı isim birden fazla gelirse tekille
+  const byName = new Map();
+  for (const c of mapped) {
+    if (!byName.has(c.name)) byName.set(c.name, c);
+  }
+  const uniq = Array.from(byName.values()).sort((a,b)=> safeCmp(a.name,b.name));
+  return uniq; // [{name,lat?,lng?}]
 }
 
 // ----------------------- Overpass: tren & otogar (ülke-geniş sorgu, sonra state’e dağıt)
@@ -173,6 +188,38 @@ function bestCityForPlace(placeName, cityNames){
   return best;
 }
 
+// ----------------------- merkez hesaplayıcılar
+const median = (arr) => {
+  if (!arr.length) return null;
+  const a = [...arr].sort((x,y)=>x-y);
+  const mid = Math.floor(a.length/2);
+  return a.length % 2 ? a[mid] : (a[mid-1] + a[mid]) / 2;
+};
+const avg = (arr) => arr.length ? arr.reduce((s,x)=>s+x,0) / arr.length : null;
+
+// Şehirlerden: medyan (%70) + ortalama (%30)
+function centerFromCities(cityObjs = []){
+  const lats = cityObjs.map(c => c.lat).filter(isNum);
+  const lngs = cityObjs.map(c => c.lng).filter(isNum);
+  if (!lats.length || !lngs.length) return null;
+  const mlat = median(lats), mlng = median(lngs);
+  const alat = avg(lats),    alng = avg(lngs);
+  return { lat: 0.7*mlat + 0.3*alat, lng: 0.7*mlng + 0.3*alng };
+}
+
+// Hub’lardan: aynı mantık
+function centerFromHubs(hubs = {plane:[],train:[],bus:[]}){
+  const pts = []
+    .concat(hubs?.plane || [], hubs?.train || [], hubs?.bus || [])
+    .map(h => ({ lat: Number(h?.lat), lng: Number(h?.lng) }))
+    .filter(p => isNum(p.lat) && isNum(p.lng));
+  if (!pts.length) return null;
+  const lats = pts.map(p=>p.lat), lngs = pts.map(p=>p.lng);
+  const mlat = median(lats), mlng = median(lngs);
+  const alat = avg(lats),    alng = avg(lngs);
+  return { lat: 0.7*mlat + 0.3*alat, lng: 0.7*mlng + 0.3*alng };
+}
+
 // ----------------------- ana akış (STATE bazlı, havalimanı yok)
 (async function main(){
   console.log('→ (STATE) Ülkeler çekiliyor (CSC)…');
@@ -184,9 +231,11 @@ function bestCityForPlace(placeName, cityNames){
   for (const c of countries){
     console.log(`\n=== ${c.code} • ${c.name} (STATE) ===`);
 
-    // 1) states + stateCitiesMap + reverse index (city->state)
+    // 1) states + stateCitiesWithCoords + reverse index (city->state)
     const states = await fetchStatesForCountry(c.code); // [{code,name}]
-    const stateCitiesMap = {};
+    /** state -> [{name,lat?,lng?}] */
+    const stateCitiesWithCoords = {};
+    /** cityName -> stateName */
     const cityToState = new Map();
 
     if (states.length > 0) {
@@ -194,10 +243,10 @@ function bestCityForPlace(placeName, cityNames){
       await Promise.all(states.map(st => limit(async () => {
         if (!st.code) return;
         try {
-          const cities = await fetchCitiesForState(c.code, st.code);
+          const cities = await fetchCitiesForState(c.code, st.code); // [{name,lat?,lng?}]
           if (cities.length) {
-            stateCitiesMap[st.name] = cities.slice();
-            for (const nm of cities) cityToState.set(nm, st.name);
+            stateCitiesWithCoords[st.name] = cities.slice();
+            for (const item of cities) cityToState.set(item.name, st.name);
           }
         } catch (e) {
           console.warn(`⚠️  ${c.code}/${st.code} şehirleri alınamadı: ${e.message}`);
@@ -231,7 +280,7 @@ function bestCityForPlace(placeName, cityNames){
     }));
 
     const adminByName = new Map(admins.map(a => [a.name, a]));
-    const allCities = [...cityToState.keys()].sort(safeCmp);
+    const allCities = Array.from(cityToState.keys()).sort(safeCmp);
 
     for (const st of stations){
       // İstasyonu bir şehre; şehri de state'e bağla
@@ -246,7 +295,7 @@ function bestCityForPlace(placeName, cityNames){
       bucket.push({ name: st.name, lat: st.lat, lng: st.lng });
     }
 
-    // temizlik ve sıralama
+    // temizlik ve sıralama + CENTER HESABI
     for (const a of admins){
       for (const k of ['plane','train','bus']){
         const arr = a.hubs[k] || [];
@@ -256,13 +305,22 @@ function bestCityForPlace(placeName, cityNames){
           if (seen.has(key)) return false; seen.add(key); return true;
         }).sort((x,y)=> safeCmp(x.name,y.name));
       }
+
+      // 3.a) şehir koordinatlarından merkez
+      const cityObjs = stateCitiesWithCoords[a.name] || [];
+      let center = centerFromCities(cityObjs);
+
+      // 3.b) gerekirse hub’lardan merkez
+      if (!center) center = centerFromHubs(a.hubs);
+
+      a.center = center || null;
     }
 
     const doc = {
       code: c.code,
       name: c.name,
-      level: 'admin',                 // ← state düzeyi
-      admins,                         // [{code,name,center,hubs:{plane[],train[],bus[]}}]
+      level: 'admin',                 // state düzeyi
+      admins,                         // [{code,name,center:{lat,lng},hubs:{plane[],train[],bus[]}}]
       note: 'Airports intentionally omitted in state build. (Add later if needed.)'
     };
 
@@ -281,5 +339,5 @@ function bestCityForPlace(placeName, cityNames){
   ensureDir(path.join(OUT_DIR));
   fs.writeFileSync(path.join(OUT_DIR, 'all.json'), JSON.stringify(all, null, 2), 'utf8');
 
-  console.log('\n✅ (STATE) Bitti. Çıktılar: data/atlas-state/countries/<ISO2>.json ve data/atlas-state/all.json');
+  console.log('\n✅ (STATE) Bitti. Çıktılar: data/atlas-state/countries/<ISO2>.json ve data/atlas-state/all.json (center DOLU)');
 })().catch(e => { console.error(e); process.exit(1); });

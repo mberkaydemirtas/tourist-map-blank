@@ -6,7 +6,10 @@
     {
       "code": "TR-01",
       "name": "Adana",
-      "center": null,
+      "center": {
+        "lat": 37.233074724375,
+        "lng": 35.49497529875
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -19,6 +22,16 @@
             "name": "Adana",
             "lat": 37.0036906,
             "lng": 35.3191275
+          },
+          {
+            "name": "Ceyhan",
+            "lat": 37.0180605,
+            "lng": 35.8172751
+          },
+          {
+            "name": "Ceyhan",
+            "lat": 37.0183473,
+            "lng": 35.8171126
           },
           {
             "name": "Pozantı",
@@ -73,7 +86,10 @@
     {
       "code": "TR-02",
       "name": "Adıyaman",
-      "center": null,
+      "center": {
+        "lat": 37.79638833333333,
+        "lng": 38.275795333333335
+      },
       "hubs": {
         "plane": [],
         "train": [],
@@ -94,7 +110,10 @@
     {
       "code": "TR-03",
       "name": "Afyonkarahisar",
-      "center": null,
+      "center": {
+        "lat": 38.572992666666664,
+        "lng": 30.476840833333334
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -231,7 +250,10 @@
     {
       "code": "TR-04",
       "name": "Ağrı",
-      "center": null,
+      "center": {
+        "lat": 39.577695125,
+        "lng": 43.067826999999994
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -258,7 +280,10 @@
     {
       "code": "TR-68",
       "name": "Aksaray",
-      "center": null,
+      "center": {
+        "lat": 38.447866,
+        "lng": 33.962711625
+      },
       "hubs": {
         "plane": [],
         "train": [],
@@ -268,14 +293,17 @@
     {
       "code": "TR-05",
       "name": "Amasya",
-      "center": null,
+      "center": {
+        "lat": 40.77798014285714,
+        "lng": 35.54257528571428
+      },
       "hubs": {
         "plane": [],
         "train": [
           {
             "name": "Gümüş",
-            "lat": 37.514922,
-            "lng": 34.6211702
+            "lat": 37.5147947,
+            "lng": 34.6211201
           },
           {
             "name": "Suluova",
@@ -310,7 +338,10 @@
     {
       "code": "TR-06",
       "name": "Ankara",
-      "center": null,
+      "center": {
+        "lat": 39.975900115769235,
+        "lng": 32.74618073423077
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -390,11 +421,6 @@
             "lng": 32.5840239
           },
           {
-            "name": "Yakacık Tren İstasyonu/Payas",
-            "lat": 36.7669053,
-            "lng": 36.2096136
-          },
-          {
             "name": "Yeniçubuk İstasyonu",
             "lat": 39.2096281,
             "lng": 36.0928779
@@ -452,10 +478,19 @@
     {
       "code": "TR-07",
       "name": "Antalya",
-      "center": null,
+      "center": {
+        "lat": 36.818129224500005,
+        "lng": 30.7399277605
+      },
       "hubs": {
         "plane": [],
-        "train": [],
+        "train": [
+          {
+            "name": "Konya",
+            "lat": 37.8653357,
+            "lng": 32.4758962
+          }
+        ],
         "bus": [
           {
             "name": "Akseki Otogarı",
@@ -538,7 +573,10 @@
     {
       "code": "TR-75",
       "name": "Ardahan",
-      "center": null,
+      "center": {
+        "lat": 41.1859445,
+        "lng": 42.7909035
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -565,7 +603,10 @@
     {
       "code": "TR-08",
       "name": "Artvin",
-      "center": null,
+      "center": {
+        "lat": 41.269959,
+        "lng": 41.597125
+      },
       "hubs": {
         "plane": [],
         "train": [],
@@ -601,7 +642,10 @@
     {
       "code": "TR-09",
       "name": "Aydın",
-      "center": null,
+      "center": {
+        "lat": 37.821428764705885,
+        "lng": 28.02817082352941
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -616,14 +660,29 @@
             "lng": 27.5950542
           },
           {
+            "name": "Germencik Tren İstasyonu",
+            "lat": 37.8731094,
+            "lng": 27.5957932
+          },
+          {
             "name": "İncirliova",
             "lat": 37.8538377,
             "lng": 27.7250479
           },
           {
+            "name": "İncirliova Tren İstasyonu",
+            "lat": 37.8538508,
+            "lng": 27.7250042
+          },
+          {
             "name": "Köşk",
             "lat": 37.8515466,
             "lng": 28.0514779
+          },
+          {
+            "name": "Köşk",
+            "lat": 37.8517021,
+            "lng": 28.0514727
           },
           {
             "name": "Kuyucak",
@@ -644,6 +703,11 @@
             "name": "Sultanhisar",
             "lat": 37.8873183,
             "lng": 28.1557307
+          },
+          {
+            "name": "Sultanhisar",
+            "lat": 37.887337,
+            "lng": 28.1555251
           }
         ],
         "bus": [
@@ -698,7 +762,10 @@
     {
       "code": "TR-10",
       "name": "Balıkesir",
-      "center": null,
+      "center": {
+        "lat": 39.653199595,
+        "lng": 27.70708785
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -795,7 +862,10 @@
     {
       "code": "TR-74",
       "name": "Bartın",
-      "center": null,
+      "center": {
+        "lat": 41.6947835,
+        "lng": 32.519749
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -803,6 +873,11 @@
             "name": "Kurtuluş",
             "lat": 39.9288787,
             "lng": 32.8679043
+          },
+          {
+            "name": "Kurtuluş Tren İstasyonu",
+            "lat": 39.9288429,
+            "lng": 32.8678983
           },
           {
             "name": "Ulusulu",
@@ -852,7 +927,10 @@
     {
       "code": "TR-72",
       "name": "Batman",
-      "center": null,
+      "center": {
+        "lat": 37.89462350000001,
+        "lng": 41.3635685
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -868,7 +946,10 @@
     {
       "code": "TR-69",
       "name": "Bayburt",
-      "center": null,
+      "center": {
+        "lat": 40.259933,
+        "lng": 40.12580799999999
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -884,7 +965,10 @@
     {
       "code": "TR-11",
       "name": "Bilecik",
-      "center": null,
+      "center": {
+        "lat": 40.102110124999996,
+        "lng": 30.123253125
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -897,6 +981,11 @@
             "name": "Bozüyük YHT",
             "lat": 39.8805264,
             "lng": 30.042665
+          },
+          {
+            "name": "Bozüyük YHT Garı",
+            "lat": 39.9044187,
+            "lng": 30.0373542
           },
           {
             "name": "Osmaneli",
@@ -941,7 +1030,10 @@
     {
       "code": "TR-12",
       "name": "Bingöl",
-      "center": null,
+      "center": {
+        "lat": 39.202327249999996,
+        "lng": 40.543250125
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -957,7 +1049,10 @@
     {
       "code": "TR-13",
       "name": "Bitlis",
-      "center": null,
+      "center": {
+        "lat": 38.497301,
+        "lng": 42.28141414285714
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -1009,7 +1104,10 @@
     {
       "code": "TR-14",
       "name": "Bolu",
-      "center": null,
+      "center": {
+        "lat": 40.68529166666666,
+        "lng": 31.81347333333333
+      },
       "hubs": {
         "plane": [],
         "train": [],
@@ -1030,7 +1128,10 @@
     {
       "code": "TR-15",
       "name": "Burdur",
-      "center": null,
+      "center": {
+        "lat": 37.37363427272727,
+        "lng": 29.875382545454542
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -1166,13 +1267,13 @@
           },
           {
             "name": "Göztepe",
-            "lat": 40.9792219,
-            "lng": 29.062645
+            "lat": 40.9792106,
+            "lng": 29.0626271
           },
           {
             "name": "Günyazı",
-            "lat": 37.0574356,
-            "lng": 35.9514573
+            "lat": 37.0574062,
+            "lng": 35.9514444
           },
           {
             "name": "Halkalı",
@@ -1210,6 +1311,16 @@
             "lng": 27.1415242
           },
           {
+            "name": "İsdemir",
+            "lat": 36.7239166,
+            "lng": 36.2135802
+          },
+          {
+            "name": "Kabakça",
+            "lat": 41.215506,
+            "lng": 28.3647008
+          },
+          {
             "name": "Kanlıca",
             "lat": 39.2831221,
             "lng": 34.882332
@@ -1231,8 +1342,8 @@
           },
           {
             "name": "Karaman",
-            "lat": 37.1934961,
-            "lng": 33.2154398
+            "lat": 37.1936571,
+            "lng": 33.2150688
           },
           {
             "name": "Karaözü",
@@ -1248,11 +1359,6 @@
             "name": "Karasar",
             "lat": 39.4347533,
             "lng": 37.288092
-          },
-          {
-            "name": "Kayacık",
-            "lat": 38.0033616,
-            "lng": 32.5923629
           },
           {
             "name": "Kelebek",
@@ -1331,13 +1437,13 @@
           },
           {
             "name": "Sirkeci",
-            "lat": 41.0135842,
-            "lng": 28.9769944
+            "lat": 41.0136066,
+            "lng": 28.9771437
           },
           {
             "name": "Sirkeci",
-            "lat": 41.0149603,
-            "lng": 28.9784948
+            "lat": 41.0150174,
+            "lng": 28.977962
           },
           {
             "name": "Soğucak",
@@ -1407,11 +1513,6 @@
         ],
         "bus": [
           {
-            "name": "Akfìrat",
-            "lat": 40.9247996,
-            "lng": 29.4210049
-          },
-          {
             "name": "Ayazağa",
             "lat": 41.1226422,
             "lng": 29.0013139
@@ -1467,7 +1568,10 @@
     {
       "code": "TR-16",
       "name": "Bursa",
-      "center": null,
+      "center": {
+        "lat": 40.18425305882353,
+        "lng": 29.134411117647062
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -1510,6 +1614,11 @@
             "name": "Kocabaş Istasyon",
             "lat": 37.8037151,
             "lng": 29.3277358
+          },
+          {
+            "name": "Kütahya Tren Gar",
+            "lat": 39.4204223,
+            "lng": 30.0006175
           },
           {
             "name": "Mardin İstasyonu",
@@ -1570,6 +1679,11 @@
             "name": "Yıldırım Kemal İstasyonu",
             "lat": 38.8776101,
             "lng": 30.12473
+          },
+          {
+            "name": "Yıldırım Tren İstasyonu",
+            "lat": 39.9324104,
+            "lng": 32.7045429
           }
         ],
         "bus": [
@@ -1694,7 +1808,10 @@
     {
       "code": "TR-17",
       "name": "Çanakkale",
-      "center": null,
+      "center": {
+        "lat": 40.039933749999996,
+        "lng": 26.5668695
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -1727,6 +1844,11 @@
             "name": "Mercan İstasyonu",
             "lat": 39.7490467,
             "lng": 40.2578391
+          },
+          {
+            "name": "Sincan Tren İstasyonu",
+            "lat": 39.9645489,
+            "lng": 32.5840521
           }
         ],
         "bus": [
@@ -1811,7 +1933,10 @@
     {
       "code": "TR-18",
       "name": "Çankırı",
-      "center": null,
+      "center": {
+        "lat": 40.7327355,
+        "lng": 33.395066175
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -1848,7 +1973,10 @@
     {
       "code": "TR-19",
       "name": "Çorum",
-      "center": null,
+      "center": {
+        "lat": 40.58053857142857,
+        "lng": 34.736123571428564
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -1885,7 +2013,10 @@
     {
       "code": "TR-20",
       "name": "Denizli",
-      "center": null,
+      "center": {
+        "lat": 37.79968615789473,
+        "lng": 29.256271789473686
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -1898,6 +2029,11 @@
             "name": "Ahmetler",
             "lat": 38.3903132,
             "lng": 29.1032999
+          },
+          {
+            "name": "Arıkören",
+            "lat": 37.4607025,
+            "lng": 32.9280828
           },
           {
             "name": "Asmakaya",
@@ -1970,6 +2106,11 @@
             "lng": 33.125977
           },
           {
+            "name": "Çobanbey",
+            "lat": 36.6360806,
+            "lng": 37.4761947
+          },
+          {
             "name": "Çöğürler",
             "lat": 39.2679422,
             "lng": 30.1785217
@@ -2021,8 +2162,13 @@
           },
           {
             "name": "Hacıkırı",
-            "lat": 37.2522064,
-            "lng": 34.9810261
+            "lat": 37.2521654,
+            "lng": 34.9808425
+          },
+          {
+            "name": "Haydarli",
+            "lat": 37.5793216,
+            "lng": 37.4542337
           },
           {
             "name": "Hipodrom",
@@ -2033,6 +2179,11 @@
             "name": "Horozköy",
             "lat": 38.6266873,
             "lng": 27.4031801
+          },
+          {
+            "name": "İncirlik",
+            "lat": 36.9839488,
+            "lng": 35.4350652
           },
           {
             "name": "İsabeyli",
@@ -2046,8 +2197,8 @@
           },
           {
             "name": "Kapıkule",
-            "lat": 41.7188193,
-            "lng": 26.3615951
+            "lat": 41.7190195,
+            "lng": 26.3615763
           },
           {
             "name": "Karakuyu",
@@ -2110,9 +2261,14 @@
             "lng": 34.7791886
           },
           {
+            "name": "Sarıseki",
+            "lat": 36.6686886,
+            "lng": 36.2136553
+          },
+          {
             "name": "Sazlıköy",
-            "lat": 37.7792818,
-            "lng": 27.4623421
+            "lat": 37.783068,
+            "lng": 27.4633615
           },
           {
             "name": "Seyitler",
@@ -2121,8 +2277,8 @@
           },
           {
             "name": "Sudurağı",
-            "lat": 37.2718131,
-            "lng": 33.374956
+            "lat": 37.2716469,
+            "lng": 33.3750987
           },
           {
             "name": "Şehitlik",
@@ -2257,7 +2413,10 @@
     {
       "code": "TR-21",
       "name": "Diyarbakır",
-      "center": null,
+      "center": {
+        "lat": 38.190064176470585,
+        "lng": 40.251781470588234
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -2285,6 +2444,11 @@
             "name": "Üreğil",
             "lat": 39.9225045,
             "lng": 32.9321733
+          },
+          {
+            "name": "Üreğil Tren İstasyonu",
+            "lat": 39.9225567,
+            "lng": 32.9320322
           }
         ],
         "bus": [
@@ -2324,7 +2488,10 @@
     {
       "code": "TR-81",
       "name": "Düzce",
-      "center": null,
+      "center": {
+        "lat": 40.874487499999994,
+        "lng": 31.098889874999998
+      },
       "hubs": {
         "plane": [],
         "train": [],
@@ -2345,7 +2512,10 @@
     {
       "code": "TR-22",
       "name": "Edirne",
-      "center": null,
+      "center": {
+        "lat": 41.27967033333333,
+        "lng": 26.616017666666664
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -2377,7 +2547,10 @@
     {
       "code": "TR-23",
       "name": "Elazığ",
-      "center": null,
+      "center": {
+        "lat": 38.66367812727273,
+        "lng": 39.614157672727266
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -2444,7 +2617,10 @@
     {
       "code": "TR-24",
       "name": "Erzincan",
-      "center": null,
+      "center": {
+        "lat": 39.72437333333333,
+        "lng": 39.458951
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -2465,7 +2641,10 @@
     {
       "code": "TR-25",
       "name": "Erzurum",
-      "center": null,
+      "center": {
+        "lat": 40.01335225,
+        "lng": 41.59900225
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -2478,11 +2657,6 @@
             "name": "Çatalağzı",
             "lat": 41.4992381,
             "lng": 31.8741749
-          },
-          {
-            "name": "Çatalca Tren İstasyonu",
-            "lat": 41.1505101,
-            "lng": 28.480342
           },
           {
             "name": "Çataldere Istasyon",
@@ -2537,7 +2711,10 @@
     {
       "code": "TR-26",
       "name": "Eskişehir",
-      "center": null,
+      "center": {
+        "lat": 39.70408592857143,
+        "lng": 30.91602364285714
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -2578,8 +2755,8 @@
           },
           {
             "name": "Çiftehan",
-            "lat": 37.5115038,
-            "lng": 34.7736855
+            "lat": 37.5115147,
+            "lng": 34.7736312
           },
           {
             "name": "Hanlı Istasyon",
@@ -2593,8 +2770,8 @@
           },
           {
             "name": "Kaşınhanı",
-            "lat": 37.7019543,
-            "lng": 32.5701761
+            "lat": 37.7032,
+            "lng": 32.5684579
           },
           {
             "name": "Lalahan",
@@ -2679,7 +2856,10 @@
     {
       "code": "TR-27",
       "name": "Gaziantep",
-      "center": null,
+      "center": {
+        "lat": 37.056065,
+        "lng": 37.487698333333334
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -2695,7 +2875,10 @@
     {
       "code": "TR-28",
       "name": "Giresun",
-      "center": null,
+      "center": {
+        "lat": 40.8467111875,
+        "lng": 38.702612187499994
+      },
       "hubs": {
         "plane": [],
         "train": [],
@@ -2721,7 +2904,10 @@
     {
       "code": "TR-29",
       "name": "Gümüşhane",
-      "center": null,
+      "center": {
+        "lat": 40.34830649999999,
+        "lng": 39.363713
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -2748,7 +2934,10 @@
     {
       "code": "TR-30",
       "name": "Hakkâri",
-      "center": null,
+      "center": {
+        "lat": 37.31837798,
+        "lng": 44.211464480000004
+      },
       "hubs": {
         "plane": [],
         "train": [],
@@ -2764,24 +2953,32 @@
     {
       "code": "TR-31",
       "name": "Hatay",
-      "center": null,
+      "center": {
+        "lat": 36.419399799999994,
+        "lng": 36.20704752
+      },
       "hubs": {
         "plane": [],
         "train": [
           {
-            "name": "Dörtyol Istasyon",
-            "lat": 36.8239602,
-            "lng": 36.1958578
+            "name": "Dörtyol",
+            "lat": 36.8239831,
+            "lng": 36.1956148
           },
           {
             "name": "Erzin",
-            "lat": 36.9745888,
-            "lng": 36.1304859
+            "lat": 36.9746038,
+            "lng": 36.1302382
           },
           {
-            "name": "İskenderun İstasyonu",
-            "lat": 36.5875063,
-            "lng": 36.1811533
+            "name": "İskenderun",
+            "lat": 36.5872671,
+            "lng": 36.1813157
+          },
+          {
+            "name": "Payas",
+            "lat": 36.7669311,
+            "lng": 36.2093457
           }
         ],
         "bus": [
@@ -2806,7 +3003,10 @@
     {
       "code": "TR-76",
       "name": "Iğdır",
-      "center": null,
+      "center": {
+        "lat": 39.906681649999996,
+        "lng": 43.88247402499999
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -2827,7 +3027,10 @@
     {
       "code": "TR-32",
       "name": "Isparta",
-      "center": null,
+      "center": {
+        "lat": 37.946777230769236,
+        "lng": 30.845153153846155
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -2859,7 +3062,10 @@
     {
       "code": "TR-34",
       "name": "İstanbul",
-      "center": null,
+      "center": {
+        "lat": 41.0415644765,
+        "lng": 28.931056321499995
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -2867,11 +3073,6 @@
             "name": "Alsancak Gar",
             "lat": 38.4386339,
             "lng": 27.1481153
-          },
-          {
-            "name": "Arıkören Gar",
-            "lat": 37.4605946,
-            "lng": 32.9279532
           },
           {
             "name": "Bakırköy",
@@ -2897,6 +3098,11 @@
             "name": "Çatal",
             "lat": 38.1724198,
             "lng": 27.7208343
+          },
+          {
+            "name": "Çatalca",
+            "lat": 41.1505914,
+            "lng": 28.480199
           },
           {
             "name": "Çukurhüseyin",
@@ -2950,13 +3156,8 @@
           },
           {
             "name": "Pendik",
-            "lat": 40.8801577,
-            "lng": 29.231618
-          },
-          {
-            "name": "Pendik Garı",
-            "lat": 40.879944,
-            "lng": 29.2312435
+            "lat": 40.8802498,
+            "lng": 29.2315477
           },
           {
             "name": "Sabuncupınar",
@@ -3226,7 +3427,10 @@
     {
       "code": "TR-35",
       "name": "İzmir",
-      "center": null,
+      "center": {
+        "lat": 38.39068998741936,
+        "lng": 27.152019932258064
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -3282,8 +3486,8 @@
           },
           {
             "name": "Karaisalıbucağı",
-            "lat": 37.1913669,
-            "lng": 34.9391714
+            "lat": 37.1913626,
+            "lng": 34.9392812
           },
           {
             "name": "Karşıyaka",
@@ -3518,7 +3722,10 @@
     {
       "code": "TR-46",
       "name": "Kahramanmaraş",
-      "center": null,
+      "center": {
+        "lat": 37.76369745454545,
+        "lng": 36.93989409090909
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -3528,9 +3735,9 @@
             "lng": 37.3828069
           },
           {
-            "name": "İncirlik Garı",
-            "lat": 36.9839488,
-            "lng": 35.4350652
+            "name": "Kahramanmaraş",
+            "lat": 37.5639971,
+            "lng": 36.9307209
           },
           {
             "name": "Mustafa Kemal",
@@ -3549,8 +3756,8 @@
           },
           {
             "name": "Pazarcık",
-            "lat": 37.4907596,
-            "lng": 37.2901618
+            "lat": 37.4908476,
+            "lng": 37.2899692
           },
           {
             "name": "Zonguldak Gar",
@@ -3695,7 +3902,10 @@
     {
       "code": "TR-78",
       "name": "Karabük",
-      "center": null,
+      "center": {
+        "lat": 41.197104,
+        "lng": 32.667101
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -3711,13 +3921,13 @@
           },
           {
             "name": "Yenice",
-            "lat": 36.9744909,
-            "lng": 35.0554921
-          },
-          {
-            "name": "Yenice",
             "lat": 40.1597337,
             "lng": 36.2486015
+          },
+          {
+            "name": "Yenice Istasyon",
+            "lat": 36.9744822,
+            "lng": 35.0554978
           },
           {
             "name": "Yenice İstasyonu",
@@ -3737,7 +3947,10 @@
     {
       "code": "TR-70",
       "name": "Karaman",
-      "center": null,
+      "center": {
+        "lat": 36.970735499999996,
+        "lng": 32.950278
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -3752,9 +3965,9 @@
             "lng": 36.6195166
           },
           {
-            "name": "Ayrancı İstasyonu",
-            "lat": 37.3709385,
-            "lng": 33.6664242
+            "name": "Ayrancı",
+            "lat": 37.3710613,
+            "lng": 33.6662614
           },
           {
             "name": "Gazi Mahallesi",
@@ -3772,11 +3985,6 @@
             "lng": 29.2267867
           },
           {
-            "name": "Konya Terminal",
-            "lat": 37.8682982,
-            "lng": 32.475429
-          },
-          {
             "name": "Yuva İstasyonu",
             "lat": 36.9844502,
             "lng": 37.685851
@@ -3792,11 +4000,6 @@
             "name": "776 - Gümüldür",
             "lat": 38.2629201,
             "lng": 27.1626804
-          },
-          {
-            "name": "Akfırat Evleri",
-            "lat": 40.8984339,
-            "lng": 29.4182997
           },
           {
             "name": "Anadolu Feneri",
@@ -3857,6 +4060,11 @@
             "name": "Elazığ Otogarı",
             "lat": 38.6647819,
             "lng": 39.2452234
+          },
+          {
+            "name": "Evka 6 (ESHOT)",
+            "lat": 38.5013581,
+            "lng": 27.0908408
           },
           {
             "name": "Iğdırlı Turizm",
@@ -3924,7 +4132,10 @@
     {
       "code": "TR-36",
       "name": "Kars",
-      "center": null,
+      "center": {
+        "lat": 40.530117625,
+        "lng": 43.131902874999994
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -3966,7 +4177,10 @@
     {
       "code": "TR-37",
       "name": "Kastamonu",
-      "center": null,
+      "center": {
+        "lat": 41.6386466,
+        "lng": 33.707014300000004
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -4002,8 +4216,8 @@
           },
           {
             "name": "Dilek",
-            "lat": 38.4448787,
-            "lng": 38.2580222
+            "lat": 38.4449554,
+            "lng": 38.2582073
           },
           {
             "name": "Döğer",
@@ -4183,7 +4397,10 @@
     {
       "code": "TR-38",
       "name": "Kayseri",
-      "center": null,
+      "center": {
+        "lat": 38.71502482117647,
+        "lng": 35.61805805647059
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -4208,9 +4425,9 @@
             "lng": 35.4303932
           },
           {
-            "name": "Pınarbaşı Gar",
-            "lat": 38.0371687,
-            "lng": 32.6048485
+            "name": "Pınarbaşı",
+            "lat": 38.0372312,
+            "lng": 32.6049151
           },
           {
             "name": "Sarıoğlan İstasyonu",
@@ -4265,7 +4482,10 @@
     {
       "code": "TR-71",
       "name": "Kırıkkale",
-      "center": null,
+      "center": {
+        "lat": 39.83443166666667,
+        "lng": 33.549894333333334
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -4296,44 +4516,17 @@
     {
       "code": "TR-39",
       "name": "Kırklareli",
-      "center": null,
+      "center": {
+        "lat": 41.602877,
+        "lng": 27.315669624999998
+      },
       "hubs": {
         "plane": [],
         "train": [
           {
-            "name": "Babaeski Hızlı Tren İstasyonu",
-            "lat": 41.397978,
-            "lng": 27.103488
-          },
-          {
-            "name": "Babaeski Hızlı Tren İstasyonu",
-            "lat": 41.3979393,
-            "lng": 27.1034638
-          },
-          {
-            "name": "Babaeski Hızlı Tren İstasyonu",
-            "lat": 41.397548,
-            "lng": 27.1032188
-          },
-          {
-            "name": "Babaeski Hızlı Tren İstasyonu",
-            "lat": 41.397883,
-            "lng": 27.1034286
-          },
-          {
-            "name": "Babaeski Hızlı Tren İstasyonu",
-            "lat": 41.3978442,
-            "lng": 27.1034043
-          },
-          {
-            "name": "Babaeski Hızlı Tren İstasyonu",
-            "lat": 41.398154,
-            "lng": 27.1035983
-          },
-          {
             "name": "Babaeski YHT Garı",
-            "lat": 41.3982962,
-            "lng": 27.1036873
+            "lat": 41.3977208,
+            "lng": 27.103344
           },
           {
             "name": "Demirköy",
@@ -4341,32 +4534,7 @@
             "lng": 30.007931
           },
           {
-            "name": "Lüleburgaz Hızlı Tren İstasyonu",
-            "lat": 41.36638,
-            "lng": 27.3474055
-          },
-          {
-            "name": "Lüleburgaz Hızlı Tren İstasyonu",
-            "lat": 41.3663222,
-            "lng": 27.3473952
-          },
-          {
-            "name": "Lüleburgaz Hızlı Tren İstasyonu",
-            "lat": 41.3665972,
-            "lng": 27.3474442
-          },
-          {
-            "name": "Lüleburgaz Hızlı Tren İstasyonu",
-            "lat": 41.3662143,
-            "lng": 27.347376
-          },
-          {
-            "name": "Lüleburgaz Hızlı Tren İstasyonu",
-            "lat": 41.3658906,
-            "lng": 27.3473184
-          },
-          {
-            "name": "Lüleburgaz Tren İstasyonu",
+            "name": "Lüleburgaz",
             "lat": 41.3554105,
             "lng": 27.3318476
           },
@@ -4374,6 +4542,11 @@
             "name": "Lüleburgaz YHT Garı",
             "lat": 41.3663379,
             "lng": 27.3475217
+          },
+          {
+            "name": "Pehlivanköy",
+            "lat": 41.3462071,
+            "lng": 26.918388
           }
         ],
         "bus": [
@@ -4398,7 +4571,10 @@
     {
       "code": "TR-40",
       "name": "Kırşehir",
-      "center": null,
+      "center": {
+        "lat": 39.35882514285714,
+        "lng": 34.15738042857143
+      },
       "hubs": {
         "plane": [],
         "train": [],
@@ -4419,7 +4595,10 @@
     {
       "code": "TR-79",
       "name": "Kilis",
-      "center": null,
+      "center": {
+        "lat": 36.77708825,
+        "lng": 37.141873749999995
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -4435,7 +4614,10 @@
     {
       "code": "TR-41",
       "name": "Kocaeli",
-      "center": null,
+      "center": {
+        "lat": 40.77069475,
+        "lng": 29.7801165
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -4497,11 +4679,6 @@
             "lng": 29.8007513
           },
           {
-            "name": "Gölcük Şehirlerarası Otobüs Terminali",
-            "lat": 40.7147668,
-            "lng": 29.8376638
-          },
-          {
             "name": "Karamürsel Terminali",
             "lat": 40.6913973,
             "lng": 29.6178413
@@ -4527,7 +4704,10 @@
     {
       "code": "TR-42",
       "name": "Konya",
-      "center": null,
+      "center": {
+        "lat": 37.8976824516129,
+        "lng": 32.390785838709675
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -4542,9 +4722,9 @@
             "lng": 30.1103443
           },
           {
-            "name": "Çumra İstasyonu",
-            "lat": 37.5719321,
-            "lng": 32.7844315
+            "name": "Çumra",
+            "lat": 37.5720111,
+            "lng": 32.7845981
           },
           {
             "name": "Derbent",
@@ -4659,7 +4839,10 @@
     {
       "code": "TR-43",
       "name": "Kütahya",
-      "center": null,
+      "center": {
+        "lat": 39.207368230769234,
+        "lng": 29.508442538461537
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -4706,7 +4889,10 @@
     {
       "code": "TR-44",
       "name": "Malatya",
-      "center": null,
+      "center": {
+        "lat": 38.55173284615385,
+        "lng": 38.17856869230769
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -4741,14 +4927,9 @@
             "lng": 33.5358819
           },
           {
-            "name": "Toprakkale Istasyonu",
-            "lat": 37.0668152,
-            "lng": 36.1456738
-          },
-          {
             "name": "Yazıhan",
-            "lat": 38.5956989,
-            "lng": 38.1815395
+            "lat": 38.5957628,
+            "lng": 38.1816948
           }
         ],
         "bus": [
@@ -4761,11 +4942,6 @@
             "name": "Kadifekale",
             "lat": 38.4141307,
             "lng": 27.1474541
-          },
-          {
-            "name": "Kafkale Spor Tesisleri",
-            "lat": 40.832342,
-            "lng": 29.2985121
           },
           {
             "name": "Kale Seyahat Dudullu Terminali",
@@ -4798,7 +4974,10 @@
     {
       "code": "TR-45",
       "name": "Manisa",
-      "center": null,
+      "center": {
+        "lat": 38.71303623529411,
+        "lng": 27.982277235294113
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -4935,7 +5114,10 @@
     {
       "code": "TR-47",
       "name": "Mardin",
-      "center": null,
+      "center": {
+        "lat": 37.37684719999999,
+        "lng": 40.86284669999999
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -4948,6 +5130,11 @@
             "name": "Nusaybin",
             "lat": 37.0758079,
             "lng": 41.2281406
+          },
+          {
+            "name": "Ömerli",
+            "lat": 41.1172857,
+            "lng": 28.6414161
           }
         ],
         "bus": [
@@ -4977,7 +5164,10 @@
     {
       "code": "TR-33",
       "name": "Mersin",
-      "center": null,
+      "center": {
+        "lat": 36.69692384571428,
+        "lng": 34.24173112857142
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -5010,6 +5200,11 @@
             "name": "Yenişehir",
             "lat": 39.9291091,
             "lng": 32.857846
+          },
+          {
+            "name": "Yenişehir Tren İstasyonu",
+            "lat": 39.9291198,
+            "lng": 32.8592268
           },
           {
             "name": "Yenişehir YHT",
@@ -5079,7 +5274,10 @@
     {
       "code": "TR-48",
       "name": "Muğla",
-      "center": null,
+      "center": {
+        "lat": 36.98479323076923,
+        "lng": 28.39252869230769
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -5176,7 +5374,10 @@
     {
       "code": "TR-49",
       "name": "Muş",
-      "center": null,
+      "center": {
+        "lat": 38.956618999999996,
+        "lng": 41.772202
+      },
       "hubs": {
         "plane": [],
         "train": [],
@@ -5192,7 +5393,10 @@
     {
       "code": "TR-50",
       "name": "Nevşehir",
-      "center": null,
+      "center": {
+        "lat": 38.67537175,
+        "lng": 34.712635625
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -5200,6 +5404,11 @@
             "name": "Adliye",
             "lat": 37.0878414,
             "lng": 37.3586626
+          },
+          {
+            "name": "Adliye",
+            "lat": 37.0877979,
+            "lng": 37.358594
           },
           {
             "name": "Amasya",
@@ -5275,6 +5484,11 @@
             "name": "Çizözü",
             "lat": 39.9505872,
             "lng": 36.4000276
+          },
+          {
+            "name": "Edirne",
+            "lat": 41.6552066,
+            "lng": 26.5805143
           },
           {
             "name": "Ekerek",
@@ -5569,7 +5783,10 @@
     {
       "code": "TR-51",
       "name": "Niğde",
-      "center": null,
+      "center": {
+        "lat": 37.9203,
+        "lng": 34.5849085
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -5579,9 +5796,14 @@
             "lng": 34.5624295
           },
           {
-            "name": "Ulukışla Gar",
-            "lat": 37.5458645,
-            "lng": 34.4804511
+            "name": "Ulukışla",
+            "lat": 37.5457083,
+            "lng": 34.4803603
+          },
+          {
+            "name": "Ulukışla",
+            "lat": 37.5459411,
+            "lng": 34.480413
           }
         ],
         "bus": [
@@ -5606,7 +5828,10 @@
     {
       "code": "TR-52",
       "name": "Ordu",
-      "center": null,
+      "center": {
+        "lat": 40.87474426315789,
+        "lng": 37.50262963157895
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -5648,7 +5873,10 @@
     {
       "code": "TR-80",
       "name": "Osmaniye",
-      "center": null,
+      "center": {
+        "lat": 37.20752142857143,
+        "lng": 36.264007428571425
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -5656,6 +5884,11 @@
             "name": "Bahçe",
             "lat": 37.1870924,
             "lng": 36.5588938
+          },
+          {
+            "name": "Bahçe",
+            "lat": 37.1869243,
+            "lng": 36.5589613
           },
           {
             "name": "Bahçeli (Km 755+290)",
@@ -5673,9 +5906,24 @@
             "lng": 42.0150224
           },
           {
+            "name": "Demirbahçe Tren İstasyonu",
+            "lat": 39.9399235,
+            "lng": 32.8830686
+          },
+          {
             "name": "Demirlibahçe",
             "lat": 39.9400682,
             "lng": 32.8831855
+          },
+          {
+            "name": "Toprakkale",
+            "lat": 37.0666,
+            "lng": 36.1455078
+          },
+          {
+            "name": "Toprakkale",
+            "lat": 37.0668152,
+            "lng": 36.1456738
           }
         ],
         "bus": [
@@ -5705,7 +5953,10 @@
     {
       "code": "TR-53",
       "name": "Rize",
-      "center": null,
+      "center": {
+        "lat": 41.038991249999995,
+        "lng": 40.684324775
+      },
       "hubs": {
         "plane": [],
         "train": [],
@@ -5726,7 +5977,10 @@
     {
       "code": "TR-54",
       "name": "Sakarya",
-      "center": null,
+      "center": {
+        "lat": 40.761914687499996,
+        "lng": 30.4513975
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -5751,6 +6005,11 @@
             "lng": 30.3558304
           },
           {
+            "name": "Arifiye Tren İstasyonu",
+            "lat": 40.7134631,
+            "lng": 30.3560655
+          },
+          {
             "name": "Atasanayi",
             "lat": 38.4990422,
             "lng": 27.0531415
@@ -5767,8 +6026,8 @@
           },
           {
             "name": "Belemedik",
-            "lat": 37.3553389,
-            "lng": 34.9106021
+            "lat": 37.3553067,
+            "lng": 34.9107819
           },
           {
             "name": "Cumaovası",
@@ -5886,14 +6145,9 @@
             "lng": 29.2559607
           },
           {
-            "name": "Konya Gar",
-            "lat": 37.8652002,
-            "lng": 32.4763039
-          },
-          {
-            "name": "Konya Gar",
-            "lat": 37.8666883,
-            "lng": 32.4764761
+            "name": "Köprüağzı",
+            "lat": 37.3613722,
+            "lng": 37.0003319
           },
           {
             "name": "Köprüören",
@@ -5996,6 +6250,11 @@
             "lng": 37.361555
           },
           {
+            "name": "Topraklık",
+            "lat": 37.0762251,
+            "lng": 37.3615129
+          },
+          {
             "name": "Türkobası",
             "lat": 39.8291574,
             "lng": 32.4131354
@@ -6007,8 +6266,8 @@
           },
           {
             "name": "Yakapınar",
-            "lat": 36.9675909,
-            "lng": 35.6123918
+            "lat": 36.9677268,
+            "lng": 35.6123456
           },
           {
             "name": "Yenidoğan",
@@ -6118,7 +6377,10 @@
     {
       "code": "TR-55",
       "name": "Samsun",
-      "center": null,
+      "center": {
+        "lat": 41.20759758823529,
+        "lng": 36.21102358823529
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -6200,7 +6462,10 @@
     {
       "code": "TR-56",
       "name": "Siirt",
-      "center": null,
+      "center": {
+        "lat": 37.94221171428571,
+        "lng": 42.01534128571428
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -6237,7 +6502,10 @@
     {
       "code": "TR-57",
       "name": "Sinop",
-      "center": null,
+      "center": {
+        "lat": 41.78023518533333,
+        "lng": 34.909068878
+      },
       "hubs": {
         "plane": [],
         "train": [],
@@ -6247,7 +6515,10 @@
     {
       "code": "TR-58",
       "name": "Sivas",
-      "center": null,
+      "center": {
+        "lat": 39.780338529411765,
+        "lng": 37.402504
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -6260,6 +6531,11 @@
             "name": "Altınşehir",
             "lat": 41.0474135,
             "lng": 28.7477316
+          },
+          {
+            "name": "Aydın Garı",
+            "lat": 37.8480763,
+            "lng": 27.8422295
           },
           {
             "name": "Beylerbeyi",
@@ -6277,6 +6553,11 @@
             "lng": 37.0093313
           },
           {
+            "name": "Burdur Gar",
+            "lat": 37.7230457,
+            "lng": 30.2817411
+          },
+          {
             "name": "Cerrahpaşa",
             "lat": 41.0028107,
             "lng": 28.9402407
@@ -6290,11 +6571,6 @@
             "name": "Çizmeburun",
             "lat": 38.7187162,
             "lng": 41.6259043
-          },
-          {
-            "name": "Çobanbeyli",
-            "lat": 36.6360806,
-            "lng": 37.4761947
           },
           {
             "name": "Demirköprü",
@@ -6338,8 +6614,8 @@
           },
           {
             "name": "Kesikkopru",
-            "lat": 38.7116829,
-            "lng": 38.0113076
+            "lat": 38.711595,
+            "lng": 38.0111531
           },
           {
             "name": "Kırcasalih",
@@ -6534,7 +6810,10 @@
     {
       "code": "TR-63",
       "name": "Şanlıurfa",
-      "center": null,
+      "center": {
+        "lat": 37.17534461538461,
+        "lng": 38.82750784615384
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -6571,7 +6850,10 @@
     {
       "code": "TR-73",
       "name": "Şırnak",
-      "center": null,
+      "center": {
+        "lat": 37.433072857142854,
+        "lng": 42.44327571428571
+      },
       "hubs": {
         "plane": [],
         "train": [],
@@ -6592,7 +6874,10 @@
     {
       "code": "TR-59",
       "name": "Tekirdağ",
-      "center": null,
+      "center": {
+        "lat": 41.13705290909091,
+        "lng": 27.51986936363636
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -6602,9 +6887,19 @@
             "lng": 37.7317494
           },
           {
+            "name": "Büyükkarıştıran",
+            "lat": 41.3101157,
+            "lng": 27.5656516
+          },
+          {
             "name": "Cürek İstasyonu",
             "lat": 39.4447383,
             "lng": 38.0359307
+          },
+          {
+            "name": "Çerkezköy",
+            "lat": 41.2793777,
+            "lng": 28.0105924
           },
           {
             "name": "Çerkezköy Tren İstasyonu",
@@ -6612,9 +6907,9 @@
             "lng": 28.0106503
           },
           {
-            "name": "Çorlu Tren İstasyonu",
-            "lat": 41.1776454,
-            "lng": 27.7783768
+            "name": "Çorlu",
+            "lat": 41.1777435,
+            "lng": 27.7784023
           },
           {
             "name": "Florya Akvaryum",
@@ -6814,7 +7109,10 @@
     {
       "code": "TR-60",
       "name": "Tokat",
-      "center": null,
+      "center": {
+        "lat": 40.343012,
+        "lng": 36.46008525
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -6891,7 +7189,10 @@
     {
       "code": "TR-61",
       "name": "Trabzon",
-      "center": null,
+      "center": {
+        "lat": 40.887539,
+        "lng": 39.84321
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -6938,7 +7239,10 @@
     {
       "code": "TR-62",
       "name": "Tunceli",
-      "center": null,
+      "center": {
+        "lat": 39.141353125,
+        "lng": 39.440084999999996
+      },
       "hubs": {
         "plane": [],
         "train": [],
@@ -6948,7 +7252,10 @@
     {
       "code": "TR-64",
       "name": "Uşak",
-      "center": null,
+      "center": {
+        "lat": 38.4748385,
+        "lng": 29.4147265
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -6990,7 +7297,10 @@
     {
       "code": "TR-65",
       "name": "Van",
-      "center": null,
+      "center": {
+        "lat": 38.49925718461538,
+        "lng": 43.39514193846154
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -7023,6 +7333,11 @@
             "name": "Sarayköy Istasyonu",
             "lat": 37.9139646,
             "lng": 28.9259687
+          },
+          {
+            "name": "Sarayköy Tren İstasyonu",
+            "lat": 37.914086,
+            "lng": 28.9257964
           }
         ],
         "bus": [
@@ -7067,7 +7382,10 @@
     {
       "code": "TR-77",
       "name": "Yalova",
-      "center": null,
+      "center": {
+        "lat": 40.645067499999996,
+        "lng": 29.222801999999998
+      },
       "hubs": {
         "plane": [],
         "train": [],
@@ -7098,7 +7416,10 @@
     {
       "code": "TR-66",
       "name": "Yozgat",
-      "center": null,
+      "center": {
+        "lat": 39.64250635714285,
+        "lng": 35.318079714285716
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -7153,14 +7474,14 @@
             "lng": 32.6882118
           },
           {
+            "name": "Isparta Gar",
+            "lat": 37.7717928,
+            "lng": 30.562791
+          },
+          {
             "name": "Ispartakule",
             "lat": 41.0629265,
             "lng": 28.6993173
-          },
-          {
-            "name": "Karaman Gar",
-            "lat": 37.1933889,
-            "lng": 33.2150904
           },
           {
             "name": "Manisa Garı",
@@ -7335,7 +7656,10 @@
     {
       "code": "TR-67",
       "name": "Zonguldak",
-      "center": null,
+      "center": {
+        "lat": 41.362155249999994,
+        "lng": 31.8166925
+      },
       "hubs": {
         "plane": [],
         "train": [
@@ -7348,6 +7672,11 @@
             "name": "Gökçebey",
             "lat": 41.3068459,
             "lng": 32.138553
+          },
+          {
+            "name": "Kayacık Lojistik Merkezi",
+            "lat": 38.0033717,
+            "lng": 32.5920759
           }
         ],
         "bus": [
@@ -7420,6 +7749,11 @@
             "name": "Güllüce Mollakamer Köyü Merkez Otoğarı",
             "lat": 39.8932076,
             "lng": 43.661124
+          },
+          {
+            "name": "İlçe Transfer Merkezi",
+            "lat": 41.2958657,
+            "lng": 36.334351
           },
           {
             "name": "Kdz. Ereğli Otobüs Terminali",
