@@ -40,6 +40,61 @@ const TIME_SLOTS = (() => {
   return arr;
 })();
 
+/* ------------------------------ Date utils & validator ------------------------------ */
+const toISO = (d) => {
+  if (!d) return null;
+  const date = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(+date)) return null;
+  const y = date.getFullYear();
+  const m = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+/** 
+ * Validation:
+ * - Single segment: start <= end
+ * - Multi-city continuity (no overlap):
+ *    - If prevSegmentEnd is provided, start >= prevSegmentEnd
+ *    - If nextSegmentStart is provided, end <= nextSegmentStart
+ */
+function validateDates({ startDate, endDate, prevSegmentEnd, nextSegmentStart }) {
+  const issues = [];
+  const s = toISO(startDate);
+  const e = toISO(endDate);
+  const prevE = toISO(prevSegmentEnd);
+  const nextS = toISO(nextSegmentStart);
+
+  // Required ordering for this segment
+  if (s && e && s > e) {
+    issues.push({
+      code: 'START_AFTER_END',
+      message: `Başlangıç (${s}) bitiş (${e}) tarihinden sonraya olamaz.`,
+      field: 'start',
+    });
+  }
+
+  // No overlap with previous segment (allow equal)
+  if (prevE && s && s < prevE) {
+    issues.push({
+      code: 'START_BEFORE_PREV_END',
+      message: `Bu şehrin başlangıcı (${s}), önceki segmentin bitişinden (${prevE}) önce olamaz.`,
+      field: 'start',
+    });
+  }
+
+  // No overlap with next segment (allow equal)
+  if (nextS && e && e > nextS) {
+    issues.push({
+      code: 'END_AFTER_NEXT_START',
+      message: `Bu şehrin bitişi (${e}), sonraki segmentin başlangıcından (${nextS}) sonra olamaz.`,
+      field: 'end',
+    });
+  }
+
+  return issues;
+}
+
 export default function StartEndQuestion({
   countryCode,
   cityName,
@@ -47,6 +102,15 @@ export default function StartEndQuestion({
   value,
   onChange,
   onMapPick,    // (which, { center, cityName }) => Promise<pickedHub|null|undefined>
+
+  /* 🔗 Optional props for multi-city continuity (from parent/wizard):
+     - prevSegmentEnd: ISO date (YYYY-MM-DD) → this segment's start must be >= prevSegmentEnd
+     - nextSegmentStart: ISO date (YYYY-MM-DD) → this segment's end must be <= nextSegmentStart
+     - onValidityChange: (isValid:boolean, issues:Array) => void
+  */
+  prevSegmentEnd,
+  nextSegmentStart,
+  onValidityChange,
 }) {
   const defaultStart = { type: null, hub: null, date: null, time: '09:00' };
   const defaultEnd   = { type: null, hub: null, date: null, time: '17:00' };
@@ -63,14 +127,48 @@ export default function StartEndQuestion({
     setEnd(value?.end || defaultEnd);
   }, [value?.end?.type, value?.end?.hub?.place_id, value?.end?.date, value?.end?.time]);
 
-  // üst bileşene bildir
+  // ✅ Derive validation issues
+  const issues = useMemo(() => {
+    return validateDates({
+      startDate: start?.date,
+      endDate: end?.date,
+      prevSegmentEnd,
+      nextSegmentStart,
+    });
+  }, [start?.date, end?.date, prevSegmentEnd, nextSegmentStart]);
+
+  const hasErrors = issues.length > 0;
+
+  // üst bileşene bildir (value + validity)
   useEffect(() => {
     onChange?.({ start, end });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [start, end]);
 
+  useEffect(() => {
+    onValidityChange?.(!hasErrors, issues);
+  }, [hasErrors, issues, onValidityChange]);
+
+  // Calendar hints:
+  // - Start date: cannot be before prevSegmentEnd (if given), and not after chosen end
+  // - End date: cannot be before chosen start, and not after nextSegmentStart (if given)
+  const startMinDate = prevSegmentEnd || undefined;
+  const startMaxDate = end?.date || undefined;
+
+  const endMinDate = start?.date || undefined;
+  const endMaxDate = nextSegmentStart || undefined;
+
   return (
     <View style={{ gap: 14 }}>
+      {/* 🔔 Error banner (shows all current issues) */}
+      {hasErrors && (
+        <View style={styles.errorBanner}>
+          {issues.map((it, i) => (
+            <Text key={`${it.code}-${i}`} style={styles.errorText}>• {it.message}</Text>
+          ))}
+        </View>
+      )}
+
       <Card title={`${cityName} • Başlangıç`}>
         <PointPicker
           label="Nereden?"
@@ -108,7 +206,10 @@ export default function StartEndQuestion({
           <DatePicker
             label="Tarih"
             value={start.date}
+            minDate={startMinDate}
+            maxDate={startMaxDate}
             onChange={(d) => setStart((s) => ({ ...s, date: d }))}
+            fieldInvalid={issues.some(x => x.field === 'start')}
           />
           <TimeDropdown
             label="Saat"
@@ -153,7 +254,10 @@ export default function StartEndQuestion({
           <DatePicker
             label="Tarih"
             value={end.date}
+            minDate={endMinDate}
+            maxDate={endMaxDate}
             onChange={(d) => setEnd((s) => ({ ...s, date: d }))}
+            fieldInvalid={issues.some(x => x.field === 'end')}
           />
           <TimeDropdown
             label="Saat"
@@ -451,7 +555,7 @@ function PointPicker({
   );
 }
 
-function DatePicker({ label, value, onChange }) {
+function DatePicker({ label, value, onChange, minDate, maxDate, fieldInvalid }) {
   const [open, setOpen] = useState(false);
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -461,13 +565,12 @@ function DatePicker({ label, value, onChange }) {
     };
   }, []);
 
-  const marked = useMemo(
-    () =>
-      value
-        ? { [value]: { selected: true, selectedColor: BTN, selectedTextColor: '#fff' } }
-        : {},
-    [value]
-  );
+  const marked = useMemo(() => {
+    const base = value
+      ? { [value]: { selected: true, selectedColor: BTN, selectedTextColor: '#fff' } }
+      : {};
+    return base;
+  }, [value]);
 
   // global kapatma
   useEffect(() => {
@@ -481,10 +584,18 @@ function DatePicker({ label, value, onChange }) {
     if (mountedRef.current) setOpen(false);
   };
 
+  const disabledRange = (day) => {
+    // Visual guard only; hard checks come from validator
+    const ds = day?.dateString;
+    if (minDate && ds < minDate) return true;
+    if (maxDate && ds > maxDate) return true;
+    return false;
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <Text style={styles.label}>{label}</Text>
-      <TouchableOpacity onPress={() => setOpen(true)} style={styles.selectShell}>
+      <TouchableOpacity onPress={() => setOpen(true)} style={[styles.selectShell, fieldInvalid && styles.invalidBorder]}>
         <Text style={styles.selectShellText}>{value || 'Tarih seçin'}</Text>
         <Text style={styles.caret}>▾</Text>
       </TouchableOpacity>
@@ -506,8 +617,10 @@ function DatePicker({ label, value, onChange }) {
             <Calendar
               markedDates={marked}
               onDayPress={(d) => {
-                onChange(d.dateString);
-                closeDate();
+                if (!disabledRange(d)) {
+                  onChange(d.dateString);
+                  closeDate();
+                }
               }}
               theme={{
                 calendarBackground: '#0D0F14',
@@ -520,6 +633,11 @@ function DatePicker({ label, value, onChange }) {
               }}
               style={{ borderRadius: 12, overflow: 'hidden' }}
             />
+            {!!(minDate || maxDate) && (
+              <Text style={styles.hintText}>
+                {minDate && `En erken: ${minDate}`}{minDate && maxDate && ' • '}{maxDate && `En geç: ${maxDate}`}
+              </Text>
+            )}
           </View>
         </Modal>
       )}
@@ -788,4 +906,18 @@ const styles = StyleSheet.create({
   optionRow: { paddingVertical: 11, paddingHorizontal: 10 },
   optionText: { fontSize: 15, color: '#fff' },
   separator: { height: 1, backgroundColor: BORDER },
+
+  /* 🔔 Validation UI */
+  errorBanner: {
+    borderWidth: 1,
+    borderColor: '#F87171',
+    backgroundColor: '#2A0F13',
+    padding: 10,
+    borderRadius: 10,
+  },
+  errorText: { color: '#FCA5A5', fontSize: 13, lineHeight: 18 },
+  invalidBorder: { borderColor: '#F87171' },
+
+  /* Hint for min/max */
+  hintText: { color: '#9AA0A6', fontSize: 12, marginTop: 8, textAlign: 'center' },
 });

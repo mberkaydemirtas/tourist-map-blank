@@ -26,18 +26,43 @@ const BORDER = '#23262F';
  * - onMapPick?: (payload: { index: number, center?: { lat:number,lng:number }, cityName?: string, startDate: string, endDate: string }) => Promise<{ name: string, place_id?: string, location?: {lat:number,lng:number} } | null | undefined>
  */
 export default function LodgingQuestion({ tripRange, cityName, cityCenter, stays = [], onChange, onMapPick }) {
-  const [localStays, setLocalStays] = useState(stays);
-  const lastIndexRef = useRef(null);
+   const [localStays, setLocalStays] = useState(() =>
+     (stays && stays.length)
+       ? stays
+       : [{ id: uid(), startDate: tripRange?.startDate || '', endDate: tripRange?.endDate || '', place: null }]
+   );
+   const lastIndexRef = useRef(null);
+ 
+   // İçerik eşitliği: ID farkını “değişiklik” sayma
+   const eqStay = (a, b) =>
+     a?.startDate === b?.startDate &&
+     a?.endDate === b?.endDate &&
+     (a?.place?.place_id ?? a?.place?.name ?? null) ===
+       (b?.place?.place_id ?? b?.place?.name ?? null);
+   const eqStays = (A, B) => {
+     if (!Array.isArray(A) || !Array.isArray(B)) return false;
+     if (A.length !== B.length) return false;
+     for (let i = 0; i < A.length; i++) if (!eqStay(A[i], B[i])) return false;
+     return true;
+   };
+ 
+   // Şehir veya tripRange değişince, SADECE farklıysa local state’i güncelle
+   useEffect(() => {
+     if (stays && stays.length) {
+       if (!eqStays(localStays, stays)) setLocalStays(stays);
+     } else {
+       const seed = [{ id: uid(), startDate: tripRange?.startDate || '', endDate: tripRange?.endDate || '', place: null }];
+       if (!eqStays(localStays, seed)) setLocalStays(seed);
+     }
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [stays, tripRange?.startDate, tripRange?.endDate]);
 
-  // İlk blok: otomatik aralıkla oluştur
-  useEffect(() => {
-    if (!localStays || localStays.length === 0) {
-      setLocalStays([{ id: uid(), startDate: tripRange?.startDate || '', endDate: tripRange?.endDate || '', place: null }]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => { onChange?.(localStays); }, [localStays]);
+   // Parent’a sadece farklı veri gitsin (echo-loop’u kır)
+   useEffect(() => {
+     if (!eqStays(localStays, stays)) onChange?.(localStays);
+     // stays'i kasıtlı olarak dependency'e koymuyoruz; eqStays ile kontrol ediyoruz.
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [localStays]);
 
   // Coverage (geceler [start, end))
   const coverage = useMemo(() => buildCoverage(localStays, tripRange), [localStays, tripRange]);

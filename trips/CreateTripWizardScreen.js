@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import {
   Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, FlatList,
   DeviceEventEmitter, InteractionManager,
@@ -30,22 +30,30 @@ export default function CreateTripWizardScreen() {
   const [startEndByCity, setStartEndByCity] = useState({});
   const [cityIndex, setCityIndex] = useState(0);
 
-  // Step 2 — Konaklama (Wizard state'i hâlâ eski shape: { place, start, end })
+  // Step 2 — Konaklama
   const [lodgingSingle, setLodgingSingle] = useState([]); // [{ place, start, end }, ...]
   const [lodgingByCity, setLodgingByCity] = useState({}); // { [cityKey]: [{...}] }
 
-  // --- Helpers: LodgingQuestion <-> Wizard shape dönüşümleri ---
-  const staysFromSegments = (segs = []) => segs.map((s, i) => ({
-    id: s.id || `${s?.place?.place_id || 'seg'}_${i}`,
-    place: s.place || null,
-    startDate: s.start || null,
-    endDate: s.end || null,
-  }));
-  const segmentsFromStays = (stays = []) => stays.map(s => ({
-    place: s.place || null,
-    start: s.startDate || null,
-    end: s.endDate || null,
-  }));
+  // Step 2'ye girildiğinde, multi-city ise ilk şehre dön
+  useEffect(() => {
+    if (step === 2 && whereAnswer?.mode === 'multi') {
+      setCityIndex(0);
+    }
+  }, [step, whereAnswer?.mode]);
+
+   // Segments <-> Stays dönüşümünde ID’yi KAYBETME!
+   const staysFromSegments = (segs = []) => segs.map((s, i) => ({
+     id: s.id || `${s?.place?.place_id || 'seg'}_${i}`, // mevcut id varsa kullan
+     place: s.place || null,
+     startDate: s.start || null,
+     endDate: s.end || null,
+   }));
+   const segmentsFromStays = (stays = []) => stays.map(s => ({
+     id: s.id,                 // 🔴 kritik: id’yi koru
+     place: s.place || null,
+     start: s.startDate || null,
+     end: s.endDate || null,
+   }));
 
   // Türev state (aktif şehir objesi & key)
   const activeCityObj = useMemo(() => {
@@ -80,8 +88,8 @@ export default function CreateTripWizardScreen() {
     nav,
     route,
     onPick: (pick) => {
-      // Plan A: Lodging seçimleri Promise ile döneceği için burada İŞLEMEYELİM.
-      // Başlangıç/Bitiş seçimlerini ise mevcut akış gibi güncellemeye devam edelim.
+      // Lodging seçimleri await ile dönecek — burada işlemiyoruz.
+      // Start/End seçimi mevcut akışla güncelleniyor.
       if (whereAnswer?.mode === 'single') {
         if (pick.which === 'start' || pick.which === 'end') {
           setStartEndSingle(prev => ({
@@ -108,30 +116,50 @@ export default function CreateTripWizardScreen() {
           }));
         }
       }
-      // NOT: pick.which === 'lodging' burada bilerek no-op (Plan A)
+      // pick.which === 'lodging' burada no-op
     },
   });
 
-  // Step 1 valid?
+  /* -------------------------- STEP 1 VALIDATION -------------------------- */
+  function seComplete(se) {
+    return !!(
+      se?.start?.type && se?.start?.hub && se?.start?.date && se?.start?.time &&
+      se?.end?.type   && se?.end?.hub   && se?.end?.date   && se?.end?.time
+    );
+  }
+  function seOrderOk(se) {
+    const s = se?.start?.date, e = se?.end?.date;
+    return !!(s && e && s <= e);
+  }
+
+  // Multi-city: komşular arasında çakışma olmasın (start[i+1] ≥ end[i])
   const step1Valid = useMemo(() => {
     if (!whereAnswer) return false;
+
     if (whereAnswer.mode === 'single') {
       const v = startEndSingle;
-      return !!(
-        v?.start?.type && v?.start?.hub && v?.start?.date && v?.start?.time &&
-        v?.end?.type && v?.end?.hub && v?.end?.date && v?.end?.time
-      );
-    } else {
-      const arr = (whereAnswer.items || []).filter(it => it.city?.name);
-      if (!arr.length) return false;
-      return arr.every(it => {
-        const se = startEndByCity[it.city.place_id];
-        return !!(
-          se?.start?.type && se?.start?.hub && se?.start?.date && se?.start?.time &&
-          se?.end?.type && se?.end?.hub && se?.end?.date && se?.end?.time
-        );
-      });
+      return seComplete(v) && seOrderOk(v);
     }
+
+    const items = (whereAnswer.items || []).filter(it => it.city?.name);
+    if (!items.length) return false;
+
+    const allCompleteAndOrdered = items.every(it => {
+      const se = startEndByCity[it.city.place_id];
+      return seComplete(se) && seOrderOk(se);
+    });
+    if (!allCompleteAndOrdered) return false;
+
+    for (let i = 0; i < items.length - 1; i++) {
+      const aKey = items[i].city.place_id;
+      const bKey = items[i + 1].city.place_id;
+      const aEnd = startEndByCity[aKey]?.end?.date;
+      const bStart = startEndByCity[bKey]?.start?.date;
+      if (aEnd && bStart && bStart < aEnd) {
+        return false;
+      }
+    }
+    return true;
   }, [whereAnswer, startEndSingle, startEndByCity]);
 
   // Gece sayısı (global)
@@ -185,6 +213,7 @@ export default function CreateTripWizardScreen() {
   // Submit
   const submit = async () => {
     const range = computeGlobalRange(whereAnswer, startEndSingle, startEndByCity);
+    // 🧩 DÜZELTME: 'where' değil 'whereAnswer'
     const inbound = computeInbound(whereAnswer, startEndSingle, startEndByCity);
     const outbound = computeOutbound(whereAnswer, startEndSingle, startEndByCity);
 
@@ -221,7 +250,7 @@ export default function CreateTripWizardScreen() {
     });
   }
 
-  /** KONAKLAMA için haritadan seçim — Plan A (awaitSelection:true) */
+  /** KONAKLAMA için haritadan seçim — awaitSelection:true */
   function handleLodgingMapPick({ index, center, cityName, startDate, endDate }) {
     return bridge.openPicker({
       which: 'lodging',
@@ -231,7 +260,6 @@ export default function CreateTripWizardScreen() {
       sheetInitial: 'half',
       presetCategory: 'lodging',
       awaitSelection: true,
-      // search: 'otel', // opsiyonel
     });
   }
 
@@ -273,6 +301,14 @@ export default function CreateTripWizardScreen() {
                     {(() => {
                       const filtered = (whereAnswer.items || []).filter(it => it.city?.name);
                       const cityNames = filtered.map(it => it.city.name);
+                      const cityKeys  = filtered.map(it => it.city.place_id);
+                      const idx = cityIndex;
+
+                      const prevKey = idx > 0 ? cityKeys[idx - 1] : null;
+                      const nextKey = idx < cityKeys.length - 1 ? cityKeys[idx + 1] : null;
+                      const prevEnd = prevKey ? startEndByCity[prevKey]?.end?.date : undefined;
+                      const nextStart = nextKey ? startEndByCity[nextKey]?.start?.date : undefined;
+
                       return (
                         <>
                           <Stepper
@@ -289,6 +325,8 @@ export default function CreateTripWizardScreen() {
                               value={startEndByCity[activeCityKey]}
                               onChange={(v) => setStartEndByCity(prev => ({ ...prev, [activeCityKey]: v }))}
                               onMapPick={handleMapPick}
+                              prevSegmentEnd={prevEnd}        // start ≥ prevEnd
+                              nextSegmentStart={nextStart}    // end ≤ nextStart
                             />
                           ) : null}
                         </>
@@ -308,6 +346,7 @@ export default function CreateTripWizardScreen() {
                       cityName={activeCityObj.name}
                       cityCenter={activeCityObj.center}
                       tripRange={{ startDate: activeRange.start, endDate: activeRange.end }}
+                      // 🧩 DÜZELTME: single modda kendi state'i kullan
                       stays={staysFromSegments(lodgingSingle)}
                       onChange={(next) => setLodgingSingle(segmentsFromStays(next))}
                       onMapPick={handleLodgingMapPick}
@@ -332,7 +371,9 @@ export default function CreateTripWizardScreen() {
                               cityCenter={activeCityObj.center}
                               tripRange={{ startDate: activeRange.start, endDate: activeRange.end }}
                               stays={staysFromSegments(lodgingByCity[activeCityKey] || [])}
-                              onChange={(next) => setLodgingByCity(prev => ({ ...prev, [activeCityKey]: segmentsFromStays(next) }))}
+                              onChange={(next) =>
+                                setLodgingByCity(prev => ({ ...prev, [activeCityKey]: segmentsFromStays(next) }))
+                              }
                               onMapPick={handleLodgingMapPick}
                             />
                           ) : null}
