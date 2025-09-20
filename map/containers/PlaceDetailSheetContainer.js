@@ -11,6 +11,7 @@ const PlaceDetailSheetContainer = forwardRef(function PlaceDetailSheetContainer(
     snapPoints = ['30%', '60%', '75%', '90%'],
     onOpen,
     onClose,
+    onConfirmPicker,
   },
   ref
 ) {
@@ -85,25 +86,18 @@ const PlaceDetailSheetContainer = forwardRef(function PlaceDetailSheetContainer(
     : undefined;
 
   const overrideCtaOnPress = picker
-    ? () => {
-        const p = map.marker || {};
-        const loc =
-          p.location ||
-          p.geometry?.location ||
-          (p.coordinate && { lat: p.coordinate.latitude, lng: p.coordinate.longitude }) ||
-          null;
-
-        const hub = {
-          name: p.name || p.title || 'Seçilen Nokta',
-          place_id: p.place_id || p.id || null,
-          location: loc,
-        };
-
-        navigation?.navigate('Gezilerim', {
-          screen: 'CreateTripWizard',
-          params: { pickFromMap: { which: picker.which, cityKey: picker.cityKey, hub } },
-        });
-      }
+   ? () => {
+       const p = map.marker || {};
+       const loc =
+         p.location ||
+         p.geometry?.location ||
+         (p.coordinate && { lat: p.coordinate.latitude, lng: p.coordinate.longitude }) ||
+         null;
+       const hub = { name: p.name || p.title || 'Seçilen Nokta', place_id: p.place_id || p.id || null, location: loc };
+       if (onConfirmPicker) {
+         onConfirmPicker(hub); // MapScreen.finishPickerSelection → bridge Promise çözülür
+       }
+     }
     : undefined;
 
   return (

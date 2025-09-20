@@ -1,6 +1,6 @@
 // src/map/services/placeService.js
 // maps.js üstüne ince bir arayüz. Şimdilik doğrudan forward ediyoruz.
-import * as Maps from '../map/maps';
+import * as Maps from '../../map/maps';
 
 /** Yer önerileri (Autocomplete) */
 export const autocomplete = Maps.autocomplete;

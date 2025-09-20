@@ -59,3 +59,4 @@ const S = StyleSheet.create({
   },
   wpNum: { fontSize: 11, fontWeight: '700', color: '#111' },
 });
+

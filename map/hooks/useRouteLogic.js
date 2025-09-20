@@ -4,7 +4,7 @@ import {
   decodePolyline,
   getNormalizedRoutes,
   getAllModesNormalized,
-} from '../../services/routeService';
+} from '../../trips/services/routeService';
 
 export function useRouteLogic(mapRef) {
   const [selectedMode, setSelectedMode] = useState('driving');

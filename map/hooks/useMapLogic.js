@@ -3,8 +3,8 @@ import { Alert } from 'react-native';
 import { useRouteLogic } from './useRouteLogic';
 import { usePlacesLogic } from './usePlacesLogic';
 import { useCategoryLogic } from './useCategoryLogic';
-import { getAddressFromCoords } from '../../services/placeService';
-import { decodePolyline } from '../../services/routeService';
+import { getAddressFromCoords } from '../../trips/services/placeService';
+import { decodePolyline } from '../../trips/services/routeService';
 import { normalizeCoord } from '../utils/coords';
 
 const ANKARA_CENTER = { latitude: 39.925533, longitude: 32.866287 };

@@ -1,5 +1,5 @@
 // services/routeService.js
-import * as Maps from '../map/maps';
+import * as Maps from '../../map/maps';
 
 export const getRoute = Maps.getRoute;
 export const decodePolyline = Maps.decodePolyline;

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { getNearbyPlaces } from '../../services/placeService';
+import { getNearbyPlaces } from '../../trips/services/placeService';
 
 /**
  * Kategori araması ve "Bu Bölgeyi Tara" akışı.

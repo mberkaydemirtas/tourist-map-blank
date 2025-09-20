@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+// StartEndQuestion.js
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,12 +8,20 @@ import {
   Modal,
   FlatList,
   Pressable,
+  TextInput,
+  ActivityIndicator,
+  InteractionManager,
+  DeviceEventEmitter,
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { listHubsForCity } from '../services/geoService';
+
+// Şehir bazlı hub katalog
+import { getHubs } from '../src/services/hubsCatalog';
 
 const BORDER = '#23262F';
 const BTN = '#2563EB';
+const EVT_CLOSE_DROPDOWNS = 'CLOSE_ALL_DROPDOWNS';
+const AUTO_SELECT_SINGLE = false;
 
 const TYPE_MAP = {
   airport: { mode: 'plane', label: 'Havalimanı' },
@@ -23,18 +32,21 @@ const TYPE_MAP = {
 
 const TIME_SLOTS = (() => {
   const arr = [];
-  for (let h = 0; h < 24; h++) for (let m = 0; m < 60; m += 30) {
-    arr.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      arr.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+    }
   }
   return arr;
 })();
 
 export default function StartEndQuestion({
+  countryCode,
   cityName,
-  cityCenter,
+  cityCenter,   // { lat, lng }
   value,
   onChange,
-  onMapPick,
+  onMapPick,    // (which, { center, cityName }) => Promise<pickedHub|null|undefined>
 }) {
   const defaultStart = { type: null, hub: null, date: null, time: '09:00' };
   const defaultEnd   = { type: null, hub: null, date: null, time: '17:00' };
@@ -42,62 +54,112 @@ export default function StartEndQuestion({
   const [start, setStart] = useState(value?.start || defaultStart);
   const [end,   setEnd]   = useState(value?.end   || defaultEnd);
 
-  // Parent value değiştiğinde (örn. Haritadan Seç -> geri dönüş) iç state’i senkronize et
-  useEffect(() => { setStart(value?.start || defaultStart); }, [
-    value?.start?.type, value?.start?.hub?.place_id, value?.start?.date, value?.start?.time
-  ]);
-  useEffect(() => { setEnd(value?.end || defaultEnd); }, [
-    value?.end?.type, value?.end?.hub?.place_id, value?.end?.date, value?.end?.time
-  ]);
+  // dışarıdan value güncellenirse senkronize et
+  useEffect(() => {
+    setStart(value?.start || defaultStart);
+  }, [value?.start?.type, value?.start?.hub?.place_id, value?.start?.date, value?.start?.time]);
 
-  // Değişiklikleri parent’a bildir
-  useEffect(() => { onChange?.({ start, end }); }, [start, end]); // eslint-disable-line
+  useEffect(() => {
+    setEnd(value?.end || defaultEnd);
+  }, [value?.end?.type, value?.end?.hub?.place_id, value?.end?.date, value?.end?.time]);
+
+  // üst bileşene bildir
+  useEffect(() => {
+    onChange?.({ start, end });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [start, end]);
 
   return (
     <View style={{ gap: 14 }}>
       <Card title={`${cityName} • Başlangıç`}>
         <PointPicker
           label="Nereden?"
+          countryCode={countryCode}
           cityName={cityName}
           cityCenter={cityCenter}
           selectedType={start.type}
           selectedHub={start.hub}
           onSelectType={async (t) => {
             if (t === 'map') {
-              const picked = await onMapPick?.('start');
-              setStart(s => ({ ...s, type: 'map', hub: picked || null }));
+              try {
+                const hasValidCenter =
+                  cityCenter &&
+                  Number.isFinite(Number(cityCenter.lat)) &&
+                  Number.isFinite(Number(cityCenter.lng));
+                const center = hasValidCenter
+                  ? { lat: Number(cityCenter.lat), lng: Number(cityCenter.lng) }
+                  : undefined;
+
+                const picked = await onMapPick?.('start', { center, cityName });
+                if (picked === undefined) return; // kullanıcı iptal etti
+                setStart((s) => ({ ...s, type: 'map', hub: picked || null }));
+              } catch {
+                // sessiz geç
+              }
             } else {
-              setStart(s => ({ ...s, type: t, hub: null }));
+              if (start.type === t) return;
+              setStart((s) => ({ ...s, type: t, hub: null }));
             }
           }}
-          onSelectHub={(hub) => setStart(s => ({ ...s, hub }))}
+          onSelectHub={(hub) => setStart((s) => ({ ...s, hub }))}
+          onClear={() => setStart((s) => ({ ...s, hub: null }))}
         />
         <Row>
-          <DatePicker label="Tarih" value={start.date} onChange={(d) => setStart(s => ({ ...s, date: d }))} />
-          <TimeDropdown label="Saat" value={start.time} onChange={(t) => setStart(s => ({ ...s, time: t }))} />
+          <DatePicker
+            label="Tarih"
+            value={start.date}
+            onChange={(d) => setStart((s) => ({ ...s, date: d }))}
+          />
+          <TimeDropdown
+            label="Saat"
+            value={start.time}
+            onChange={(t) => setStart((s) => ({ ...s, time: t }))}
+          />
         </Row>
       </Card>
 
       <Card title={`${cityName} • Bitiş`}>
         <PointPicker
           label="Nerede bitecek?"
+          countryCode={countryCode}
           cityName={cityName}
           cityCenter={cityCenter}
           selectedType={end.type}
           selectedHub={end.hub}
           onSelectType={async (t) => {
             if (t === 'map') {
-              const picked = await onMapPick?.('end');
-              setEnd(s => ({ ...s, type: 'map', hub: picked || null }));
+              try {
+                const hasValidCenter =
+                  cityCenter &&
+                  Number.isFinite(Number(cityCenter.lat)) &&
+                  Number.isFinite(Number(cityCenter.lng));
+                const center = hasValidCenter
+                  ? { lat: Number(cityCenter.lat), lng: Number(cityCenter.lng) }
+                  : undefined;
+
+                const picked = await onMapPick?.('end', { center, cityName });
+                if (picked === undefined) return;
+                setEnd((s) => ({ ...s, type: 'map', hub: picked || null }));
+              } catch {}
             } else {
-              setEnd(s => ({ ...s, type: t, hub: null }));
+              if (end.type === t) return;
+              setEnd((s) => ({ ...s, type: t, hub: null }));
             }
           }}
-          onSelectHub={(hub) => setEnd(s => ({ ...s, hub }))}
+          onSelectHub={(hub) => setEnd((s) => ({ ...s, hub }))}
+          onClear={() => setEnd((s) => ({ ...s, hub: null }))}
         />
         <Row>
-          <DatePicker label="Tarih" value={end.date} onChange={(d) => setEnd(s => ({ ...s, date: d }))} />
-          <TimeDropdown label="Saat" value={end.time} onChange={(t) => setEnd(s => ({ ...s, time: t }))} />
+          <DatePicker
+            label="Tarih"
+            value={end.date}
+            onChange={(d) => setEnd((s) => ({ ...s, date: d }))}
+          />
+          <TimeDropdown
+            label="Saat"
+            value={end.time}
+            onChange={(t) => setEnd((s) => ({ ...s, time: t }))}
+          />
         </Row>
       </Card>
     </View>
@@ -106,28 +168,161 @@ export default function StartEndQuestion({
 
 /* -------------------------------- Sub-components ------------------------------- */
 function Card({ title, children }) {
-  return <View style={styles.card}><Text style={styles.cardTitle}>{title}</Text><View style={{ gap: 10 }}>{children}</View></View>;
+  return (
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>{title}</Text>
+      <View style={{ gap: 10 }}>{children}</View>
+    </View>
+  );
 }
-function Row({ children }) { return <View style={{ flexDirection: 'row', gap: 10 }}>{children}</View>; }
+function Row({ children }) {
+  return <View style={{ flexDirection: 'row', gap: 10 }}>{children}</View>;
+}
 
-function PointPicker({ label, cityName, cityCenter, selectedType, selectedHub, onSelectType, onSelectHub }) {
-  const [hubs, setHubs] = useState([]);
+function PointPicker({
+  label,
+  countryCode,
+  cityName,
+  cityCenter,
+  selectedType,
+  selectedHub,
+  onSelectType,
+  onSelectHub,
+  onClear,
+}) {
   const [openHubModal, setOpenHubModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [hubs, setHubs] = useState([]);
+  const [filter, setFilter] = useState('');
 
-  async function loadHubsByType(typeKey) {
-    const mode = TYPE_MAP[typeKey]?.mode;
-    if (!mode || mode === 'custom' || !cityCenter) { setHubs([]); return; }
-    setHubs([]); // önce temizle (eski liste flash yapmasın)
-    const res = await listHubsForCity({ lat: cityCenter.lat, lng: cityCenter.lng, mode });
-    const filtered = normalizeHubsForType(typeKey, res || [], cityName, cityCenter);
-    setHubs(filtered);
-    // tek seçenek kaldıysa otomatik seç
-    if (filtered.length === 1) onSelectHub?.(toHubShape(filtered[0]));
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // tüm dropdownları kapat
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(EVT_CLOSE_DROPDOWNS, () => {
+      if (mountedRef.current) setOpenHubModal(false);
+    });
+    return () => sub.remove();
+  }, []);
+
+  // tip 'map' olursa veya temizlenirse modalı kapat
+  useEffect(() => {
+    if (selectedType === 'map' || !selectedType) setOpenHubModal(false);
+  }, [selectedType]);
+
+  // basit cache
+  const cacheRef = useRef(new Map());
+  const keyBase = useMemo(() => {
+    const cc = String(countryCode || '').toUpperCase();
+    const adminOrCity = cityName || 'unknown';
+    return `${cc}|${adminOrCity}`;
+  }, [countryCode, cityName]);
+
+  const normStr = (v) => (v ?? '').toString().trim();
+
+  async function ensureHubs(typeKey) {
+    const modeKey = TYPE_MAP[typeKey]?.mode;
+    if (!modeKey || modeKey === 'custom') {
+      setHubs([]);
+      return;
+    }
+
+    const cacheKey = `${keyBase}|${typeKey}`;
+    if (cacheRef.current.has(cacheKey)) {
+      const cached = cacheRef.current.get(cacheKey);
+      if (mountedRef.current) setHubs(cached);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const cc = String(countryCode || '').toUpperCase();
+      const admin = cc === 'TR' ? normStr(cityName) || null : null;
+      const city = cc === 'TR' ? null : normStr(cityName) || null;
+
+      let rawAll = null;
+      try {
+        if (typeof getHubs === 'function') {
+          rawAll = getHubs({ country: cc, admin, city });
+        }
+      } catch (e) {
+        console.error('[getHubs] threw:', e?.message || e);
+      }
+      if (!rawAll || typeof rawAll !== 'object') {
+        rawAll = { plane: [], train: [], bus: [] };
+      }
+
+      const sourceArr = Array.isArray(rawAll?.[modeKey]) ? rawAll[modeKey] : [];
+
+      let mapped = (sourceArr || [])
+        .map((h, idx) => {
+          const lat = Number(h?.lat ?? h?.latitude);
+          const lng = Number(h?.lng ?? h?.longitude);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+          const name = normStr(h?.name) || `#${idx}`;
+          const pid =
+            normStr(h?.place_id) || `${cc}|${normStr(cityName)}|${modeKey}|${idx}`;
+          return { name, place_id: pid, location: { lat, lng } };
+        })
+        .filter(Boolean);
+
+      let filtered = [];
+      try {
+        filtered = normalizeHubsForType(typeKey, mapped, cityName, cityCenter);
+      } catch (e) {
+        console.error('[normalizeHubsForType] error:', e?.message || e);
+        filtered = mapped;
+      }
+
+      cacheRef.current.set(cacheKey, filtered);
+      if (mountedRef.current) {
+        setHubs(filtered);
+        if (filtered.length === 1 && AUTO_SELECT_SINGLE)
+          onSelectHub?.(toHubShape(filtered[0]));
+      }
+    } catch (e) {
+      console.error('[PointPicker.ensureHubs] error:', e);
+      if (mountedRef.current) setHubs([]);
+    } finally {
+      if (mountedRef.current) setLoading(false);
+    }
   }
 
+  // TIP değiştiğinde: filtre sıfırla + veri getir
   useEffect(() => {
-    if (selectedType && selectedType !== 'map') loadHubsByType(selectedType);
-  }, [selectedType]); // eslint-disable-line
+    setFilter('');
+    setHubs([]);
+    if (selectedType && selectedType !== 'map') {
+      InteractionManager.runAfterInteractions(() => {
+        if (mountedRef.current) ensureHubs(selectedType);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedType, keyBase]);
+
+  // Modal içi arama
+  const filteredHubs = useMemo(() => {
+    if (!filter.trim()) return hubs;
+    const q = norm(filter);
+    const starts = [];
+    const contains = [];
+    hubs.forEach((h) => {
+      const n = norm(h.name);
+      if (n.startsWith(q)) starts.push(h);
+      else if (n.includes(q)) contains.push(h);
+    });
+    return [...starts, ...contains];
+  }, [hubs, filter]);
+
+  const closeHub = () => {
+    if (mountedRef.current) setOpenHubModal(false);
+  };
 
   return (
     <View style={{ gap: 8 }}>
@@ -136,15 +331,32 @@ function PointPicker({ label, cityName, cityCenter, selectedType, selectedHub, o
       {/* Tip butonları */}
       <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
         {Object.entries(TYPE_MAP).map(([k, v]) => (
-          <TouchableOpacity key={k} onPress={() => onSelectType(k)} style={[styles.modeBtn, selectedType === k && styles.modeBtnActive]}>
+          <TouchableOpacity
+            key={k}
+            onPress={() => onSelectType(k)}
+            style={[styles.modeBtn, selectedType === k && styles.modeBtnActive]}
+          >
             <Text style={styles.modeText}>{v.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
+      {/* “Haritadan Seç” */}
+      {selectedType === 'map' && (
+        <TouchableOpacity onPress={() => onSelectType('map')} style={styles.selectShell}>
+          <Text style={styles.selectShellText}>
+            {selectedHub?.name || 'Haritadan seç'}
+          </Text>
+          <Text style={styles.caret}>▾</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Hub seçimi (airport/train/bus) */}
       {selectedType && selectedType !== 'map' && (
-        <TouchableOpacity onPress={() => setOpenHubModal(true)} style={styles.selectShell}>
+        <TouchableOpacity
+          onPress={() => setOpenHubModal(true)}
+          style={styles.selectShell}
+        >
           <Text style={styles.selectShellText}>
             {selectedHub?.name || `${TYPE_MAP[selectedType].label} seçin`}
           </Text>
@@ -152,42 +364,122 @@ function PointPicker({ label, cityName, cityCenter, selectedType, selectedHub, o
         </TouchableOpacity>
       )}
 
-      <Modal visible={openHubModal} transparent animationType="fade" onRequestClose={() => setOpenHubModal(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setOpenHubModal(false)} />
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>{TYPE_MAP[selectedType || 'airport']?.label} Seçin</Text>
-          <FlatList
-            data={hubs}
-            keyExtractor={(it) => it.place_id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.optionRow}
-                onPress={() => { onSelectHub(toHubShape(item)); setOpenHubModal(false); }}
-              >
-                <Text style={styles.optionText}>{item.name}</Text>
-                {item.meta && <Text style={{ color:'#9AA0A6', fontSize:12 }}>{item.meta}</Text>}
-              </TouchableOpacity>
-            )}
-            ListEmptyComponent={
-              <View style={{ padding: 10, gap: 6 }}>
-                <Text style={{ color: '#9AA0A6' }}>Uygun nokta bulunamadı.</Text>
-                <Text style={{ color: '#9AA0A6' }}>“Haritadan Seç” ile manuel nokta belirleyebilirsiniz.</Text>
-              </View>
-            }
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-          />
-          <TouchableOpacity onPress={() => setOpenHubModal(false)} style={[styles.smallBtn, { marginTop: 8 }]}>
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Kapat</Text>
+      {/* Seçimi temizle */}
+      {!!selectedHub && (
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+          <TouchableOpacity
+            onPress={onClear}
+            style={[styles.smallBtn, { borderColor: '#EF4444' }]}
+          >
+            <Text style={{ color: '#EF4444', fontWeight: '700' }}>
+              Seçimi Temizle
+            </Text>
           </TouchableOpacity>
         </View>
-      </Modal>
+      )}
+
+      {openHubModal && (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          presentationStyle="overFullScreen"
+          hardwareAccelerated
+          onRequestClose={closeHub}
+          onDismiss={closeHub}
+        >
+          <Pressable style={styles.modalBackdrop} onPress={closeHub} />
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>
+              {TYPE_MAP[selectedType || 'airport']?.label} Seçin
+            </Text>
+
+            {/* Arama kutusu */}
+            <TextInput
+              placeholder="İsimle ara (örn. Esenboğa)"
+              placeholderTextColor="#6B7280"
+              value={filter}
+              onChangeText={setFilter}
+              style={styles.searchInput}
+            />
+
+            {loading ? (
+              <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                <ActivityIndicator />
+                <Text style={{ color: '#9AA0A6', marginTop: 8 }}>Yükleniyor…</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={filteredHubs.slice(0, 300)}
+                keyExtractor={(it, i) => String(it?.place_id ?? i)}
+                removeClippedSubviews
+                keyboardShouldPersistTaps="always"
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.optionRow}
+                    onPress={() => {
+                      onSelectHub(toHubShape(item));
+                      requestAnimationFrame(() => {
+                        if (mountedRef.current) setOpenHubModal(false);
+                      });
+                    }}
+                  >
+                    <Text style={styles.optionText}>{item.name}</Text>
+                    {item.meta && (
+                      <Text style={{ color: '#9AA0A6', fontSize: 12 }}>
+                        {item.meta}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+                ItemSeparatorComponent={() => <View style={styles.separator} />}
+                initialNumToRender={10}
+                maxToRenderPerBatch={10}
+                windowSize={5}
+                contentContainerStyle={{ paddingBottom: 12 }}
+              />
+            )}
+
+            <TouchableOpacity onPress={closeHub} style={[styles.smallBtn, { marginTop: 8 }]}>
+              <Text style={{ color: '#fff', fontWeight: '700' }}>Kapat</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
 
 function DatePicker({ label, value, onChange }) {
   const [open, setOpen] = useState(false);
-  const marked = useMemo(() => (value ? { [value]: { selected: true, selectedColor: BTN, selectedTextColor: '#fff' } } : {}), [value]);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const marked = useMemo(
+    () =>
+      value
+        ? { [value]: { selected: true, selectedColor: BTN, selectedTextColor: '#fff' } }
+        : {},
+    [value]
+  );
+
+  // global kapatma
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(EVT_CLOSE_DROPDOWNS, () => {
+      if (mountedRef.current) setOpen(false);
+    });
+    return () => sub.remove();
+  }, []);
+
+  const closeDate = () => {
+    if (mountedRef.current) setOpen(false);
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -197,32 +489,69 @@ function DatePicker({ label, value, onChange }) {
         <Text style={styles.caret}>▾</Text>
       </TouchableOpacity>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)} />
-        <View style={[styles.modalCard, { top: '12%', bottom: '12%' }]}>
-          <Text style={styles.modalTitle}>Tarih Seçin</Text>
-          <Calendar
-            markedDates={marked}
-            onDayPress={(d) => { onChange(d.dateString); setOpen(false); }}
-            theme={{
-              calendarBackground: '#0D0F14',
-              dayTextColor: '#fff',
-              monthTextColor: '#fff',
-              textDisabledColor: '#6B7280',
-              arrowColor: '#fff',
-              selectedDayBackgroundColor: BTN,
-              todayTextColor: '#60A5FA',
-            }}
-            style={{ borderRadius: 12, overflow: 'hidden' }}
-          />
-        </View>
-      </Modal>
+      {open && (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          presentationStyle="overFullScreen"
+          hardwareAccelerated
+          onRequestClose={closeDate}
+          onDismiss={closeDate}
+        >
+          <Pressable style={styles.modalBackdrop} onPress={closeDate} />
+          <View style={[styles.modalCard, { top: '12%', bottom: '12%' }]}>
+            <Text style={styles.modalTitle}>Tarih Seçin</Text>
+            <Calendar
+              markedDates={marked}
+              onDayPress={(d) => {
+                onChange(d.dateString);
+                closeDate();
+              }}
+              theme={{
+                calendarBackground: '#0D0F14',
+                dayTextColor: '#fff',
+                monthTextColor: '#fff',
+                textDisabledColor: '#6B7280',
+                arrowColor: '#fff',
+                selectedDayBackgroundColor: BTN,
+                todayTextColor: '#60A5FA',
+              }}
+              style={{ borderRadius: 12, overflow: 'hidden' }}
+            />
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
 
 function TimeDropdown({ label, value, onChange }) {
   const [open, setOpen] = useState(false);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(EVT_CLOSE_DROPDOWNS, () => {
+      if (mountedRef.current) setOpen(false);
+    });
+    return () => sub.remove();
+  }, []);
+
+  const closeTime = () => {
+    if (mountedRef.current) setOpen(false);
+  };
+
+  const initialIndex = useMemo(() => {
+    const idx = TIME_SLOTS.indexOf(value);
+    return idx >= 0 ? idx : undefined;
+  }, [value]);
+
   return (
     <View style={{ flex: 1 }}>
       <Text style={styles.label}>{label}</Text>
@@ -231,42 +560,89 @@ function TimeDropdown({ label, value, onChange }) {
         <Text style={styles.caret}>▾</Text>
       </TouchableOpacity>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)} />
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>Saat Seçin</Text>
-          <FlatList
-            data={TIME_SLOTS}
-            keyExtractor={(it) => it}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.optionRow} onPress={() => { onChange(item); setOpen(false); }}>
-                <Text style={styles.optionText}>{item}</Text>
-              </TouchableOpacity>
-            )}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-            initialScrollIndex={Math.max(0, TIME_SLOTS.findIndex(t => t === value))}
-            getItemLayout={(_, idx) => ({ length: 44, offset: 44 * idx, index: idx })}
-          />
-        </View>
-      </Modal>
+      {open && (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          presentationStyle="overFullScreen"
+          hardwareAccelerated
+          onRequestClose={closeTime}
+          onDismiss={closeTime}
+        >
+          <Pressable style={styles.modalBackdrop} onPress={closeTime} />
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Saat Seçin</Text>
+            <FlatList
+              data={TIME_SLOTS}
+              keyExtractor={(it, i) => String(it ?? i)}
+              removeClippedSubviews
+              keyboardShouldPersistTaps="always"
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.optionRow}
+                  onPress={() => {
+                    onChange(item);
+                    closeTime();
+                  }}
+                >
+                  <Text style={styles.optionText}>{item}</Text>
+                </TouchableOpacity>
+              )}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+              initialScrollIndex={initialIndex}
+              getItemLayout={(_, idx) => ({
+                length: 44,
+                offset: 44 * idx,
+                index: idx,
+              })}
+              initialNumToRender={20}
+              maxToRenderPerBatch={20}
+              windowSize={8}
+            />
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
 
 /* --------------------------------- Filtering logic --------------------------------- */
-// listHubsForCity() sonuçlarını şehir odaklı temizlemek için heuristik filtre
+function trFold(s) {
+  const map = {
+    İ: 'i', I: 'i', ı: 'i',
+    Ş: 's', ş: 's',
+    Ğ: 'g', ğ: 'g',
+    Ü: 'u', ü: 'u',
+    Ö: 'o', ö: 'o',
+    Ç: 'c', ç: 'c',
+  };
+  return String(s ?? '').replace(/[İIıŞşĞğÜüÖöÇç]/g, (ch) => map[ch] || ch);
+}
+function norm(s) {
+  return trFold(s).toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
 function normalizeHubsForType(typeKey, hubs, cityName, cityCenter) {
   const nameLC = (s) => (s || '').toString().toLowerCase();
-  const strip = (s) => s?.normalize?.('NFD')?.replace(/[\u0300-\u036f]/g, '') || s || '';
-  const cityToken = nameLC(strip(cityName || ''));
+  const strip = (s) => trFold(String(s ?? ''));
+  const cityToken = nameLC(strip((cityName ?? '') + ''));
 
-  const withDistance = hubs.map(h => ({
+  const withDistance = hubs.map((h) => ({
     ...h,
-    _d: h?.location && cityCenter ? haversine(cityCenter, h.location) : null, // km
-    _name: nameLC(h.name),
+    _d:
+      h?.location?.lat != null &&
+      h?.location?.lng != null &&
+      cityCenter
+        ? haversine(cityCenter, h.location)
+        : null,
+    _name: nameLC(h.name || ''),
   }));
 
-  let inc = [], exc = [], maxKm = 30;
+  let inc = [],
+    exc = [],
+    maxKm = 30;
   if (typeKey === 'airport') {
     inc = ['havaliman', 'havaalan', 'airport', 'intl', 'international'];
     exc = ['helipad', 'heliport', 'uçuş akademi', 'private'];
@@ -281,30 +657,32 @@ function normalizeHubsForType(typeKey, hubs, cityName, cityCenter) {
     maxKm = 20;
   }
 
-  // 1) isim filtreleri
-  let filtered = withDistance.filter(h => {
-    const n = h._name;
-    const okInc = inc.some(k => n.includes(k));
-    const bad = exc.some(k => n.includes(k));
-    return okInc && !bad;
-  });
+  const isBad = (n) => exc.some((k) => n.includes(k));
+  const matchesInc = (n) => inc.some((k) => n.includes(k));
 
-  // 2) mesafe filtre
-  filtered = filtered.filter(h => (h._d == null) || h._d <= maxKm);
+  // 1) sıkı filtre
+  let filtered = withDistance.filter((h) => matchesInc(h._name) && !isBad(h._name));
+  filtered = filtered.filter((h) => (h._d != null ? h._d <= maxKm : true));
 
-  // 3) skorla: şehir adı geçen > daha yakın > uluslararası anahtar kelime
-  filtered.forEach(h => {
+  // 2) gerekirse gevşet
+  if (filtered.length === 0) {
+    filtered = withDistance
+      .filter((h) => !isBad(h._name))
+      .filter((h) => h._d == null || h._d <= maxKm);
+  }
+
+  // 3) skorla
+  filtered.forEach((h) => {
     let score = 0;
     if (cityToken && h._name.includes(cityToken)) score += 5;
     if (h._d != null) score += Math.max(0, (maxKm - h._d) / maxKm) * 4;
-    if (typeKey === 'airport' && (h._name.includes('intl') || h._name.includes('international'))) score += 1.5;
+    if (matchesInc(h._name)) score += 1.5;
     h._score = score;
   });
 
-  filtered.sort((a,b) => b._score - a._score);
+  filtered.sort((a, b) => b._score - a._score);
 
-  // 4) gereksiz alanları temizle + meta
-  return filtered.map(h => ({
+  return filtered.map((h) => ({
     name: h.name,
     place_id: h.place_id,
     location: h.location,
@@ -322,30 +700,90 @@ function haversine(a, b) {
   const dLon = toRad(b.lng - a.lng);
   const lat1 = toRad(a.lat);
   const lat2 = toRad(b.lat);
-  const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
-function toRad(deg) { return deg * Math.PI / 180; }
+function toRad(deg) {
+  return (deg * Math.PI) / 180;
+}
 
 /* --------------------------------- Styles --------------------------------- */
 const styles = StyleSheet.create({
-  card: { borderBottomWidth: 1, borderColor: BORDER, padding: 12, borderRadius: 12, backgroundColor: '#0B0D12' },
+  card: {
+    borderBottomWidth: 1,
+    borderColor: BORDER,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#0B0D12',
+  },
   cardTitle: { color: '#fff', fontSize: 15, fontWeight: '700', marginBottom: 8 },
 
   label: { fontSize: 13, color: '#A8A8B3', marginBottom: 6 },
-  modeBtn: { paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: BORDER, borderRadius: 10, backgroundColor: '#0D0F14' },
+  modeBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 10,
+    backgroundColor: '#0D0F14',
+  },
   modeBtnActive: { borderColor: BTN, backgroundColor: '#0E1B2E' },
   modeText: { color: '#fff' },
 
-  selectShell: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: BORDER, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, backgroundColor: '#0D0F14' },
+  selectShell: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: '#0D0F14',
+  },
   selectShellText: { color: '#fff' },
   caret: { fontSize: 12, color: '#9AA0A6', marginLeft: 8 },
 
-  smallBtn: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: BORDER, backgroundColor: '#0D0F14' },
+  smallBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: '#0D0F14',
+  },
 
-  modalBackdrop: { position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.35)' },
-  modalCard: { position: 'absolute', left: 16, right: 16, top: '18%', bottom: '18%', borderRadius: 16, backgroundColor: '#0D0F14', padding: 12, borderWidth: 1, borderColor: BORDER },
+  modalBackdrop: {
+    position: 'absolute',
+    inset: 0,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  modalCard: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    top: '14%',
+    bottom: '14%',
+    borderRadius: 16,
+    backgroundColor: '#0D0F14',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
   modalTitle: { fontSize: 16, fontWeight: '700', marginBottom: 8, color: '#fff' },
+
+  searchInput: {
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    color: '#fff',
+    marginBottom: 8,
+    backgroundColor: '#0D0F14',
+  },
 
   optionRow: { paddingVertical: 11, paddingHorizontal: 10 },
   optionText: { fontSize: 15, color: '#fff' },
