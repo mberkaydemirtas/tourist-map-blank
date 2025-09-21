@@ -20,6 +20,7 @@ import MapScreen from './MapScreen';
 import TripsListScreen from '../trips/TripsListScreen';
 import TripEditorScreen from '../trips/TripEditorScreen';
 import CreateTripWizardScreen from '../trips/CreateTripWizardScreen';
+import TripPlacesScreen from '../trips/screens/TripPlacesScreen';
 
 // Veri sürücüsü (local-first)
 import { setTripsDriver } from '../trips/shared/tripsRepo';
@@ -28,6 +29,7 @@ enableScreens(false); // ✅ sadece teşhis için (crash kesiliyorsa screens kay
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
 const TripsStack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator()
 
 function HomeNavigator() {
   return (
@@ -62,6 +64,9 @@ function TripsNavigator() {
         component={TripEditorScreen}
         options={{ title: 'Gezi Detayı' }}
       />
+      <Stack.Screen name="TripPlacesScreen" component={TripPlacesScreen} />
+
+
     </TripsStack.Navigator>
   );
 }

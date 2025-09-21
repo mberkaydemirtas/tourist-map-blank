@@ -1,10 +1,33 @@
-// routes/poi.js
+//server/ routes/poi.js
 const express = require("express");
 const router = express.Router();
 
 const GOOGLE_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 // ====== Basit LRU Cache (arama) ======
+const cache = new Map();
+const TTL_MS = 60 * 1000; // 60 sn
+
+function cacheKey(q, lat, lon, city, category) {
+  return `${q}|${lat}|${lon}|${city}|${category}`;
+}
+function getCache(k){
+  const v = cache.get(k);
+  if (!v) return null;
+  if (Date.now() > v.expires) { cache.delete(k); return null; }
+  return v.data;
+}
+function setCache(k, data){ cache.set(k, { data, expires: Date.now()+TTL_MS }); }
+
+// /api/poi/google/search içinde, fetch’lerden önce:
+const key = cacheKey(q, lat, lon, city, category);
+const cached = getCache(key);
+if (cached) { return res.json(cached.slice(0,20)); }
+
+// Google’dan yanıt aldığında en sonda:
+setCache(key, out);
+return res.json(out.slice(0,20));
+
 class LRUCache {
   constructor(max = 600, ttlMs = 15 * 60 * 1000) {
     this.max = max; this.ttl = ttlMs; this.map = new Map();
