@@ -1,3 +1,4 @@
+// map/components/MapHeaderControls.js
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import SearchBar from './SearchBar';
 import CategoryBar from './CategoryBar';

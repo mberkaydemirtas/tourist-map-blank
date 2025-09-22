@@ -1,13 +1,14 @@
 // trips/TripsListScreen.js
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl, Platform } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 
 // === Yeni servisler (offline-first + sync) ===
 import { listTripsLocal, createTripLocal, markDeleteLocal, getTripLocal } from '../app/lib/tripsLocal';
 import { syncTrips } from '../app/services/tripsSync';
 import { getDeviceId } from '../app/services/device';
+import { SERVER_ENABLED } from '../app/lib/api';
 
 // (Varsa senin tarih helper'ın kalsın)
 import { formatDate } from './shared/types';
@@ -16,9 +17,10 @@ const BORDER = '#23262F';
 
 export default function TripsListScreen() {
   const nav = useNavigation();
+  const route = useRoute();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [overlay, setOverlay] = useState(false);
+  const firstLoadedRef = useRef(false);
 
   const onSelectPlaces = (id) => {
     nav.navigate('TripPlacesScreen', { id });
@@ -31,24 +33,41 @@ export default function TripsListScreen() {
       const rows = await listTripsLocal();
       setItems(rows.filter(x => !x.deleted));
 
-      // 2) sessiz senkron
-      const deviceId = await getDeviceId();
-      await syncTrips({ deviceId }).catch(() => { /* offline olabilir, sorun değil */ });
-
-      // 3) senkron sonrası tekrar yükle
-      const rows2 = await listTripsLocal();
-      setItems(rows2.filter(x => !x.deleted));
+      // 2) server açıksa arkada sessiz senkron (UI'ı bloklama)
+      if (SERVER_ENABLED) {
+        (async () => {
+          try {
+            const deviceId = await getDeviceId();
+            await syncTrips({ deviceId });
+            const rows2 = await listTripsLocal();
+            setItems(rows2.filter(x => !x.deleted));
+          } catch {}
+        })();
+      }
     } finally {
       setLoading(false);
     }
   }, []);
-  useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const startScratch = async () => {
-    setOverlay(false);
-    const t = await createTripLocal({ title: 'New Trip' });
-    nav.navigate('TripEditor', { id: t._id });
-  };
+   useFocusEffect(useCallback(() => {
+     const needFirst = !firstLoadedRef.current;
+     const hasRefreshParam = !!route?.params?.refresh;
+     if (needFirst || hasRefreshParam) {
+       firstLoadedRef.current = true;
+       load();
+     }
+   }, [load, route?.params?.refresh]));
+
+  // === Buton davranışı: Wizard akışı (WhereTo → StartEnd → Lodging)
+  const startNewTrip = useCallback(() => {
+    nav.navigate('CreateTripWizard');
+  }, [nav]);
+
+  // === Alternatif: Hemen local taslak oluşturup editöre gitmek istersen:
+  // const startNewTrip = useCallback(async () => {
+  //   const t = await createTripLocal({ title: 'New Trip' });
+  //   nav.navigate('TripEditor', { id: t._id });
+  // }, [nav]);
 
   const onDelete = (id, title) => {
     Alert.alert('Geziyi Sil', `"${title}" silinsin mi?`, [
@@ -58,8 +77,12 @@ export default function TripsListScreen() {
         style: 'destructive',
         onPress: async () => {
           await markDeleteLocal(id);
-          const deviceId = await getDeviceId();
-          await syncTrips({ deviceId }).catch(()=>{});
+          if (SERVER_ENABLED) {
+            try {
+              const deviceId = await getDeviceId();
+              await syncTrips({ deviceId });
+            } catch {}
+          }
           await load();
         }
       },
@@ -67,7 +90,6 @@ export default function TripsListScreen() {
   };
 
   const onDuplicate = async (id) => {
-    // Basit çoğaltma
     const src = await getTripLocal(id);
     if (!src) return;
     const copy = {
@@ -78,9 +100,13 @@ export default function TripsListScreen() {
       version: 0,
       __dirty: true,
     };
-    await createTripLocal(copy); // createTripLocal yeni uuid verir
-    const deviceId = await getDeviceId();
-    await syncTrips({ deviceId }).catch(()=>{});
+    await createTripLocal(copy);
+    if (SERVER_ENABLED) {
+      try {
+        const deviceId = await getDeviceId();
+        await syncTrips({ deviceId });
+      } catch {}
+    }
     await load();
   };
 
@@ -101,43 +127,29 @@ export default function TripsListScreen() {
       onPress={() => nav.navigate('TripEditor', { id: item._id })}
       onLongPress={() => nav.navigate('TripEditor', { id: item._id })}
     >
-      {/* Sol: Başlık + tarih alt yazısı */}
       <View style={[styles.cell, styles.flex3]}>
         <Text style={styles.title} numberOfLines={2}>{item.title || '(untitled)'}</Text>
         <Text style={styles.subTitle} numberOfLines={1}>
           {(item?.dateRange?.start || '—')} → {(item?.dateRange?.end || '—')}
         </Text>
       </View>
-
-      {/* Orta: durak sayısı (places) */}
       <Text style={[styles.cell, styles.center, styles.badge]}>{item.places?.length ?? 0}</Text>
-
-      {/* Tarihler */}
       <Text style={[styles.cell, styles.flex1]} numberOfLines={1}>
         {item.createdAt ? formatDate(item.createdAt) : '—'}
       </Text>
       <Text style={[styles.cell, styles.flex1]} numberOfLines={1}>
         {item.updatedAt ? formatDate(item.updatedAt) : '—'}
       </Text>
-
-      {/* Aksiyonlar */}
       <View style={[styles.cell, styles.actions]}>
-        {/* YERLERİ SEÇ butonu (yeni) */}
         <TouchableOpacity onPress={() => onSelectPlaces(item._id)} style={styles.iconBtn}>
           <Ionicons name="map-outline" size={22} color="#22c55e" />
         </TouchableOpacity>
-
-        {/* Kopyala */}
         <TouchableOpacity onPress={() => onDuplicate(item._id)} style={styles.iconBtn}>
           <Ionicons name="copy-outline" size={22} color="#fff" />
         </TouchableOpacity>
-
-        {/* Düzenle */}
         <TouchableOpacity onPress={() => nav.navigate('TripEditor', { id: item._id })} style={styles.iconBtn}>
           <Ionicons name="pencil-outline" size={22} color="#fff" />
         </TouchableOpacity>
-
-        {/* Sil */}
         <TouchableOpacity onPress={() => onDelete(item._id, item.title)} style={styles.iconBtn}>
           <Ionicons name="trash-outline" size={22} color="#ef4444" />
         </TouchableOpacity>
@@ -149,7 +161,7 @@ export default function TripsListScreen() {
     <View style={styles.container}>
       <View style={styles.topBar}>
         <Text style={styles.screenTitle}>Gezilerim</Text>
-        <TouchableOpacity onPress={() => setOverlay(true)} style={styles.newBtn} activeOpacity={0.9}>
+        <TouchableOpacity onPress={startNewTrip} style={styles.newBtn} activeOpacity={0.9}>
           <Ionicons name="add" size={20} color="#fff" />
           <Text style={styles.newBtnText}>Yeni Gezi</Text>
         </TouchableOpacity>
@@ -170,16 +182,6 @@ export default function TripsListScreen() {
         ) : null}
         contentContainerStyle={{ paddingBottom: 24 }}
       />
-
-      {/* Mevcut overlay'in kalsın – import'un varsa aç */}
-      {/* <CreateTripOverlay
-        visible={overlay}
-        onClose={() => setOverlay(false)}
-        onStartScratch={startScratch}
-        onStartTemplate={() => {}}
-        onStartAI={() => {}}
-        online={true}
-      /> */}
     </View>
   );
 }
@@ -197,6 +199,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1, borderBottomWidth: 1, borderColor: BORDER, backgroundColor: '#0D0F14',
   },
   hCell: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
+
   row: {
     flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 12,
     borderBottomWidth: 1, borderColor: BORDER, gap: 8,

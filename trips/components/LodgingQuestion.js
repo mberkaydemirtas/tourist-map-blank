@@ -25,8 +25,7 @@ const BORDER = '#23262F';
  * - onChange(nextStays)
  * - onMapPick?: (payload: { index: number, center?: { lat:number,lng:number }, cityName?: string, startDate: string, endDate: string }) => Promise<{ name: string, place_id?: string, location?: {lat:number,lng:number} } | null | undefined>
  */
-export default function LodgingQuestion({ tripRange, cityName, cityCenter, stays = [], onChange, onMapPick }) {
-   const [localStays, setLocalStays] = useState(() =>
+export default function LodgingQuestion({ tripRange, cityName, cityCenter, stays = [], onChange, onMapPick, onNext }) {   const [localStays, setLocalStays] = useState(() =>
      (stays && stays.length)
        ? stays
        : [{ id: uid(), startDate: tripRange?.startDate || '', endDate: tripRange?.endDate || '', place: null }]
@@ -152,7 +151,18 @@ export default function LodgingQuestion({ tripRange, cityName, cityCenter, stays
             <Text style={{ color: '#9AA0A6' }}>{firstMissingInterval.start} → {firstMissingInterval.end}</Text>
           )}
         </Pressable>
-      )}
+        )}
+       {/* İLERİ: eksik gece yoksa aktif */}
+       <Pressable
+         onPress={() => onNext?.(localStays)}
+         disabled={missingNights.length > 0}
+         style={[
+           styles.primaryBtn,
+           missingNights.length > 0 && { opacity: 0.5 }
+         ]}
+       >
+         <Text style={styles.primaryBtnText}>İleri</Text>
+       </Pressable>
     </View>
   );
 }
@@ -240,6 +250,8 @@ const styles = StyleSheet.create({
   btnText: { fontWeight: '700' },
   addBtn: { paddingHorizontal: 12, paddingVertical: 12, borderRadius: 10, borderWidth: 1, borderColor: BORDER, backgroundColor: '#0D1117', alignSelf: 'flex-start', gap: 2 },
   error: { color: '#F87171', marginTop: 8, fontWeight: '700' },
+   primaryBtn: { marginTop: 12, alignSelf: 'flex-end', backgroundColor: BTN, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12 },
+   primaryBtnText: { color: '#fff', fontWeight: '800' },
   modalBackdrop: { position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.35)' },
   modalCard: { position: 'absolute', left: 16, right: 16, top: '18%', bottom: '18%', borderRadius: 16, backgroundColor: '#0D0F14', padding: 12, borderWidth: 1, borderColor: BORDER },
   modalTitle: { fontSize: 16, fontWeight: '700', marginBottom: 8, color: '#fff' },

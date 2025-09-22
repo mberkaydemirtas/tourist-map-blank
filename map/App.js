@@ -64,7 +64,7 @@ function TripsNavigator() {
         component={TripEditorScreen}
         options={{ title: 'Gezi Detayı' }}
       />
-      <Stack.Screen name="TripPlacesScreen" component={TripPlacesScreen} />
+      <TripsStack.Screen name="TripPlacesScreen" component={TripPlacesScreen} />
 
 
     </TripsStack.Navigator>

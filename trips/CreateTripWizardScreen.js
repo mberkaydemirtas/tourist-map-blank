@@ -1,19 +1,57 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+// trips/CreateTripWizardScreen.js
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, FlatList,
   DeviceEventEmitter, InteractionManager,
 } from 'react-native';
 const EVT_CLOSE_DROPDOWNS = 'CLOSE_ALL_DROPDOWNS';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { createTrip } from './services/tripsService';
-import { buildInitialDailyPlan, outboundMustArriveBeforeMin } from './shared/types';
+
+// Local-first storage
+import { createTripLocal, saveTripLocal } from '../app/lib/tripsLocal';
+
+// Soru bileşenleri
 import WhereToQuestion from './components/WhereToQuestion';
 import StartEndQuestion from './components/StartEndQuestion';
 import LodgingQuestion from './components/LodgingQuestion';
+import TripListQuestion from './components/TripListQuestion';
+
+// Harita köprüsü
 import { useTripsExploreBridge } from '../bridges/useTripsExploreBridge';
 
 const BORDER = '#23262F';
 const BTN = '#2563EB';
+
+/* ---------------------- Yardımcılar: Gün listesi & DP ---------------------- */
+function dateRangeDays(startISO, endISO) {
+  if (!startISO || !endISO) return [];
+  const start = new Date(startISO);
+  const end = new Date(endISO);
+  if (isNaN(start) || isNaN(end) || end < start) return [];
+  const days = [];
+  const d = new Date(start);
+  while (d <= end) {
+    days.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 1);
+  }
+  return days;
+}
+
+/** Yeni tarih aralığına göre dailyPlan kurar/yeniler.
+ *  Eski dailyPlan varsa, aynı index'teki günler korunur.
+ */
+function buildDailyPlan(startDate, endDate, prevDP = []) {
+  const days = dateRangeDays(startDate, endDate);
+  if (!days.length) return [];
+  const next = days.map((d, i) => {
+    const prev = prevDP[i];
+    return {
+      date: d,
+      visits: Array.isArray(prev?.visits) ? prev.visits : [], // { id,name,lat,lng,address }
+    };
+  });
+  return next;
+}
 
 export default function CreateTripWizardScreen() {
   const nav = useNavigation();
@@ -24,8 +62,7 @@ export default function CreateTripWizardScreen() {
   // Step 0 — Nereye gidiyorsun?
   const [whereAnswer, setWhereAnswer] = useState(null); // { mode: 'single'|'multi', single?, items? }
 
-  // Step 1 — Başlangıç & Bitiş (tek ya da tüm şehirler)
-  // single: { start, end }; multi: { [place_id]: { start, end } }
+  // Step 1 — Başlangıç & Bitiş
   const [startEndSingle, setStartEndSingle] = useState(null);
   const [startEndByCity, setStartEndByCity] = useState({});
   const [cityIndex, setCityIndex] = useState(0);
@@ -34,26 +71,36 @@ export default function CreateTripWizardScreen() {
   const [lodgingSingle, setLodgingSingle] = useState([]); // [{ place, start, end }, ...]
   const [lodgingByCity, setLodgingByCity] = useState({}); // { [cityKey]: [{...}] }
 
+  // Step 3 — Gezilecek Yerler (TripListQuestion) için günlük plan
+  const [dailyPlan, setDailyPlan] = useState([]); // [{ date:'YYYY-MM-DD', visits:[{id,name,lat,lng,address}] }]
+
+  // Yerel taslak — wizard’a girince bir kez oluştur
+  const [draft, setDraft] = useState(null);
+  useEffect(() => {
+    (async () => {
+      const t = await createTripLocal({ title: 'New Trip' });
+      setDraft(t);
+    })();
+  }, []);
+
   // Step 2'ye girildiğinde, multi-city ise ilk şehre dön
   useEffect(() => {
-    if (step === 2 && whereAnswer?.mode === 'multi') {
-      setCityIndex(0);
-    }
+    if (step === 2 && whereAnswer?.mode === 'multi') setCityIndex(0);
   }, [step, whereAnswer?.mode]);
 
-   // Segments <-> Stays dönüşümünde ID’yi KAYBETME!
-   const staysFromSegments = (segs = []) => segs.map((s, i) => ({
-     id: s.id || `${s?.place?.place_id || 'seg'}_${i}`, // mevcut id varsa kullan
-     place: s.place || null,
-     startDate: s.start || null,
-     endDate: s.end || null,
-   }));
-   const segmentsFromStays = (stays = []) => stays.map(s => ({
-     id: s.id,                 // 🔴 kritik: id’yi koru
-     place: s.place || null,
-     start: s.startDate || null,
-     end: s.endDate || null,
-   }));
+  // Segments <-> Stays (ID’yi koru)
+  const staysFromSegments = (segs = []) => segs.map((s, i) => ({
+    id: s.id || `${s?.place?.place_id || 'seg'}_${i}`,
+    place: s.place || null,
+    startDate: s.start || null,
+    endDate: s.end || null,
+  }));
+  const segmentsFromStays = (stays = []) => stays.map(s => ({
+    id: s.id,
+    place: s.place || null,
+    start: s.startDate || null,
+    end: s.endDate || null,
+  }));
 
   // Türev state (aktif şehir objesi & key)
   const activeCityObj = useMemo(() => {
@@ -83,13 +130,11 @@ export default function CreateTripWizardScreen() {
     }
   }, [whereAnswer, activeCityKey, startEndSingle, startEndByCity]);
 
-  // Map ↔ Wizard köprüsü
+  // Harita köprüsü
   const bridge = useTripsExploreBridge({
     nav,
     route,
     onPick: (pick) => {
-      // Lodging seçimleri await ile dönecek — burada işlemiyoruz.
-      // Start/End seçimi mevcut akışla güncelleniyor.
       if (whereAnswer?.mode === 'single') {
         if (pick.which === 'start' || pick.which === 'end') {
           setStartEndSingle(prev => ({
@@ -116,7 +161,7 @@ export default function CreateTripWizardScreen() {
           }));
         }
       }
-      // pick.which === 'lodging' burada no-op
+      // lodging pick'i LodgingQuestion içinde await ile dönüyor
     },
   });
 
@@ -155,9 +200,7 @@ export default function CreateTripWizardScreen() {
       const bKey = items[i + 1].city.place_id;
       const aEnd = startEndByCity[aKey]?.end?.date;
       const bStart = startEndByCity[bKey]?.start?.date;
-      if (aEnd && bStart && bStart < aEnd) {
-        return false;
-      }
+      if (aEnd && bStart && bStart < aEnd) return false;
     }
     return true;
   }, [whereAnswer, startEndSingle, startEndByCity]);
@@ -169,6 +212,7 @@ export default function CreateTripWizardScreen() {
     return diffNights(range.start, range.end);
   }, [whereAnswer, startEndSingle, startEndByCity]);
 
+  // İleri buton durumu
   const canNext = useMemo(() => {
     if (step === 0) {
       if (!whereAnswer) return false;
@@ -192,6 +236,7 @@ export default function CreateTripWizardScreen() {
         return rangeOk(segs, rng);
       });
     }
+    // Step 3 (TripListQuestion) için zorunluluk yok; kullanıcı boş bırakabilir.
     return true;
   }, [step, whereAnswer, step1Valid, lodgingSingle, lodgingByCity, activeRange, startEndByCity]);
 
@@ -206,39 +251,46 @@ export default function CreateTripWizardScreen() {
 
   const next = () => {
     if (!canNext) return Alert.alert('Eksik bilgi', 'Devam etmek için bu adımı tamamlayın.');
-    safeStepChange(() => setStep(s => Math.min(3, s + 1)));
+    safeStepChange(() => setStep(s => Math.min(4, s + 1))); // 0..4
   };
   const back = () => { safeStepChange(() => setStep(s => Math.max(0, s - 1))); };
 
-  // Submit
-  const submit = async () => {
+  // TripListQuestion adımına girerken dailyPlan'i kur
+  useEffect(() => {
+    if (step !== 3) return;
     const range = computeGlobalRange(whereAnswer, startEndSingle, startEndByCity);
-    // 🧩 DÜZELTME: 'where' değil 'whereAnswer'
-    const inbound = computeInbound(whereAnswer, startEndSingle, startEndByCity);
-    const outbound = computeOutbound(whereAnswer, startEndSingle, startEndByCity);
+    const nextDP = buildDailyPlan(range.start, range.end, dailyPlan);
+    setDailyPlan(nextDP);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, whereAnswer, startEndSingle, startEndByCity]);
 
+  // Submit — yerelde kaydet ve TripsHome'a dön
+  const submit = async () => {
+    if (!draft) return;
+
+    const range = computeGlobalRange(whereAnswer, startEndSingle, startEndByCity);
     const stays = buildStays(whereAnswer, startEndSingle, startEndByCity, lodgingSingle, lodgingByCity);
-    const tripInit = {
-      source: 'scratch',
+
+    await saveTripLocal({
+      ...draft,
+      title: draft.title || (whereAnswer?.mode === 'single'
+        ? (whereAnswer?.single?.city?.name ? `${whereAnswer.single.city.name} Trip` : 'My Trip')
+        : 'My Trip'),
+      cities: whereAnswer?.mode === 'single'
+        ? [whereAnswer?.single?.city?.name].filter(Boolean)
+        : (whereAnswer?.items || []).map(it => it.city?.name).filter(Boolean),
       dateRange: { start: range.start, end: range.end },
-      transport: {
-        inbound: inbound ? {
-          mode: inbound.mode,
-          arriveTime: inbound.time,
-          hub: inbound.hub ? { name: inbound.hub.name, place_id: inbound.hub.place_id } : undefined,
-        } : undefined,
-        outbound: outbound ? {
-          mode: outbound.mode,
-          departTime: outbound.time,
-          hub: outbound.hub ? { name: outbound.hub.name, place_id: outbound.hub.place_id } : undefined,
-          mustArriveBeforeMin: outboundMustArriveBeforeMin(outbound.mode),
-        } : undefined,
-      },
-      stays,
-    };
-    const daily = buildInitialDailyPlan(tripInit);
-    const created = await createTrip({ ...tripInit, daily });
-    nav.navigate('TripEditor', { id: created.id });
+      lodgings: stays.map(s => ({
+        id: s.id || undefined,
+        name: s.place?.name,
+        checkIn: s.dateRange?.start || null,
+        checkOut: s.dateRange?.end || null,
+      })),
+      // TripListQuestion çıktısı:
+      dailyPlan, // [{date, visits:[{id,name,lat,lng,address}]}]
+    });
+
+    nav.navigate('TripsHome', { refresh: Date.now() });
   };
 
   /** START/END için haritadan seçim — köprü üzerinden */
@@ -263,8 +315,25 @@ export default function CreateTripWizardScreen() {
     });
   }
 
+  // Trip nesnesi (TripListQuestion'a verilecek minimum alanlar)
+  const rangeForTrip = useMemo(
+    () => computeGlobalRange(whereAnswer, startEndSingle, startEndByCity),
+    [whereAnswer, startEndSingle, startEndByCity]
+  );
+  const tripForList = useMemo(() => ({
+    startDate: rangeForTrip.start || null,
+    endDate: rangeForTrip.end || null,
+    dailyPlan,
+  }), [rangeForTrip.start, rangeForTrip.end, dailyPlan]);
+
+  const setTripFromList = (nextTrip) => {
+    if (Array.isArray(nextTrip?.dailyPlan)) {
+      setDailyPlan(nextTrip.dailyPlan);
+    }
+  };
+
   // --- Render
-  const titles = ['Lokasyon', 'Başlangıç & Bitiş', 'Konaklama', 'Önizleme'];
+  const titles = ['Lokasyon', 'Başlangıç & Bitiş', 'Konaklama', 'Gezilecek Yerler', 'Önizleme'];
 
   return (
     <View style={styles.container}>
@@ -325,8 +394,8 @@ export default function CreateTripWizardScreen() {
                               value={startEndByCity[activeCityKey]}
                               onChange={(v) => setStartEndByCity(prev => ({ ...prev, [activeCityKey]: v }))}
                               onMapPick={handleMapPick}
-                              prevSegmentEnd={prevEnd}        // start ≥ prevEnd
-                              nextSegmentStart={nextStart}    // end ≤ nextStart
+                              prevSegmentEnd={prevEnd}
+                              nextSegmentStart={nextStart}
                             />
                           ) : null}
                         </>
@@ -346,7 +415,6 @@ export default function CreateTripWizardScreen() {
                       cityName={activeCityObj.name}
                       cityCenter={activeCityObj.center}
                       tripRange={{ startDate: activeRange.start, endDate: activeRange.end }}
-                      // 🧩 DÜZELTME: single modda kendi state'i kullan
                       stays={staysFromSegments(lodgingSingle)}
                       onChange={(next) => setLodgingSingle(segmentsFromStays(next))}
                       onMapPick={handleLodgingMapPick}
@@ -385,8 +453,20 @@ export default function CreateTripWizardScreen() {
               </Card>
             )}
 
-            {/* STEP 3 — Önizleme */}
+            {/* STEP 3 — Gezilecek Yerler */}
             {step === 3 && (
+              <Card title="Gezilecek Yerler">
+                <TripListQuestion
+                  trip={tripForList}
+                  setTrip={setTripFromList}
+                  onBack={back}
+                  onNext={next}
+                />
+              </Card>
+            )}
+
+            {/* STEP 4 — Önizleme */}
+            {step === 4 && (
               <Card title="Önizleme">
                 <Preview
                   where={whereAnswer}
@@ -406,7 +486,7 @@ export default function CreateTripWizardScreen() {
       <View style={styles.footer}>
         <TouchableOpacity onPress={() => nav.goBack()} style={styles.ghostBtn}><Text style={styles.ghostText}>Vazgeç</Text></TouchableOpacity>
         {step > 0 && (<TouchableOpacity onPress={back} style={styles.secondaryBtn}><Text style={styles.secondaryText}>Geri</Text></TouchableOpacity>)}
-        {step < 3 ? (
+        {step < 4 ? (
           <TouchableOpacity disabled={!canNext} onPress={next} style={[styles.primaryBtn, !canNext && styles.disabled]}><Text style={styles.primaryText}>İleri</Text></TouchableOpacity>
         ) : (
           <TouchableOpacity onPress={submit} style={styles.primaryBtn}><Text style={styles.primaryText}>Geziyi Oluştur</Text></TouchableOpacity>
@@ -501,40 +581,11 @@ function computeGlobalRange(where, singleSE, multiSE) {
   return { start, end };
 }
 
-function computeInbound(where, singleSE, multiSE) {
-  if (!where) return null;
-  if (where.mode === 'single') {
-    if (!singleSE?.start) return null;
-    return { mode: mapTypeToMode(singleSE.start.type), time: singleSE.start.time, hub: singleSE.start.hub };
-  }
-  const first = (where.items || [])[0];
-  const se = first ? multiSE[first.city.place_id] : null;
-  return se?.start ? { mode: mapTypeToMode(se.start.type), time: se.start.time, hub: se.start.hub } : null;
-}
-
-function computeOutbound(where, singleSE, multiSE) {
-  if (!where) return null;
-  if (where.mode === 'single') {
-    if (!singleSE?.end) return null;
-    return { mode: mapTypeToMode(singleSE.end.type), time: singleSE.end.time, hub: singleSE.end.hub };
-  }
-  const items = (where.items || []);
-  const last = items[items.length - 1];
-  const se = last ? multiSE[last.city.place_id] : null;
-  return se?.end ? { mode: mapTypeToMode(se.end.type), time: se.end.time, hub: se.end.hub } : null;
-}
-
-function mapTypeToMode(type) {
-  if (type === 'airport') return 'plane';
-  if (type === 'train') return 'train';
-  if (type === 'bus') return 'bus';
-  return 'custom';
-}
-
 function buildStays(where, singleSE, multiSE, singleSegs, byCitySegs) {
   const toStay = (cityName, seg) => {
     const nights = diffNights(seg.start, seg.end);
     return {
+      id: seg.id,
       city: cityName,
       place: { name: seg.place?.name, place_id: seg.place?.place_id },
       nights,

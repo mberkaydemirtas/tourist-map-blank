@@ -6,6 +6,8 @@ module.exports = (() => {
   // ✅ Allow .cjs modules (used by Firebase)
   config.resolver.sourceExts.push('cjs');
 
+  config.resolver.assetExts.push('csv');
+
   // ✅ Important: disable package exports enforcement for compatibility
   config.resolver.unstable_enablePackageExports = false;
 

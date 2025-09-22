@@ -1,3 +1,4 @@
+// map/hooks/useLocation.js
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as Location from 'expo-location';
 import { AppState } from 'react-native';
