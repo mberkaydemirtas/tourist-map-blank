@@ -6,7 +6,8 @@
     "orientation": "portrait",
     "plugins": [
       "expo-dev-client",
-      "expo-asset"
+      "expo-asset",
+      "expo-sqlite"
     ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,12 +15,11 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff",
-      "jsengine": "jsc"
+      "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
-      "jsEngine": "jsc",
+      "jsEngine": "hermes",
       "config": {
         "googleMapsApiKey": "AIzaSyBP0UQMQsLeyJNQLfGrmEEWkoB8QhWY4V8"
       }
@@ -34,7 +34,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "jsEngine": "jsc",
+      "jsEngine": "hermes",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBP0UQMQsLeyJNQLfGrmEEWkoB8QhWY4V8"

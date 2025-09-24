@@ -1,3 +1,4 @@
+// server/controllers/tripController.js
 const Trip = require('../models/Trip');
 
 // ================== Yardımcılar ==================

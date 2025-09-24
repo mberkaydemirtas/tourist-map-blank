@@ -2,14 +2,10 @@
 import { Platform } from "react-native";
 
 /**
- * ENV DESTEĞİ
- * - EXPO_PUBLIC_API_BASE            : Tam URL (örn: https://tourist-map-blank-10.onrender.com)
- * - EXPO_PUBLIC_SERVER_ENABLED      : "true" | "false"  (varsayılan: true, API_BASE varsa)
- * - EXPO_PUBLIC_API_TIMEOUT_MS      : sayı (ms) (varsayılan: 5000)
- *
- * Local & Prod varsayılanları:
- * - PROD_BASE  : Render alan adın (fallback)
- * - LOCAL_BASE : Android emülatör için 10.0.2.2, iOS sim/desktop için localhost
+ * ENV:
+ * - EXPO_PUBLIC_API_BASE         : https://… (tam URL)
+ * - EXPO_PUBLIC_SERVER_ENABLED   : "true" | "false"
+ * - EXPO_PUBLIC_API_TIMEOUT_MS   : sayı (ms)
  */
 
 const PROD_BASE = "https://tourist-map-blank-10.onrender.com";
@@ -18,55 +14,53 @@ const LOCAL_BASE =
 
 let isEmulatorOrSim = false;
 try {
-  // expo-constants varsa kullan; yoksa false kalır (gerçek cihaz varsayılır)
   const Constants = require("expo-constants").default;
   isEmulatorOrSim = !Constants.isDevice;
-} catch {
-  /* noop */
-}
+} catch {}
 
-// ---- ENV okuma (Expo public env) ----
 const ENV_API_BASE = (process.env?.EXPO_PUBLIC_API_BASE || "").trim();
-const ENV_SERVER_ENABLED_RAW = (process.env?.EXPO_PUBLIC_SERVER_ENABLED || "").trim().toLowerCase();
+const ENV_SERVER_ENABLED_RAW = (process.env?.EXPO_PUBLIC_SERVER_ENABLED || "")
+  .trim()
+  .toLowerCase();
 const ENV_TIMEOUT_RAW = (process.env?.EXPO_PUBLIC_API_TIMEOUT_MS || "").trim();
 
-// ---- API_BASE seçimi ----
 export const API_BASE =
   ENV_API_BASE ||
-  // Geliştirme modunda: emülatör/sim'de LOCAL, gerçek cihazda PROD
   (__DEV__ ? (isEmulatorOrSim ? LOCAL_BASE : PROD_BASE) : PROD_BASE);
 
-// ---- SERVER_ENABLED seçimi ----
-// Eğer ENV explicitly "false" ise kapat. Aksi halde API_BASE varsa açık varsay.
 export const SERVER_ENABLED =
-  ENV_SERVER_ENABLED_RAW === "false" ? false : Boolean(API_BASE && API_BASE.length);
+  ENV_SERVER_ENABLED_RAW === "false"
+    ? false
+    : Boolean(API_BASE && API_BASE.length);
 
-// ---- Timeout (ms) ----
 export const API_TIMEOUT_MS = Number.isFinite(Number(ENV_TIMEOUT_RAW))
   ? Number(ENV_TIMEOUT_RAW)
   : 5000;
 
-// Dahili yardımcı
 function serverAvailable() {
   return SERVER_ENABLED && typeof API_BASE === "string" && API_BASE.length > 0;
 }
 
-// Ortak fetch helper (timeout + opsiyonel x-device-id)
-export async function apiFetch(path, { method = "GET", headers = {}, body, deviceId, timeoutMs } = {}) {
-  if (!serverAvailable()) {
-    // Çağıran fonksiyonlar isterse bu hatayı yakalayıp no-op yapabilir
-    throw new Error("server_disabled");
-  }
+export async function apiFetch(
+  path,
+  { method = "GET", headers = {}, body, deviceId, timeoutMs } = {}
+) {
+  if (!serverAvailable()) throw new Error("server_disabled");
+
   const h = {
     "Content-Type": "application/json",
     ...(deviceId ? { "x-device-id": deviceId } : null),
     ...headers,
   };
 
-  const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const ctrl =
+    typeof AbortController !== "undefined" ? new AbortController() : null;
   let timer = null;
   if (ctrl) {
-    timer = setTimeout(() => ctrl.abort(), Number(timeoutMs ?? API_TIMEOUT_MS));
+    timer = setTimeout(
+      () => ctrl.abort(),
+      Number(timeoutMs ?? API_TIMEOUT_MS)
+    );
   }
 
   try {
@@ -82,15 +76,14 @@ export async function apiFetch(path, { method = "GET", headers = {}, body, devic
   }
 }
 
-// ---- POI yardımcıları ----
-// Server kapalıyken UI’ı kilitlememek için no-op dönüşler yapıyoruz.
+/* ---------------- POI yardımcıları (server) ---------------- */
 
 export async function poiSearch(q, { lat, lon, category, city }) {
-  if (!serverAvailable()) return []; // no-op: boş liste
+  if (!serverAvailable()) return []; // offline no-op
   const url =
     `${API_BASE}/api/poi/google/search` +
-    `?q=${encodeURIComponent(q)}` +
-    `&lat=${lat}&lon=${lon}` +
+    `?q=${encodeURIComponent(q || "")}` +
+    `&lat=${lat ?? ""}&lon=${lon ?? ""}` +
     `&city=${encodeURIComponent(city || "")}` +
     `&category=${encodeURIComponent(category || "")}`;
 
@@ -106,7 +99,7 @@ export async function poiSearch(q, { lat, lon, category, city }) {
 }
 
 export async function poiMatch(items, city) {
-  if (!serverAvailable()) return { results: [] }; // no-op: boş sonuç
+  if (!serverAvailable()) return { results: [] };
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), API_TIMEOUT_MS);
   try {

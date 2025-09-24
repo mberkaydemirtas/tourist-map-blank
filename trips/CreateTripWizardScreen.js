@@ -72,6 +72,7 @@ export default function CreateTripWizardScreen() {
   const [lodgingByCity, setLodgingByCity] = useState({}); // { [cityKey]: [{...}] }
 
   // Step 3 — Gezilecek Yerler (TripListQuestion) için günlük plan
+  const [selectedPlaces, setSelectedPlaces] = useState([]);
   const [dailyPlan, setDailyPlan] = useState([]); // [{ date:'YYYY-MM-DD', visits:[{id,name,lat,lng,address}] }]
 
   // Yerel taslak — wizard’a girince bir kez oluştur
@@ -134,6 +135,7 @@ export default function CreateTripWizardScreen() {
   const bridge = useTripsExploreBridge({
     nav,
     route,
+    
     onPick: (pick) => {
       if (whereAnswer?.mode === 'single') {
         if (pick.which === 'start' || pick.which === 'end') {
@@ -288,6 +290,12 @@ export default function CreateTripWizardScreen() {
       })),
       // TripListQuestion çıktısı:
       dailyPlan, // [{date, visits:[{id,name,lat,lng,address}]}]
+      places: selectedPlaces?.map(p => ({
+        id: p.id,
+        name: p.name,
+        coords: p.coords || (p.lat && p.lon ? { lat: p.lat, lng: p.lon } : undefined),
+        address: p.address || undefined,
+      })) || [],
     });
 
     nav.navigate('TripsHome', { refresh: Date.now() });
@@ -302,18 +310,19 @@ export default function CreateTripWizardScreen() {
     });
   }
 
-  /** KONAKLAMA için haritadan seçim — awaitSelection:true */
-  function handleLodgingMapPick({ index, center, cityName, startDate, endDate }) {
-    return bridge.openPicker({
-      which: 'lodging',
-      cityKey: activeCityKey,
-      center: center || activeCityObj?.center,
-      cityName: cityName || activeCityObj?.name,
-      sheetInitial: 'half',
-      presetCategory: 'lodging',
-      awaitSelection: true,
-    });
-  }
+   // LodgingQuestion bir Promise bekliyor → picker'ı awaitSelection: true ile aç!
+   function handleLodgingMapPick({ index, center, cityName, startDate, endDate }) {
+     return bridge.openPicker({
+       which: 'lodging',
+       cityKey: activeCityKey,
+       center: center || activeCityObj?.center,
+       cityName: cityName || activeCityObj?.name,
+       sheetInitial: 'half',
+       awaitSelection: true,      // ✅ SEÇİMİ BEKLE
+       presetCategory: 'lodging', // ✅ Otel/konaklama kategorisi açık gelsin
+       // search: istersen burada bir başlangıç araması da verebilirsin
+     });
+   }
 
   // Trip nesnesi (TripListQuestion'a verilecek minimum alanlar)
   const rangeForTrip = useMemo(
@@ -323,12 +332,16 @@ export default function CreateTripWizardScreen() {
   const tripForList = useMemo(() => ({
     startDate: rangeForTrip.start || null,
     endDate: rangeForTrip.end || null,
-    dailyPlan,
-  }), [rangeForTrip.start, rangeForTrip.end, dailyPlan]);
+     dailyPlan,
+     selectedPlaces,
+   }), [rangeForTrip.start, rangeForTrip.end, dailyPlan, selectedPlaces]);
 
   const setTripFromList = (nextTrip) => {
     if (Array.isArray(nextTrip?.dailyPlan)) {
       setDailyPlan(nextTrip.dailyPlan);
+    }
+    if (Array.isArray(nextTrip?.selectedPlaces)) {
+      setSelectedPlaces(nextTrip.selectedPlaces);
     }
   };
 
@@ -456,12 +469,14 @@ export default function CreateTripWizardScreen() {
             {/* STEP 3 — Gezilecek Yerler */}
             {step === 3 && (
               <Card title="Gezilecek Yerler">
-                <TripListQuestion
-                  trip={tripForList}
-                  setTrip={setTripFromList}
-                  onBack={back}
-                  onNext={next}
-                />
+               <TripListQuestion
+                 trip={tripForList}
+                 setTrip={setTripFromList}
+                 onBack={back}
+                 onNext={next}
+                 cityName={activeCityObj?.name || ''}
+                 cityCenter={activeCityObj?.center || { lat: 39.92077, lng: 32.85411 }}
+               />
               </Card>
             )}
 
