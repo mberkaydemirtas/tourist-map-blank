@@ -1,4 +1,3 @@
-// trips/components/TripListQuestion.js
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
@@ -61,7 +60,7 @@ function catKeyToQuery(k) {
   return ''; // sights
 }
 
-function toPlace(item) {
+function toPlace(item, fallbackCity) {
   return {
     id: String(item.id),
     name: item.name,
@@ -73,6 +72,7 @@ function toPlace(item) {
     source: item.source,
     place_id: item.place_id,
     category: item.category,
+    city: item.city || fallbackCity || '',   // 👈 NEW
     addedAt: new Date().toISOString(),
   };
 }
@@ -95,6 +95,7 @@ export default function TripListQuestion({
   countryCode = trip?.countryCode || 'TR',
   cityName    = trip?.cityName    || '',
   cityCenter  = trip?.cityCenter  || { lat: 39.92077, lng: 32.85411 },
+  listHeight = 420, // ✅ ayrı kaydırıcı yüksekliği (isteğe göre)
 }) {
   const [items, setItems] = useState([]);         // aktif liste (lokal/remote karışık)
   const [catCounts, setCatCounts] = useState({}); // kategori sayaçları (lokal DB)
@@ -105,7 +106,6 @@ export default function TripListQuestion({
   const selected = useMemo(() => trip?.selectedPlaces || [], [trip?.selectedPlaces]);
 
   // 1) DB’yi ısıt + kategori sayaçlarını çek
-  console.log('[TripList] init load → cityName:', cityName, 'category:', activeCat);
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -122,9 +122,7 @@ export default function TripListQuestion({
         if (mounted) setCatCounts({});
       }
     })();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [countryCode, cityName]);
 
   // 2) Aktif kategori/şehir değişince, q yokken kısa liste (lokal 20 kayıt)
@@ -150,25 +148,21 @@ export default function TripListQuestion({
         if (mounted) setLoading(false);
       }
     })();
-    return () => {
-      mounted = false;
-    };
-  }, [activeCat, cityName, cityCenter?.lat, cityCenter?.lng]);
+    return () => { mounted = false; };
+  }, [activeCat, cityName, cityCenter?.lat, cityCenter?.lng, countryCode]);
 
   // 3) Arama (debounce) — önce lokal, boşsa remote (poiHybrid içinde fallback)
-  
   const debRef = useRef(null);
   useEffect(() => {
     if (debRef.current) clearTimeout(debRef.current);
     const q = (query || '').trim();
-    console.log('[TripList] search → q:', q, 'cat:', activeCat, 'city:', cityName);
     // q < 2 → tekrar kısa liste
     if (q.length < 2) {
       debRef.current = setTimeout(async () => {
         setLoading(true);
         try {
           const out = await searchPoiHybrid({
-            country: 'TR',
+            country: countryCode,
             city: cityName,
             category: activeCat,
             q: '',
@@ -190,7 +184,7 @@ export default function TripListQuestion({
     debRef.current = setTimeout(async () => {
       try {
         const out = await searchPoiHybrid({
-          country: 'TR',
+          country: countryCode,
           city: cityName,
           category: activeCat,
           q,
@@ -206,20 +200,23 @@ export default function TripListQuestion({
       }
     }, 300);
 
-    return () => {
-      if (debRef.current) clearTimeout(debRef.current);
-    };
-  }, [query, activeCat, cityName, cityCenter?.lat, cityCenter?.lng]);
+    return () => { if (debRef.current) clearTimeout(debRef.current); };
+  }, [query, activeCat, cityName, cityCenter?.lat, cityCenter?.lng, countryCode]);
 
   function toggleSelection(item) {
-    const exists = selected.find((x) => x.id === item.id);
+    const cityKey = item.city || cityName; // active city fallback
+    const exists = selected.find((x) => x.id === item.id && (x.city || '') === cityKey);
     let next;
-    if (exists) next = selected.filter((x) => x.id !== item.id);
-    else next = [...selected, toPlace(item)];
+    if (exists) next = selected.filter((x) => !(x.id === item.id && (x.city || '') === cityKey));
+    else next = [...selected, toPlace(item, cityName)];
     setTrip?.({ ...(trip || {}), selectedPlaces: next });
   }
 
   const selectedCount = selected.length;
+  const selectedCityCount = useMemo(
+  () => (selected || []).filter((x) => (x.city || '') === (cityName || '')).length,
+  [selected, cityName]
+);
 
   return (
     <View style={{ gap: 12 }}>
@@ -266,79 +263,59 @@ export default function TripListQuestion({
         {loading ? <ActivityIndicator /> : null}
       </View>
 
-      {/* Sonuçlar */}
-      <FlatList
-        vertical
-        scrollEnabled
-        data={items}
-        keyExtractor={(it) => String(it.id)}
-        removeClippedSubviews
-        initialNumToRender={8}
-        maxToRenderPerBatch={10}
-        windowSize={5}
-        updateCellsBatchingPeriod={50}
-        keyboardShouldPersistTaps="handled"
-        decelerationRate="fast"
-        snapToAlignment="start"
-        contentContainerStyle={{ paddingBottom: 12, paddingVertical: 4 }}
-        renderItem={({ item }) => {
-          const checked = !!selected.find((x) => x.id === item.id);
-          return (
-            <Pressable
-              onPressIn={() => console.log('CARD_PRESSIN', item.id)}
-              onPress={() => toggleSelection(item)}
-              style={[styles.card, checked && styles.cardChecked]}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-                <View style={styles.checkbox}>
-                  {checked ? <Ionicons name="checkmark" size={16} color="#0D0F14" /> : null}
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.name} numberOfLines={2}>
-                    {item.name}
-                  </Text>
-                  {!!item.address && (
-                    <Text style={styles.addr} numberOfLines={1}>
-                      {item.address}
+      {/* Sonuçlar — ayrı, kendi scroll alanı */}
+      <View style={{ height: listHeight }}>
+        <FlatList
+          data={items}
+          keyExtractor={(it) => String(it.id)}
+          nestedScrollEnabled
+          showsVerticalScrollIndicator
+          contentContainerStyle={{ paddingBottom: 12, paddingVertical: 4 }}
+          renderItem={({ item }) => {
+            const checked = !!selected.find((x) => x.id === item.id);
+            return (
+              <Pressable
+                onPressIn={() => console.log('CARD_PRESSIN', item.id)}
+                onPress={() => toggleSelection(item)}
+                style={[styles.card, checked && styles.cardChecked]}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                  <View style={styles.checkbox}>
+                    {checked ? <Ionicons name="checkmark" size={16} color="#0D0F14" /> : null}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.name} numberOfLines={2}>
+                      {item.name}
                     </Text>
-                  )}
+                    {!!item.address && (
+                      <Text style={styles.addr} numberOfLines={1}>
+                        {item.address}
+                      </Text>
+                    )}
+                  </View>
+                  <Badge>{item.source === 'google' ? 'Google' : 'Yerel'}</Badge>
                 </View>
-                <Badge>{item.source === 'google' ? 'Google' : 'Yerel'}</Badge>
+              </Pressable>
+            );
+          }}
+          ListEmptyComponent={
+            !loading ? (
+              <View style={styles.empty}>
+                <Ionicons name="location-outline" size={22} color="#9AA0A6" />
+                <Text style={styles.emptyText}>Bu kategori için sonuç yok.</Text>
               </View>
-            </Pressable>
-          );
-        }}
-        ListEmptyComponent={
-          !loading ? (
-            <View style={styles.empty}>
-              <Ionicons name="location-outline" size={22} color="#9AA0A6" />
-              <Text style={styles.emptyText}>Bu kategori için sonuç yok.</Text>
-            </View>
-          ) : null
-        }
-      />
+            ) : null
+          }
+        />
+      </View>
 
       {/* Alt bar */}
       <View style={styles.bottomBar}>
-        <Text style={{ color: '#A8A8B3' }}>
-          Seçili: <Text style={{ color: '#fff', fontWeight: '800' }}>{selectedCount}</Text>
-        </Text>
+      <Text style={{ color: '#A8A8B3' }}>
+        Seçili{cityName ? ` (${cityName})` : ''}:{' '}
+        <Text style={{ color: '#fff', fontWeight: '800' }}>{selectedCityCount}</Text>
+      </Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Pressable
-            onPressIn={() => console.log('BACK_PRESSIN')}
-            onPress={onBack}
-            disabled={!onBack}
-            style={[styles.smallBtn, !onBack && { opacity: 0.5 }]}
-          >
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Geri</Text>
-          </Pressable>
-          <Pressable
-            onPress={onNext}
-            disabled={!onNext}
-            style={[styles.primaryBtn, { paddingVertical: 10 }, !onNext && { opacity: 0.5 }]}
-          >
-            <Text style={{ color: '#fff', fontWeight: '700' }}>İleri</Text>
-          </Pressable>
         </View>
       </View>
     </View>
@@ -374,14 +351,15 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, color: '#fff' },
 
+  // ✅ Wider, full-width card with vertical list
   card: {
-    width: 240,
-    marginRight: 10,
+    width: '100%',
     borderWidth: 1,
     borderColor: BORDER,
     borderRadius: 12,
     padding: 12,
     backgroundColor: '#0B0D12',
+    marginBottom: 10,
   },
   cardChecked: { borderColor: BTN, backgroundColor: '#0F1420' },
   rowChecked: { borderColor: BTN, backgroundColor: '#0F1420' },

@@ -78,23 +78,45 @@ export async function apiFetch(
 
 /* ---------------- POI yardımcıları (server) ---------------- */
 
-export async function poiSearch(q, { lat, lon, category, city }) {
-  if (!serverAvailable()) return []; // offline no-op
-  const url =
-    `${API_BASE}/api/poi/google/search` +
-    `?q=${encodeURIComponent(q || "")}` +
-    `&lat=${lat ?? ""}&lon=${lon ?? ""}` +
-    `&city=${encodeURIComponent(city || "")}` +
-    `&category=${encodeURIComponent(category || "")}`;
+export async function poiSearch(q, { lat, lon, category, city, timeoutMs } = {}) {
+  if (!serverAvailable()) return [];
 
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), API_TIMEOUT_MS);
+  // prefer env or caller override; fall back to 10000ms (was 5000)
+  const T1 = Number.isFinite(Number(timeoutMs)) ? Number(timeoutMs) : Math.max(API_TIMEOUT_MS, 10000);
+  const T2 = Math.max(T1 * 1.6, 16000); // second try window
+
+  async function runOnce(ms) {
+    const url =
+      `${API_BASE}/api/poi/google/search` +
+      `?q=${encodeURIComponent(q || "")}` +
+      `&lat=${lat ?? ""}&lon=${lon ?? ""}` +
+      `&city=${encodeURIComponent(city || "")}` +
+      `&category=${encodeURIComponent(category || "")}`;
+
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms);
+    try {
+      const res = await fetch(url, { signal: ctrl.signal });
+      if (!res.ok) throw new Error(`poiSearch_failed_${res.status}`);
+      return await res.json(); // [{source:'google', name, lat, lon, place_id}, ...]
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
   try {
-    const res = await fetch(url, { signal: ctrl.signal });
-    if (!res.ok) throw new Error("poiSearch_failed");
-    return res.json(); // [{source:'google', name, lat, lon, place_id}, ...]
-  } finally {
-    clearTimeout(t);
+    return await runOnce(T1);
+  } catch (e) {
+    // Retry once if the first attempt was aborted/timeout or a transient fetch error
+    const isAbort = (e?.name === 'AbortError') || String(e?.message || '').toLowerCase().includes('abort');
+    if (isAbort) {
+      try {
+        return await runOnce(T2);
+      } catch (_) {
+        return []; // swallow second failure → "no remote results"
+      }
+    }
+    return [];
   }
 }
 

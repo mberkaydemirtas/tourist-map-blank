@@ -1,5 +1,7 @@
 {
   "expo": {
+    "jsEngine": "hermes",
+    "newArchEnabled": false,
     "name": "tourist-map-2",
     "slug": "tourist-map-2",
     "version": "1.0.0",
@@ -11,7 +13,6 @@
     ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",

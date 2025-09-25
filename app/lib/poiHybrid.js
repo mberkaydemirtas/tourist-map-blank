@@ -1,7 +1,8 @@
 // app/lib/poiHybrid.js
 // Lokal SQLite (shard) + Server fallback hibrit katman:
 // - Önce lokal shard → anında sonuç
-// - Lokal boş ve q>=2 ise server/google fallback (api.js → poiSearch)
+// - q < 2: sadece lokal (gerekirse şehir filtresiz fallback)
+// - q ≥ 2: lokal + Google (append, uniq), Google çağrısı api.js → poiSearch
 // - Sekme sayaçları için hızlı GROUP BY
 
 import { queryPoi, openPoiDb } from './poiLocal';
@@ -94,7 +95,25 @@ export async function getCategoryCounts({ country = DEFAULT_COUNTRY, city }) {
   return countsCity;
 }
 
-// ⬇️ Fallback: q boş & lokal 0 ise şehirsiz tekrar dene; yine 0 ise remote
+// --- küçük yardımcılar (de-dup anahtarı) ---
+const asciiFold = (s) => String(s ?? '').replace(
+  /[İIıŞşĞğÜüÖöÇç]/g,
+  ch => ({'İ':'i','I':'i','ı':'i','Ş':'s','ş':'s','Ğ':'g','ğ':'g','Ü':'u','ü':'u','Ö':'o','ö':'o','Ç':'c','ç':'c'}[ch] || ch)
+);
+const norm = (s) => asciiFold(s).toLowerCase().trim();
+const round6 = (n) => Number.isFinite(n) ? Math.round(n * 1e6) / 1e6 : NaN;
+function makeKey(it) {
+  if (it.place_id) return `pid:${it.place_id}`;
+  const n = norm(it.name || '');
+  const a = round6(Number(it.lat));
+  const b = round6(Number(it.lon ?? it.lng));
+  const c = norm(it.city || '');
+  return `nlc:${n}|${a}|${b}|${c}`;
+}
+
+// ⬇️ Hibrit arama:
+// q < 2 → (lokal, gerekirse şehir filtresiz fallback)
+// q ≥ 2 → lokal + remote (append), uniq, local öncelikli sırada
 export async function searchPoiHybrid({
   country = DEFAULT_COUNTRY,
   city,
@@ -103,35 +122,55 @@ export async function searchPoiHybrid({
   limit = 50,
   center,
 } = {}) {
-  const first = await queryPoi({ country, city, category, q, limit });
+  const qTrim = (q || '').trim();
+
+  // 1) LOCAL (her durumda)
+  const first = await queryPoi({ country, city, category, q: qTrim, limit });
   let localItems = (first?.rows || []).map(r => toItem(r, 'local'));
 
-  if ((!q || q.trim().length < 2) && localItems.length === 0 && city) {
-    const second = await queryPoi({ country, city: undefined, category, q: '', limit });
-    localItems = (second?.rows || []).map(r => toItem(r, 'local'));
-    if (localItems.length) {
-      console.log('[poiHybrid] list fallback to no-city for category:', category, 'city was:', city);
+  // q < 2 ise: sadece lokal; lokal 0 ve city varsa → şehir filtresiz fallback
+  if (qTrim.length < 2) {
+    if (localItems.length === 0 && city) {
+      const second = await queryPoi({ country, city: undefined, category, q: '', limit });
+      localItems = (second?.rows || []).map(r => toItem(r, 'local'));
+      if (localItems.length) {
+        console.log('[poiHybrid] list fallback to no-city for category:', category, 'city was:', city);
+      }
     }
-  }
-
-  if (!q || q.trim().length < 2 || localItems.length > 0) {
     return localItems.slice(0, limit);
   }
 
-  // remote fallback (Google/server)
+  // 2) REMOTE (Google/server) — q ≥ 2 → ekle/append
   const lat = Number(center?.lat);
   const lon = Number(center?.lon ?? center?.lng);
+
   try {
-    const out = await poiSearch(q.trim(), {
+    const out = await poiSearch(qTrim, {
       lat: Number.isFinite(lat) ? lat : undefined,
       lon: Number.isFinite(lon) ? lon : undefined,
       city: city || '',
       category: catKeyToQuery(category),
+      timeoutMs: 10000, // api.js gerektiğinde retry edecek
     });
-    const remote = (out || []).map(r => toItem(r, 'google', category));
-    return remote.slice(0, limit);
+    const remoteItems = (out || []).map(r => toItem(r, 'google', category));
+
+    // 3) Merge (local öncelikli) + uniq
+    const uniq = new Map();
+    for (const it of localItems) {
+      const k = makeKey(it);
+      if (!uniq.has(k)) uniq.set(k, it);
+    }
+    for (const it of remoteItems) {
+      const k = makeKey(it);
+      if (!uniq.has(k)) uniq.set(k, it);
+    }
+
+    return Array.from(uniq.values()).slice(0, limit);
   } catch (e) {
-    if (__DEV__) console.warn('[poiHybrid.searchPoiHybrid] remote error:', e?.message || e);
-    return [];
+    const msg = String(e?.message || '').toLowerCase();
+    const aborted = e?.name === 'AbortError' || msg.includes('abort');
+    if (!aborted && __DEV__) console.warn('[poiHybrid.searchPoiHybrid] remote error:', e?.message || e);
+    // remote patlarsa en azından lokal sonuçları göster
+    return localItems.slice(0, limit);
   }
 }

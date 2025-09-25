@@ -1,4 +1,3 @@
-// trips/CreateTripWizardScreen.js
 import React, { useMemo, useState, useEffect } from 'react';
 import {
   Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, FlatList,
@@ -87,6 +86,11 @@ export default function CreateTripWizardScreen() {
   // Step 2'ye girildiğinde, multi-city ise ilk şehre dön
   useEffect(() => {
     if (step === 2 && whereAnswer?.mode === 'multi') setCityIndex(0);
+  }, [step, whereAnswer?.mode]);
+
+  // ✅ Step 3'e girildiğinde de multi-city ise ilk şehre dön (Ankara → … → Antalya)
+  useEffect(() => {
+    if (step === 3 && whereAnswer?.mode === 'multi') setCityIndex(0);
   }, [step, whereAnswer?.mode]);
 
   // Segments <-> Stays (ID’yi koru)
@@ -320,7 +324,6 @@ export default function CreateTripWizardScreen() {
        sheetInitial: 'half',
        awaitSelection: true,      // ✅ SEÇİMİ BEKLE
        presetCategory: 'lodging', // ✅ Otel/konaklama kategorisi açık gelsin
-       // search: istersen burada bir başlangıç araması da verebilirsin
      });
    }
 
@@ -343,6 +346,25 @@ export default function CreateTripWizardScreen() {
     if (Array.isArray(nextTrip?.selectedPlaces)) {
       setSelectedPlaces(nextTrip.selectedPlaces);
     }
+  };
+
+  // --- Multi-city helpers for Step 3 flow (Ankara → Antalya → …)
+  const filteredCities = useMemo(
+    () => (whereAnswer?.items || []).filter(it => it.city?.name),
+    [whereAnswer]
+  );
+  const cityNames = filteredCities.map(it => it.city.name);
+  const cityCount = cityNames.length;
+  const isFirstCity = cityIndex === 0;
+  const isLastCity  = cityIndex === Math.max(0, cityCount - 1);
+
+  const goPrevCityOrBack = () => {
+    if (whereAnswer?.mode === 'multi' && !isFirstCity) setCityIndex(i => Math.max(0, i - 1));
+    else back();
+  };
+  const goNextCityOrStep = () => {
+    if (whereAnswer?.mode === 'multi' && !isLastCity) setCityIndex(i => Math.min(cityCount - 1, i + 1));
+    else next();
   };
 
   // --- Render
@@ -469,14 +491,36 @@ export default function CreateTripWizardScreen() {
             {/* STEP 3 — Gezilecek Yerler */}
             {step === 3 && (
               <Card title="Gezilecek Yerler">
-               <TripListQuestion
-                 trip={tripForList}
-                 setTrip={setTripFromList}
-                 onBack={back}
-                 onNext={next}
-                 cityName={activeCityObj?.name || ''}
-                 cityCenter={activeCityObj?.center || { lat: 39.92077, lng: 32.85411 }}
-               />
+                {whereAnswer?.mode === 'multi' ? (
+                  <View style={{ gap: 10 }}>
+                    {/* ✅ Stepper to show "Ankara (1/2) → Antalya (2/2)" */}
+                    <Stepper
+                      items={cityNames}
+                      index={cityIndex}
+                      onPrev={() => setCityIndex(i => Math.max(0, i - 1))}
+                      onNext={() => setCityIndex(i => Math.min(cityNames.length - 1, i + 1))}
+                    />
+                    <TripListQuestion
+                      trip={tripForList}
+                      setTrip={setTripFromList}
+                      onBack={goPrevCityOrBack}
+                      onNext={goNextCityOrStep}
+                      cityName={activeCityObj?.name || ''}
+                      cityCenter={activeCityObj?.center || { lat: 39.92077, lng: 32.85411 }}
+                      listHeight={420} // separate scroller height
+                    />
+                  </View>
+                ) : (
+                  <TripListQuestion
+                    trip={tripForList}
+                    setTrip={setTripFromList}
+                    onBack={back}
+                    onNext={next}
+                    cityName={activeCityObj?.name || ''}
+                    cityCenter={activeCityObj?.center || { lat: 39.92077, lng: 32.85411 }}
+                    listHeight={420}
+                  />
+                )}
               </Card>
             )}
 
