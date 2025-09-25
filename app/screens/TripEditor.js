@@ -1,7 +1,7 @@
 // app/screens/TripEditor.js
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from "react-native";
-import { getTripLocal, saveTripLocal } from "../services/tripsLocal";
+import { getTripLocal, saveTripLocal } from "../lib/tripsLocal";
 import { getDeviceId } from "../services/device";
 import { syncTrips } from "../services/tripsSync";
 import { useNavigation, useRoute } from "@react-navigation/native";

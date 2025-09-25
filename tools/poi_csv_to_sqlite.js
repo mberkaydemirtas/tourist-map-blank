@@ -10,8 +10,8 @@ import path from 'node:path';
 import Database from 'better-sqlite3';
 import { parse } from 'csv-parse';
 
-const IN_CSV   = process.argv[2];                 // e.g. ./data/turkey_poi.csv
-const OUT_DB   = process.argv[3] || './poi_TR.db';// output sqlite db
+const IN_CSV   = process.argv[2];
+const OUT_DB   = process.argv[3] || './poi_TR.db';
 const COUNTRY  = (process.argv[4] || 'TR').toUpperCase();
 
 if (!IN_CSV) {
@@ -19,7 +19,7 @@ if (!IN_CSV) {
   process.exit(1);
 }
 
-/** --------- utils (normalize + category map) ---------- */
+/* -------------------- utils (normalize + category map) -------------------- */
 const hasNormalize = typeof String.prototype.normalize === 'function';
 function trNorm(s='') {
   const str = String(s || '');
@@ -76,9 +76,15 @@ function pickField(row, list, def='') {
   return def;
 }
 
-/** --------- sqlite prepare ---------- */
+/* --------------------------- sqlite prepare --------------------------- */
+// OUT_DB klasörü yoksa oluştur
+fs.mkdirSync(path.dirname(path.resolve(OUT_DB)), { recursive: true });
+
+// Çıktı dosyasını sıfırla
 fs.rmSync(OUT_DB, { force: true });
+
 const db = new Database(OUT_DB);
+// Yazım sırasında WAL performansı; en sonda checkpoint edip DELETE’a döneceğiz
 db.pragma('journal_mode = WAL');
 db.pragma('synchronous = OFF');
 db.pragma('temp_store = MEMORY');
@@ -109,7 +115,7 @@ const insertMany = db.transaction((rows) => {
   for (const r of rows) insert.run(r);
 });
 
-/** --------- CSV stream parse + batch insert ---------- */
+/* ---------------- CSV stream parse + batch insert ---------------- */
 const BATCH = 2000;
 let batch = [];
 let total = 0;
@@ -157,6 +163,12 @@ parser.on('end', () => {
     CREATE INDEX IF NOT EXISTS idx_poi_nameNorm ON poi(nameNorm);
     CREATE INDEX IF NOT EXISTS idx_poi_city_cat ON poi(city, category);
   `);
+
+  // 🔴 KRİTİK: WAL → ana .db’ye yazdır, sonra DELETE moduna dön ve vacuımla
+  db.exec(`PRAGMA wal_checkpoint(FULL);`);
+  db.exec(`PRAGMA journal_mode=DELETE;`);
+  db.exec(`VACUUM;`);
+
   db.close();
   console.log('SQLite ready at:', OUT_DB);
 });

@@ -1,3 +1,4 @@
+// app/db/schema.sql
 CREATE TABLE IF NOT EXISTS poi (
   id TEXT PRIMARY KEY,
   country TEXT,         -- "TR"

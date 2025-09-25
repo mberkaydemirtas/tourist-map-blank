@@ -21,41 +21,80 @@ const mapCategory = (row) => {
   return 'sights';
 };
 
-const norm = (s='') => s
-  .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
-  .replace(/[İIı]/g,'i').replace(/[Şş]/g,'s')
-  .replace(/[Ğğ]/g,'g').replace(/[Üü]/g,'u')
-  .replace(/[Öö]/g,'o').replace(/[Çç]/g,'c')
-  .toLowerCase().trim();
+const norm = (s='') => {
+  try {
+    return s.normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[İIı]/g,'i').replace(/[Şş]/g,'s')
+      .replace(/[Ğğ]/g,'g').replace(/[Üü]/g,'u')
+      .replace(/[Öö]/g,'o').replace(/[Çç]/g,'c')
+      .toLowerCase().trim();
+  } catch {
+    return String(s||'').toLowerCase().trim();
+  }
+};
 
 function toRows(csvText) {
   const { data } = Papa.parse(csvText, { header:true, skipEmptyLines:'greedy' });
   return data.map((r, i) => {
     const city = (r.province||r.city||r.town||'').trim();
     const category = mapCategory(r);
+    const lat = Number(r.lat??r.latitude);
+    const lon = Number(r.lon??r.lng??r.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
     return {
       id: String(r.id || r._id || `csv_${i}`),
       country: 'TR',
       city,
       category,
       name: r.name?.trim() || '(isimsiz)',
-      nameNorm: norm(r.name||''),
-      lat: Number(r.lat||r.latitude),
-      lon: Number(r.lon||r.lng||r.longitude),
-      address: '',
+      nameNorm: norm((r.name||'') + ' ' + (r.address||'')),
+      lat, lon,
+      address: String(r.address||'').trim(),
     };
-  }).filter(x => Number.isFinite(x.lat) && Number.isFinite(x.lon));
+  }).filter(Boolean);
 }
 
 function writeDb(outPath, rows){
   const db = new Database(outPath);
-  db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=OFF;`);
-  db.exec(`CREATE TABLE IF NOT EXISTS poi (id TEXT PRIMARY KEY, country TEXT, city TEXT, category TEXT, name TEXT, nameNorm TEXT, lat REAL, lon REAL, address TEXT);`);
-  const ins = db.prepare(`INSERT OR REPLACE INTO poi (id,country,city,category,name,nameNorm,lat,lon,address) VALUES (@id,@country,@city,@category,@name,@nameNorm,@lat,@lon,@address)`);
+  // WAL ile hızlı yaz, sonra checkpoint + DELETE’a dön
+  db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=OFF; PRAGMA temp_store=MEMORY;`);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS poi (
+      id TEXT PRIMARY KEY,
+      country TEXT NOT NULL,
+      city TEXT,
+      category TEXT,
+      name TEXT,
+      nameNorm TEXT,
+      lat REAL,
+      lon REAL,
+      address TEXT,
+      source TEXT DEFAULT 'local'
+    );
+  `);
+
+  const ins = db.prepare(`
+    INSERT OR REPLACE INTO poi
+    (id,country,city,category,name,nameNorm,lat,lon,address,source)
+    VALUES (@id,@country,@city,@category,@name,@nameNorm,@lat,@lon,@address,'local')
+  `);
+
   const trx = db.transaction((batch)=>{ for (const r of batch) ins.run(r); });
   trx(rows);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_city_cat ON poi(city, category);`);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_city_name ON poi(city, nameNorm);`);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_poi_country_city ON poi(country, city);
+    CREATE INDEX IF NOT EXISTS idx_poi_category ON poi(category);
+    CREATE INDEX IF NOT EXISTS idx_poi_nameNorm ON poi(nameNorm);
+    CREATE INDEX IF NOT EXISTS idx_poi_city_cat ON poi(city, category);
+  `);
+
+  // 🔴 KRİTİK: WAL’i ana .db’ye flushla, sonra DELETE moduna dön ve vakumla
+  db.exec(`PRAGMA wal_checkpoint(FULL);`);
+  db.exec(`PRAGMA journal_mode=DELETE;`);
+  db.exec(`VACUUM;`);
+
   db.close();
 }
 

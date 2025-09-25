@@ -9,7 +9,6 @@ export default function MapMarkers(props) {
 
   // Güvenli liste: categoryMarkers array değilse boş dizi kullan
   const markers = Array.isArray(categoryMarkers) ? categoryMarkers : [];
-  console.log('📌 Render edilecek kategori marker sayısı:', markers.length);
 
   return (
     <>

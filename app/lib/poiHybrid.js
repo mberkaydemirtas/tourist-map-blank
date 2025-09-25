@@ -8,7 +8,7 @@ import { queryPoi, openPoiDb } from './poiLocal';
 import { poiSearch } from './api';
 
 const DEFAULT_COUNTRY = 'TR';
-const MAP_CATEGORIES = ['sights', 'restaurants', 'cafes', 'bars', 'museums', 'parks'];
+const MAP_CATEGORIES = ['sights','restaurants','cafes','bars','museums','parks'];
 
 function catKeyToQuery(k) {
   if (k === 'restaurants') return 'restaurant';
@@ -35,68 +35,92 @@ function toItem(row, source = 'local', enforcedCategory) {
   };
 }
 
-// Uygulama açılışında bir kez çağır (asset kopyalama + DB open tetiklenir)
 export async function prewarmPoiShard(country = DEFAULT_COUNTRY) {
   const db = await openPoiDb(country);
   return !!db;
 }
 
-// Sekme sayaçları
+// ⬇️ Fallback: city ile 0 çıkarsa şehir filtresiz tekrar dene
 export async function getCategoryCounts({ country = DEFAULT_COUNTRY, city }) {
   const db = await openPoiDb(country);
   if (!db) return Object.fromEntries(MAP_CATEGORIES.map(k => [k, 0]));
 
-  const where = [];
-  const args = [];
-  if (city) { where.push('city = ?'); args.push(city); }
+  const hasAsync = typeof db.getAllAsync === 'function';
 
-  const sql = `
-    SELECT category, COUNT(*) AS n
-    FROM poi
-    ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
-    GROUP BY category
-  `;
+  async function run(withCity) {
+    const where = [];
+    const args = [];
+    if (withCity && city) { where.push('city = ?'); args.push(String(city).trim()); }
+    const sql = `
+      SELECT category, COUNT(*) AS n
+      FROM poi
+      ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      GROUP BY category
+    `;
 
-  const rows = await new Promise((resolve) => {
-    db.readTransaction((tx) => {
-      tx.executeSql(
-        sql,
-        args,
-        (_, rs) => resolve(rs.rows._array || []),
-        (_, err) => { console.warn('[poiHybrid.getCategoryCounts] sql error', err); resolve([]); }
-      );
+    let rows = [];
+    try {
+      if (hasAsync) {
+        rows = await db.getAllAsync(sql, args);
+      } else {
+        rows = await new Promise((resolve) => {
+          db.readTransaction((tx) => {
+            tx.executeSql(sql, args, (_, rs) => resolve(rs?.rows?._array || []),
+              () => { resolve([]); return false; });
+          });
+        });
+      }
+    } catch (err) {
+      console.warn('[getCategoryCounts] sql error', err?.message || err);
+      rows = [];
+    }
+
+    const out = Object.fromEntries(MAP_CATEGORIES.map(k => [k, 0]));
+    rows.forEach(r => {
+      const key = String(r.category || '').trim();
+      if (key && out[key] != null) out[key] = Number(r.n) || 0;
     });
-  });
+    return out;
+  }
 
-  const out = Object.fromEntries(MAP_CATEGORIES.map(k => [k, 0]));
-  rows.forEach((r) => {
-    const key = String(r.category || '').trim();
-    if (key && out[key] != null) out[key] = Number(r.n) || 0;
-  });
-  return out;
+  // önce şehirli, 0 ise şehirsiz
+  const countsCity = await run(true);
+  const totalCity = Object.values(countsCity).reduce((a,b)=>a+b,0);
+  if (city && totalCity === 0) {
+    const countsAll = await run(false);
+    console.log('[poiHybrid] counts fallback to no-city. given city:', city, 'counts:', countsAll);
+    return countsAll;
+  }
+  return countsCity;
 }
 
-// Hibrit arama (önce lokal, boşsa server)
+// ⬇️ Fallback: q boş & lokal 0 ise şehirsiz tekrar dene; yine 0 ise remote
 export async function searchPoiHybrid({
   country = DEFAULT_COUNTRY,
   city,
   category,
   q = '',
   limit = 50,
-  center, // {lat, lng? lon?}
+  center,
 } = {}) {
-  const local = await queryPoi({ country, city, category, q, limit });
-  const localItems = (local?.rows || []).map(r => toItem(r, 'local'));
+  const first = await queryPoi({ country, city, category, q, limit });
+  let localItems = (first?.rows || []).map(r => toItem(r, 'local'));
 
-  // local bulunduysa veya q kısa ise direkt dön
+  if ((!q || q.trim().length < 2) && localItems.length === 0 && city) {
+    const second = await queryPoi({ country, city: undefined, category, q: '', limit });
+    localItems = (second?.rows || []).map(r => toItem(r, 'local'));
+    if (localItems.length) {
+      console.log('[poiHybrid] list fallback to no-city for category:', category, 'city was:', city);
+    }
+  }
+
   if (!q || q.trim().length < 2 || localItems.length > 0) {
     return localItems.slice(0, limit);
   }
 
-  // fallback → server/google
+  // remote fallback (Google/server)
   const lat = Number(center?.lat);
   const lon = Number(center?.lon ?? center?.lng);
-  let remote = [];
   try {
     const out = await poiSearch(q.trim(), {
       lat: Number.isFinite(lat) ? lat : undefined,
@@ -104,9 +128,10 @@ export async function searchPoiHybrid({
       city: city || '',
       category: catKeyToQuery(category),
     });
-    remote = (out || []).map(r => toItem(r, 'google', category));
+    const remote = (out || []).map(r => toItem(r, 'google', category));
+    return remote.slice(0, limit);
   } catch (e) {
-    if (__DEV__) console.warn('[poiHybrid.searchPoiHybrid] fallback error:', e?.message || e);
+    if (__DEV__) console.warn('[poiHybrid.searchPoiHybrid] remote error:', e?.message || e);
+    return [];
   }
-  return remote.slice(0, limit);
 }

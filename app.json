@@ -11,7 +11,7 @@
     ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -25,6 +25,7 @@
       }
     },
     "android": {
+      "jsEngine": "hermes",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
@@ -34,7 +35,6 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "jsEngine": "hermes",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBP0UQMQsLeyJNQLfGrmEEWkoB8QhWY4V8"

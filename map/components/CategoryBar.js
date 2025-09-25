@@ -8,7 +8,6 @@ const categories = [
 ];
 
 export default function CategoryBar({ onSelect, activeCategory }) {
-  console.log('🔍 Aktif Kategori:', activeCategory);
 
   return (
     <View style={styles.container}>
