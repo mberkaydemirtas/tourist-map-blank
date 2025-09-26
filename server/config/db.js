@@ -1,14 +1,21 @@
 // server/config/db.js
 const mongoose = require('mongoose');
 
-const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('✅ MongoDB bağlantısı başarılı');
-  } catch (err) {
-    console.error('❌ MongoDB bağlantı hatası:', err.message);
-    process.exit(1); // Uygulama crash olsun ki fark edelim
+async function connectDB() {
+  const uri = process.env.MONGODB_URI || process.env.MONGO_URI || '';
+  if (!uri) {
+    console.warn('[DB] MONGODB_URI tanımlı değil — bağlantı atlandı (dev/test).');
+    return null;
   }
-};
+  try {
+    await mongoose.connect(uri, { dbName: process.env.MONGO_DB_NAME || undefined });
+    console.log('✅ MongoDB bağlandı');
+    return mongoose;
+  } catch (e) {
+    console.error('❌ MongoDB bağlantı hatası:', e?.message || e);
+    // dev’de API’leri bloklamayalım:
+    return null;
+  }
+}
 
 module.exports = connectDB;

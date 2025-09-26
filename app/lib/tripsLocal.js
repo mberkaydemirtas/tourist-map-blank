@@ -40,6 +40,8 @@ export async function createTripLocal(seed = {}) {
     end: seed.end || null,
     lodgings: seed.lodgings || [],
     places: seed.places || [],
+    status: seed.status || 'draft',       // 'draft' | 'active' | 'completed'
+    wizardStep: Number.isFinite(seed.wizardStep) ? seed.wizardStep : 0,
     version: 0,
     updatedAt: now,
     deleted: !!seed.deleted,
@@ -65,6 +67,22 @@ export async function saveTripLocal(trip) {
   await writeIndex(idx);
   return next;
 }
+
+ // 👇 küçük, güvenli patch helper (id + patch ver; okuyup birleştirir)
+ export async function patchTripLocal(id, patch = {}) {
+   const raw = await AsyncStorage.getItem(`trip:${id}`);
+   const now = new Date().toISOString();
+   const base = raw ? JSON.parse(raw) : { _id: id, version: 0 };
+   const next = { ...base, ...patch, updatedAt: now, __dirty: true };
+   await AsyncStorage.setItem(`trip:${id}`, JSON.stringify(next));
+   const idx = await readIndex();
+   const i = idx.findIndex(x => x.id === id);
+   const row = { id, updatedAt: now, version: next.version, deleted: !!next.deleted };
+   if (i >= 0) idx[i] = row; else idx.push(row);
+   await writeIndex(idx);
+   return next;
+ }
+ 
 
 export async function markDeleteLocal(id) {
   const raw = await AsyncStorage.getItem(`trip:${id}`);
