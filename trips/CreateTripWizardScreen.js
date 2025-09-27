@@ -4,6 +4,7 @@ import {
   DeviceEventEmitter, InteractionManager,
 } from 'react-native';
 const EVT_CLOSE_DROPDOWNS = 'CLOSE_ALL_DROPDOWNS';
+const EVT_TRIP_META_UPDATED = 'TRIP_META_UPDATED';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
 // Local-first storage
@@ -108,6 +109,60 @@ export default function CreateTripWizardScreen() {
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeId]);
+
+  useEffect(() => {
+  if (!draft?._id) return;
+
+  // Tek şehir / çok şehir’e göre isimleri topla
+  const cities =
+    whereAnswer?.mode === 'single'
+      ? [whereAnswer?.single?.city?.name].filter(Boolean)
+      : ((whereAnswer?.items || [])
+          .map(it => it?.city?.name)
+          .filter(Boolean));
+
+  // Henüz şehir seçilmemişse dokunma
+  if (!cities || cities.length === 0) return;
+
+  // Yerelde patch
+  patchTripLocal(draft._id, { cities }).catch(() => {});
+
+  // Liste ekranına canlı bildirim
+  DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, {
+    tripId: draft._id,
+    patch: { cities },
+  });
+}, [
+  draft?._id,
+  whereAnswer?.mode,
+  whereAnswer?.single?.city?.name,
+  whereAnswer?.items, // referans her değiştiğinde tetiklenir
+]);
+
+useEffect(() => {
+  if (!draft?._id) return;
+
+  // Wizard’daki tekil/çoklu akıştan global aralığı hesapla
+  const range = computeGlobalRange(whereAnswer, startEndSingle, startEndByCity);
+  const hasAny = !!(range.start || range.end);
+  if (!hasAny) return;
+
+  // Yerelde patch
+  patchTripLocal(draft._id, { dateRange: range }).catch(() => {});
+
+  // Liste ekranına canlı bildirim
+  DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, {
+    tripId: draft._id,
+    patch: { dateRange: range },
+  });
+}, [
+  draft?._id,
+  whereAnswer,                   // mod değişimleri vs.
+  startEndSingle?.start?.date,
+  startEndSingle?.end?.date,
+  startEndByCity,                // referans değişiminde tetiklenir
+]);
+
 
   // Step 3'e (konaklama) girildiğinde, multi-city ise ilk şehre dön (old step 2 → now 3)
   useEffect(() => {

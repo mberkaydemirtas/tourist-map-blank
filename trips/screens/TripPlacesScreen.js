@@ -13,7 +13,7 @@ import TripPlaceSelection from "../components/TripPlaceSelection";
  * PROD:
  * - Aşağıdaki PROD_BASE'e kendi domain'ini koy (örn. https://api.senin-domainin.com)
  */
-const PROD_BASE = "https://tourist-map-blank-10.onrender.com"; // prod domain hazır değilse şimdilik aynı kalsın
+const PROD_BASE = "https://tourist-map-blank-12.onrender.com"; // prod domain hazır değilse şimdilik aynı kalsın
 
 const LOCAL_BASE = (() => {
   if (Platform.OS === "android") return "http://10.0.2.2:5000";
