@@ -9,7 +9,7 @@ import { Platform } from "react-native";
  * - EXPO_PUBLIC_GOOGLE_PLACES_KEY  : (opsiyonel) client-side fallback için
  */
 
-const PROD_BASE = "https://tourist-map-blank-10.onrender.com";
+const PROD_BASE = "https://tourist-map-blank-12.onrender.com";
 const LOCAL_BASE =
   Platform.OS === "android" ? "http://10.0.2.2:5000" : "http://localhost:5000";
 
@@ -26,17 +26,24 @@ const ENV_SERVER_ENABLED_RAW = (process.env?.EXPO_PUBLIC_SERVER_ENABLED || "")
 const ENV_TIMEOUT_RAW = (process.env?.EXPO_PUBLIC_API_TIMEOUT_MS || "").trim();
 const GOOGLE_WEB_KEY = (process.env?.EXPO_PUBLIC_GOOGLE_PLACES_KEY || "").trim();
 
+// API_BASE seçimi:
+// 1) ENV override
+// 2) Dev: emulator/simulator → LOCAL_BASE, gerçek cihaz → PROD_BASE
+// 3) Prod: PROD_BASE
 export const API_BASE =
   ENV_API_BASE || (__DEV__ ? (isEmulatorOrSim ? LOCAL_BASE : PROD_BASE) : PROD_BASE);
 
 export const SERVER_ENABLED =
   ENV_SERVER_ENABLED_RAW === "false" ? false : Boolean(API_BASE && API_BASE.length);
 
+// ⛑️ 0 veya geçersiz değerlerde 5000ms kullan
 const _tParsed = Number(ENV_TIMEOUT_RAW);
 export const API_TIMEOUT_MS = Number.isFinite(_tParsed) && _tParsed > 0 ? _tParsed : 5000;
 
 if (__DEV__) {
-  console.log(`[API] BASE=${API_BASE} TIMEOUT=${API_TIMEOUT_MS}ms SERVER_ENABLED=${SERVER_ENABLED} `);
+  console.log(
+    `[API] BASE=${API_BASE} TIMEOUT=${API_TIMEOUT_MS}ms SERVER_ENABLED=${SERVER_ENABLED} `
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -46,12 +53,17 @@ function serverAvailable() {
   return SERVER_ENABLED && typeof API_BASE === "string" && API_BASE.length > 0;
 }
 
+// Hem AbortController hem AbortSignal kabul et
 function asAbortSignal(maybe) {
   if (!maybe) return null;
   if (typeof maybe === "object" && typeof maybe.abort === "function" && maybe.signal) {
     return maybe.signal; // AbortController
   }
-  if (typeof maybe === "object" && typeof maybe.aborted === "boolean" && typeof maybe.addEventListener === "function") {
+  if (
+    typeof maybe === "object" &&
+    typeof maybe.aborted === "boolean" &&
+    typeof maybe.addEventListener === "function"
+  ) {
     return maybe; // AbortSignal
   }
   return null;
@@ -77,7 +89,9 @@ function composeAbortController(upstream, timeoutMs = API_TIMEOUT_MS) {
       if (timer) clearTimeout(timer);
       if (upstreamSignal) upstreamSignal.removeEventListener("abort", onUpstreamAbort);
     },
-    abort() { controller.abort(); },
+    abort() {
+      controller.abort();
+    },
   };
 }
 
@@ -91,9 +105,10 @@ async function fetchJson(
   const isPoiGoogle = url.includes("/api/poi/google/");
   const forceNoSignal = isAndroid && isPoiGoogle;
 
+  const T = Number.isFinite(Number(timeoutMs)) ? Number(timeoutMs) : API_TIMEOUT_MS;
   const { signal: finalSignal, cleanup } = forceNoSignal
     ? { signal: undefined, cleanup: () => {} }
-    : composeAbortController(signal, timeoutMs);
+    : composeAbortController(signal, T);
 
   const h = { Accept: "application/json", ...(headers || {}) };
   // RN Android + proxy: gzip bazen body’nin hiç resolve olmamasına yol açabiliyor
@@ -101,6 +116,14 @@ async function fetchJson(
   const baseOpts = { method, headers: h, body };
 
   try {
+    if (forceNoSignal) {
+      // Android RN abort bug’u için: signal yok ama yine de HARD TIMEOUT uygula
+      const p = fetch(url, baseOpts);
+      const t = new Promise((_, rej) =>
+        setTimeout(() => rej(new Error(`tmout_no_signal_${T}`)), T)
+      );
+      return await Promise.race([p, t]);
+    }
     return await fetch(url, { ...baseOpts, signal: finalSignal });
   } catch (e) {
     const msg = String(e?.message || "");
@@ -113,9 +136,14 @@ async function fetchJson(
 
     if (looksLikeSignalUnsupported || looksLikeAbortOrRnBug || forceNoSignal) {
       try {
-        if (__DEV__) console.warn("[fetchJson] re-try without signal due to:", msg || "(forced)");
-        // sinyalsiz – RN abort bug’ını by-pass
-        return await fetch(url, baseOpts);
+        if (__DEV__)
+          console.warn("[fetchJson] re-try without signal due to:", msg || "(forced)");
+        // sinyalsiz – RN abort bug’ını by-pass (ikinci denemede de hard-timeout uygula)
+        const p2 = fetch(url, baseOpts);
+        const t2 = new Promise((_, rej) =>
+          setTimeout(() => rej(new Error(`tmout_retry_no_signal_${T}`)), T)
+        );
+        return await Promise.race([p2, t2]);
       } finally {
         cleanup();
       }
@@ -136,6 +164,8 @@ function toArray(json) {
 }
 
 const isNetFail = (e) => String(e?.message || "").includes("Network request failed");
+const tryFetch = (base, builder, { signal, timeoutMs }) =>
+  fetchJson(builder(base), { signal, timeoutMs });
 
 /* ------------------------------------------------------------------ */
 /* Public helpers                                                      */
@@ -151,7 +181,7 @@ export function newPlacesSessionToken() {
   return `sess_${ts}_${rnd}`;
 }
 
-/* ================== AUTOCOMPLETE (server proxy + failover) ================== */
+/* ================== AUTOCOMPLETE (server proxy + multi-failover) ================== */
 export async function poiAutocomplete(
   q,
   { lat, lon, city, limit = 8, sessionToken, timeoutMs, signal } = {}
@@ -171,69 +201,98 @@ export async function poiAutocomplete(
     return String(u);
   };
 
-  // 1) Tercihen API_BASE
   if (serverAvailable()) {
     try {
       const url = build(API_BASE);
       if (__DEV__) console.log("[poiAutocomplete] url=", url);
       const res = await fetchJson(url, { signal, timeoutMs: T });
-      if (!res.ok) throw new Error(`poiAutocomplete_failed_${res.status}_${await res.text().catch(()=> "")}`);
+      if (!res.ok)
+        throw new Error(
+          `poiAutocomplete_failed_${res.status}_${await res.text().catch(() => "")}`
+        );
       const json = await res.json();
       const arr = toArray(json);
       if (__DEV__) {
         try {
           console.log(
-            "[poiAutocomplete] status=", res.status,
-            "X-Cache=", res.headers.get("X-Cache"),
-            "X-Google-Count=", res.headers.get("X-Google-Count")
+            "[poiAutocomplete] status=",
+            res.status,
+            "X-Cache=",
+            res.headers.get("X-Cache"),
+            "X-Google-Count=",
+            res.headers.get("X-Google-Count")
           );
         } catch {}
       }
       return arr;
     } catch (e1) {
-      // 2) 10.0.2.2 erişilemiyorsa PROD'a düş
-      if (isNetFail(e1) && API_BASE.includes("10.0.2.2")) {
-        try {
-          const url2 = build(PROD_BASE);
-          if (__DEV__) console.warn("[poiAutocomplete] FAILOVER →", url2);
-          const res2 = await fetchJson(url2, { signal, timeoutMs: T });
-          if (!res2.ok) throw new Error(`poiAutocomplete_failed_${res2.status}_${await res2.text().catch(()=> "")}`);
-          const json2 = await res2.json();
-          return toArray(json2);
-        } catch (e2) {
-          // 3) (opsiyonel) Doğrudan Google
-          if (GOOGLE_WEB_KEY) {
-            try {
-              const p = new URLSearchParams({
-                input: String(q || ""),
-                key: GOOGLE_WEB_KEY,
-                language: "tr",
-                region: "TR",
-                types: "establishment",
-              });
-              if (lat != null && lon != null) {
-                p.set("location", `${lat},${lon}`); p.set("radius", "30000");
-              }
-              if (sessionToken) p.set("sessiontoken", String(sessionToken));
-              const gUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?${p}`;
-              if (__DEV__) console.warn("[poiAutocomplete] DIRECT GOOGLE →", gUrl);
-              const rG = await fetchJson(gUrl, { timeoutMs: T });
-              const jG = await rG.json();
-              const preds = Array.isArray(jG?.predictions) ? jG.predictions : [];
-              return preds.map(p => ({
-                source: "google",
-                name: p?.structured_formatting?.main_text || p?.description || "",
-                place_id: p?.place_id,
-                address: p?.description || "",
-                city: city || "",
-              }));
-            } catch (e3) {
-              if (__DEV__) console.warn("[poiAutocomplete] direct-google failed:", e3?.message || e3);
-            }
-          }
-          throw e2;
+      // Genişletilmiş failover: localhost <-> 10.0.2.2 <-> PROD, sonra direct Google
+      if (isNetFail(e1)) {
+        // localhost → 10.0.2.2
+        if (API_BASE.includes("localhost")) {
+          try {
+            const resL = await tryFetch("http://10.0.2.2:5000", build, { signal, timeoutMs: T });
+            if (!resL.ok) throw new Error(`poiAutocomplete_failed_${resL.status}`);
+            if (__DEV__) console.warn("[poiAutocomplete] FAILOVER → 10.0.2.2");
+            return toArray(await resL.json());
+          } catch {}
+        }
+        // 10.0.2.2 → localhost
+        if (API_BASE.includes("10.0.2.2")) {
+          try {
+            const resLoc = await tryFetch("http://localhost:5000", build, {
+              signal,
+              timeoutMs: T,
+            });
+            if (!resLoc.ok) throw new Error(`poiAutocomplete_failed_${resLoc.status}`);
+            if (__DEV__) console.warn("[poiAutocomplete] FAILOVER → localhost");
+            return toArray(await resLoc.json());
+          } catch {}
+        }
+        // Dev hostlar → PROD
+        if (API_BASE.includes("localhost") || API_BASE.includes("10.0.2.2")) {
+          try {
+            const resP = await tryFetch(PROD_BASE, build, { signal, timeoutMs: T });
+            if (!resP.ok) throw new Error(`poiAutocomplete_failed_${resP.status}`);
+            if (__DEV__) console.warn("[poiAutocomplete] FAILOVER → PROD");
+            return toArray(await resP.json());
+          } catch {}
         }
       }
+
+      // (Opsiyonel) Doğrudan Google
+      if (GOOGLE_WEB_KEY) {
+        try {
+          const p = new URLSearchParams({
+            input: String(q || ""),
+            key: GOOGLE_WEB_KEY,
+            language: "tr",
+            region: "TR",
+            types: "establishment",
+          });
+          if (lat != null && lon != null) {
+            p.set("location", `${lat},${lon}`);
+            p.set("radius", "30000");
+          }
+          if (sessionToken) p.set("sessiontoken", String(sessionToken));
+          const gUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?${p}`;
+          if (__DEV__) console.warn("[poiAutocomplete] DIRECT GOOGLE →", gUrl);
+          const rG = await fetchJson(gUrl, { timeoutMs: T });
+          const jG = await rG.json();
+          const preds = Array.isArray(jG?.predictions) ? jG.predictions : [];
+          return preds.map((p) => ({
+            source: "google",
+            name: p?.structured_formatting?.main_text || p?.description || "",
+            place_id: p?.place_id,
+            address: p?.description || "",
+            city: city || "",
+          }));
+        } catch (e3) {
+          if (__DEV__)
+            console.warn("[poiAutocomplete] direct-google failed:", e3?.message || e3);
+        }
+      }
+
       throw e1;
     }
   }
@@ -248,14 +307,15 @@ export async function poiAutocomplete(
       types: "establishment",
     });
     if (lat != null && lon != null) {
-      p.set("location", `${lat},${lon}`); p.set("radius", "30000");
+      p.set("location", `${lat},${lon}`);
+      p.set("radius", "30000");
     }
     if (sessionToken) p.set("sessiontoken", String(sessionToken));
     const gUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?${p}`;
     const rG = await fetchJson(gUrl, { timeoutMs: T });
     const jG = await rG.json();
     const preds = Array.isArray(jG?.predictions) ? jG.predictions : [];
-    return preds.map(p => ({
+    return preds.map((p) => ({
       source: "google",
       name: p?.structured_formatting?.main_text || p?.description || "",
       place_id: p?.place_id,
@@ -267,7 +327,7 @@ export async function poiAutocomplete(
   return [];
 }
 
-/* ========== SEARCH (TextSearch/Nearby) — proxy + prod failover ========== */
+/* ========== SEARCH (TextSearch/Nearby) — proxy + geniş failover ========== */
 export async function poiSearch(q, { lat, lon, category, city, timeoutMs, signal } = {}) {
   const T1 = Number.isFinite(Number(timeoutMs))
     ? Number(timeoutMs)
@@ -293,24 +353,47 @@ export async function poiSearch(q, { lat, lon, category, city, timeoutMs, signal
       if (__DEV__) {
         try {
           console.log(
-            "[poiSearch] status=", res.status,
-            "X-Cache=", res.headers.get("X-Cache"),
-            "X-Google-Count=", res.headers.get("X-Google-Count")
+            "[poiSearch] status=",
+            res.status,
+            "X-Cache=",
+            res.headers.get("X-Cache"),
+            "X-Google-Count=",
+            res.headers.get("X-Google-Count")
           );
         } catch {}
       }
       return toArray(json);
     } catch (e1) {
-      if (isNetFail(e1) && API_BASE.includes("10.0.2.2")) {
-        try {
-          const url2 = build(PROD_BASE);
-          if (__DEV__) console.warn("[poiSearch] FAILOVER → PROD", url2);
-          const res2 = await fetchJson(url2, { signal, timeoutMs: T1 });
-          if (!res2.ok) throw new Error(`poiSearch_failed_${res2.status}`);
-          const json2 = await res2.json();
-          return toArray(json2);
-        } catch {
-          return [];
+      if (isNetFail(e1)) {
+        // localhost → 10.0.2.2
+        if (API_BASE.includes("localhost")) {
+          try {
+            const resL = await tryFetch("http://10.0.2.2:5000", build, { signal, timeoutMs: T1 });
+            if (!resL.ok) throw new Error(`poiSearch_failed_${resL.status}`);
+            if (__DEV__) console.warn("[poiSearch] FAILOVER → 10.0.2.2");
+            return toArray(await resL.json());
+          } catch {}
+        }
+        // 10.0.2.2 → localhost
+        if (API_BASE.includes("10.0.2.2")) {
+          try {
+            const resLoc = await tryFetch("http://localhost:5000", build, {
+              signal,
+              timeoutMs: T1,
+            });
+            if (!resLoc.ok) throw new Error(`poiSearch_failed_${resLoc.status}`);
+            if (__DEV__) console.warn("[poiSearch] FAILOVER → localhost");
+            return toArray(await resLoc.json());
+          } catch {}
+        }
+        // Dev hostlar → PROD
+        if (API_BASE.includes("localhost") || API_BASE.includes("10.0.2.2")) {
+          try {
+            const resP = await tryFetch(PROD_BASE, build, { signal, timeoutMs: T1 });
+            if (!resP.ok) throw new Error(`poiSearch_failed_${resP.status}`);
+            if (__DEV__) console.warn("[poiSearch] FAILOVER → PROD");
+            return toArray(await resP.json());
+          } catch {}
         }
       }
       return [];
@@ -333,7 +416,10 @@ export async function apiFetch(
     ...headers,
   };
 
-  const { signal, cleanup } = composeAbortController(undefined, Number(timeoutMs ?? API_TIMEOUT_MS));
+  const { signal, cleanup } = composeAbortController(
+    undefined,
+    Number(timeoutMs ?? API_TIMEOUT_MS)
+  );
   try {
     const res = await fetch(`${API_BASE}${path}`, {
       method,

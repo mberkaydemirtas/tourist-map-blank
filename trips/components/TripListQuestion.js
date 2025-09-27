@@ -8,17 +8,18 @@ import {
   FlatList,
   StyleSheet,
   ActivityIndicator,
-  ScrollView,
+  ScrollView, // yatay sekmeler için güvenli
 } from 'react-native';
+import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   prewarmPoiShard,
   getCategoryCounts,
-  searchPoiGoogleOnly, // sadece Google Autocomplete
+  searchPoiLocal,
+  searchPoiHybridThreshold,
 } from '../../app/lib/poiHybrid';
 import { newPlacesSessionToken } from '../../app/lib/api.js';
 
-// ---- Sekmeler
 const CATEGORIES = [
   { key: 'sights',      label: 'Turistik Yerler' },
   { key: 'restaurants', label: 'Restoranlar' },
@@ -27,15 +28,15 @@ const CATEGORIES = [
   { key: 'museums',     label: 'Müzeler' },
   { key: 'parks',       label: 'Parklar' },
 ];
+const CAT_LABELS = Object.fromEntries(CATEGORIES.map(c => [c.key, c.label]));
+const labelForCat = (k) => CAT_LABELS[k] || k || '';
 
 const BTN = '#2563EB';
 const BORDER = '#23262F';
+const MIN_CHARS = 1;
+const DEBOUNCE_MS = 250;
 
-// performans ayarları
-const MIN_CHARS   = 3;   // en az 3 harf
-const DEBOUNCE_MS = 300; // 300 ms bekleme
-
-/* --------------------------- helpers --------------------------- */
+/* helpers */
 function toPlace(item, fallbackCity) {
   return {
     id: String(item.id ?? item.place_id ?? Math.random().toString(36).slice(2)),
@@ -52,7 +53,6 @@ function toPlace(item, fallbackCity) {
     addedAt: new Date().toISOString(),
   };
 }
-
 function Badge({ children }) {
   return (
     <View style={styles.badge}>
@@ -61,7 +61,6 @@ function Badge({ children }) {
   );
 }
 
-/* ========================= BİLEŞEN ========================= */
 export default function TripListQuestion({
   trip,
   setTrip,
@@ -71,16 +70,17 @@ export default function TripListQuestion({
   cityName    = trip?.cityName    || '',
   cityCenter  = trip?.cityCenter  || { lat: 39.92077, lng: 32.85411 },
 
-  listHeight = 420,
-  selectedListHeight = 220,
+  // dış sayfa scroll’undan bağımsız, bu kartın içinde scroll edilecek yükseklik
+  placesMaxHeight = 360,
 }) {
-  const [items, setItems] = useState([]);         // sadece Google autocomplete sonuçları
-  const [catCounts, setCatCounts] = useState({}); // kategori sayaçları (lokal DB)
+  const [items, setItems] = useState([]);
+  const [catCounts, setCatCounts] = useState({});
   const [loading, setLoading] = useState(false);
   const [activeCat, setActiveCat] = useState(CATEGORIES[0].key);
   const [query, setQuery] = useState('');
-  const reqIdRef = useRef(0);                     // latest-only kimliği
+  const reqIdRef = useRef(0);
   const debRef = useRef(null);
+  const initialLocalRef = useRef([]);
 
   const selected = useMemo(() => trip?.selectedPlaces || [], [trip?.selectedPlaces]);
   const selectedCityItems = useMemo(
@@ -88,15 +88,15 @@ export default function TripListQuestion({
     [selected, cityName]
   );
 
-  // Autocomplete session token (Google maliyeti optimizasyonu)
+  // Google session token
   const sessionRef = useRef(null);
   useEffect(() => {
     const qTrim = (query || '').trim();
     if (qTrim && !sessionRef.current) sessionRef.current = newPlacesSessionToken();
-    if (!qTrim) sessionRef.current = null; // arama temizlenince yeni seans
+    if (!qTrim) sessionRef.current = null;
   }, [query]);
 
-  // 1) DB'yi ısıt + kategori sayaçlarını çek (listeyi lokalden doldurmuyoruz)
+  // prewarm + sayaçlar
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -107,26 +107,46 @@ export default function TripListQuestion({
         setCatCounts(counts || {});
         const firstWithData = CATEGORIES.find((c) => (counts?.[c.key] || 0) > 0);
         setActiveCat(firstWithData ? firstWithData.key : CATEGORIES[0].key);
-      } catch (e) {
-        console.warn('[TripList] prewarm/getCategoryCounts error:', e?.message || e);
+      } catch {
         if (mounted) setCatCounts({});
       }
     })();
     return () => { mounted = false; };
   }, [countryCode, cityName]);
 
-  // 2) Kategori/şehir değişince başlangıç listesi boş
-  useEffect(() => { setItems([]); }, [activeCat, cityName, cityCenter?.lat, cityCenter?.lng, countryCode]);
+  // preload local
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const out = await searchPoiLocal({
+          country: countryCode,
+          city: cityName,
+          category: activeCat,
+          q: '',
+          limit: 20,
+        });
+        if (!mounted) return;
+        initialLocalRef.current = out || [];
+        setItems(initialLocalRef.current);
+      } catch {
+        if (mounted) {
+          initialLocalRef.current = [];
+          setItems([]);
+        }
+      }
+    })();
+    return () => { mounted = false; };
+  }, [activeCat, cityName, countryCode]);
 
-  // 3) Arama: yalnızca Google Autocomplete (min 3 harf + debounce + latest-only)
+  // arama (local → gerekirse google)
   useEffect(() => {
     let mounted = true;
     if (debRef.current) clearTimeout(debRef.current);
     const qTrim = (query || '').trim();
 
-    // 3 harften az ise istek yok, anında boş liste
     if (!qTrim || qTrim.length < MIN_CHARS) {
-      setItems([]);
+      setItems(initialLocalRef.current);
       setLoading(false);
       return;
     }
@@ -136,20 +156,20 @@ export default function TripListQuestion({
       const myReqId = ++reqIdRef.current;
       setLoading(true);
       try {
-        const out = await searchPoiGoogleOnly({
+        const out = await searchPoiHybridThreshold({
+          country: countryCode,
           city: cityName,
           category: activeCat,
           q: qTrim,
           limit: 50,
           center: cityCenter,
+          minLocal: 3,
           sessionToken: sessionRef.current,
         });
-        if (!mounted || myReqId !== reqIdRef.current) return; // stale cevap
+        if (!mounted || myReqId !== reqIdRef.current) return;
         setItems(out || []);
-        if (__DEV__) console.log('[TripList] google-only len=', out?.length || 0, 'q=', qTrim);
-      } catch (e) {
-        if (__DEV__) console.warn('[TripList] google-only error:', e?.message || e);
-        if (mounted) setItems([]);
+      } catch {
+        if (mounted) setItems(initialLocalRef.current);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -162,7 +182,7 @@ export default function TripListQuestion({
   }, [query, activeCat, cityName, cityCenter?.lat, cityCenter?.lng, countryCode]);
 
   function toggleSelection(item) {
-    const cityKey = item.city || cityName; // aktif şehir fallback
+    const cityKey = item.city || cityName;
     const exists = selected.find((x) => x.id === item.id && (x.city || '') === cityKey);
     let next;
     if (exists) next = selected.filter((x) => !(x.id === item.id && (x.city || '') === cityKey));
@@ -172,9 +192,10 @@ export default function TripListQuestion({
 
   const selectedCityCount = selectedCityItems.length;
 
+  /* ---------------- render ---------------- */
   return (
-    <View style={styles.container}>
-      {/* Kategori sekmeleri (sayaçlar lokal DB’den) */}
+    <View style={styles.root}>
+      {/* Sekmeler — yatay scroll + hafif sola */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -200,11 +221,11 @@ export default function TripListQuestion({
         </View>
       </ScrollView>
 
-      {/* Arama çubuğu */}
+      {/* Arama */}
       <View style={styles.searchRow}>
         <Ionicons name="search" size={18} color="#9AA0A6" />
         <TextInput
-          placeholder={`Google’dan ara (en az ${MIN_CHARS} harf)…`}
+          placeholder="Ara (önce veritabanı; azsa Google)…"
           placeholderTextColor="#6B7280"
           value={query}
           onChangeText={setQuery}
@@ -216,18 +237,19 @@ export default function TripListQuestion({
         {loading ? <ActivityIndicator /> : null}
       </View>
 
-      {/* Sonuçlar */}
-      <View style={{ height: listHeight }}>
-        <FlatList
+      {/* Places: kart içinde bağımsız scroll (GH FlatList) */}
+      <View style={[styles.sheetDark, { maxHeight: placesMaxHeight }]}>
+        <GHFlatList
           data={items}
           keyExtractor={keyExtractor}
           extraData={selected}
           nestedScrollEnabled
           scrollEnabled
           showsVerticalScrollIndicator
-          keyboardShouldPersistTaps="always"
-          contentContainerStyle={{ paddingBottom: 12, paddingVertical: 4 }}
-          getItemLayout={getItemLayout}
+          keyboardShouldPersistTaps="handled"
+          scrollEventThrottle={16}
+          overScrollMode="always"
+          contentContainerStyle={styles.listContent}
           renderItem={({ item }) => {
             const cityKey = item.city || cityName;
             const checked = !!selected.find((x) => x.id === item.id && (x.city || '') === cityKey);
@@ -243,8 +265,10 @@ export default function TripListQuestion({
 
                   <View style={{ flex: 1 }}>
                     <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
-                    {!!item.address && <Text style={styles.addr} numberOfLines={1}>{item.address}</Text>}
-                  </View>
+                   {!!item.address && item.source !== 'google' && (
+                     <Text style={styles.addr} numberOfLines={1}>{item.address}</Text>
+                   )}                  
+                   </View>
 
                   <View style={{ alignItems: 'flex-end', gap: 6 }}>
                     <Badge>{item.source === 'google' ? 'Google' : 'Yerel'}</Badge>
@@ -258,29 +282,30 @@ export default function TripListQuestion({
             !loading ? (
               <View style={styles.empty}>
                 <Ionicons name="location-outline" size={22} color="#9AA0A6" />
-                <Text style={styles.emptyText}>En az {MIN_CHARS} harf yazın.</Text>
+                <Text style={styles.emptyText}>Sonuç yok.</Text>
               </View>
             ) : null
           }
         />
       </View>
 
-      {/* Seçili yerler */}
+      {/* Seçilenler — dış sayfayla birlikte kayar (iç scroll kapalı) */}
       <View style={{ height: 12 }} />
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Seçilenler {cityName ? `(${cityName})` : ''}</Text>
         <Text style={styles.sectionCount}>{selectedCityCount}</Text>
       </View>
-      <View style={styles.selectedListWrapper(selectedListHeight)}>
+
+      <View style={[styles.sheetDark, { paddingVertical: 8 }]}>
         <FlatList
           data={selectedCityItems}
-          keyExtractor={(it, idx) => (it?.id && String(it.id)) || (it?.place_id && `pid-${it.place_id}`) || `sel-${idx}`}
-          nestedScrollEnabled
-          scrollEnabled
-          showsVerticalScrollIndicator
-          keyboardShouldPersistTaps="always"
-          contentContainerStyle={{ paddingBottom: 12, paddingVertical: 4 }}
-          getItemLayout={getItemLayout}
+          keyExtractor={(it, idx) =>
+            (it?.id && String(it.id)) || (it?.place_id && `pid-${it.place_id}`) || `sel-${idx}`
+          }
+          // Seçilenler ana sayfayla kayacak → iç scroll kapalı:
+          scrollEnabled={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[styles.listContent, { paddingBottom: 6 }]}
           renderItem={({ item }) => (
             <Pressable onPress={() => toggleSelection(item)} style={[styles.card, styles.cardSelectedList]}>
               <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
@@ -288,11 +313,20 @@ export default function TripListQuestion({
                   <Ionicons name="checkmark" size={16} color="#0D0F14" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.name} numberOfLines={2}>
-                    {item.name}{item.source === 'google' ? ' · Google' : ''}
-                  </Text>
-                  {!!item.address && <Text style={styles.addr} numberOfLines={1}>{item.address}</Text>}
-                </View>
+                  <View style={styles.titleRow}>
+                    <Text style={styles.name} numberOfLines={2}>
+                      {item.name}{item.source === 'google' ? ' · Google' : ''}
+                    </Text>
+                    {!!item.category && (
+                      <Text style={styles.catTag} numberOfLines={1}>
+                        {labelForCat(item.category)}
+                      </Text>
+                    )}
+                  </View>
+                   {!!item.address && item.source !== 'google' && (
+                     <Text style={styles.addr} numberOfLines={1}>{item.address}</Text>
+                   )}                
+                   </View>
                 <Text style={styles.removeText}>Kaldır</Text>
               </View>
             </Pressable>
@@ -308,18 +342,17 @@ export default function TripListQuestion({
   );
 }
 
-/* ----------------------------- helpers (list) ---------------------------- */
+/* list helpers */
 function keyExtractor(it, idx) {
   return (it?.id && String(it.id)) || (it?.place_id && `pid-${it.place_id}`) || `row-${idx}`;
 }
-function getItemLayout(_, index) {
-  return { length: 72, offset: 72 * index, index };
-}
 
-/* ----------------------------- styles ---------------------------- */
+/* styles */
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  tabs: { paddingHorizontal: 4, gap: 8 },
+  root: { flex: 1, backgroundColor: '#101014' },
+
+  // Sekmeleri az sola kaydır
+  tabs: { paddingHorizontal: 8, gap: 8, marginLeft: -4, paddingRight: 6 },
   tab: {
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -343,8 +376,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     backgroundColor: '#0D0F14',
+    marginTop: 8,
   },
   searchInput: { flex: 1, color: '#fff' },
+
+  // Kart benzeri kutu
+  sheetDark: {
+    backgroundColor: '#14161c',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#2a2d36',
+    overflow: 'hidden',
+    marginTop: 12,
+  },
+  listContent: { paddingHorizontal: 10, paddingVertical: 8, paddingBottom: 12 },
 
   card: {
     width: '100%',
@@ -367,10 +412,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#0D0F14',
   },
-  checkboxChecked: {
-    backgroundColor: BTN,
-    borderColor: BTN,
-  },
+  checkboxChecked: { backgroundColor: BTN, borderColor: BTN },
 
   name: { color: '#fff', fontWeight: '700' },
   addr: { color: '#9AA0A6', fontSize: 12, marginTop: 2 },
@@ -393,12 +435,29 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingHorizontal: 2,
+  },
   sectionTitle: { color: '#E5E7EB', fontWeight: '800' },
   sectionCount: { color: '#9AA0A6', fontWeight: '700' },
 
+  // Seçilenler: kategori etiketi (yalnızca bu listede)
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  catTag: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#0D0F14',
+    backgroundColor: '#60A5FA',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+
   cardSelectedList: { backgroundColor: '#0F1420' },
   removeText: { color: '#FCA5A5', fontWeight: '700' },
-
-  selectedListWrapper: (h) => ({ height: h }),
 });

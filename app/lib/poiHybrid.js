@@ -1,19 +1,21 @@
 // app/lib/poiHybrid.js
 import { queryPoi, openPoiDb } from './poiLocal';
-import { poiSearch, poiAutocomplete as _poiAutocomplete } from './api.js';
+import { poiSearch, poiAutocomplete } from './api.js';
 
 const DEFAULT_COUNTRY = 'TR';
 const MAP_CATEGORIES = ['sights','restaurants','cafes','bars','museums','parks'];
 
+/* -------------------- kategori → Google type -------------------- */
 function catKeyToQuery(k) {
   if (k === 'restaurants') return 'restaurant';
-  if (k === 'cafes') return 'cafe';
-  if (k === 'bars') return 'bar';
-  if (k === 'museums') return 'museum';
-  if (k === 'parks') return 'park';
+  if (k === 'cafes')       return 'cafe';
+  if (k === 'bars')        return 'bar';
+  if (k === 'museums')     return 'museum';
+  if (k === 'parks')       return 'park';
   return '';
 }
 
+/* ---------------------------- normalize ---------------------------- */
 function toItem(row, source = 'local', enforcedCategory) {
   const category = enforcedCategory || row.category || 'sights';
   const lat = Number(row.lat);
@@ -31,6 +33,7 @@ function toItem(row, source = 'local', enforcedCategory) {
   };
 }
 
+/* ----------------------------- prewarm ----------------------------- */
 export async function prewarmPoiShard(country = DEFAULT_COUNTRY) {
   const db = await openPoiDb(country);
   return !!db;
@@ -87,7 +90,7 @@ const asciiFold = (s) => String(s ?? '').replace(
   /[İIıŞşĞğÜüÖöÇç]/g,
   ch => ({'İ':'i','I':'i','ı':'i','Ş':'s','ş':'s','Ğ':'g','ğ':'g','Ü':'u','ü':'u','Ö':'o','ö':'o','Ç':'c','ç':'c'}[ch] || ch)
 );
-const norm = (s) => asciiFold(s).toLowerCase().trim();
+const norm   = (s) => asciiFold(s).toLowerCase().trim();
 const round6 = (n) => Number.isFinite(n) ? Math.round(n * 1e6) / 1e6 : NaN;
 function makeKey(it) {
   if (it.place_id) return `pid:${it.place_id}`;
@@ -97,9 +100,14 @@ function makeKey(it) {
   const c = norm(it.city || '');
   return `nlc:${n}|${a}|${b}|${c}`;
 }
+const mergeUniq = (...arrays) => {
+  const m = new Map();
+  arrays.flat().forEach(it => { if (it) m.set(makeKey(it), it); });
+  return Array.from(m.values());
+};
 
 /* --------------------------------------------------------------------------
- * FAST LOCAL ONLY (kullanım dışı bırakılmadı — sayaçlar için mevcut)
+ * LOCAL SEARCH (DB)
  * -------------------------------------------------------------------------- */
 export async function searchPoiLocal({
   country = DEFAULT_COUNTRY,
@@ -112,6 +120,7 @@ export async function searchPoiLocal({
   const first = await queryPoi({ country, city, category, q: qTrim, limit });
   let localItems = (first?.rows || []).map(r => toItem(r, 'local'));
 
+  // q kısa ve şehirde hiç yoksa ülke geneline düş
   if (qTrim.length < 2) {
     if (localItems.length === 0 && city) {
       const second = await queryPoi({ country, city: undefined, category, q: '', limit });
@@ -125,203 +134,97 @@ export async function searchPoiLocal({
 }
 
 /* --------------------------------------------------------------------------
- * GOOGLE-ONLY (Autocomplete listesi — DB yorumlandı)
+ * GOOGLE FETCH (tek atım: önce autocomplete, boşsa text search)
  * -------------------------------------------------------------------------- */
-export async function searchPoiGoogleOnly({
-  city,
-  category,           // UI sekmesi için kategori bilgisini set edelim
-  q = '',
-  limit = 50,
-  center,              // { lat, lon|lng }
-  sessionToken,
-} = {}) {
-  const qTrim = (q || '').trim();
-  if (!qTrim) return []; // boş aramada artık liste yok
+async function searchGoogleOnce(qTrim, {
+  lat, lon, city, category, limit = 10, sessionToken, timeoutMs
+}) {
+  const toG = (r) => toItem(r, 'google', category || 'sights');
 
-  const lat = Number(center?.lat);
-  const lon = Number(center?.lon ?? center?.lng);
-
+  // 1) Autocomplete
   try {
-    const raw = await _poiAutocomplete(qTrim, {
-      lat: Number.isFinite(lat) ? lat : undefined,
-      lon: Number.isFinite(lon) ? lon : undefined,
+    const ac = await poiAutocomplete(qTrim, {
+      lat: Number.isFinite(Number(lat)) ? Number(lat) : undefined,
+      lon: Number.isFinite(Number(lon)) ? Number(lon) : undefined,
       city: city || '',
-      limit: Number(limit) || 50,
+      limit,
       sessionToken,
+      timeoutMs,
     });
-
-    // server array döndürüyor; güvenli tarafta kalalım
-    const arr = Array.isArray(raw) ? raw : (Array.isArray(raw?.predictions) ? raw.predictions : []);
-    const items = arr.map(r => toItem(r, 'google', category || 'sights'));
-    if (__DEV__) console.log('[GoogleOnly] items=', items.length, 'q=', qTrim);
-    return items.slice(0, Number(limit) || 50);
+    if (Array.isArray(ac) && ac.length) return ac.map(toG);
   } catch (e) {
-    if (__DEV__) console.warn('[GoogleOnly] error:', e?.message || e);
+    if (__DEV__) console.warn('[hybrid] autocomplete fail:', e?.message || e);
+  }
+
+  // 2) Text Search (kategori bias’ı)
+  try {
+    const type = catKeyToQuery(category);
+    const ts = await poiSearch(qTrim, {
+      lat: Number.isFinite(Number(lat)) ? Number(lat) : undefined,
+      lon: Number.isFinite(Number(lon)) ? Number(lon) : undefined,
+      city: city || '',
+      category: type,
+      timeoutMs,
+    });
+    return (Array.isArray(ts) ? ts : []).map(toG);
+  } catch (e) {
+    if (__DEV__) console.warn('[hybrid] textsearch fail:', e?.message || e);
     return [];
   }
 }
 
 /* --------------------------------------------------------------------------
- * REMOTE APPEND (eski hibrit; artık TripListQuestion bunu kullanmayacak)
+ * HYBRID THRESHOLD
+ * - Önce lokal (DB)
+ * - q varsa ve lokal < minLocal ise Google’dan ekle
+ * - her durumda de-dup + limit
  * -------------------------------------------------------------------------- */
-export async function searchPoiRemoteAppend({
-  country = 'TR',
+export async function searchPoiHybridThreshold({
+  country = DEFAULT_COUNTRY,
   city,
   category,
   q = '',
   limit = 50,
-  center,
-  existing = [],
+  center,              // { lat, lng|lon }
+  minLocal = 3,
   sessionToken,
-  signal,
+  timeoutMs,
 } = {}) {
-  if (__DEV__) console.log('[RemoteAppend] typeof _poiAutocomplete =', typeof _poiAutocomplete);
-
   const qTrim = (q || '').trim();
-  const needRemote = qTrim.length >= 2;
-  if (__DEV__) console.log('[RemoteAppend] existing=', existing.length, 'qLen=', qTrim.length, 'needRemote=', needRemote);
-  if (!needRemote) return existing.slice(0, limit);
+  const local = await searchPoiLocal({ country, city, category, q: qTrim, limit });
 
+  // q yoksa → sadece lokal top-20 (sabit liste hissi)
+  if (!qTrim) return local.slice(0, Math.max(20, Math.min(limit, 50)));
+
+  // q varsa: lokal yeterliyse direkt dön
+  if (local.length >= minLocal) return local.slice(0, limit);
+
+  // lokal az → Google ekle
   const lat = Number(center?.lat);
   const lon = Number(center?.lon ?? center?.lng);
+  const remote = await searchGoogleOnce(qTrim, { lat, lon, city, category, limit: 12, sessionToken, timeoutMs });
 
-  const cat = (() => {
-    if (category === 'restaurants') return 'restaurant';
-    if (category === 'cafes')       return 'cafe';
-    if (category === 'bars')        return 'bar';
-    if (category === 'museums')     return 'museum';
-    if (category === 'parks')       return 'park';
-    return '';
-  })();
-
-  const toGItem = (row) => ({
-    id: String(row.id ?? row.place_id ?? Math.random().toString(36).slice(2)),
-    name: row.name || '(isimsiz)',
-    category: category || row.category || 'sights',
-    lat: Number.isFinite(Number(row.lat)) ? Number(row.lat) : undefined,
-    lon: Number.isFinite(Number(row.lon ?? row.lng)) ? Number(row.lon ?? row.lng) : undefined,
-    address: row.address || row.formatted_address || row.description || '',
-    city: row.city || '',
-    place_id: row.place_id,
-    source: 'google',
-  });
-  const toArr = (v) => Array.isArray(v) ? v : (Array.isArray(v?.results) ? v.results : []);
-
-  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-
-  const autoPromiseRaw = (async () => {
-    if (typeof _poiAutocomplete !== 'function') return [];
-    try {
-      const auto = await _poiAutocomplete(qTrim, {
-        lat: Number.isFinite(lat) ? lat : undefined,
-        lon: Number.isFinite(lon) ? lon : undefined,
-        city: city || '',
-        limit: 8,
-        sessionToken,
-      });
-      const arr = toArr(auto).map(toGItem);
-      if (__DEV__) console.log('[RemoteAppend:auto] count=', arr.length);
-      return arr;
-    } catch (e) {
-      if (__DEV__) console.warn('[RemoteAppend:auto] error:', e?.message || e);
-      return [];
-    }
-  })();
-
-  const runTextSearch = async () => {
-    try {
-      const near = await poiSearch(qTrim, {
-        lat: Number.isFinite(lat) ? lat : undefined,
-        lon: Number.isFinite(lon) ? lon : undefined,
-        city: city || '',
-        category: qTrim.length >= 3 ? '' : cat,
-        timeoutMs: 12000,
-        signal,
-      });
-      let arr = (near || []).map(toGItem);
-      if (__DEV__) console.log('[RemoteAppend:text:near] count=', arr.length);
-      if (arr.length > 0) return arr;
-
-      const byCity = await poiSearch(qTrim, {
-        city: city || '',
-        category: '',
-        timeoutMs: 12000,
-        signal,
-      });
-      arr = (byCity || []).map(toGItem);
-      if (__DEV__) console.log('[RemoteAppend:text:city] count=', arr.length);
-      if (arr.length > 0) return arr;
-
-      const global = await poiSearch(qTrim, {
-        category: '',
-        timeoutMs: 12000,
-        signal,
-      });
-      arr = (global || []).map(toGItem);
-      if (__DEV__) console.log('[RemoteAppend:text:global] count=', arr.length);
-      return arr;
-    } catch (e) {
-      if (__DEV__) console.warn('[RemoteAppend:text] error:', e?.message || e);
-      return [];
-    }
-  };
-
-  const textPromiseDelayed = (async () => {
-    await wait(700);
-    return await runTextSearch();
-  })();
-
-  let autoItems = [];
-  let textItems = [];
-
-  const early = await Promise.race([
-    autoPromiseRaw.then(a => ({ from: 'auto', items: a })),
-    textPromiseDelayed.then(t => ({ from: 'text', items: t })),
-  ]);
-
-  if (early?.from === 'auto') autoItems = early.items || [];
-  if (early?.from === 'text') textItems = early.items || [];
-
-  function mergeAndSlice() {
-    const uniq = new Map();
-    const mk = (it) => {
-      if (it.place_id) return `pid:${it.place_id}`;
-      const n = (it.name || '').toLowerCase().trim();
-      const a = Number.isFinite(Number(it.lat)) ? Math.round(Number(it.lat) * 1e6) / 1e6 : NaN;
-      const b = Number.isFinite(Number(it.lon)) ? Math.round(Number(it.lon) * 1e6) / 1e6 : NaN;
-      const c = (it.city || '').toLowerCase().trim();
-      return `nlc:${n}|${a}|${b}|${c}`;
-    };
-    for (const it of existing)  uniq.set(mk(it), it);
-    for (const it of autoItems) uniq.set(mk(it), it);
-    for (const it of textItems) uniq.set(mk(it), it);
-    const merged = Array.from(uniq.values()).slice(0, limit);
-    if (__DEV__) {
-      const g = merged.filter(x => x?.source === 'google').length;
-      const l = merged.length - g;
-      console.log(`[RemoteAppend] merged total=${merged.length} local=${l} google=${g} q="${qTrim}" cat=${category}`);
-    }
-    return merged;
+  const merged = mergeUniq(local, remote).slice(0, limit);
+  if (__DEV__) {
+    const g = merged.filter(x => x?.source === 'google').length;
+    const l = merged.length - g;
+    console.log(`[hybridThreshold] q="${qTrim}" cat=${category} → total=${merged.length} local=${l} google=${g}`);
   }
-
-  if ((autoItems?.length || 0) > 0 || (textItems?.length || 0) > 0) {
-    return mergeAndSlice();
-  }
-
-  if (early?.from === 'auto') {
-    textItems = await textPromiseDelayed.catch(() => []);
-  } else {
-    autoItems = await autoPromiseRaw.catch(() => []);
-  }
-  return mergeAndSlice();
+  return merged;
 }
 
 /* --------------------------------------------------------------------------
- * HYBRID (compat) — artık aramada kullanmıyoruz, ama export kalsın
+ * (opsiyonel) Eskilerle uyum için basit hibrit
  * -------------------------------------------------------------------------- */
 export async function searchPoiHybrid(opts = {}) {
   const local = await searchPoiLocal(opts);
   const qTrim = (opts?.q || '').trim();
   if (!qTrim) return local;
-  return await searchPoiRemoteAppend({ ...opts, existing: local });
+  // lokal + google simple append (eşiksiz)
+  const lat = Number(opts?.center?.lat);
+  const lon = Number(opts?.center?.lon ?? opts?.center?.lng);
+  const remote = await searchGoogleOnce(qTrim, {
+    lat, lon, city: opts?.city, category: opts?.category, limit: 12, sessionToken: opts?.sessionToken,
+  });
+  return mergeUniq(local, remote).slice(0, Number(opts?.limit) || 50);
 }

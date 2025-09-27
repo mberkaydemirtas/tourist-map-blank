@@ -1,4 +1,4 @@
-// metro.config.js
+// metro.config.cjs
 const { getDefaultConfig } = require('@expo/metro-config');
 
 module.exports = (() => {
