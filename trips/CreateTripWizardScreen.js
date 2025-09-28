@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import {
   Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, FlatList,
   DeviceEventEmitter, InteractionManager,
@@ -9,7 +9,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 
 // Local-first storage
 import { createTripLocal, saveTripLocal, getTripLocal, patchTripLocal } from '../app/lib/tripsLocal';
-import { useFocusEffect } from '@react-navigation/native';
 
 // Soru bileşenleri
 import WhereToQuestion from './components/WhereToQuestion';
@@ -38,9 +37,7 @@ function dateRangeDays(startISO, endISO) {
   return days;
 }
 
-/** Yeni tarih aralığına göre dailyPlan kurar/yeniler.
- *  Eski dailyPlan varsa, aynı index'teki günler korunur.
- */
+/** Yeni tarih aralığına göre dailyPlan kurar/yeniler. Eski dailyPlan varsa aynı index'teki günleri korur. */
 function buildDailyPlan(startDate, endDate, prevDP = []) {
   const days = dateRangeDays(startDate, endDate);
   if (!days.length) return [];
@@ -48,51 +45,86 @@ function buildDailyPlan(startDate, endDate, prevDP = []) {
     const prev = prevDP[i];
     return {
       date: d,
-      visits: Array.isArray(prev?.visits) ? prev.visits : [], // { id,name,lat,lng,address }
+      visits: Array.isArray(prev?.visits) ? prev.visits : [],
     };
   });
   return next;
+}
+
+/* ---------------------- Lokasyon yardımcıları ---------------------- */
+function cityKeysOf(whereAnswer) {
+  if (!whereAnswer) return [];
+  if (whereAnswer.mode === 'single') return [whereAnswer?.single?.city?.place_id].filter(Boolean);
+  return (whereAnswer?.items || []).map(it => it?.city?.place_id).filter(Boolean);
+}
+function shallowEqualArr(a = [], b = []) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
 }
 
 export default function CreateTripWizardScreen() {
   const nav = useNavigation();
   const route = useRoute();
 
+  // Review'den geri dönüş
+  const jumpToStep = route?.params?.jumpToStep;
+  const returnTo   = route?.params?.returnTo ?? null;
+  const editIntent = route?.params?.editIntent ?? null;
+  const openedForEdit = returnTo === 'TripReview' || !!editIntent;
+
+  // jumpToStep'i sadece ilk kez uygula
+  const appliedJumpOnce = useRef(false);
+
   // NEW: Step 0 — Trip name
   const [tripTitle, setTripTitle] = useState('');
   const uiTitle = (tripTitle || '').trim() || 'Yeni Gezi';
   const [step, setStep] = useState(0);
 
-  // Step 1 — Nereye gidiyorsun? (shifted from old step 0)
-  const [whereAnswer, setWhereAnswer] = useState(null); // { mode: 'single'|'multi', single?, items? }
+  // Step 1 — Nereye gidiyorsun?
+  const [whereAnswer, setWhereAnswer] = useState(null);
 
-  // Step 2 — Başlangıç & Bitiş (shifted from old step 1)
+  // Step 2 — Başlangıç & Bitiş
   const [startEndSingle, setStartEndSingle] = useState(null);
   const [startEndByCity, setStartEndByCity] = useState({});
   const [cityIndex, setCityIndex] = useState(0);
 
-  // Step 3 — Konaklama (shifted from old step 2)
-  const [lodgingSingle, setLodgingSingle] = useState([]); // [{ place, start, end }, ...]
-  const [lodgingByCity, setLodgingByCity] = useState({}); // { [cityKey]: [{...}] }
+  // Step 3 — Konaklama
+  const [lodgingSingle, setLodgingSingle] = useState([]);
+  const [lodgingByCity, setLodgingByCity] = useState({});
 
-  // Step 4 — Gezilecek Yerler (TripListQuestion) (shifted from old step 3)
+  // Step 4 — Gezilecek Yerler
   const [selectedPlaces, setSelectedPlaces] = useState([]);
-  const [dailyPlan, setDailyPlan] = useState([]); // [{ date:'YYYY-MM-DD', visits:[{id,name,lat,lng,address}] }]
-  
+  const [dailyPlan, setDailyPlan] = useState([]);
 
-  // Yerel taslak — yeni ya da resume
+  // Yerel taslak
   const [draft, setDraft] = useState(null);
   const resumeId = route?.params?.resumeId || null;
+
+  // İlk açılışta istenen adıma zıpla (edit akışında draft.wizardStep uygulanmaz)
+  useEffect(() => {
+    if (!appliedJumpOnce.current && Number.isInteger(jumpToStep)) {
+      setStep(Math.max(0, Math.min(4, jumpToStep)));
+      appliedJumpOnce.current = true;
+      // Paramı temizle ki haritadan dönüşte tekrar 1. adıma reset olmasın
+      try { nav.setParams({ jumpToStep: undefined }); } catch {}
+    }
+  }, [jumpToStep, nav]);
+
   useEffect(() => {
     (async () => {
       if (resumeId) {
         const t = await getTripLocal(resumeId);
         if (t) {
           setDraft(t);
-          // Kaydedilmiş adımı ve temel alanları geri yükle
-          if (Number.isFinite(t.wizardStep)) setStep(t.wizardStep);
+          if (!openedForEdit && Number.isFinite(t.wizardStep)) {
+            setStep(Math.max(0, Math.min(4, t.wizardStep)));
+          } else if (!appliedJumpOnce.current && Number.isInteger(jumpToStep)) {
+            setStep(Math.max(0, Math.min(4, jumpToStep)));
+            appliedJumpOnce.current = true;
+            try { nav.setParams({ jumpToStep: undefined }); } catch {}
+          }
           if (t.title) setTripTitle(t.title);
-          // Basit hydrate (varsa)
           if (t._whereAnswer) setWhereAnswer(t._whereAnswer);
           if (t._startEndSingle) setStartEndSingle(t._startEndSingle);
           if (t._startEndByCity) setStartEndByCity(t._startEndByCity);
@@ -103,78 +135,53 @@ export default function CreateTripWizardScreen() {
           return;
         }
       }
-      // yeni taslak
       const t = await createTripLocal({ title: 'New Trip', status: 'draft', wizardStep: 0 });
       setDraft(t);
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resumeId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeId, openedForEdit]);
 
+  /* ---- Lokasyon patch + canlı bildirim ---- */
   useEffect(() => {
-  if (!draft?._id) return;
+    if (!draft?._id) return;
 
-  // Tek şehir / çok şehir’e göre isimleri topla
-  const cities =
-    whereAnswer?.mode === 'single'
-      ? [whereAnswer?.single?.city?.name].filter(Boolean)
-      : ((whereAnswer?.items || [])
-          .map(it => it?.city?.name)
-          .filter(Boolean));
+    const cities =
+      whereAnswer?.mode === 'single'
+        ? [whereAnswer?.single?.city?.name].filter(Boolean)
+        : ((whereAnswer?.items || []).map(it => it?.city?.name).filter(Boolean));
 
-  // Henüz şehir seçilmemişse dokunma
-  if (!cities || cities.length === 0) return;
+    if (!cities.length) return;
 
-  // Yerelde patch
-  patchTripLocal(draft._id, { cities }).catch(() => {});
+    patchTripLocal(draft._id, { cities }).catch(() => {});
+    DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: draft._id, patch: { cities } });
+  }, [draft?._id, whereAnswer?.mode, whereAnswer?.single?.city?.name, whereAnswer?.items]);
 
-  // Liste ekranına canlı bildirim
-  DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, {
-    tripId: draft._id,
-    patch: { cities },
-  });
-}, [
-  draft?._id,
-  whereAnswer?.mode,
-  whereAnswer?.single?.city?.name,
-  whereAnswer?.items, // referans her değiştiğinde tetiklenir
-]);
-
-useEffect(() => {
-  if (!draft?._id) return;
-
-  // Wizard’daki tekil/çoklu akıştan global aralığı hesapla
-  const range = computeGlobalRange(whereAnswer, startEndSingle, startEndByCity);
-  const hasAny = !!(range.start || range.end);
-  if (!hasAny) return;
-
-  // Yerelde patch
-  patchTripLocal(draft._id, { dateRange: range }).catch(() => {});
-
-  // Liste ekranına canlı bildirim
-  DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, {
-    tripId: draft._id,
-    patch: { dateRange: range },
-  });
-}, [
-  draft?._id,
-  whereAnswer,                   // mod değişimleri vs.
-  startEndSingle?.start?.date,
-  startEndSingle?.end?.date,
-  startEndByCity,                // referans değişiminde tetiklenir
-]);
-
-
-  // Step 3'e (konaklama) girildiğinde, multi-city ise ilk şehre dön (old step 2 → now 3)
+  /* ---- Lokasyon değişimini yalnızca Step 1'de kullanıcı “İleri” deyince commit et ---- */
+  const committedCityKeysRef = useRef([]);
   useEffect(() => {
-    if (step === 3 && whereAnswer?.mode === 'multi') setCityIndex(0);
-  }, [step, whereAnswer?.mode]);
+    if (!whereAnswer) return;
+    if (committedCityKeysRef.current.length === 0) {
+      committedCityKeysRef.current = cityKeysOf(whereAnswer);
+    }
+  }, [whereAnswer]);
 
-  // Step 4'e (gezilecek yerler) girildiğinde, multi-city ise ilk şehre dön (old step 3 → now 4)
+  /* ---- Global tarih aralığını türetip kaydet ---- */
   useEffect(() => {
-    if (step === 4 && whereAnswer?.mode === 'multi') setCityIndex(0);
-  }, [step, whereAnswer?.mode]);
+    if (!draft?._id) return;
+    const range = computeGlobalRange(whereAnswer, startEndSingle, startEndByCity);
+    if (!range.start && !range.end) return;
+    patchTripLocal(draft._id, { dateRange: range }).catch(() => {});
+    DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: draft._id, patch: { dateRange: range } });
+  }, [draft?._id, whereAnswer, startEndSingle?.start?.date, startEndSingle?.end?.date, startEndByCity]);
 
-  // Segments <-> Stays (ID’yi koru)
+  /* ---- Çok-şehir adımında index koruması ---- */
+  useEffect(() => {
+    if (whereAnswer?.mode !== 'multi') return;
+    const max = Math.max(0, (whereAnswer?.items || []).filter(it => it?.city?.name).length - 1);
+    if (cityIndex > max) setCityIndex(0);
+  }, [whereAnswer, cityIndex]);
+
+  // Segments <-> Stays
   const staysFromSegments = (segs = []) => segs.map((s, i) => ({
     id: s.id || `${s?.place?.place_id || 'seg'}_${i}`,
     place: s.place || null,
@@ -188,7 +195,7 @@ useEffect(() => {
     end: s.endDate || null,
   }));
 
-  // Türev state (aktif şehir objesi & key)
+  // Türev state (aktif şehir)
   const activeCityObj = useMemo(() => {
     if (whereAnswer?.mode === 'single') {
       return whereAnswer.single?.city
@@ -262,24 +269,19 @@ useEffect(() => {
     return !!(s && e && s <= e);
   }
 
-  // Multi-city: komşular arasında çakışma olmasın (start[i+1] ≥ end[i])
   const step2Valid = useMemo(() => {
     if (!whereAnswer) return false;
-
     if (whereAnswer.mode === 'single') {
       const v = startEndSingle;
       return seComplete(v) && seOrderOk(v);
     }
-
     const items = (whereAnswer.items || []).filter(it => it.city?.name);
     if (!items.length) return false;
-
     const allCompleteAndOrdered = items.every(it => {
       const se = startEndByCity[it.city.place_id];
       return seComplete(se) && seOrderOk(se);
     });
     if (!allCompleteAndOrdered) return false;
-
     for (let i = 0; i < items.length - 1; i++) {
       const aKey = items[i].city.place_id;
       const bKey = items[i + 1].city.place_id;
@@ -290,14 +292,7 @@ useEffect(() => {
     return true;
   }, [whereAnswer, startEndSingle, startEndByCity]);
 
-  // Gece sayısı (global)
-  const nights = useMemo(() => {
-    const range = computeGlobalRange(whereAnswer, startEndSingle, startEndByCity);
-    if (!range.start || !range.end) return 0;
-    return diffNights(range.start, range.end);
-  }, [whereAnswer, startEndSingle, startEndByCity]);
-
-  // İleri buton durumu (steps shifted by +1)
+  // İleri buton durumu
   const canNext = useMemo(() => {
     if (step === 0) {
       return (tripTitle || '').trim().length >= 2;
@@ -312,7 +307,12 @@ useEffect(() => {
       if (!whereAnswer) return false;
       const rangeOk = (segs, rng) =>
         segs.length > 0 &&
-        segs.every(s => s.place?.name && s.start && s.end && rng.start && rng.end && s.start >= rng.start && s.end <= rng.end && s.end > s.start);
+        segs.every(s =>
+          s.place?.name &&
+          s.start && s.end &&
+          rng.start && rng.end &&
+          s.start >= rng.start && s.end <= rng.end && s.end > s.start
+        );
 
       if (whereAnswer.mode === 'single') return rangeOk(lodgingSingle, activeRange);
 
@@ -324,7 +324,6 @@ useEffect(() => {
         return rangeOk(segs, rng);
       });
     }
-    // Step 4 (TripListQuestion) için zorunluluk yok.
     return true;
   }, [step, tripTitle, whereAnswer, step2Valid, lodgingSingle, lodgingByCity, activeRange, startEndByCity]);
 
@@ -337,13 +336,101 @@ useEffect(() => {
     });
   };
 
-  const next = () => {
-    if (!canNext) return Alert.alert('Eksik bilgi', 'Devam etmek için bu adımı tamamlayın.');
-    safeStepChange(() => setStep(s => Math.min(5, s + 1))); // 0..5 (now 6 steps)
-  };
-  const back = () => { safeStepChange(() => setStep(s => Math.max(0, s - 1))); };
+  function next() {
+    if (!canNext) {
+      Alert.alert('Eksik bilgi', 'Devam etmek için bu adımı tamamlayın.');
+      return;
+    }
 
-  // TripListQuestion adımına girerken dailyPlan'i kur (old step 3 → now 4)
+    // Step 1'de şehir seti değiştiyse *burada* resetle (kullanıcı İleri dediğinde)
+    if (step === 1) {
+      const newKeys = cityKeysOf(whereAnswer);
+      const prevKeys = committedCityKeysRef.current;
+      const changed = !shallowEqualArr(newKeys, prevKeys);
+      if (changed) {
+        // ileri adımların tamamını temizle
+        setStartEndSingle(null);
+        setStartEndByCity({});
+        setLodgingSingle([]);
+        setLodgingByCity({});
+        setSelectedPlaces([]);
+        setDailyPlan([]);
+        setCityIndex(0);
+
+        if (draft?._id) {
+          patchTripLocal(draft._id, {
+            _startEndSingle: null,
+            _startEndByCity: {},
+            _lodgingSingle: [],
+            _lodgingByCity: {},
+            places: [],
+            dailyPlan: [],
+            dateRange: { start: null, end: null },
+          }).catch(() => {});
+        }
+
+        // yeni şehir setini commit olarak kabul et
+        committedCityKeysRef.current = newKeys;
+      }
+    }
+
+    // Step 4 → Review
+    if (step === 4) {
+      const id = draft?._id || route?.params?.resumeId;
+      if (id) {
+        patchTripLocal(id, { status: 'draft', wizardStep: step }).catch(() => {});
+        nav.navigate('TripReview', { tripId: id, ts: Date.now() });
+      } else {
+        nav.navigate('TripReview');
+      }
+      return;
+    }
+
+    // Edit akışında hedef adıma gelince Review’e dön
+    if (returnTo === 'TripReview' && editIntent && Number.isInteger(editIntent.returnAfterStep)) {
+      if (step === editIntent.returnAfterStep) {
+        const id = draft?._id || route?.params?.resumeId;
+        if (id) {
+          patchTripLocal(id, { status: 'draft', wizardStep: step }).catch(() => {});
+          nav.navigate('TripReview', { tripId: id, ts: Date.now() });
+        } else {
+          nav.navigate('TripReview');
+        }
+        return;
+      }
+    }
+
+    // Normal ileri
+    safeStepChange(() => setStep(s => Math.min(4, s + 1)));
+  }
+
+  // Konaklama editinde “geri”yi Start&End’e değil Review’a al (silme YOK)
+  const back = () => {
+    if (openedForEdit && editIntent?.target === 'lodging' && step === 3) {
+      const id = draft?._id || route?.params?.resumeId;
+      if (id) nav.navigate('TripReview', { tripId: id, ts: Date.now() });
+      else nav.navigate('TripReview');
+      return;
+    }
+    safeStepChange(() => setStep(s => Math.max(0, s - 1)));
+  };
+
+  // Donanım geri/gesture
+  useEffect(() => {
+    const unsub = nav.addListener('beforeRemove', (e) => {
+      if (openedForEdit && editIntent?.target === 'lodging' && step === 3) {
+        e.preventDefault();
+        const id = draft?._id || route?.params?.resumeId;
+        if (id) nav.navigate('TripReview', { tripId: id, ts: Date.now() });
+        else nav.navigate('TripReview');
+      } else if (draft?._id) {
+        patchTripLocal(draft._id, { status: 'draft', wizardStep: step }).catch(() => {});
+      }
+    });
+    return unsub;
+  }, [nav, draft?._id, step, openedForEdit, editIntent?.target]);
+
+  // TripListQuestion adımına girerken dailyPlan güncelle
   useEffect(() => {
     if (step !== 4) return;
     const range = computeGlobalRange(whereAnswer, startEndSingle, startEndByCity);
@@ -352,53 +439,31 @@ useEffect(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, whereAnswer, startEndSingle, startEndByCity]);
 
-    // --- Autosave draft (debounced)
-   useEffect(() => {
-     if (!draft?._id) return;
-     const id = draft._id;
-     const t = setTimeout(() => {
-       const payload = {
-         title: (tripTitle || '').trim() || draft.title || 'New Trip',
-         status: 'draft',
-         wizardStep: step,
-         // kullanıcı devam etsin diye geçici state'leri de saklıyoruz
-         _whereAnswer: whereAnswer,
-         _startEndSingle: startEndSingle,
-         _startEndByCity: startEndByCity,
-         _lodgingSingle: lodgingSingle,
-         _lodgingByCity: lodgingByCity,
-         dailyPlan,
-         places: selectedPlaces,
-       };
-       patchTripLocal(id, payload).then(setDraft).catch(() => {});
-     }, 350);
-     return () => clearTimeout(t);
-   }, [
-     draft?._id,
-     step,
-     tripTitle,
-     whereAnswer,
-     startEndSingle,
-     startEndByCity,
-     lodgingSingle,
-     lodgingByCity,
-     dailyPlan,
-     selectedPlaces,
-   ]);
+  // Autosave
+  useEffect(() => {
+    if (!draft?._id) return;
+    const id = draft._id;
+    const t = setTimeout(() => {
+      const payload = {
+        title: (tripTitle || '').trim() || draft.title || 'New Trip',
+        status: 'draft',
+        wizardStep: step,
+        _whereAnswer: whereAnswer,
+        _startEndSingle: startEndSingle,
+        _startEndByCity: startEndByCity,
+        _lodgingSingle: lodgingSingle,
+        _lodgingByCity: lodgingByCity,
+        dailyPlan,
+        places: selectedPlaces,
+      };
+      patchTripLocal(id, payload).then(setDraft).catch(() => {});
+    }, 350);
+    return () => clearTimeout(t);
+  }, [draft?._id, step, tripTitle, whereAnswer, startEndSingle, startEndByCity, lodgingSingle, lodgingByCity, dailyPlan, selectedPlaces]);
 
-     useEffect(() => {
-     const unsub = nav.addListener('beforeRemove', () => {
-       if (!draft?._id) return;
-       patchTripLocal(draft._id, { status: 'draft', wizardStep: step }).catch(() => {});
-     });
-     return unsub;
-   }, [nav, draft?._id, step]);
-
-
-  // Submit — yerelde kaydet ve TripsHome'a dön
+  // Submit
   const submit = async () => {
     if (!draft) return;
-
     const range = computeGlobalRange(whereAnswer, startEndSingle, startEndByCity);
     const stays = buildStays(whereAnswer, startEndSingle, startEndByCity, lodgingSingle, lodgingByCity);
 
@@ -421,21 +486,20 @@ useEffect(() => {
         checkIn: s.dateRange?.start || null,
         checkOut: s.dateRange?.end || null,
       })),
-      dailyPlan, // [{date, visits:[{id,name,lat,lng,address}]}]
+      dailyPlan,
       places: selectedPlaces?.map(p => ({
         id: p.id,
         name: p.name,
         coords: p.coords || (p.lat && p.lon ? { lat: p.lat, lng: p.lon } : undefined),
         address: p.address || undefined,
       })) || [],
-       status: 'active',
-       wizardStep: null,
-       // geçici alanları temizleyelim
-       _whereAnswer: undefined,
-       _startEndSingle: undefined,
-       _startEndByCity: undefined,
-       _lodgingSingle: undefined,
-       _lodgingByCity: undefined,
+      status: 'active',
+      wizardStep: null,
+      _whereAnswer: undefined,
+      _startEndSingle: undefined,
+      _startEndByCity: undefined,
+      _lodgingSingle: undefined,
+      _lodgingByCity: undefined,
     });
 
     nav.navigate('TripsHome', { refresh: Date.now() });
@@ -450,7 +514,7 @@ useEffect(() => {
     });
   }
 
-  // LodgingQuestion bir Promise bekliyor → picker'ı awaitSelection: true ile aç!
+  // Konaklama picker
   function handleLodgingMapPick({ index, center, cityName, startDate, endDate }) {
     return bridge.openPicker({
       which: 'lodging',
@@ -463,7 +527,7 @@ useEffect(() => {
     });
   }
 
-  // Trip nesnesi (TripListQuestion'a verilecek minimum alanlar)
+  // Trip nesnesi (TripListQuestion)
   const rangeForTrip = useMemo(
     () => computeGlobalRange(whereAnswer, startEndSingle, startEndByCity),
     [whereAnswer, startEndSingle, startEndByCity]
@@ -476,19 +540,12 @@ useEffect(() => {
   }), [rangeForTrip.start, rangeForTrip.end, dailyPlan, selectedPlaces]);
 
   const setTripFromList = (nextTrip) => {
-    if (Array.isArray(nextTrip?.dailyPlan)) {
-      setDailyPlan(nextTrip.dailyPlan);
-    }
-    if (Array.isArray(nextTrip?.selectedPlaces)) {
-      setSelectedPlaces(nextTrip.selectedPlaces);
-    }
+    if (Array.isArray(nextTrip?.dailyPlan)) setDailyPlan(nextTrip.dailyPlan);
+    if (Array.isArray(nextTrip?.selectedPlaces)) setSelectedPlaces(nextTrip.selectedPlaces);
   };
 
-  // --- Multi-city helpers for Step 4 flow (Ankara → Antalya → …)
-  const filteredCities = useMemo(
-    () => (whereAnswer?.items || []).filter(it => it.city?.name),
-    [whereAnswer]
-  );
+  // Multi-city helpers
+  const filteredCities = useMemo(() => (whereAnswer?.items || []).filter(it => it.city?.name), [whereAnswer]);
   const cityNames = filteredCities.map(it => it.city.name);
   const cityCount = cityNames.length;
   const isFirstCity = cityIndex === 0;
@@ -504,7 +561,7 @@ useEffect(() => {
   };
 
   // --- Render
-  const titles = ['Gezi Adı', 'Lokasyon', 'Başlangıç & Bitiş', 'Konaklama', 'Gezilecek Yerler', 'Önizleme'];
+  const titles = ['Gezi Adı', 'Lokasyon', 'Başlangıç & Bitiş', 'Konaklama', 'Gezilecek Yerler'];
 
   return (
     <View style={styles.container}>
@@ -518,16 +575,8 @@ useEffect(() => {
             {/* STEP 0 — Gezi Adı */}
             {step === 0 && (
               <Card title="Gezi Adı">
-                <Text style={{ color: '#A8A8B3' }}>
-                  Lütfen geziye bir isim verin (ör. “Ankara + Antalya Sonbahar”).
-                </Text>
-                <Input
-                  placeholder="Gezi adı"
-                  value={tripTitle}
-                  onChangeText={setTripTitle}
-                  maxLength={80}
-                  autoFocus
-                />
+                <Text style={{ color: '#A8A8B3' }}>Lütfen geziye bir isim verin (ör. “Ankara + Antalya Sonbahar”).</Text>
+                <Input placeholder="Gezi adı" value={tripTitle} onChangeText={setTripTitle} maxLength={80} autoFocus />
                 <Text style={{ color: '#6B7280', fontSize: 12 }}>
                   {Math.max(0, 80 - (tripTitle || '').length)} karakter kaldı
                 </Text>
@@ -677,19 +726,6 @@ useEffect(() => {
                 )}
               </Card>
             )}
-
-            {/* STEP 5 — Önizleme */}
-            {step === 5 && (
-              <Card title="Önizleme">
-                <Preview
-                  where={whereAnswer}
-                  singleSE={startEndSingle}
-                  multiSE={startEndByCity}
-                  nights={nights}
-                  staysCount={computeStaysCount(whereAnswer, lodgingSingle, lodgingByCity)}
-                />
-              </Card>
-            )}
           </View>
         )}
         contentContainerStyle={{ paddingBottom: 12 }}
@@ -697,17 +733,22 @@ useEffect(() => {
 
       {/* Footer */}
       <View style={styles.footer}>
-  <TouchableOpacity onPress={() => {
-      if (draft?._id) patchTripLocal(draft._id, { status: 'draft', wizardStep: step }).catch(()=>{});
-      nav.goBack();
-    }} style={styles.ghostBtn}>
-          <Text style={styles.ghostText}>Vazgeç</Text></TouchableOpacity>
-        {step > 0 && (<TouchableOpacity onPress={back} style={styles.secondaryBtn}><Text style={styles.secondaryText}>Geri</Text></TouchableOpacity>)}
-        {step < 5 ? (
-          <TouchableOpacity disabled={!canNext} onPress={next} style={[styles.primaryBtn, !canNext && styles.disabled]}><Text style={styles.primaryText}>İleri</Text></TouchableOpacity>
-        ) : (
-          <TouchableOpacity onPress={submit} style={styles.primaryBtn}><Text style={styles.primaryText}>Geziyi Oluştur</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => {
+          if (draft?._id) patchTripLocal(draft._id, { status: 'draft', wizardStep: step }).catch(()=>{});
+          nav.goBack();
+        }} style={styles.ghostBtn}>
+          <Text style={styles.ghostText}>Vazgeç</Text>
+        </TouchableOpacity>
+
+        {!(openedForEdit && editIntent?.target === 'lodging' && step === 3) && step > 0 && (
+          <TouchableOpacity onPress={back} style={styles.secondaryBtn}>
+            <Text style={styles.secondaryText}>Geri</Text>
+          </TouchableOpacity>
         )}
+
+        <TouchableOpacity disabled={!canNext} onPress={next} style={[styles.primaryBtn, !canNext && styles.disabled]}>
+          <Text style={styles.primaryText}>İleri</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -741,31 +782,6 @@ function Stepper({ items, index, onPrev, onNext }) {
   );
 }
 
-function Preview({ where, singleSE, multiSE, nights, staysCount }) {
-  const range = computeGlobalRange(where, singleSE, multiSE);
-  const lines = [];
-
-  if (where?.mode === 'single' && singleSE) {
-    lines.push(`Başlangıç: ${singleSE.start?.date || '-'} ${singleSE.start?.time || '-'} @ ${singleSE.start?.hub?.name || '-'}`);
-    lines.push(`Bitiş:     ${singleSE.end?.date || '-'} ${singleSE.end?.time || '-'} @ ${singleSE.end?.hub?.name || '-'}`);
-  } else {
-    (where?.items || []).forEach(it => {
-      const se = multiSE[it.city.place_id];
-      if (!se) return;
-      lines.push(`[${it.city.name}] Başlangıç: ${se.start?.date || '-'} ${se.start?.time || '-'} @ ${se.start?.hub?.name || '-'}`);
-      lines.push(`[${it.city.name}] Bitiş:     ${se.end?.date || '-'} ${se.end?.time || '-'} @ ${se.end?.hub?.name || '-'}`);
-    });
-  }
-
-  return (
-    <View style={{ gap: 8 }}>
-      <Text style={styles.preview}>{lines.join('\n')}</Text>
-      <Text style={styles.preview}>Toplam Gece: {nights}</Text>
-      <Text style={styles.preview}>Konaklama Kaydı: {staysCount}</Text>
-    </View>
-  );
-}
-
 /* ------------------------------ Logic utils ----------------------------- */
 function diffNights(start, end) {
   if (!start || !end) return 0;
@@ -776,14 +792,9 @@ function diffNights(start, end) {
 
 function computeGlobalRange(where, singleSE, multiSE) {
   if (!where) return { start: null, end: null };
-
   if (where.mode === 'single') {
-    return {
-      start: singleSE?.start?.date || null,
-      end:   singleSE?.end?.date   || null,
-    };
+    return { start: singleSE?.start?.date || null, end: singleSE?.end?.date || null };
   }
-
   const dates = [];
   (where.items || []).forEach(it => {
     const se = multiSE[it.city.place_id];
@@ -791,27 +802,20 @@ function computeGlobalRange(where, singleSE, multiSE) {
     if (se?.end?.date)   dates.push(se.end.date);
   });
   if (!dates.length) return { start: null, end: null };
-
   const asc = dates.slice().sort();
-  const start = asc[0] || null;
-  const end   = asc[asc.length - 1] || null;
-
-  return { start, end };
+  return { start: asc[0] || null, end: asc[asc.length - 1] || null };
 }
 
 function buildStays(where, singleSE, multiSE, singleSegs, byCitySegs) {
-  const toStay = (cityName, seg) => {
-    const nights = diffNights(seg.start, seg.end);
-    return {
-      id: seg.id,
-      city: cityName,
-      place: { name: seg.place?.name, place_id: seg.place?.place_id },
-      nights,
-      checkIn: '14:00',
-      checkOut: '11:00',
-      dateRange: { start: seg.start, end: seg.end },
-    };
-  };
+  const toStay = (cityName, seg) => ({
+    id: seg.id,
+    city: cityName,
+    place: { name: seg.place?.name, place_id: seg.place?.place_id },
+    nights: diffNights(seg.start, seg.end),
+    checkIn: '14:00',
+    checkOut: '11:00',
+    dateRange: { start: seg.start, end: seg.end },
+  });
   const result = [];
   if (!where) return result;
   if (where.mode === 'single') {
@@ -825,12 +829,6 @@ function buildStays(where, singleSE, multiSE, singleSegs, byCitySegs) {
     });
   }
   return result;
-}
-
-function computeStaysCount(where, singleSegs, byCitySegs) {
-  if (!where) return 0;
-  if (where.mode === 'single') return (singleSegs || []).length;
-  return (where.items || []).reduce((acc, it) => acc + ((byCitySegs[it.city.place_id] || []).length), 0);
 }
 
 /* ------------------------------- Styles -------------------------------- */

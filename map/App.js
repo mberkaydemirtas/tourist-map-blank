@@ -21,6 +21,7 @@ import TripsListScreen from '../trips/TripsListScreen';
 import TripEditorScreen from '../trips/TripEditorScreen';
 import CreateTripWizardScreen from '../trips/CreateTripWizardScreen';
 import TripPlacesScreen from '../trips/screens/TripPlacesScreen';
+import TripReviewScreen from '../trips/components/TripReviewScreen';
 
 // Veri sürücüsü (local-first)
 import { setTripsDriver } from '../trips/shared/tripsRepo';
@@ -65,6 +66,7 @@ function TripsNavigator() {
         options={{ title: 'Gezi Detayı' }}
       />
       <TripsStack.Screen name="TripPlacesScreen" component={TripPlacesScreen} />
+      <TripsStack.Screen name="TripReview" component={TripReviewScreen} options={{ title: 'Review' }} />
 
 
     </TripsStack.Navigator>
