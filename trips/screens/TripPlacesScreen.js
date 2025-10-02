@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Platform } from "react-native";
 import TripPlaceSelection from "../components/TripPlaceSelection";
+import { resolvePlacesBatch } from '../services/placeResolver';
 
 // ---------- API BASE (otomatik seç) ----------
 /**
@@ -56,39 +57,15 @@ export default function TripPlacesScreen() {
   // Seçimi onayla → OSM noktalarını lazy match ile place_id'ye bağla
   const onConfirm = async (selected) => {
     try {
-      const osmOnly = selected.filter(x => x.source === "osm" && !x.place_id);
-      let matches = [];
-      if (osmOnly.length) {
-        const res = await fetch(`${API_BASE}/api/poi/match`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            items: osmOnly.map(x => ({
-              osm_id: x.osm_id,
-              name: x.name,
-              lat: x.lat,
-              lon: x.lon,
-              city: "Ankara",
-            }))
-          })
-        });
-        if (!res.ok) throw new Error(`poiMatch_failed_${res.status}`);
-        const json = await res.json();
-        matches = json.results || [];
-      }
-
-      const byKey = new Map(matches.map(m => [m.osm_id ?? `${m.name}@${m.lat},${m.lon}`, m]));
-      const merged = selected.map(item => {
-        if (item.source === "osm" && !item.place_id) {
-          const k = item.osm_id ?? `${item.name}@${item.lat},${item.lon}`;
-          const m = byKey.get(k);
-          if (m?.matched && m.place_id) return { ...item, place_id: m.place_id };
-        }
-        return item;
+      const resolved = await resolvePlacesBatch({
+        items: selected,
+        city: "Ankara",
+        API_BASE,
       });
-
-      console.log("Rota noktaları:", merged);
-      // navigation.navigate("RouteScreen", { points: merged })
+      console.log("Resolved places:", resolved);
+      // TODO: burada wizard/route state’ine yazın:
+      // setSelectedPlaces(resolved)
+      // veya navigation ile wizard'a geri dönün.
     } catch (err) {
       console.warn("onConfirm error:", err?.message || err);
     }

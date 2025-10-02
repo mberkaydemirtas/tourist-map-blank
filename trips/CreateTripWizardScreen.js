@@ -100,6 +100,8 @@ export default function CreateTripWizardScreen() {
   // Step 3 — Konaklama
   const [lodgingSingle, setLodgingSingle] = useState([]);
   const [lodgingByCity, setLodgingByCity] = useState({});
+  const [travelMode, setTravelMode] = useState('walk_transport'); // default seçili
+
 
   // Step 4 — Gezilecek Yerler
   const [selectedPlaces, setSelectedPlaces] = useState([]);
@@ -424,12 +426,13 @@ const flushTitleNow = useCallback(async () => {
       _lodgingByCity: lodgingByCity,
       dailyPlan,
       places: selectedPlaces,
+      travelMode,
     };
 
     await patchTripLocal(id, payload).catch(() => {});
     setDraft(prev => (prev ? { ...prev, ...payload } : prev));
     DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: id, patch: payload });
-  }, [whereAnswer, startEndSingle, startEndByCity, lodgingSingle, lodgingByCity, dailyPlan, selectedPlaces, tripTitle]);
+  }, [whereAnswer, startEndSingle, startEndByCity, lodgingSingle, lodgingByCity, dailyPlan, selectedPlaces, tripTitle, travelMode]);
 
   // NEXT
 async function next() {
@@ -620,6 +623,7 @@ useEffect(() => {
       _lodgingByCity: lodgingByCity,
       dailyPlan,
       places: selectedPlaces,
+      travelMode,
     };
     patchTripLocal(key, payload)
       .then((res) => setDraft(prev => ensureIdsDoc(res || prev)))
@@ -832,6 +836,8 @@ useEffect(() => {
                       stays={staysFromSegments(lodgingSingle)}
                       onChange={(next) => setLodgingSingle(segmentsFromStays(next))}
                       onMapPick={handleLodgingMapPick}
+                      travelMode={travelMode}
+                      onChangeMode={setTravelMode}
                     />
                   ) : <Text style={{ color: '#A8A8B3' }}>Önce şehir ve tarihleri seçin.</Text>
                 ) : (
@@ -857,6 +863,8 @@ useEffect(() => {
                                 setLodgingByCity(prev => ({ ...prev, [activeCityKey]: segmentsFromStays(next) }))
                               }
                               onMapPick={handleLodgingMapPick}
+                              travelMode={travelMode}
+                              onChangeMode={setTravelMode}
                             />
                           ) : null}
                         </>
@@ -886,6 +894,7 @@ useEffect(() => {
                       cityName={activeCityObj?.name || ''}
                       cityCenter={activeCityObj?.center || { lat: 39.92077, lng: 32.85411 }}
                       listHeight={420}
+                      travelMode={travelMode} setTravelMode={setTravelMode} 
                     />
                   </View>
                 ) : (

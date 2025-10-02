@@ -10,7 +10,7 @@
 // - "Haritadan Konum Seç" → mevcut bloğun (gerekirse otomatik) tarihleriyle haritayı aç; seçim gelirse bloğa yazar.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 
 const BTN = '#2563EB';
@@ -25,7 +25,13 @@ const BORDER = '#23262F';
  * - onChange(nextStays)
  * - onMapPick?: (payload: { index: number, center?: { lat:number,lng:number }, cityName?: string, startDate: string, endDate: string }) => Promise<{ name: string, place_id?: string, location?: {lat:number,lng:number} } | null | undefined>
  */
-export default function LodgingQuestion({ tripRange, cityName, cityCenter, stays = [], onChange, onMapPick, onNext }) {   const [localStays, setLocalStays] = useState(() =>
+export default function LodgingQuestion({
+  tripRange, cityName, cityCenter,
+  stays = [], onChange, onMapPick, onNext,
+  travelMode = 'walk_transport',     // default: Walk & Transportation
+  onChangeMode = () => {},
+}) {
+     const [localStays, setLocalStays] = useState(() =>
      (stays && stays.length)
        ? stays
        : [{ id: uid(), startDate: tripRange?.startDate || '', endDate: tripRange?.endDate || '', place: null }]
@@ -110,6 +116,26 @@ export default function LodgingQuestion({ tripRange, cityName, cityCenter, stays
   return (
     <View style={{ gap: 12 }}>
       <Text style={styles.note}>Konaklamalar • Gezi: {tripRange?.startDate || '—'} → {tripRange?.endDate || '—'}</Text>
+ 
+       {/* Ulaşım Modu Toggle */}
+       <View style={{ flexDirection:'row', gap:8 }}>
+         {[
+           { key:'walk_transport', label:'Walk & Transportation' },
+           { key:'car_taxi',       label:'Car & Taxi' },
+         ].map(opt => (
+           <TouchableOpacity
+             key={opt.key}
+             onPress={() => onChangeMode(opt.key)}
+             style={[
+               styles.btn,
+               { borderColor: travelMode === opt.key ? '#2563EB' : BORDER,
+                 backgroundColor: travelMode === opt.key ? '#0E1B2E' : '#0D0F14' }
+             ]}
+           >
+             <Text style={[styles.btnText, { color:'#fff' }]}>{opt.label}</Text>
+           </TouchableOpacity>
+         ))}
+       </View>
 
       {localStays.map((stay, idx) => (
         <View key={stay.id} style={styles.card}>

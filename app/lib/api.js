@@ -6,7 +6,7 @@ import { Platform } from "react-native";
  * - EXPO_PUBLIC_API_BASE           : https://… (tam URL)
  * - EXPO_PUBLIC_SERVER_ENABLED     : "true" | "false"
  * - EXPO_PUBLIC_API_TIMEOUT_MS     : sayı (ms)
- * - EXPO_PUBLIC_GOOGLE_PLACES_KEY  : (opsiyonel) client-side fallback için
+ * - EXPO_PUBLIC_GOOGLE_MAPS_API_KEY : (opsiyonel) client-side fallback için
  */
 
 const PROD_BASE = "https://tourist-map-blank-12.onrender.com";
@@ -24,7 +24,7 @@ const ENV_SERVER_ENABLED_RAW = (process.env?.EXPO_PUBLIC_SERVER_ENABLED || "")
   .trim()
   .toLowerCase();
 const ENV_TIMEOUT_RAW = (process.env?.EXPO_PUBLIC_API_TIMEOUT_MS || "").trim();
-const GOOGLE_WEB_KEY = (process.env?.EXPO_PUBLIC_GOOGLE_PLACES_KEY || "").trim();
+const GOOGLE_WEB_KEY = (process.env?.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "").trim();
 
 // API_BASE seçimi:
 // 1) ENV override
@@ -36,9 +36,9 @@ export const API_BASE =
 export const SERVER_ENABLED =
   ENV_SERVER_ENABLED_RAW === "false" ? false : Boolean(API_BASE && API_BASE.length);
 
-// ⛑️ 0 veya geçersiz değerlerde 5000ms kullan
+// ⛑️ 0 veya geçersiz değerlerde 15000ms kullan (ÖNCE 5000’di)
 const _tParsed = Number(ENV_TIMEOUT_RAW);
-export const API_TIMEOUT_MS = Number.isFinite(_tParsed) && _tParsed > 0 ? _tParsed : 5000;
+export const API_TIMEOUT_MS = Number.isFinite(_tParsed) && _tParsed > 0 ? _tParsed : 15000;
 
 if (__DEV__) {
   console.log(
@@ -95,15 +95,18 @@ function composeAbortController(upstream, timeoutMs = API_TIMEOUT_MS) {
   };
 }
 
-// 🔧 Güvenli fetch: RN Android + Abort bug’ları için /api/poi/google/* isteklerinde sinyali kapat
+// 🔧 Güvenli fetch: RN Android + Abort bug’ları için bazı isteklerde sinyali kapat
 async function fetchJson(
   urlStr,
   { method = "GET", headers, body, signal, timeoutMs } = {}
 ) {
   const url = String(urlStr);
   const isAndroid = Platform.OS === "android";
+
+  // GÜNCEL: /api/poi/match de no-signal kapsamına alındı
   const isPoiGoogle = url.includes("/api/poi/google/");
-  const forceNoSignal = isAndroid && isPoiGoogle;
+  const isPoiMatch = url.includes("/api/poi/match");
+  const forceNoSignal = isAndroid && (isPoiGoogle || isPoiMatch);
 
   const T = Number.isFinite(Number(timeoutMs)) ? Number(timeoutMs) : API_TIMEOUT_MS;
   const { signal: finalSignal, cleanup } = forceNoSignal
@@ -111,8 +114,8 @@ async function fetchJson(
     : composeAbortController(signal, T);
 
   const h = { Accept: "application/json", ...(headers || {}) };
-  // RN Android + proxy: gzip bazen body’nin hiç resolve olmamasına yol açabiliyor
-  if (isPoiGoogle) h["Accept-Encoding"] = "identity";
+  // RN Android + proxy: gzip bazı ortamlarda body'nin resolve olmamasına yol açabiliyor
+  if (isPoiGoogle || isPoiMatch) h["Accept-Encoding"] = "identity";
   const baseOpts = { method, headers: h, body };
 
   try {
@@ -437,25 +440,22 @@ export async function apiFetch(
 export async function poiMatch(items, city) {
   if (!serverAvailable()) return { results: [] };
 
-  const { signal, cleanup } = composeAbortController(undefined, API_TIMEOUT_MS);
-  try {
-    const res = await fetch(`${API_BASE}/api/poi/match`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal,
-      body: JSON.stringify({
-        items: (items || []).map((x) => ({
-          osm_id: x.osm_id,
-          name: x.name,
-          lat: x.lat,
-          lon: x.lon,
-          city: city || "Ankara",
-        })),
-      }),
-    });
-    if (!res.ok) throw new Error("poiMatch_failed");
-    return res.json(); // { results: [...] }
-  } finally {
-    cleanup();
-  }
+  // GÜNCEL: fetchJson kullanıyoruz → RN Abort bug bypass + tek noktadan timeout
+  const url = `${API_BASE}/api/poi/match`;
+  const res = await fetchJson(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    timeoutMs: API_TIMEOUT_MS,
+    body: JSON.stringify({
+      items: (items || []).map((x) => ({
+        osm_id: x.osm_id,
+        name: x.name,
+        lat: x.lat,
+        lon: x.lon,
+        city: city || "Ankara",
+      })),
+    }),
+  });
+  if (!res.ok) throw new Error(`poiMatch_failed_${res.status}`);
+  return res.json(); // { results: [...] }
 }

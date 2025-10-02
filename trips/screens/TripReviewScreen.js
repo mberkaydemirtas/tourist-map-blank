@@ -1,12 +1,14 @@
 // trips/screens/TripReviewScreen.js
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator,DeviceEventEmitter  } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, DeviceEventEmitter, Platform, ToastAndroid } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 
-import { listTripsLocal, getTripLocal, saveTripLocal, patchTripLocal } from '../../app/lib/tripsLocal';
+import { listTripsLocal, getTripLocal, patchTripLocal } from '../../app/lib/tripsLocal';
 import { generatePlan } from '../services/planService';
 import { savePlan } from '../shared/plansRepo';
+import { resolvePlacesBatch } from '../services/placeResolver';
+import { API_BASE } from '../../app/lib/api';
 
 const BORDER = '#23262F';
 const FG = '#EAEAEA';
@@ -116,62 +118,219 @@ export default function TripReviewScreen() {
     });
   }, [nav, tripId]);
 
-const finalize = useCallback(async () => {
-  if (!trip) return;
-  try {
-    setSaving(true);
+  /* ---------------- Re-resolve (Yeniden Eşle) ---------------- */
+  const round5 = (x) => Math.round(Number(x) * 1e5) / 1e5;
+  const keyOf = (x) => {
+    const lat = Number(x?.lat ?? x?.coords?.lat);
+    const lon = Number(x?.lon ?? x?.coords?.lng ?? x?.coords?.lon);
+    const nm  = String(x?.name || '').trim().toLowerCase();
+    return `${nm}@${round5(lat)},${round5(lon)}`;
+  };
 
-   // 1) Geziyi finalize et → completed (yerinde patch)
-   const key = trip._id ?? trip.id;
-   const when = new Date().toISOString();
-   await patchTripLocal(key, {
-     status: 'completed',
-     wizardStep: null,
-     updatedAt: when,
-     __dirty: true,
-   });
-   // local state'i de güncelle (ekrana anında yansısın)
-   const completedTrip = ensureIds({ ...trip, status: 'completed', wizardStep: null, updatedAt: when });
-   setTrip(completedTrip);
+  const reResolve = useCallback(async () => {
+    if (!trip) return;
 
-    // Listeyi canlı güncelle (rozeti de değişsin)
-    try {
-      DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, {
-       tripId: key,
-       patch: { status: 'completed', wizardStep: null, updatedAt: when },
-      });
-    } catch {}
+    const all = getPlacesArray(trip);
+    if (!all.length) {
+      Alert.alert('Bilgi', 'Eşlenecek yer bulunamadı.');
+      return;
+    }
 
-    // 2) Plan üret + kaydet
-    const prefs = {
-      dayStart: '09:30',
-      dayEnd: '20:00',
-      lunchAround: '13:00',
-      dinnerAround: '19:00',
-      defaultDurations: { museum: 90, sights: 45, restaurants: 60, cafes: 40, parks: 40, bars: 75 },
-      tempo: 'normal',
-      travelMode: 'driving',
-      mealSearchRadiusMeters: 1200,
-      minRating: 4.2,
-    };
-    const plan = await generatePlan(completedTrip, prefs, { useRealDirections: true });
-    await savePlan(plan);
+    // Kaynak alanı: places mi selectedPlaces mı?
+    const sourceField = Array.isArray(trip?.places) && trip.places.length ? 'places'
+                     : (Array.isArray(trip?.selectedPlaces) ? 'selectedPlaces' : 'places');
 
-    // 3) Stack’i resetle → geri tuşu "Trip Anasayfası"na götürsün
-    nav.reset({
-      index: 1,
-      routes: [
-        { name: 'TripsHome' }, // ← sende “Trip Anasayfası”nın gerçek route adı neyse bunu yaz
-        { name: 'TripPlans', params: { tripId: completedTrip._id } },
-      ],
+    const unresolved = all.filter(p => {
+      if (p?.place_id) return false;
+      const lat = Number(p?.lat ?? p?.coords?.lat);
+      const lon = Number(p?.lon ?? p?.coords?.lng ?? p?.coords?.lon);
+      return Number.isFinite(lat) && Number.isFinite(lon) && (p?.name || '').trim().length > 0;
     });
-  } catch (e) {
-    console.warn('[TripReview] finalize error', e);
-    Alert.alert('Hata', 'Gezi tamamlanırken sorun oluştu.');
-  } finally {
-    setSaving(false);
-  }
-}, [trip, nav]);
+
+    if (!unresolved.length) {
+      Alert.alert('Tamam', 'Şu an eşleşmeyen kayıt yok.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const cityName =
+        (Array.isArray(trip?.cities) && trip.cities[0]) ||
+        (trip?._whereAnswer?.mode === 'single' ? trip?._whereAnswer?.single?.city?.name : null) ||
+        '';
+
+      const batch = await resolvePlacesBatch({
+        items: unresolved,
+        city: cityName || ''
+      });
+
+      // Eski listeyi anahtarla birleştir
+      const byKey = new Map(batch.map(x => [keyOf(x), x]));
+      const merged = all.map(old => {
+        if (old?.place_id) return old;
+        const k = keyOf(old);
+        const nn = byKey.get(k);
+        if (nn?.place_id) {
+          return {
+            ...old,
+            place_id: nn.place_id,
+            resolved: true,
+            opening_hours: nn.opening_hours ?? old.opening_hours ?? null,
+            rating: nn.rating ?? old.rating ?? null,
+            user_ratings_total: nn.user_ratings_total ?? old.user_ratings_total ?? null,
+            price_level: nn.price_level ?? old.price_level ?? null,
+          };
+        }
+        return old;
+      });
+
+      // Kaynağa geri yaz
+      const key = trip._id ?? trip.id;
+      await patchTripLocal(key, {
+        [sourceField]: merged,
+        updatedAt: new Date().toISOString(),
+        __dirty: true,
+      });
+
+      setTrip(prev => ({ ...(prev || {}), [sourceField]: merged }));
+      DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: key, patch: { [sourceField]: merged } });
+      Alert.alert('Tamam', 'Yeniden eşleştirme tamamlandı.');
+    } catch (e) {
+      console.warn('[TripReview] reResolve error', e);
+      Alert.alert('Hata', 'Yeniden eşleştirme başarısız.');
+    } finally {
+      setLoading(false);
+    }
+  }, [trip]);
+
+  // küçük helper – Android’de Toast, iOS’ta Alert
+  const notify = useCallback((msg) => {
+    if (Platform.OS === 'android') ToastAndroid.show(msg, ToastAndroid.LONG);
+    else Alert.alert('Bilgi', msg);
+  }, []);
+  /* ---------------- Finalize ---------------- */
+  const finalize = useCallback(async () => {
+    if (!trip) return;
+    try {
+      setSaving(true);
+
+      // 0) Kaynak alan ve şehir adı
+      const sourceField =
+        Array.isArray(trip?.places) && trip.places.length ? 'places'
+        : (Array.isArray(trip?.selectedPlaces) ? 'selectedPlaces' : 'places');
+      const allPlaces = getPlacesArray(trip);
+      const cityName =
+        (Array.isArray(trip?.cities) && trip.cities[0]) ||
+        (trip?._whereAnswer?.mode === 'single' ? trip?._whereAnswer?.single?.city?.name : null) ||
+        '';
+
+      // 1) EŞLEŞTİR (arka planda sessizce)
+      const round5 = (x) => Math.round(Number(x) * 1e5) / 1e5;
+      const keyOf = (x) => {
+        const lat = Number(x?.lat ?? x?.coords?.lat);
+        const lon = Number(x?.lon ?? x?.coords?.lng ?? x?.coords?.lon);
+        const nm  = String(x?.name || '').trim().toLowerCase();
+        return `${nm}@${round5(lat)},${round5(lon)}`;
+      };
+      const candidates = allPlaces.filter(p => {
+        if (p?.place_id) return false;
+        const lat = Number(p?.lat ?? p?.coords?.lat);
+        const lon = Number(p?.lon ?? p?.coords?.lng ?? p?.coords?.lon);
+        return Number.isFinite(lat) && Number.isFinite(lon) && (p?.name || '').trim().length > 0;
+      });
+      let mergedPlaces = allPlaces;
+      if (candidates.length) {
+        const batch = await resolvePlacesBatch({ items: candidates, city: cityName || '' });
+        const byKey = new Map(batch.map(x => [keyOf(x), x]));
+        mergedPlaces = allPlaces.map(old => {
+          if (old?.place_id) return old;
+          const nn = byKey.get(keyOf(old));
+          if (nn?.place_id) {
+            return {
+              ...old,
+              place_id: nn.place_id,
+              resolved: true,
+              opening_hours: nn.opening_hours ?? old.opening_hours ?? null,
+              rating: nn.rating ?? old.rating ?? null,
+              user_ratings_total: nn.user_ratings_total ?? old.user_ratings_total ?? null,
+              price_level: nn.price_level ?? old.price_level ?? null,
+            };
+          }
+          return old;
+        });
+      }
+
+      // 1.5) Bilgilendir (hafif sorun metnin aynen kullanıldı)
+      const stillUnresolved = mergedPlaces.filter(p => !p.place_id && (p?.lat || p?.coords)).length;
+      const noCoords = mergedPlaces.filter(p => !p.place_id && !p?.lat && !p?.coords).length;
+      if (stillUnresolved > 0 && noCoords === 0) {
+        notify('Plan hazır 🎉  Bazı yerlerin bilgileri doğrulanamadı; yine de rotaya esnek olarak ekledik.');
+      } else if (noCoords > 0) {
+        notify(`Plan hazır 🎉  ${noCoords} yerin konumu bulunamadı, şimdilik plandan çıkarıldı.`);
+        mergedPlaces = mergedPlaces.filter(p => p?.coords || (p?.lat != null && p?.lon != null));
+      }
+
+      // 1.6) Trip’e yaz (eşleştirilmiş yerler)
+      const key = trip._id ?? trip.id;
+      await patchTripLocal(key, {
+        [sourceField]: mergedPlaces,
+        updatedAt: new Date().toISOString(),
+        __dirty: true,
+      });      
+      // 2) Geziyi finalize et → completed (ardından plan)
+      const when = new Date().toISOString();
+      await patchTripLocal(key, { status: 'completed', wizardStep: null, updatedAt: when, __dirty: true });
+      const completedTrip = ensureIds({
+        ...trip,
+        [sourceField]: mergedPlaces,
+        status: 'completed',
+        wizardStep: null,
+        updatedAt: when
+      });
+
+      setTrip(completedTrip);
+
+      // Liste olayını yayınla
+      try {
+        DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, {
+          tripId: key,
+          patch: { status: 'completed', wizardStep: null, updatedAt: when },
+        });
+      } catch {}
+
+      // 3) Plan üret + kaydet (eşleşmiş yerlerle)
+      const uiMode = trip?.travelMode || 'walk_transport';
+      const routingMode = uiMode === 'car_taxi' ? 'driving' : 'walking';
+      const prefs = {
+        dayStart: '09:30',
+        dayEnd: '20:00',
+        lunchAround: '13:00',
+        dinnerAround: '19:00',
+        defaultDurations: { museum: 90, sights: 45, restaurants: 60, cafes: 40, parks: 40, bars: 75 },
+        tempo: 'normal',
+        travelMode: routingMode,
+        mealSearchRadiusMeters: 1200,
+        minRating: 4.2,
+      };
+      const plan = await generatePlan(completedTrip, prefs, { useRealDirections: true });
+      await savePlan(plan);
+
+      // 4) Stack reset
+      nav.reset({
+        index: 1,
+        routes: [
+          { name: 'TripsHome' },
+          { name: 'TripPlans', params: { tripId: completedTrip._id } },
+        ],
+      });
+    } catch (e) {
+      console.warn('[TripReview] finalize error', e);
+      Alert.alert('Hata', 'Gezi tamamlanırken sorun oluştu.');
+    } finally {
+      setSaving(false);
+    }
+  }, [trip, nav]);
 
   // ---- render guards ----
   if (booting) {
@@ -237,8 +396,10 @@ const finalize = useCallback(async () => {
                 <StartEndPretty trip={trip} />
               ) : r.type === 'lodgingPretty' ? (
                 <LodgingsPretty trip={trip} />
+              ) : r.type === 'travelModePretty' ? (
+                <TravelModePretty trip={trip} />
               ) : r.type === 'placesGroup' ? (
-                <PlacesGrouped trip={trip} />
+                <PlacesGrouped trip={trip} onRetry={reResolve} />
               ) : (
                 <Text style={styles.value}>{r.value || '—'}</Text>
               )}
@@ -277,8 +438,30 @@ function buildRows(trip) {
     { key: 'Tarih Aralığı', type: 'datePretty', action: 'dates' },
     { key: 'Başlangıç & Bitiş', type: 'startEndPretty', action: 'startEnd', help: 'Ulaşım noktaları ve saatler' },
     { key: 'Konaklama', type: 'lodgingPretty', action: 'lodging', help: 'Tarih aralığına göre şehir şehir' },
+    { key: 'Ulaşım', type: 'travelModePretty', help: 'Varsayılan mod (harita ve rota)' },
     { key: 'Seçilen Yerler', type: 'placesGroup', action: 'places', help: 'Gezilecek yerler + yeme-içme' },
   ];
+}
+
+function TravelModePretty({ trip }) {
+  // UI anahtarları: 'walk_transport' | 'car_taxi'
+  const mode = trip?.travelMode || 'walk_transport';
+
+  const label = mode === 'car_taxi' ? 'Car & Taxi' : 'Walk & Transportation';
+  const icon  = mode === 'car_taxi' ? 'car-outline' : 'walk-outline';
+  const tone  = mode === 'car_taxi' ? 'primary' : 'soft';
+
+  return (
+    <View style={styles.groupBox}>
+      <View style={{ flexDirection:'row', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+        <Ionicons name={icon} size={16} color={ACCENT} />
+        <Badge text={label} tone={tone} />
+      </View>
+      <Text style={[styles.help, { marginTop:6 }]}>
+        Bu seçim rota/harita için varsayılan moddur. (Lodging adımından değiştirilebilir.)
+      </Text>
+    </View>
+  );
 }
 
 /* ---------------- title pretty ---------------- */
@@ -350,6 +533,9 @@ function DateRangePretty({ trip }) {
         {!!(start && end) && <Badge text={`${nights} gece`} />}
       </View>
       {(!start || !end) && <Text style={styles.value}>Tarih aralığı eksik.</Text>}
+      {!!(trip?.places?.length) && getPlacesArray(trip).some(p => !p.opening_hours) && (
+        <Text style={[styles.help,{marginTop:6}]}>Bazı yerlerde açılış-kapanış bilgisi yok; plana esnek yerleştirilecek.</Text>
+      )}
     </View>
   );
 }
@@ -557,7 +743,7 @@ function getPlacesArray(trip) {
     : (Array.isArray(trip?.selectedPlaces) ? trip.selectedPlaces : []);
 }
 
-function PlacesGrouped({ trip }) {
+function PlacesGrouped({ trip, onRetry }) {
   const arr = getPlacesArray(trip);
   if (!arr.length) return <Text style={styles.value}>Seçim yok</Text>;
 
@@ -566,6 +752,9 @@ function PlacesGrouped({ trip }) {
     const k = byCat.has(p.category) ? p.category : 'sights';
     byCat.get(k).push(p);
   }
+
+  const total = arr.length;
+  const matched = arr.filter(p => p.place_id).length;
 
   return (
     <View style={styles.groupBox}>
@@ -576,11 +765,29 @@ function PlacesGrouped({ trip }) {
           <View key={g.key} style={styles.groupRow}>
             <Text style={styles.groupTitle}>{g.label}</Text>
             {items.map((p, i) => (
-              <Text key={`${g.key}-${i}`} style={styles.groupItem}>• {p.name}</Text>
+              <View key={`${g.key}-${i}`} style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:2,flexWrap:'wrap'}}>
+                <Text style={styles.groupItem}>• {p.name}</Text>
+                {!p.place_id && <Badge text="Eşleşmedi" tone="danger" />}
+                {!!p.opening_hours && <Badge text="Saat var" tone="soft" />}
+              </View>
             ))}
           </View>
         );
       })}
+
+      <View style={{marginTop:8, padding:10, borderWidth:1, borderColor:'#1F2937', borderRadius:10}}>
+        <Text style={{color:'#EAEAEA', fontWeight:'700'}}>Yer Eşleşmeleri</Text>
+        <Text style={{color:'#9CA3AF', marginTop:4}}>
+          Eşleşen: {matched} / {total}
+        </Text>
+
+        <TouchableOpacity
+          onPress={onRetry}
+          style={{marginTop:8, alignSelf:'flex-start', paddingVertical:8, paddingHorizontal:12, borderRadius:10, borderWidth:1, borderColor:'#2563EB', backgroundColor:'#0E1B2E'}}
+        >
+          <Text style={{color:'#fff', fontWeight:'700'}}>Yeniden Eşle</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
