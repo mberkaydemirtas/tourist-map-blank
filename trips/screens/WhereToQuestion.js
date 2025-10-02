@@ -1,4 +1,4 @@
-// trips/trips/components/WhereToQuestion.js
+// trips/trips/screens/WhereToQuestion.js
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Modal,

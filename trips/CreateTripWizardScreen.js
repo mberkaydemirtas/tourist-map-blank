@@ -1,3 +1,4 @@
+// trips/CreateTripWizardScreen.js
 import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import {
   Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, FlatList,
@@ -11,10 +12,10 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { createTripLocal, saveTripLocal, getTripLocal, patchTripLocal } from '../app/lib/tripsLocal';
 
 // Soru bileşenleri
-import WhereToQuestion from './components/WhereToQuestion';
-import StartEndQuestion from './components/StartEndQuestion';
-import LodgingQuestion from './components/LodgingQuestion';
-import TripListQuestion from './components/TripListQuestion';
+import WhereToQuestion from './screens/WhereToQuestion';
+import StartEndQuestion from './screens/StartEndQuestion';
+import LodgingQuestion from './screens/LodgingQuestion';
+import TripListQuestion from './screens/TripListQuestion';
 
 // Harita köprüsü
 import { useTripsExploreBridge } from '../bridges/useTripsExploreBridge';
@@ -23,6 +24,13 @@ const BORDER = '#23262F';
 const BTN = '#2563EB';
 
 /* ---------------------- Yardımcılar: Gün listesi & DP ---------------------- */
+function ensureIdsDoc(t) {
+  if (!t) return t;
+  const id  = t.id  ?? t._id;
+  const _id = t._id ?? id;
+  return { ...t, id, _id };
+}
+
 function dateRangeDays(startISO, endISO) {
   if (!startISO || !endISO) return [];
   const start = new Date(startISO);
@@ -101,12 +109,14 @@ export default function CreateTripWizardScreen() {
   const [draft, setDraft] = useState(null);
   const resumeId = route?.params?.resumeId || null;
 
+  // Autosave timer ref (navigate etmeden önce flush edeceğiz)
+  const autosaveRef = useRef(null);
+
   // İlk açılışta istenen adıma zıpla (edit akışında draft.wizardStep uygulanmaz)
   useEffect(() => {
     if (!appliedJumpOnce.current && Number.isInteger(jumpToStep)) {
       setStep(Math.max(0, Math.min(4, jumpToStep)));
       appliedJumpOnce.current = true;
-      // Paramı temizle ki haritadan dönüşte tekrar 1. adıma reset olmasın
       try { nav.setParams({ jumpToStep: undefined }); } catch {}
     }
   }, [jumpToStep, nav]);
@@ -135,26 +145,46 @@ export default function CreateTripWizardScreen() {
           return;
         }
       }
-      const t = await createTripLocal({ title: 'New Trip', status: 'draft', wizardStep: 0 });
+      const tRaw = await createTripLocal({ title: 'New Trip', status: 'draft', wizardStep: 0 });
+      const t = ensureIdsDoc(tRaw);
       setDraft(t);
+
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeId, openedForEdit]);
 
+  /* ---- İSİM: anında kaydet + Trips listesine canlı yansıt ---- */
+useEffect(() => {
+  const key = draft?.id ?? draft?._id ?? route?.params?.resumeId ?? null;
+  if (!key) return;
+
+  const t = (tripTitle || '').trim();
+  if (t.length < 2) return;
+
+  const h = setTimeout(() => {
+    patchTripLocal(key, { title: t }).catch(() => {});
+    DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: key, patch: { title: t } });
+  }, 250);
+
+  return () => clearTimeout(h);
+}, [tripTitle, draft?.id, draft?._id, route?.params?.resumeId]);
+
+
   /* ---- Lokasyon patch + canlı bildirim ---- */
-  useEffect(() => {
-    if (!draft?._id) return;
+useEffect(() => {
+  const key = draft?.id ?? draft?._id ?? route?.params?.resumeId ?? null;
+  if (!key) return;
 
-    const cities =
-      whereAnswer?.mode === 'single'
-        ? [whereAnswer?.single?.city?.name].filter(Boolean)
-        : ((whereAnswer?.items || []).map(it => it?.city?.name).filter(Boolean));
+  const cities =
+    whereAnswer?.mode === 'single'
+      ? [whereAnswer?.single?.city?.name].filter(Boolean)
+      : (whereAnswer?.items || []).map(it => it?.city?.name).filter(Boolean);
 
-    if (!cities.length) return;
+  if (!cities.length) return;
 
-    patchTripLocal(draft._id, { cities }).catch(() => {});
-    DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: draft._id, patch: { cities } });
-  }, [draft?._id, whereAnswer?.mode, whereAnswer?.single?.city?.name, whereAnswer?.items]);
+  patchTripLocal(key, { cities }).catch(() => {});
+  DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: key, patch: { cities } });
+}, [draft?.id, draft?._id, route?.params?.resumeId, whereAnswer?.mode, whereAnswer?.single?.city?.name, whereAnswer?.items]);
 
   /* ---- Lokasyon değişimini yalnızca Step 1'de kullanıcı “İleri” deyince commit et ---- */
   const committedCityKeysRef = useRef([]);
@@ -166,13 +196,16 @@ export default function CreateTripWizardScreen() {
   }, [whereAnswer]);
 
   /* ---- Global tarih aralığını türetip kaydet ---- */
-  useEffect(() => {
-    if (!draft?._id) return;
-    const range = computeGlobalRange(whereAnswer, startEndSingle, startEndByCity);
-    if (!range.start && !range.end) return;
-    patchTripLocal(draft._id, { dateRange: range }).catch(() => {});
-    DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: draft._id, patch: { dateRange: range } });
-  }, [draft?._id, whereAnswer, startEndSingle?.start?.date, startEndSingle?.end?.date, startEndByCity]);
+useEffect(() => {
+  const key = draft?.id ?? draft?._id ?? route?.params?.resumeId ?? null;
+  if (!key) return;
+
+  const range = computeGlobalRange(whereAnswer, startEndSingle, startEndByCity);
+  if (!range.start && !range.end) return;
+
+  patchTripLocal(key, { dateRange: range }).catch(() => {});
+  DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: key, patch: { dateRange: range } });
+}, [draft?.id, draft?._id, route?.params?.resumeId, whereAnswer, startEndSingle?.start?.date, startEndSingle?.end?.date, startEndByCity]);
 
   /* ---- Çok-şehir adımında index koruması ---- */
   useEffect(() => {
@@ -336,29 +369,94 @@ export default function CreateTripWizardScreen() {
     });
   };
 
-  function next() {
-    if (!canNext) {
-      Alert.alert('Eksik bilgi', 'Devam etmek için bu adımı tamamlayın.');
-      return;
+  // aktif trip anahtarını tek yerden resolve et
+const tripKeyId = useCallback(() => {
+  return draft?.id ?? draft?._id ?? route?.params?.resumeId ?? null;
+}, [draft?.id, draft?._id, route?.params?.resumeId]);
+
+// TITLE'I KESİN KAYDET + CANLI PATCH
+const flushTitleNow = useCallback(async () => {
+  const key = tripKeyId();
+  const t = (tripTitle || '').trim();
+  if (!key || !t) return;
+
+  // 1) önce state'i güncelle ki üst başlık anında değişsin
+  setDraft(prev => (prev ? { ...prev, title: t } : prev));
+
+  // 2) storage'a yaz (id/_id ne olursa olsun upsert dene)
+  try {
+    await patchTripLocal(key, { title: t, status: 'draft' });
+  } catch {
+    try {
+      await saveTripLocal({ ...(draft || {}), id: draft?.id || key, _id: draft?._id || key, title: t, status: 'draft' });
+    } catch {}
+  }
+
+  // 3) TripsList ekranı canlı güncellensin
+  try {
+    DeviceEventEmitter.emit('TRIP_META_UPDATED', { tripId: key, patch: { title: t } });
+  } catch {}
+}, [tripKeyId, tripTitle, draft]);
+
+  // Review'a gitmeden hemen önce KESİN yaz
+  const persistFullDraftBeforeReview = useCallback(async (id) => {
+    // autosave beklemesin
+    if (autosaveRef.current) {
+      clearTimeout(autosaveRef.current);
+      autosaveRef.current = null;
     }
 
-    // Step 1'de şehir seti değiştiyse *burada* resetle (kullanıcı İleri dediğinde)
-    if (step === 1) {
-      const newKeys = cityKeysOf(whereAnswer);
-      const prevKeys = committedCityKeysRef.current;
-      const changed = !shallowEqualArr(newKeys, prevKeys);
-      if (changed) {
-        // ileri adımların tamamını temizle
-        setStartEndSingle(null);
-        setStartEndByCity({});
-        setLodgingSingle([]);
-        setLodgingByCity({});
-        setSelectedPlaces([]);
-        setDailyPlan([]);
-        setCityIndex(0);
+    const range = computeGlobalRange(whereAnswer, startEndSingle, startEndByCity);
+    const cities =
+      whereAnswer?.mode === 'single'
+        ? [whereAnswer?.single?.city?.name].filter(Boolean)
+        : (whereAnswer?.items || []).map(it => it?.city?.name).filter(Boolean);
 
-        if (draft?._id) {
-          patchTripLocal(draft._id, {
+    const payload = {
+      title: (tripTitle || '').trim() || 'New Trip',
+      wizardStep: 4,
+      cities,
+      dateRange: { start: range.start, end: range.end },
+      _whereAnswer: whereAnswer,
+      _startEndSingle: startEndSingle,
+      _startEndByCity: startEndByCity,
+      _lodgingSingle: lodgingSingle,
+      _lodgingByCity: lodgingByCity,
+      dailyPlan,
+      places: selectedPlaces,
+    };
+
+    await patchTripLocal(id, payload).catch(() => {});
+    setDraft(prev => (prev ? { ...prev, ...payload } : prev));
+    DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: id, patch: payload });
+  }, [whereAnswer, startEndSingle, startEndByCity, lodgingSingle, lodgingByCity, dailyPlan, selectedPlaces, tripTitle]);
+
+  // NEXT
+async function next() {
+  if (!canNext) {
+    Alert.alert('Eksik bilgi', 'Devam etmek için bu adımı tamamlayın.');
+    return;
+  }
+
+  // aktif trip anahtarı (_id || id || resumeId)
+  const tripKey = draft?.id ?? draft?._id ?? route?.params?.resumeId ?? null;
+
+  // Step 1'de şehir seti değiştiyse resetle
+  if (step === 1) {
+    const newKeys  = cityKeysOf(whereAnswer);
+    const prevKeys = committedCityKeysRef.current;
+    if (!shallowEqualArr(newKeys, prevKeys)) {
+      setStartEndSingle(null);
+      setStartEndByCity({});
+      setLodgingSingle([]);
+      setLodgingByCity({});
+      setSelectedPlaces([]);
+      setDailyPlan([]);
+      setCityIndex(0);
+
+      if (tripKey) {
+        try {
+          await patchTripLocal(tripKey, {
             _startEndSingle: null,
             _startEndByCity: {},
             _lodgingSingle: [],
@@ -366,43 +464,104 @@ export default function CreateTripWizardScreen() {
             places: [],
             dailyPlan: [],
             dateRange: { start: null, end: null },
-          }).catch(() => {});
-        }
-
-        // yeni şehir setini commit olarak kabul et
-        committedCityKeysRef.current = newKeys;
+          });
+        } catch {}
       }
+      committedCityKeysRef.current = newKeys;
+    }
+  }
+
+  // STEP 0 → başlık kesin kaydedilsin (fallback + canlı patch)
+  if (step === 0 && tripKey) {
+    const t = (tripTitle || '').trim();
+    if (t) {
+      // local state
+      setDraft(prev => (prev ? { ...prev, title: t } : prev));
+      // storage
+      try {
+        await patchTripLocal(tripKey, { title: t });
+      } catch {
+        try {
+          await saveTripLocal({
+            ...(draft || {}),
+            id: draft?.id || tripKey,
+            _id: draft?._id || tripKey,
+            title: t,
+            status: 'draft',
+          });
+        } catch {}
+      }
+      // listede canlı güncelle
+      try {
+        DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: tripKey, patch: { title: t } });
+      } catch {}
+    }
+  }
+
+  // --- SNAPSHOT FLUSH: "İleri" anında mevcut adımın verisini yaz ---
+  if (tripKey) {
+    const nextStep = Math.min(4, step + 1);
+    const patchNow = { wizardStep: nextStep };
+
+    // STEP 1 → lokasyon özeti
+    if (step === 1) {
+      patchNow._whereAnswer = whereAnswer;
+      patchNow.cities =
+        whereAnswer?.mode === 'single'
+          ? [whereAnswer?.single?.city?.name].filter(Boolean)
+          : (whereAnswer?.items || []).map(it => it?.city?.name).filter(Boolean);
     }
 
-    // Step 4 → Review
-    if (step === 4) {
-      const id = draft?._id || route?.params?.resumeId;
-      if (id) {
-        patchTripLocal(id, { status: 'draft', wizardStep: step }).catch(() => {});
-        nav.navigate('TripReview', { tripId: id, ts: Date.now() });
-      } else {
-        nav.navigate('TripReview');
+    // STEP 2 → tarih aralığı
+    if (step === 2) {
+      patchNow._startEndSingle = startEndSingle;
+      patchNow._startEndByCity = startEndByCity;
+      const range = computeGlobalRange(whereAnswer, startEndSingle, startEndByCity);
+      patchNow.dateRange = { start: range.start, end: range.end };
+    }
+
+    // STEP 3 → konaklama
+    if (step === 3) {
+      patchNow._lodgingSingle = lodgingSingle;
+      patchNow._lodgingByCity = lodgingByCity;
+    }
+
+    try {
+      await patchTripLocal(tripKey, patchNow);
+      setDraft(prev => (prev ? { ...prev, ...patchNow } : prev));
+      // canlı liste patch (başlıca cities/dates)
+      const livePatch = {};
+      if (patchNow.cities) livePatch.cities = patchNow.cities;
+      if (patchNow.dateRange) livePatch.dateRange = patchNow.dateRange;
+      if (Object.keys(livePatch).length) {
+        DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: tripKey, patch: livePatch });
       }
+    } catch {}
+  }
+
+  // Step 4 → Review (tam snapshot + ts)
+  if (step === 4) {
+    if (tripKey) {
+      await persistFullDraftBeforeReview(tripKey);
+      nav.navigate('TripReview', { tripId: tripKey, ts: Date.now() });
+    } else {
+      nav.navigate('TripReview');
+    }
+    return;
+  }
+
+  // Review’den gelen edit akışı: hedef adıma ulaştıysak Review’a dön
+  if (returnTo === 'TripReview' && editIntent && Number.isInteger(editIntent.returnAfterStep)) {
+    if (step === editIntent.returnAfterStep) {
+      if (tripKey) nav.navigate('TripReview', { tripId: tripKey, ts: Date.now() });
+      else nav.navigate('TripReview');
       return;
     }
-
-    // Edit akışında hedef adıma gelince Review’e dön
-    if (returnTo === 'TripReview' && editIntent && Number.isInteger(editIntent.returnAfterStep)) {
-      if (step === editIntent.returnAfterStep) {
-        const id = draft?._id || route?.params?.resumeId;
-        if (id) {
-          patchTripLocal(id, { status: 'draft', wizardStep: step }).catch(() => {});
-          nav.navigate('TripReview', { tripId: id, ts: Date.now() });
-        } else {
-          nav.navigate('TripReview');
-        }
-        return;
-      }
-    }
-
-    // Normal ileri
-    safeStepChange(() => setStep(s => Math.min(4, s + 1)));
   }
+
+  // Normal ileri
+  safeStepChange(() => setStep(s => Math.min(4, s + 1)));
+}
 
   // Konaklama editinde “geri”yi Start&End’e değil Review’a al (silme YOK)
   const back = () => {
@@ -423,9 +582,10 @@ export default function CreateTripWizardScreen() {
         const id = draft?._id || route?.params?.resumeId;
         if (id) nav.navigate('TripReview', { tripId: id, ts: Date.now() });
         else nav.navigate('TripReview');
-      } else if (draft?._id) {
-        patchTripLocal(draft._id, { status: 'draft', wizardStep: step }).catch(() => {});
-      }
+        } else {
+          const key = draft?.id ?? draft?._id ?? null;
+          if (key) patchTripLocal(key, { wizardStep: step }).catch(() => {});
+        }
     });
     return unsub;
   }, [nav, draft?._id, step, openedForEdit, editIntent?.target]);
@@ -439,29 +599,44 @@ export default function CreateTripWizardScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, whereAnswer, startEndSingle, startEndByCity]);
 
-  // Autosave
-  useEffect(() => {
-    if (!draft?._id) return;
-    const id = draft._id;
-    const t = setTimeout(() => {
-      const payload = {
-        title: (tripTitle || '').trim() || draft.title || 'New Trip',
-        status: 'draft',
-        wizardStep: step,
-        _whereAnswer: whereAnswer,
-        _startEndSingle: startEndSingle,
-        _startEndByCity: startEndByCity,
-        _lodgingSingle: lodgingSingle,
-        _lodgingByCity: lodgingByCity,
-        dailyPlan,
-        places: selectedPlaces,
-      };
-      patchTripLocal(id, payload).then(setDraft).catch(() => {});
-    }, 350);
-    return () => clearTimeout(t);
-  }, [draft?._id, step, tripTitle, whereAnswer, startEndSingle, startEndByCity, lodgingSingle, lodgingByCity, dailyPlan, selectedPlaces]);
+  // Autosave (debounce)
+useEffect(() => {
+  const key = draft?.id ?? draft?._id ?? route?.params?.resumeId ?? null;
+  if (!key) return;
 
-  // Submit
+  if (autosaveRef.current) {
+    clearTimeout(autosaveRef.current);
+    autosaveRef.current = null;
+  }
+
+  autosaveRef.current = setTimeout(() => {
+    const payload = {
+      title: (tripTitle || '').trim() || draft?.title || 'New Trip',
+      wizardStep: step,
+      _whereAnswer: whereAnswer,
+      _startEndSingle: startEndSingle,
+      _startEndByCity: startEndByCity,
+      _lodgingSingle: lodgingSingle,
+      _lodgingByCity: lodgingByCity,
+      dailyPlan,
+      places: selectedPlaces,
+    };
+    patchTripLocal(key, payload)
+      .then((res) => setDraft(prev => ensureIdsDoc(res || prev)))
+      .catch(() => {});
+    autosaveRef.current = null;
+  }, 350);
+
+  return () => {
+    if (autosaveRef.current) {
+      clearTimeout(autosaveRef.current);
+      autosaveRef.current = null;
+    }
+  };
+}, [draft?.id, draft?._id, route?.params?.resumeId, step, tripTitle, whereAnswer, startEndSingle, startEndByCity, lodgingSingle, lodgingByCity, dailyPlan, selectedPlaces]);
+
+
+  // Submit (kullanılmıyor ama dursun)
   const submit = async () => {
     if (!draft) return;
     const range = computeGlobalRange(whereAnswer, startEndSingle, startEndByCity);
@@ -734,7 +909,8 @@ export default function CreateTripWizardScreen() {
       {/* Footer */}
       <View style={styles.footer}>
         <TouchableOpacity onPress={() => {
-          if (draft?._id) patchTripLocal(draft._id, { status: 'draft', wizardStep: step }).catch(()=>{});
+          const key = draft?.id ?? draft?._id ?? null;
+          if (key) patchTripLocal(key, { wizardStep: step }).catch(()=>{});
           nav.goBack();
         }} style={styles.ghostBtn}>
           <Text style={styles.ghostText}>Vazgeç</Text>

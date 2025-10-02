@@ -1,30 +1,80 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+// trips/screens/TripReviewScreen.js
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator,DeviceEventEmitter  } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-import { getTripLocal, saveTripLocal } from '../../app/lib/tripsLocal';
+
+import { listTripsLocal, getTripLocal, saveTripLocal, patchTripLocal } from '../../app/lib/tripsLocal';
+import { generatePlan } from '../services/planService';
+import { savePlan } from '../shared/plansRepo';
 
 const BORDER = '#23262F';
 const FG = '#EAEAEA';
 const MUTED = '#9CA3AF';
 const ACCENT = '#5EEAD4';
 const LINK = '#0EA5E9';
+const EVT_TRIP_META_UPDATED = 'TRIP_META_UPDATED';
+
+/* ---------------- helpers ---------------- */
+function ensureIds(t) {
+  if (!t) return t;
+  const _id = t._id ?? t.id;
+  const id = t.id ?? _id;
+  return { ...t, _id, id };
+}
+
+async function pickMostRecentTripId() {
+  const rows = await listTripsLocal().catch(() => []);
+  const arr = (rows || []).filter(r => !r?.deleted).map(ensureIds);
+  if (!arr.length) return null;
+  const drafts = arr.filter(t => t.status === 'draft');
+  const pick = (drafts.length ? drafts : arr)
+    .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))[0];
+  return pick?._id ?? pick?.id ?? null;
+}
 
 export default function TripReviewScreen() {
   const nav = useNavigation();
   const route = useRoute();
-  const tripId = route.params?.tripId || route.params?.resumeId;
 
+  const [tripId, setTripId] = useState(
+    route.params?.tripId ?? route.params?.resumeId ?? route.params?.id ?? null
+  );
   const [trip, setTrip] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [booting, setBooting] = useState(!tripId); // parametre yoksa fallback denenecek
+
+  // Parametre yoksa en güncel geziyi otomatik seç
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (tripId) { setBooting(false); return; }
+      const guess = await pickMostRecentTripId();
+      if (!mounted) return;
+      if (guess) setTripId(guess);
+      setBooting(false);
+    })();
+    return () => { mounted = false; };
+  }, [tripId]);
 
   const reload = useCallback(async () => {
     if (!tripId) return;
     setLoading(true);
     try {
-      const t = await getTripLocal(tripId);
-      setTrip(t || null);
+      // Önce direkt dene
+      let t = await getTripLocal(tripId);
+      // Olmazsa, id/_id karışıklığı olabilir → listeden bul
+      if (!t) {
+        const rows = await listTripsLocal().catch(() => []);
+        const match = (rows || []).find(r => r.id === tripId || r._id === tripId);
+        if (match?._id) {
+          t = await getTripLocal(match._id);
+          if (!t) t = ensureIds(match);
+          setTripId(match._id);
+        }
+      }
+      setTrip(ensureIds(t) || null);
     } catch (e) {
       console.warn('[TripReview] load error', e);
       Alert.alert('Hata', 'Gezi verisi yüklenemedi.');
@@ -35,21 +85,25 @@ export default function TripReviewScreen() {
 
   useFocusEffect(useCallback(() => { reload(); }, [reload]));
 
+  // Wizard’dan ts paramı ile dönüldüğünde zorla yeniden yükle
+  useEffect(() => {
+    if (route?.params?.ts) reload();
+  }, [route?.params?.ts, reload]);
+
   const rows = useMemo(() => buildRows(trip), [trip]);
 
   const onEdit = useCallback((target) => {
     if (!tripId) return;
     const plan = {
-      title:    { step: 0, returnAfterStep: 0 }, // Gezi adı → Step 0'da İleri → Review
-      where:    { step: 1, returnAfterStep: 4 }, // Lokasyon → 2→3→4 akış, Step 4'te İleri → Review
-      dates:    { step: 2, returnAfterStep: 4 }, // Tarih → 3→4 akış, Step 4'te İleri → Review
-      startEnd: { step: 2, returnAfterStep: 4 }, // Başlangıç/Bitiş → 3→4 akış, Step 4'te İleri → Review
-      lodging:  { step: 3, returnAfterStep: 3 }, // Konaklama → Step 3'te İleri → Review
-      places:   { step: 4, returnAfterStep: 4 }, // Yerler → Step 4'te İleri → Review
+      title:    { step: 0, returnAfterStep: 0 },
+      where:    { step: 1, returnAfterStep: 4 },
+      dates:    { step: 2, returnAfterStep: 4 },
+      startEnd: { step: 2, returnAfterStep: 4 },
+      lodging:  { step: 3, returnAfterStep: 3 },
+      places:   { step: 4, returnAfterStep: 4 },
     }[target];
     if (!plan) return;
 
-    // dates-only / points-only ayrımı (StartEnd ekranda placeholder’lar)
     const fieldEdit =
       target === 'dates'    ? 'datesOnly'  :
       target === 'startEnd' ? 'pointsOnly' : null;
@@ -62,27 +116,101 @@ export default function TripReviewScreen() {
     });
   }, [nav, tripId]);
 
-  const finalize = useCallback(async () => {
-    if (!trip) return;
-    try {
-      setSaving(true);
-      await saveTripLocal({ ...trip, status: 'active', wizardStep: null });
-      nav.navigate('TripsHome', { refresh: Date.now() });
-    } catch (e) {
-      Alert.alert('Hata', 'Gezi kaydedilemedi.');
-    } finally {
-      setSaving(false);
-    }
-  }, [trip, nav]);
+const finalize = useCallback(async () => {
+  if (!trip) return;
+  try {
+    setSaving(true);
 
-  if (!tripId) {
+   // 1) Geziyi finalize et → completed (yerinde patch)
+   const key = trip._id ?? trip.id;
+   const when = new Date().toISOString();
+   await patchTripLocal(key, {
+     status: 'completed',
+     wizardStep: null,
+     updatedAt: when,
+     __dirty: true,
+   });
+   // local state'i de güncelle (ekrana anında yansısın)
+   const completedTrip = ensureIds({ ...trip, status: 'completed', wizardStep: null, updatedAt: when });
+   setTrip(completedTrip);
+
+    // Listeyi canlı güncelle (rozeti de değişsin)
+    try {
+      DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, {
+       tripId: key,
+       patch: { status: 'completed', wizardStep: null, updatedAt: when },
+      });
+    } catch {}
+
+    // 2) Plan üret + kaydet
+    const prefs = {
+      dayStart: '09:30',
+      dayEnd: '20:00',
+      lunchAround: '13:00',
+      dinnerAround: '19:00',
+      defaultDurations: { museum: 90, sights: 45, restaurants: 60, cafes: 40, parks: 40, bars: 75 },
+      tempo: 'normal',
+      travelMode: 'driving',
+      mealSearchRadiusMeters: 1200,
+      minRating: 4.2,
+    };
+    const plan = await generatePlan(completedTrip, prefs, { useRealDirections: true });
+    await savePlan(plan);
+
+    // 3) Stack’i resetle → geri tuşu "Trip Anasayfası"na götürsün
+    nav.reset({
+      index: 1,
+      routes: [
+        { name: 'TripsHome' }, // ← sende “Trip Anasayfası”nın gerçek route adı neyse bunu yaz
+        { name: 'TripPlans', params: { tripId: completedTrip._id } },
+      ],
+    });
+  } catch (e) {
+    console.warn('[TripReview] finalize error', e);
+    Alert.alert('Hata', 'Gezi tamamlanırken sorun oluştu.');
+  } finally {
+    setSaving(false);
+  }
+}, [trip, nav]);
+
+  // ---- render guards ----
+  if (booting) {
     return (
-      <View style={{flex:1,alignItems:'center',justifyContent:'center',padding:16}}>
-        <Text style={{color:'#fff'}}>Gezi bulunamadı. Lütfen sihirbazdan tekrar deneyin.</Text>
+      <View style={{flex:1,alignItems:'center',justifyContent:'center', backgroundColor:'#0B141E'}}>
+        <ActivityIndicator />
+        <Text style={{color:'#9CA3AF', marginTop:8}}>Hazırlanıyor…</Text>
       </View>
     );
   }
 
+  if (!tripId) {
+    return (
+      <View style={{flex:1,alignItems:'center',justifyContent:'center',padding:16, backgroundColor:'#0B141E'}}>
+        <Text style={{color:'#fff', fontWeight:'700', marginBottom:6}}>Gezi bulunamadı.</Text>
+        <Text style={{color:'#9CA3AF'}}>Lütfen sihirbazdan tekrar deneyin.</Text>
+      </View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={{flex:1,alignItems:'center',justifyContent:'center', backgroundColor:'#0B141E'}}>
+        <ActivityIndicator />
+        <Text style={{color:'#9CA3AF', marginTop:8}}>Yükleniyor…</Text>
+      </View>
+    );
+  }
+
+  if (!trip) {
+    return (
+      <View style={{flex:1,alignItems:'center',justifyContent:'center',padding:16, backgroundColor:'#0B141E'}}>
+        <Text style={{color:'#fff', fontWeight:'700', marginBottom:6}}>Gezi bulunamadı.</Text>
+        <Text style={{color:'#9CA3AF'}}>Kayıt erişilemiyor. Lütfen geri dönün.</Text>
+      </View>
+    );
+  }
+
+  // ---- main ----
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -465,7 +593,7 @@ function diffNights(s, e) {
 }
 
 /* ---------------- styles ---------------- */
-function Badge({ text, tone = 'primary'|'soft' }) {
+function Badge({ text, tone = 'primary' }) {
   const map = {
     primary: { bg: '#0B1220', br: '#1F2937', fg: '#A7F3D0' },
     soft:    { bg: '#0B1220', br: '#1F2937', fg: '#D1FAE5' },

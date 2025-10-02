@@ -1,136 +1,150 @@
 // app/lib/tripsLocal.js
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import 'react-native-get-random-values';
-import { v4 as uuid } from "uuid";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  listTrips,
+  getTrip,
+  createTrip,
+  updateTrip,
+  deleteTrip,
+  duplicateTrip,
+} from '../../trips/shared/tripsRepo';
 
-const IDX = "trip:INDEX";
-const LAST = "trip:lastSyncAt";
+// === Sync metaverileri (yalnızca senkron için kullanılır) ===
+// TRIPS_V1: asıl veri (src/shared/localDrivers/asyncStorageDriver.js içinde)
+// Aşağıdakiler lokal sync metaverileri:
+const LAST = 'trip:lastSyncAt';
+const SYNC_VMAP_KEY = 'TRIPS_SYNC_VERSION_MAP_V1'; // { [id]: lastSyncedVersion }
+const DELETES_KEY   = 'TRIPS_SYNC_DELETES_V1';     // string[] (silinmiş id'ler, henüz servera gönderilmedi)
 
-async function readIndex() {
-  try { return JSON.parse(await AsyncStorage.getItem(IDX)) || []; }
-  catch { return []; }
+async function readJson(key, def) {
+  try { const raw = await AsyncStorage.getItem(key); return raw ? JSON.parse(raw) : def; }
+  catch { return def; }
 }
-async function writeIndex(idx) { await AsyncStorage.setItem(IDX, JSON.stringify(idx)); }
+async function writeJson(key, val) { await AsyncStorage.setItem(key, JSON.stringify(val)); }
 
+// === Eski API: Listele / Oku / Oluştur / Kaydet / Patch / Sil / Kopyala ===
 export async function listTripsLocal() {
-  const idx = await readIndex();
-  const rows = [];
-  for (const it of idx) {
-    const raw = await AsyncStorage.getItem(`trip:${it.id}`);
-    if (!raw) continue;
-    rows.push(JSON.parse(raw));
-  }
-  return rows.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  return listTrips(); // { id, title, version, updatedAt, ... }
 }
 
 export async function getTripLocal(id) {
-  const raw = await AsyncStorage.getItem(`trip:${id}`);
-  return raw ? JSON.parse(raw) : null;
+  return getTrip(id);
 }
 
 export async function createTripLocal(seed = {}) {
-  const id = seed?._id || uuid();
-  const now = new Date().toISOString();
-  const trip = {
-    _id: id,
-    title: seed.title || "My Trip",
-    cities: seed.cities || [],
-    dateRange: seed.dateRange || { start: null, end: null },
-    start: seed.start || null,
-    end: seed.end || null,
-    lodgings: seed.lodgings || [],
-    places: seed.places || [],
-    status: seed.status || 'draft',       // 'draft' | 'active' | 'completed'
-    wizardStep: Number.isFinite(seed.wizardStep) ? seed.wizardStep : 0,
-    version: 0,
-    updatedAt: now,
-    deleted: !!seed.deleted,
-    __dirty: true,
-  };
-  await AsyncStorage.setItem(`trip:${id}`, JSON.stringify(trip));
-  const idx = await readIndex();
-  if (!idx.find(x => x.id === id)) {
-    idx.push({ id, updatedAt: now, version: 0, deleted: !!seed.deleted });
-    await writeIndex(idx);
-  }
-  return trip;
+  const t = await createTrip(seed);
+  // oluşturulan her kaydı "dirty" kabul edelim → versiyon haritası henüz yok
+  // bir şey yapmasak da getDirtyChanges bunu fark eder (undefined !== version).
+  return t;
 }
 
 export async function saveTripLocal(trip) {
-  const now = new Date().toISOString();
-  const next = { ...trip, updatedAt: now, __dirty: true };
-  await AsyncStorage.setItem(`trip:${trip._id}`, JSON.stringify(next));
-  const idx = await readIndex();
-  const i = idx.findIndex(x => x.id === trip._id);
-  const row = { id: trip._id, updatedAt: now, version: trip.version, deleted: !!trip.deleted };
-  if (i >= 0) idx[i] = row; else idx.push(row);
-  await writeIndex(idx);
-  return next;
+  if (!trip?.id) throw new Error('[tripsLocal] saveTripLocal: trip.id missing');
+  // Tam obje yolluyorsan patch olarak geçer; sürücü version'ı arttırır.
+  const updated = await updateTrip(trip.id, { ...trip });
+  return updated;
 }
 
- // 👇 küçük, güvenli patch helper (id + patch ver; okuyup birleştirir)
- export async function patchTripLocal(id, patch = {}) {
-   const raw = await AsyncStorage.getItem(`trip:${id}`);
-   const now = new Date().toISOString();
-   const base = raw ? JSON.parse(raw) : { _id: id, version: 0 };
-   const next = { ...base, ...patch, updatedAt: now, __dirty: true };
-   await AsyncStorage.setItem(`trip:${id}`, JSON.stringify(next));
-   const idx = await readIndex();
-   const i = idx.findIndex(x => x.id === id);
-   const row = { id, updatedAt: now, version: next.version, deleted: !!next.deleted };
-   if (i >= 0) idx[i] = row; else idx.push(row);
-   await writeIndex(idx);
-   return next;
- }
- 
+// Küçük, güvenli patch helper: ID + patch → birleştir
+export async function patchTripLocal(id, patch = {}) {
+  const cur = await getTrip(id);
+  if (!cur) throw new Error('[tripsLocal] patchTripLocal: trip not found');
+  const updated = await updateTrip(id, { ...cur, ...patch });
+  return updated;
+}
 
 export async function markDeleteLocal(id) {
-  const raw = await AsyncStorage.getItem(`trip:${id}`);
-  if (!raw) return;
-  const obj = JSON.parse(raw);
-  obj.deleted = true; obj.__dirty = true; obj.updatedAt = new Date().toISOString();
-  await AsyncStorage.setItem(`trip:${id}`, JSON.stringify(obj));
-  const idx = await readIndex();
-  const i = idx.findIndex(x => x.id === id);
-  if (i >= 0) { idx[i].deleted = true; idx[i].updatedAt = obj.updatedAt; }
-  await writeIndex(idx);
+  // Silmeyi kuyruğa da yaz (senkron için)
+  await deleteTrip(id);
+  const dels = await readJson(DELETES_KEY, []);
+  if (!dels.includes(id)) { dels.push(id); await writeJson(DELETES_KEY, dels); }
 }
 
+export async function duplicateTripLocal(id) {
+  return duplicateTrip(id);
+}
+
+// === Sync yardımcıları ===
+// Değişiklik listesi: version haritasına göre farkları çıkar.
 export async function getDirtyChanges() {
-  const idx = await readIndex();
+  const trips = await listTrips();
+  const vmap = await readJson(SYNC_VMAP_KEY, {}); // { [id]: number }
+  const dels = await readJson(DELETES_KEY, []);
+
   const out = [];
-  for (const it of idx) {
-    const raw = await AsyncStorage.getItem(`trip:${it.id}`);
-    if (!raw) continue;
-    const obj = JSON.parse(raw);
-    if (obj.__dirty) {
-      if (obj.deleted) out.push({ type: "delete", id: obj._id });
-      else out.push({ type: "upsert", expectedVersion: obj.version, data: stripLocal(obj) });
-    }
+
+  // Silinenler → delete
+  for (const id of dels) out.push({ type: 'delete', id });
+
+  // Var olan kayıtlar → upsert (version değişmişse)
+  for (const t of trips) {
+    // soft-delete edilmişler listTrips tarafından zaten filtreleniyor
+    const lastV = vmap[t.id];
+    if (lastV === t.version) continue; // değişmemiş
+    out.push({
+      type: 'upsert',
+      expectedVersion: lastV ?? null,
+      data: stripLocal(t),
+    });
   }
+
   return out;
 }
 
 function stripLocal(obj) {
+  // Şimdilik doğrudan nesneyi döndürüyoruz; özel yerel alan yok.
   const copy = { ...obj };
-  delete copy.__dirty;
   return copy;
 }
 
+// Sunucu sıraları uygula: TRIPS_V1 içine yazar + versiyon haritasını günceller + silme kuyruğunu temizler.
 export async function applyServerRows(rows) {
-  const idx = await readIndex();
-  const byId = new Map(idx.map(x => [x.id, x]));
+  const STORAGE_KEY = 'TRIPS_V1';
+  const itemsRaw = await AsyncStorage.getItem(STORAGE_KEY);
+  const items = itemsRaw ? (JSON.parse(itemsRaw) || []) : [];
+  const byId = new Map(items.map(x => [x.id, x]));
+
+  const vmap = await readJson(SYNC_VMAP_KEY, {});
+  const dels = new Set(await readJson(DELETES_KEY, []));
 
   for (const r of (rows || [])) {
-    const now = new Date(r.updatedAt || Date.now()).toISOString();
-    const withLocal = { ...r, __dirty: false, updatedAt: now };
-    await AsyncStorage.setItem(`trip:${r._id}`, JSON.stringify(withLocal));
+    const id = r.id || r._id;
+    if (!id) continue;
+    // Server tarafı bir silme göndermişse, soft-delete olarak işaretleyelim
+    if (r.deleted || r.deletedAt) {
+      const prev = byId.get(id) || {};
+      const delRow = {
+        ...prev,
+        id,
+        deletedAt: r.deletedAt || nowISO(),
+        updatedAt: r.updatedAt || nowISO(),
+        version: r.version ?? ((prev.version || 1) + 1),
+      };
+      byId.set(id, delRow);
+      vmap[id] = delRow.version;
+      dels.delete(id);
+      continue;
+    }
 
-    const row = { id: r._id, updatedAt: now, version: r.version, deleted: !!r.deleted };
-    byId.set(r._id, row);
+    // Upsert
+    const next = { ...byId.get(id), ...r, id, updatedAt: r.updatedAt || nowISO() };
+    byId.set(id, next);
+    if (typeof r.version === 'number') vmap[id] = r.version;
   }
-  await writeIndex(Array.from(byId.values()));
+
+  const merged = Array.from(byId.values());
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+  await writeJson(SYNC_VMAP_KEY, vmap);
+  await writeJson(DELETES_KEY, Array.from(dels)); // uygulanan silmeler kuyruğundan düşer
 }
 
-export async function getLastSync() { return (await AsyncStorage.getItem(LAST)) || null; }
-export async function setLastSync(ts) { await AsyncStorage.setItem(LAST, ts); }
+export async function getLastSync() {
+  return (await AsyncStorage.getItem(LAST)) || null;
+}
+export async function setLastSync(ts) {
+  await AsyncStorage.setItem(LAST, ts);
+}
+
+function nowISO() {
+  return new Date().toISOString();
+}

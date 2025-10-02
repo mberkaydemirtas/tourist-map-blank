@@ -1,6 +1,6 @@
 // map/App.js
-import 'react-native-gesture-handler';     // ✅ 1) EN ÜSTTE
-import 'react-native-reanimated';          // ✅ 2) Hemen ardından
+import 'react-native-gesture-handler';
+import 'react-native-reanimated';
 import { enableScreens } from 'react-native-screens';
 import React, { useEffect } from 'react';
 import { Platform, StatusBar } from 'react-native';
@@ -9,9 +9,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'; // ✅ sadece bu
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import Ionicons from '@expo/vector-icons/Ionicons';
-// map/App.js
+
 import NavigationScreen from './screens/NavigationScreen';
 
 // Ekranlar
@@ -21,57 +21,45 @@ import TripsListScreen from '../trips/TripsListScreen';
 import TripEditorScreen from '../trips/TripEditorScreen';
 import CreateTripWizardScreen from '../trips/CreateTripWizardScreen';
 import TripPlacesScreen from '../trips/screens/TripPlacesScreen';
-import TripReviewScreen from '../trips/components/TripReviewScreen';
+import TripReviewScreen from '../trips/screens/TripReviewScreen';
+import TripPlansScreen from '../trips/screens/TripPlansScreen';
 
-// Veri sürücüsü (local-first)
+// Repo kurulumları
 import { setTripsDriver } from '../trips/shared/tripsRepo';
-import AsyncStorageDriver from '../trips/localDrivers/asyncStorageDriver';
-enableScreens(false); // ✅ sadece teşhis için (crash kesiliyorsa screens kaynaklı)
+import createAsyncStorageDriver from '../trips/localDrivers/asyncStorageDriver';
+
+import { setPlansDriver } from '../trips/shared/plansRepo';
+import plansKVDriver from '../trips/localDrivers/plansKVDriver';
+
+enableScreens(false);
+
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
 const TripsStack = createNativeStackNavigator();
-const Stack = createNativeStackNavigator()
 
 function HomeNavigator() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
       <HomeStack.Screen name="Home" component={HomePage} />
       <HomeStack.Screen name="Map" component={MapScreen} />
-      {/* ⬇️ Bunu ekleyin */}
-      <HomeStack.Screen
-        name="NavigationScreen"      // Route adı navigate ile aynı olsun
-        component={NavigationScreen}
-        options={{ headerShown: false }}
-      />
+      <HomeStack.Screen name="NavigationScreen" component={NavigationScreen} options={{ headerShown: false }} />
     </HomeStack.Navigator>
   );
 }
 
 function TripsNavigator() {
   return (
-    <TripsStack.Navigator screenOptions={{ headerTitleAlign: 'center' }}>
-      <TripsStack.Screen
-        name="TripsHome"
-        component={TripsListScreen}
-        options={{ title: 'Gezilerim' }}
-      />
-      <TripsStack.Screen
-        name="CreateTripWizard"
-        component={CreateTripWizardScreen}
-        options={{ title: 'Yeni Gezi' }}
-      />
-      <TripsStack.Screen
-        name="TripEditor"
-        component={TripEditorScreen}
-        options={{ title: 'Gezi Detayı' }}
-      />
-      <TripsStack.Screen name="TripPlacesScreen" component={TripPlacesScreen} />
-      <TripsStack.Screen name="TripReview" component={TripReviewScreen} options={{ title: 'Review' }} />
-
-
-    </TripsStack.Navigator>
-  );
-}
+      <TripsStack.Navigator screenOptions={{ headerTitleAlign: 'center' }}>
+        <TripsStack.Screen name="TripsHome" component={TripsListScreen} options={{ title: 'Gezilerim' }} />
+        <TripsStack.Screen name="CreateTripWizard" component={CreateTripWizardScreen} options={{ title: 'Yeni Gezi' }} />
+        <TripsStack.Screen name="TripEditor" component={TripEditorScreen} options={{ title: 'Gezi Detayı' }} />
+        <TripsStack.Screen name="TripPlacesScreen" component={TripPlacesScreen} />
+        <TripsStack.Screen name="TripReview" component={TripReviewScreen} options={{ title: 'Review' }} />
+        {/* ⬇️ Burada sadece 'Planlar' başlığını değil, tüm header barını kapatıyoruz */}
+        <TripsStack.Screen name="TripPlans" component={TripPlansScreen} options={{ headerShown: false }} />
+      </TripsStack.Navigator>
+    );
+  }
 
 // Koyu tema
 const navTheme = {
@@ -87,12 +75,13 @@ const navTheme = {
 
 export default function App() {
   useEffect(() => {
-    setTripsDriver(AsyncStorageDriver());
+    // Trip ve Plan sürücüleri (kalıcı)
+    setTripsDriver(createAsyncStorageDriver());
+    setPlansDriver(plansKVDriver());
   }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {/* ✅ BottomSheetModalProvider en üstte; portal çakışması yok */}
       <BottomSheetModalProvider>
         <SafeAreaProvider>
           <NavigationContainer theme={navTheme}>
@@ -100,7 +89,6 @@ export default function App() {
               barStyle="light-content"
               backgroundColor={Platform.OS === 'android' ? '#000' : undefined}
             />
-
             <Tab.Navigator
               screenOptions={({ route }) => ({
                 headerShown: false,
@@ -120,9 +108,7 @@ export default function App() {
                 },
               })}
             >
-              {/* 1) Keşfet: Home + Map aynı stack içinde */}
               <Tab.Screen name="Keşfet" component={HomeNavigator} />
-              {/* 2) Gezilerim: Liste + Wizard + Editor */}
               <Tab.Screen name="Gezilerim" component={TripsNavigator} />
             </Tab.Navigator>
           </NavigationContainer>

@@ -1,4 +1,4 @@
-// trips/questions/LodgingQuestion.js
+// trips/screens/LodgingQuestion.js
 // Entegre: "Haritadan Seç" işleyişi StartEndQuestion örneğindeki onMapPick yapısıyla entegre edildi.
 // Gereksinimler:
 // - İlk blok otomatik (tripRange başlangıç/bitiş seçili).

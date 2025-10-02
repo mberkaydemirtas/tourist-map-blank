@@ -1,4 +1,4 @@
-// trips/components/TripListQuestion.js
+// trips/screens/TripListQuestion.js
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
@@ -17,7 +17,7 @@ import {
   getCategoryCounts,
   searchPoiLocal,
   searchPoiHybridThreshold,
-} from '../../app/lib/poiHybrid';
+} from '../../app/lib/poiHybrid.js';
 import { newPlacesSessionToken } from '../../app/lib/api.js';
 
 const CATEGORIES = [

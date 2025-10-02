@@ -27,19 +27,26 @@ export default function TripsListScreen() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const firstLoadedRef = useRef(false);
-  const [menuFor, setMenuFor] = useState(null); // { _id, title, status } | null
+  const [menuFor, setMenuFor] = useState(null); // { id, title, status } | null
   const [menuAnchor, setMenuAnchor] = useState(null); // { x, y, width, height }
 
   const onSelectPlaces = (id) => {
     nav.navigate('TripPlacesScreen', { id });
   };
 
+  // id/_id normalize — her kayıtta ikisi de mevcut olsun
+  function ensureIds(t, i = 0) {
+    const _id = t?._id ?? t?.id ?? `migr-${(t?.createdAt || t?.updatedAt || Date.now())}-${i}`;
+    const id  = t?.id  ?? _id;
+    return { ...t, _id, id };
+  }
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
       // 1) yerelden yükle
       const rows = await listTripsLocal();
-      setItems(rows.filter(x => !x.deleted));
+      setItems(rows.filter(x => !x?.deleted).map(ensureIds));
 
       // 2) server açıksa arkada sessiz senkron (UI'ı bloklama)
       if (SERVER_ENABLED) {
@@ -48,7 +55,7 @@ export default function TripsListScreen() {
             const deviceId = await getDeviceId();
             await syncTrips({ deviceId });
             const rows2 = await listTripsLocal();
-            setItems(rows2.filter(x => !x.deleted));
+            setItems(rows2.filter(x => !x?.deleted).map(ensureIds));
           } catch {}
         })();
       }
@@ -70,7 +77,10 @@ export default function TripsListScreen() {
     const sub = DeviceEventEmitter.addListener(EVT_TRIP_META_UPDATED, ({ tripId, patch }) => {
       if (!tripId || !patch) return;
       setItems((prev) =>
-        prev.map((t) => (t._id === tripId ? { ...t, ...patch, updatedAt: new Date().toISOString() } : t))
+        prev.map((t, i) => {
+          const match = t._id === tripId || t.id === tripId;
+          return match ? ensureIds({ ...t, ...patch, updatedAt: new Date().toISOString() }, i) : t;
+        })
       );
     });
     return () => sub.remove();
@@ -81,7 +91,10 @@ export default function TripsListScreen() {
     const patchParam = route?.params?.patchTrip;
     if (patchParam?.id && patchParam?.data) {
       setItems((prev) =>
-        prev.map((t) => (t._id === patchParam.id ? { ...t, ...patchParam.data } : t))
+        prev.map((t, i) => {
+          const match = t._id === patchParam.id || t.id === patchParam.id;
+          return match ? ensureIds({ ...t, ...patchParam.data }, i) : t;
+        })
       );
       nav.setParams({ ...route.params, patchTrip: undefined });
     }
@@ -170,18 +183,20 @@ export default function TripsListScreen() {
 
   const renderItem = ({ item }) => {
     const completed = isCompletedTrip(item);
+    const tripKey = item._id ?? item.id;
     return (
       <TouchableOpacity
         style={styles.row}
         activeOpacity={0.8}
         onPress={() => {
           if (item.status === 'draft') {
-            nav.navigate('CreateTripWizard', { resumeId: item._id });
+            nav.navigate('CreateTripWizard', { resumeId: tripKey });
           } else {
-            nav.navigate('TripEditor', { id: item._id });
+            // completed / active -> haritalı ekran
+            nav.navigate('TripPlans', { tripId: tripKey });
           }
         }}
-        onLongPress={() => nav.navigate('TripEditor', { id: item._id })}
+        onLongPress={() => nav.navigate('TripEditor', { id: tripKey })}
       >
         <View style={[styles.cell, styles.flex2]}>
           <View style={{ flexDirection:'row', alignItems:'center', gap:8 }}>
@@ -207,7 +222,7 @@ export default function TripsListScreen() {
           <EllipsisButton
             onMeasureAndOpen={(anchorRect) => {
               setMenuAnchor(anchorRect);
-              setMenuFor({ _id: item._id, title: item.title, status: item.status });
+              setMenuFor({ id: tripKey, title: item.title, status: item.status });
             }}
           />
         </View>
@@ -227,7 +242,9 @@ export default function TripsListScreen() {
 
       <FlatList
         data={items}
-        keyExtractor={(it) => it._id}
+        keyExtractor={(it, index) =>
+          String(it?._id ?? it?.id ?? `t-${index}-${it?.title ?? ''}-${it?.updatedAt ?? ''}`)
+        }
         renderItem={renderItem}
         ListHeaderComponent={Header}
         stickyHeaderIndices={[0]}
@@ -246,9 +263,15 @@ export default function TripsListScreen() {
         title={menuFor?.title}
         anchor={menuAnchor}
         onClose={() => { setMenuFor(null); setMenuAnchor(null); }}
-        onCopy={async () => { if (menuFor) await onDuplicate(menuFor._id); setMenuFor(null); }}
-        onEdit={() => { if (menuFor) nav.navigate('TripEditor', { id: menuFor._id }); setMenuFor(null); }}
-        onDelete={() => { if (menuFor) onDelete(menuFor._id, menuFor.title); setMenuFor(null); }}
+        onCopy={async () => { if (menuFor) await onDuplicate(menuFor.id); setMenuFor(null); }}
+        onEdit={() => {
+          if (!menuFor) return;
+          const row = items.find(t => (t._id === menuFor.id || t.id === menuFor.id));
+          if (row?.status === 'draft') nav.navigate('CreateTripWizard', { resumeId: menuFor.id });
+          else nav.navigate('TripPlans', { tripId: menuFor.id });
+          setMenuFor(null);
+        }}       
+        onDelete={() => { if (menuFor) onDelete(menuFor.id, menuFor.title); setMenuFor(null); }}
       />
     </View>
   );
