@@ -1,5 +1,5 @@
 // app/lib/poiHybrid.js
-import { queryPoi, openPoiDb } from './poiLocal';
+import { queryPoiWithUser as queryPoi, openPoiDb, addUserPoi, runSelect } from './poiLocal';
 import { poiSearch, poiAutocomplete } from './api.js';
 
 const DEFAULT_COUNTRY = 'TR';
@@ -15,15 +15,47 @@ function catKeyToQuery(k) {
   return '';
 }
 
+/* ----------------------- kategori çıkarımı (heuristic) ----------------------- */
+/** DB’de category yoksa/uyuşmuyorsa isim & adres bazlı çıkarım yapar */
+function inferCategory(row) {
+  const raw = `${row?.category ?? ''}`.trim().toLowerCase();
+  if (MAP_CATEGORIES.includes(raw)) return raw;
+
+  const t = `${row?.name ?? ''} ${row?.address ?? ''}`
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/[İIıŞşĞğÜüÖöÇç]/g, ch => ({'İ':'i','I':'i','ı':'i','Ş':'s','ş':'s','Ğ':'g','ğ':'g','Ü':'u','ü':'u','Ö':'o','ö':'o','Ç':'c','ç':'c'}[ch] || ch));
+
+  const has = (arr) => arr.some(k => t.includes(k));
+
+  if (has(['museum','muzesi','müze'])) return 'museums';
+  if (has(['park','koru','mesire','botanik'])) return 'parks';
+  if (has(['bar','pub','meyhane','tapas'])) return 'bars';
+  if (has(['cafe','kafe','coffee','kahve','pastane','patisserie','bakery'])) return 'cafes';
+  if (has(['restaurant','restoran','lokanta','ocakbasi','ocakbaşı','kebap','balik','balık','pizza','burger','doner','döner','meze'])) return 'restaurants';
+
+  // adı "Kalesi", "Camii", "Tower", "Castle", "Bridge", "Old Town" vb. → sights
+  if (has(['castle','kale','kalesi','tower','kule','bridge','kopru','köprü','old town','bazaar','çarşı','mosque','camii','church','kilise','ruins','harabe','monument','anıt','statue','heykel','square','meydan','palace','saray'])) {
+    return 'sights';
+  }
+  return 'sights';
+}
+
 /* ---------------------------- normalize ---------------------------- */
 function toItem(row, source = 'local', enforcedCategory) {
-  const category = enforcedCategory || row.category || 'sights';
   const lat = Number(row.lat);
   const lon = Number(row.lon ?? row.lng);
+  // category: verilen → satırdaki → çıkarım
+  const cat =
+    enforcedCategory ||
+    (MAP_CATEGORIES.includes(String(row.category)) ? row.category : null) ||
+    inferCategory(row);
+
   return {
     id: String(row.id ?? row.place_id ?? Math.random().toString(36).slice(2)),
     name: row.name || '(isimsiz)',
-    category,
+    category: cat,
     lat: Number.isFinite(lat) ? lat : undefined,
     lon: Number.isFinite(lon) ? lon : undefined,
     address: row.address || row.formatted_address || row.description || '',
@@ -39,50 +71,80 @@ export async function prewarmPoiShard(country = DEFAULT_COUNTRY) {
   return !!db;
 }
 
+/* -------------------- Derived counts fallback -------------------- */
+async function getCategoryCountsDerived({ country = DEFAULT_COUNTRY, city }) {
+  const db = await openPoiDb(country);
+  const zeros = Object.fromEntries(MAP_CATEGORIES.map(k => [k, 0]));
+  if (!db) return zeros;
+
+  const where = [], args = [];
+  if (city && String(city).trim()) { where.push('city LIKE ? COLLATE NOCASE'); args.push(`%${String(city).trim()}%`); }
+
+  // makul bir tarama limiti (cihazı yormamak için)
+  const LIMIT_SCAN = 2000;
+  const sql = `
+    SELECT id,city,category,name,lat,lon,address
+    FROM poi
+    ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+    LIMIT ${LIMIT_SCAN}
+  `;
+  const rows = await runSelect(db, sql, args);
+  const out = { ...zeros };
+  for (const r of rows) {
+    const cat = inferCategory(r);
+    if (out[cat] != null) out[cat] += 1;
+  }
+  return out;
+}
+
 /* -------------------- Category counts (lokal DB) -------------------- */
 export async function getCategoryCounts({ country = DEFAULT_COUNTRY, city }) {
   const db = await openPoiDb(country);
-  if (!db) return Object.fromEntries(MAP_CATEGORIES.map(k => [k, 0]));
-  const hasAsync = typeof db.getAllAsync === 'function';
+  const zeros = Object.fromEntries(MAP_CATEGORIES.map(k => [k, 0]));
+  if (!db) return zeros;
 
-  async function run(withCity) {
-    const where = [], args = [];
-    if (withCity && city) { where.push('city = ?'); args.push(String(city).trim()); }
-    const sql = `
-      SELECT category, COUNT(*) AS n
-      FROM poi
-      ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
-      GROUP BY category
-    `;
-    let rows = [];
-    try {
-      if (hasAsync) rows = await db.getAllAsync(sql, args);
-      else rows = await new Promise((resolve) => {
-        db.readTransaction((tx) => {
-          tx.executeSql(sql, args, (_, rs) => resolve(rs?.rows?._array || []),
-            () => { resolve([]); return false; });
-        });
-      });
-    } catch (err) {
-      console.warn('[getCategoryCounts] sql error', err?.message || err);
-      rows = [];
+  const baseWhere = [], baseArgs = [];
+  if (city) { baseWhere.push('city LIKE ? COLLATE NOCASE'); baseArgs.push(`%${String(city).trim()}%`); }
+
+  // 1) seed (poi)
+  const seedSql = `
+    SELECT category, COUNT(*) AS n
+    FROM poi
+    ${baseWhere.length ? 'WHERE ' + baseWhere.join(' AND ') : ''}
+    GROUP BY category
+  `;
+  let seedRows = [];
+  try { seedRows = await runSelect(db, seedSql, baseArgs); } catch { seedRows = []; }
+
+  // 2) user overlay (poi_user) — tablo varsa
+  let userRows = [];
+  try {
+    const chk = await runSelect(db,
+      `SELECT name FROM sqlite_master WHERE type='table' AND name='poi_user'`, []);
+    if ((chk?.length || 0) > 0) {
+      const userSql = `
+        SELECT category, COUNT(*) AS n
+        FROM poi_user
+        ${baseWhere.length ? 'WHERE ' + baseWhere.join(' AND ') : ''}
+        GROUP BY category
+      `;
+      userRows = await runSelect(db, userSql, baseArgs);
     }
-    const out = Object.fromEntries(MAP_CATEGORIES.map(k => [k, 0]));
-    rows.forEach(r => {
-      const key = String(r.category || '').trim();
-      if (key && out[key] != null) out[key] = Number(r.n) || 0;
-    });
-    return out;
-  }
+  } catch { userRows = []; }
 
-  const countsCity = await run(true);
-  const totalCity = Object.values(countsCity).reduce((a,b)=>a+b,0);
-  if (city && totalCity === 0) {
-    const countsAll = await run(false);
-    console.log('[poiHybrid] counts fallback to no-city. given city:', city, 'counts:', countsAll);
-    return countsAll;
+  const out = { ...zeros };
+  [...seedRows, ...userRows].forEach(r => {
+    const key = String(r?.category || '').trim();
+    if (out[key] != null) out[key] += Number(r?.n || 0);
+  });
+
+  // Eğer toplam çok düşükse/0 ise → isim/adresten türetilmiş sayım
+  const total = Object.values(out).reduce((a,b)=>a+b,0);
+  if (total === 0) {
+    if (__DEV__) console.log('[poiHybrid] counts fallback → derived keywords');
+    return await getCategoryCountsDerived({ country, city });
   }
-  return countsCity;
+  return out;
 }
 
 /* ------------------------- de-dup helpers ------------------------- */
@@ -107,7 +169,7 @@ const mergeUniq = (...arrays) => {
 };
 
 /* --------------------------------------------------------------------------
- * LOCAL SEARCH (DB)
+ * LOCAL SEARCH (DB) — seed + user overlay (UNION) + kategori heuristiği
  * -------------------------------------------------------------------------- */
 export async function searchPoiLocal({
   country = DEFAULT_COUNTRY,
@@ -117,19 +179,56 @@ export async function searchPoiLocal({
   limit = 50,
 } = {}) {
   const qTrim = (q || '').trim();
-  const first = await queryPoi({ country, city, category, q: qTrim, limit });
-  let localItems = (first?.rows || []).map(r => toItem(r, 'local'));
+  const wantCat = category && MAP_CATEGORIES.includes(category) ? category : null;
 
-  // q kısa ve şehirde hiç yoksa ülke geneline düş
-  if (qTrim.length < 2) {
-    if (localItems.length === 0 && city) {
-      const second = await queryPoi({ country, city: undefined, category, q: '', limit });
-      localItems = (second?.rows || []).map(r => toItem(r, 'local'));
-      if (localItems.length) {
-        console.log('[poiHybrid] list fallback to no-city for category:', category, 'city was:', city);
-      }
+  // 1) normal: şehir+kategori filtresi
+  const first = await queryPoi({ country, city, category: wantCat, q: qTrim, limit: limit });
+  let localItems = (first?.rows || []).map(r => toItem(r, r.source || 'local', wantCat));
+
+  // q varsa ve sonuçlar varsa → dön
+  if (qTrim.length >= 2 && localItems.length) return localItems.slice(0, limit);
+
+  // 2) Eğer kategori az/boşsa → daha geniş çekip JS tarafında inferCategory ile filtrele
+  const NEED_JS_FILTER = wantCat && localItems.length < limit;
+
+  if (NEED_JS_FILTER) {
+    // 2.a) şehir genel liste (kategori yok)
+    const second = await queryPoi({ country, city, category: undefined, q: qTrim ? '' : '', limit: 400 });
+    let pool = (second?.rows || []).map(r => toItem(r, r.source || 'local'));
+    // 2.b) şehir boşsa → ülke genel (kategori yok)
+    if (pool.length === 0 && city) {
+      const third = await queryPoi({ country, city: undefined, category: undefined, q: '', limit: 1000 });
+      pool = (third?.rows || []).map(r => toItem(r, r.source || 'local'));
+      if (__DEV__) console.log('[poiHybrid] list fallback to country-wide pool for JS category filter');
+    }
+    // 2.c) JS filtresi: inferCategory ile eşleşenleri topla
+    const filtered = pool.filter(x => (x?.category || inferCategory(x)) === wantCat);
+    // qTrim varsa, isim/addr içinde de geçir
+    const filteredByQ = qTrim.length >= 2
+      ? filtered.filter(x => (`${x.name} ${x.address}`).toLowerCase().includes(qTrim.toLowerCase()))
+      : filtered;
+    const merged = mergeUniq(localItems, filteredByQ);
+    return merged.slice(0, limit);
+  }
+
+  // 3) q kısa ve şehirde boşsa → mevcut mantık (ülke+kategori)
+  if (qTrim.length < 2 && localItems.length === 0 && city) {
+    const second = await queryPoi({ country, city: undefined, category: wantCat, q: '', limit });
+    localItems = (second?.rows || []).map(r => toItem(r, r.source || 'local', wantCat));
+    if (localItems.length) {
+      if (__DEV__) console.log('[poiHybrid] list fallback to no-city for category:', wantCat, 'city was:', city);
     }
   }
+
+  // 4) yine boşsa → ülke GENEL (kategori yok) + JS filtresi
+  if (wantCat && localItems.length < limit) {
+    const third = await queryPoi({ country, city: undefined, category: undefined, q: '', limit: 1000 });
+    const pool = (third?.rows || []).map(r => toItem(r, r.source || 'local'));
+    const filtered = pool.filter(x => (x?.category || inferCategory(x)) === wantCat);
+    const merged = mergeUniq(localItems, filtered);
+    return merged.slice(0, limit);
+  }
+
   return localItems.slice(0, limit);
 }
 
@@ -175,9 +274,6 @@ async function searchGoogleOnce(qTrim, {
 
 /* --------------------------------------------------------------------------
  * HYBRID THRESHOLD
- * - Önce lokal (DB)
- * - q varsa ve lokal < minLocal ise Google’dan ekle
- * - her durumda de-dup + limit
  * -------------------------------------------------------------------------- */
 export async function searchPoiHybridThreshold({
   country = DEFAULT_COUNTRY,
@@ -220,7 +316,6 @@ export async function searchPoiHybrid(opts = {}) {
   const local = await searchPoiLocal(opts);
   const qTrim = (opts?.q || '').trim();
   if (!qTrim) return local;
-  // lokal + google simple append (eşiksiz)
   const lat = Number(opts?.center?.lat);
   const lon = Number(opts?.center?.lon ?? opts?.center?.lng);
   const remote = await searchGoogleOnce(qTrim, {
@@ -228,3 +323,6 @@ export async function searchPoiHybrid(opts = {}) {
   });
   return mergeUniq(local, remote).slice(0, Number(opts?.limit) || 50);
 }
+
+// 🔸 UI tarafında, kullanıcı bir Google sonucunu seçtiğinde çağırmak için dışa aktar:
+export { addUserPoi };

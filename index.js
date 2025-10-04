@@ -1,6 +1,8 @@
 import 'react-native-gesture-handler';
 import 'react-native-reanimated';
+import './app/polyfills/normalize';
 import { registerRootComponent } from 'expo';
+
 
 import App from './map/App';
 

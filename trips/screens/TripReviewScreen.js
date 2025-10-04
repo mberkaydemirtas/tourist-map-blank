@@ -17,6 +17,62 @@ const ACCENT = '#5EEAD4';
 const LINK = '#0EA5E9';
 const EVT_TRIP_META_UPDATED = 'TRIP_META_UPDATED';
 
+/* ---------------- canonical helpers (client ile aynı mantık) ---------------- */
+const round5 = (x) => Math.round(Number(x) * 1e5) / 1e5;
+
+function stripBrackets(s = '') {
+  return String(s).replace(/\s*[\(\[\{].*?[\)\]\}]\s*/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function removeSuffixes(s = '') {
+  const kill = [
+    'restaurant','restoran','cafe','kafe','pastane','patisserie','bakery',
+    'bar','pub','coffee','kahve','lokanta','büfe','bufe','branch','şubesi','sube',
+    'ankara','istanbul','izmir'
+  ];
+  let t = String(s || '').toLowerCase();
+  t = t.replace(/[-–—•|]+/g, ' ');
+  for (let i = 0; i < 3; i++) t = t.replace(new RegExp(`\\b(${kill.join('|')})\\b`, 'g'), ' ');
+  t = t.replace(/\s+/g, ' ').trim();
+  return t.length ? t : String(s || '').toLowerCase();
+}
+function trFold(s = '') {
+  const map = { İ:'I', I:'I', ı:'i', Ş:'S', ş:'s', Ğ:'G', ğ:'g', Ü:'U', ü:'U', Ö:'O', ö:'O', Ç:'C', ç:'C' };
+  const str = String(s || '');
+  try {
+    return str
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[İIıŞşĞğÜüÖöÇç]/g, ch => map[ch] || ch)
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  } catch {
+    return str
+      .replace(/[İIıŞşĞğÜüÖöÇç]/g, ch => map[ch] || ch)
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+}
+function canonicalName(s = '') {
+  return trFold(removeSuffixes(stripBrackets(s)));
+}
+
+/** Eşleştirme anahtarı: name_norm@round5(seed_lat),round5(seed_lon)
+ *  - x._seed_coords varsa onu kullanır (sabit kalır)
+ *  - yoksa x.coords/lat/lon düşer
+ */
+function seedKey(x) {
+  const nm = canonicalName(String(x?.name || ''));
+  // seed coords → dönüşte resolvePlacesBatch x._seed_coords'ı saklıyor olmalı
+  const seed = x?._seed_coords || null;
+  const lat = Number(seed?.lat ?? x?.lat ?? x?.coords?.lat);
+  const lon = Number(seed?.lng ?? seed?.lon ?? x?.lon ?? x?.coords?.lng ?? x?.coords?.lon);
+  const la5 = round5(lat);
+  const lo5 = round5(lon);
+  return `${nm}@${la5},${lo5}`;
+}
+
 /* ---------------- helpers ---------------- */
 function ensureIds(t) {
   if (!t) return t;
@@ -118,15 +174,13 @@ export default function TripReviewScreen() {
     });
   }, [nav, tripId]);
 
-  /* ---------------- Re-resolve (Yeniden Eşle) ---------------- */
-  const round5 = (x) => Math.round(Number(x) * 1e5) / 1e5;
-  const keyOf = (x) => {
-    const lat = Number(x?.lat ?? x?.coords?.lat);
-    const lon = Number(x?.lon ?? x?.coords?.lng ?? x?.coords?.lon);
-    const nm  = String(x?.name || '').trim().toLowerCase();
-    return `${nm}@${round5(lat)},${round5(lon)}`;
-  };
+  // küçük helper – Android’de Toast, iOS’ta Alert
+  const notify = useCallback((msg) => {
+    if (Platform.OS === 'android') ToastAndroid.show(msg, ToastAndroid.LONG);
+    else Alert.alert('Bilgi', msg);
+  }, []);
 
+  /* ---------------- Re-resolve (Yeniden Eşle) ---------------- */
   const reResolve = useCallback(async () => {
     if (!trip) return;
 
@@ -160,32 +214,42 @@ export default function TripReviewScreen() {
         (trip?._whereAnswer?.mode === 'single' ? trip?._whereAnswer?.single?.city?.name : null) ||
         '';
 
+      // 1) Batch resolve (cache + fallback)
       const batch = await resolvePlacesBatch({
         items: unresolved,
         city: cityName || ''
       });
 
-      // Eski listeyi anahtarla birleştir
-      const byKey = new Map(batch.map(x => [keyOf(x), x]));
+      // 2) Eski listeyi SEED-KEY ile birleştir
+      const byKey = new Map(batch.map(nn => [seedKey(nn), nn]));
       const merged = all.map(old => {
         if (old?.place_id) return old;
-        const k = keyOf(old);
-        const nn = byKey.get(k);
+        const kOld = seedKey(old);
+        const nn = byKey.get(kOld);
         if (nn?.place_id) {
+          // Google koordinatı varsa UI için yaz
+          const gLat = Number(nn?.coords?.lat ?? nn?.lat);
+          const gLon = Number(nn?.coords?.lng ?? nn?.lon);
+          const coordsNew = (Number.isFinite(gLat) && Number.isFinite(gLon)) ? { lat: gLat, lng: gLon } : (old.coords || null);
+
           return {
             ...old,
             place_id: nn.place_id,
             resolved: true,
+            coords: coordsNew || old.coords || null,
+            lat: coordsNew?.lat ?? old.lat,
+            lon: coordsNew?.lng ?? old.lon,
             opening_hours: nn.opening_hours ?? old.opening_hours ?? null,
             rating: nn.rating ?? old.rating ?? null,
             user_ratings_total: nn.user_ratings_total ?? old.user_ratings_total ?? null,
             price_level: nn.price_level ?? old.price_level ?? null,
+            _matched: true,
           };
         }
         return old;
       });
 
-      // Kaynağa geri yaz
+      // 3) Kaynağa geri yaz
       const key = trip._id ?? trip.id;
       await patchTripLocal(key, {
         [sourceField]: merged,
@@ -204,11 +268,6 @@ export default function TripReviewScreen() {
     }
   }, [trip]);
 
-  // küçük helper – Android’de Toast, iOS’ta Alert
-  const notify = useCallback((msg) => {
-    if (Platform.OS === 'android') ToastAndroid.show(msg, ToastAndroid.LONG);
-    else Alert.alert('Bilgi', msg);
-  }, []);
   /* ---------------- Finalize ---------------- */
   const finalize = useCallback(async () => {
     if (!trip) return;
@@ -226,42 +285,44 @@ export default function TripReviewScreen() {
         '';
 
       // 1) EŞLEŞTİR (arka planda sessizce)
-      const round5 = (x) => Math.round(Number(x) * 1e5) / 1e5;
-      const keyOf = (x) => {
-        const lat = Number(x?.lat ?? x?.coords?.lat);
-        const lon = Number(x?.lon ?? x?.coords?.lng ?? x?.coords?.lon);
-        const nm  = String(x?.name || '').trim().toLowerCase();
-        return `${nm}@${round5(lat)},${round5(lon)}`;
-      };
       const candidates = allPlaces.filter(p => {
         if (p?.place_id) return false;
         const lat = Number(p?.lat ?? p?.coords?.lat);
         const lon = Number(p?.lon ?? p?.coords?.lng ?? p?.coords?.lon);
         return Number.isFinite(lat) && Number.isFinite(lon) && (p?.name || '').trim().length > 0;
       });
+
       let mergedPlaces = allPlaces;
       if (candidates.length) {
         const batch = await resolvePlacesBatch({ items: candidates, city: cityName || '' });
-        const byKey = new Map(batch.map(x => [keyOf(x), x]));
+        const byKey = new Map(batch.map(nn => [seedKey(nn), nn]));
         mergedPlaces = allPlaces.map(old => {
           if (old?.place_id) return old;
-          const nn = byKey.get(keyOf(old));
+          const nn = byKey.get(seedKey(old));
           if (nn?.place_id) {
+            const gLat = Number(nn?.coords?.lat ?? nn?.lat);
+            const gLon = Number(nn?.coords?.lng ?? nn?.lon);
+            const coordsNew = (Number.isFinite(gLat) && Number.isFinite(gLon)) ? { lat: gLat, lng: gLon } : (old.coords || null);
+
             return {
               ...old,
               place_id: nn.place_id,
               resolved: true,
+              coords: coordsNew || old.coords || null,
+              lat: coordsNew?.lat ?? old.lat,
+              lon: coordsNew?.lng ?? old.lon,
               opening_hours: nn.opening_hours ?? old.opening_hours ?? null,
               rating: nn.rating ?? old.rating ?? null,
               user_ratings_total: nn.user_ratings_total ?? old.user_ratings_total ?? null,
               price_level: nn.price_level ?? old.price_level ?? null,
+              _matched: true,
             };
           }
           return old;
         });
       }
 
-      // 1.5) Bilgilendir (hafif sorun metnin aynen kullanıldı)
+      // 1.5) Bilgilendir
       const stillUnresolved = mergedPlaces.filter(p => !p.place_id && (p?.lat || p?.coords)).length;
       const noCoords = mergedPlaces.filter(p => !p.place_id && !p?.lat && !p?.coords).length;
       if (stillUnresolved > 0 && noCoords === 0) {
@@ -271,13 +332,14 @@ export default function TripReviewScreen() {
         mergedPlaces = mergedPlaces.filter(p => p?.coords || (p?.lat != null && p?.lon != null));
       }
 
-      // 1.6) Trip’e yaz (eşleştirilmiş yerler)
+      // 1.6) Trip’e yaz (eşleşmiş yerler)
       const key = trip._id ?? trip.id;
       await patchTripLocal(key, {
         [sourceField]: mergedPlaces,
         updatedAt: new Date().toISOString(),
         __dirty: true,
-      });      
+      });
+
       // 2) Geziyi finalize et → completed (ardından plan)
       const when = new Date().toISOString();
       await patchTripLocal(key, { status: 'completed', wizardStep: null, updatedAt: when, __dirty: true });
@@ -503,6 +565,11 @@ function WherePretty({ trip }) {
 }
 
 /* ---------------- date pretty ---------------- */
+function diffNights(s, e) {
+  if (!s || !e) return 0;
+  const sd = new Date(s + 'T00:00:00'); const ed = new Date(e + 'T00:00:00');
+  return Math.max(0, Math.round((ed - sd) / 86400000));
+}
 function DateRangePretty({ trip }) {
   const wa = trip?._whereAnswer;
   const dr = trip?.dateRange;
@@ -767,7 +834,8 @@ function PlacesGrouped({ trip, onRetry }) {
             {items.map((p, i) => (
               <View key={`${g.key}-${i}`} style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:2,flexWrap:'wrap'}}>
                 <Text style={styles.groupItem}>• {p.name}</Text>
-                {!p.place_id && <Badge text="Eşleşmedi" tone="danger" />}
+                {/* görünür rozetler */}
+                {p.place_id ? <Badge text="Eşleşti" tone="primary" /> : <Badge text="Eşleşmedi" tone="danger" />}
                 {!!p.opening_hours && <Badge text="Saat var" tone="soft" />}
               </View>
             ))}
@@ -775,28 +843,22 @@ function PlacesGrouped({ trip, onRetry }) {
         );
       })}
 
-      <View style={{marginTop:8, padding:10, borderWidth:1, borderColor:'#1F2937', borderRadius:10}}>
-        <Text style={{color:'#EAEAEA', fontWeight:'700'}}>Yer Eşleşmeleri</Text>
-        <Text style={{color:'#9CA3AF', marginTop:4}}>
-          Eşleşen: {matched} / {total}
-        </Text>
-
-        <TouchableOpacity
-          onPress={onRetry}
-          style={{marginTop:8, alignSelf:'flex-start', paddingVertical:8, paddingHorizontal:12, borderRadius:10, borderWidth:1, borderColor:'#2563EB', backgroundColor:'#0E1B2E'}}
-        >
-          <Text style={{color:'#fff', fontWeight:'700'}}>Yeniden Eşle</Text>
-        </TouchableOpacity>
-      </View>
+      {__DEV__ && (
+        <View style={{marginTop:8, padding:10, borderWidth:1, borderColor:'#1F2937', borderRadius:10}}>
+          <Text style={{color:'#EAEAEA', fontWeight:'700'}}>Yer Eşleşmeleri (DEV)</Text>
+          <Text style={{color:'#9CA3AF', marginTop:4}}>
+            Eşleşen: {matched} / {total}
+          </Text>
+          <TouchableOpacity
+            onPress={onRetry}
+            style={{marginTop:8, alignSelf:'flex-start', paddingVertical:8, paddingHorizontal:12, borderRadius:10, borderWidth:1, borderColor:'#2563EB', backgroundColor:'#0E1B2E'}}
+          >
+            <Text style={{color:'#fff', fontWeight:'700'}}>Yeniden Eşle</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
-}
-
-/* ---------------- utils ---------------- */
-function diffNights(s, e) {
-  if (!s || !e) return 0;
-  const sd = new Date(s + 'T00:00:00'); const ed = new Date(e + 'T00:00:00');
-  return Math.max(0, Math.round((ed - sd) / 86400000));
 }
 
 /* ---------------- styles ---------------- */
@@ -836,7 +898,6 @@ const styles = StyleSheet.create({
   primaryBtn: { marginTop: 12, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, backgroundColor: '#34D399', borderWidth: 1, borderColor: '#065F46', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   primaryBtnText: { color: '#0B141E', fontWeight: '900' },
 
-  // grouped box & lists
   groupBox: { borderWidth: 1, borderColor: '#1F2937', borderRadius: 12, padding: 10, backgroundColor: '#0C1420', gap: 8 },
   lodgeRow: { flexDirection:'row', gap:10, alignItems:'flex-start', paddingVertical:2 },
   lodgeName: { color: '#E5E7EB', fontWeight: '700' },
@@ -845,7 +906,6 @@ const styles = StyleSheet.create({
   groupTitle: { color: '#D1FAE5', fontWeight: '800', marginBottom: 4 },
   groupItem: { color: FG, marginLeft: 6, marginBottom: 2 },
 
-  // start/end pretty
   cityGroup: { gap: 6 },
   cityTitle: { color: '#FDE68A', fontWeight: '800' },
   seRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
@@ -857,11 +917,9 @@ const styles = StyleSheet.create({
   seMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   seMetaText: { color: MUTED, marginLeft: 4 },
 
-  // title pretty
   titlePrettyWrap: { flexDirection:'row', alignItems:'center', gap:8, paddingVertical:2 },
   titleIcon: { width:24, height:24, borderRadius:999, borderWidth:1, borderColor:'#1F2937', alignItems:'center', justifyContent:'center', backgroundColor:'#0B1220' },
   bigTitle: { color: '#EAEAEA', fontWeight:'900', fontSize:16 },
 
-  // where pretty
   whereLabel: { color: '#B3EDE3', fontWeight:'800' },
 });

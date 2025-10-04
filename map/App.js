@@ -1,6 +1,7 @@
 // map/App.js
 import 'react-native-gesture-handler';
 import 'react-native-reanimated';
+import '../app/polyfills/normalize';
 import { enableScreens } from 'react-native-screens';
 import React, { useEffect } from 'react';
 import { Platform, StatusBar } from 'react-native';

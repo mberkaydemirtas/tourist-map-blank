@@ -5,10 +5,10 @@ import {
   Text,
   TextInput,
   Pressable,
-  FlatList,
   StyleSheet,
   ActivityIndicator,
-  ScrollView, // yatay sekmeler için güvenli
+  ScrollView,
+  FlatList,
 } from 'react-native';
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -17,8 +17,9 @@ import {
   getCategoryCounts,
   searchPoiLocal,
   searchPoiHybridThreshold,
+  addUserPoi,
 } from '../../app/lib/poiHybrid.js';
-import { newPlacesSessionToken } from '../../app/lib/api.js';
+import { newPlacesSessionToken, poiMatch, poiSuggest } from '../../app/lib/api.js'; // ⬅️ poiSuggest eklendi
 
 const CATEGORIES = [
   { key: 'sights',      label: 'Turistik Yerler' },
@@ -33,32 +34,120 @@ const labelForCat = (k) => CAT_LABELS[k] || k || '';
 
 const BTN = '#2563EB';
 const BORDER = '#23262F';
-const MIN_CHARS = 1;
+const MIN_CHARS = 2;
 const DEBOUNCE_MS = 250;
+const SUGGEST_OK_THRESHOLD = 6; // suggest sonucu bu sayıya ulaşıyorsa Google'a gitmeyelim
 
 /* helpers */
-function toPlace(item, fallbackCity) {
+function toPlace(item, fallbackCity, fallbackCategory) {
+  const lat = Number.isFinite(item.lat) ? item.lat : Number(item.coords?.lat);
+  const lon = Number.isFinite(item.lon) ? item.lon : Number(item.coords?.lng ?? item.coords?.lon);
   return {
     id: String(item.id ?? item.place_id ?? Math.random().toString(36).slice(2)),
     name: item.name,
-    coords:
-      Number.isFinite(item.lat) && Number.isFinite(item.lon)
-        ? { lat: item.lat, lng: item.lon }
-        : undefined,
+    coords: Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lng: lon } : undefined,
     address: item.address || undefined,
     source: item.source,
     place_id: item.place_id,
-    category: item.category,
+    category: item.category || fallbackCategory || 'sights',
     city: item.city || fallbackCity || '',
     addedAt: new Date().toISOString(),
   };
 }
-function Badge({ children }) {
+function Badge({ children, tone = 'blue' }) {
+  const bg = tone === 'green' ? '#34D399' : tone === 'indigo' ? '#818CF8' : '#60A5FA';
   return (
-    <View style={styles.badge}>
+    <View style={[styles.badge, { backgroundColor: bg }]}>
       <Text style={{ color: '#0D0F14', fontWeight: '800', fontSize: 12 }}>{children}</Text>
     </View>
   );
+}
+
+/** Oturum içinde aynı place_id’yi gereksiz yere tekrar yazmamak için */
+const seenPersistIds = new Set();
+
+/** Arama sonucu görünen Google/suggest öğelerini sessizce local overlay’e yaz (ilk 10) */
+async function persistResultsSilently(list, { city, category }) {
+  try {
+    const jobs = [];
+    const cap = 10;
+    let pushed = 0;
+    for (const it of list) {
+      if (pushed >= cap) break;
+      const pid = it?.place_id;
+      if (!pid || seenPersistIds.has(pid)) continue;
+
+      const lat = Number.isFinite(it?.lat) ? it.lat : Number(it?.coords?.lat);
+      const lon = Number.isFinite(it?.lon) ? it.lon : Number(it?.coords?.lng ?? it?.coords?.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+
+      jobs.push(
+        addUserPoi({
+          city,
+          category: it?.category || category || 'sights',
+          name: it?.name || '—',
+          lat,
+          lon,
+          address: it?.address || '',
+          place_id: pid,
+        }).catch(() => {})
+      );
+      seenPersistIds.add(pid);
+      pushed++;
+    }
+    if (jobs.length) await Promise.allSettled(jobs);
+  } catch {}
+}
+
+/** Server match cache’inden batch eşleşme bilgisi çek ve öğelere işle */
+async function annotateMatches(items, cityName) {
+  try {
+    const payload = items.map((x) => {
+      const lat = Number.isFinite(x?.lat) ? x.lat : Number(x?.coords?.lat);
+      const lon = Number.isFinite(x?.lon) ? x.lon : Number(x?.coords?.lng ?? x?.coords?.lon);
+      return (x?.name && Number.isFinite(lat) && Number.isFinite(lon))
+        ? { name: String(x.name), lat, lon, city: cityName || '' }
+        : null;
+    }).filter(Boolean);
+
+    if (!payload.length) return items;
+
+    const res = await poiMatch(payload, cityName); // { results: [...] }
+    const results = Array.isArray(res?.results) ? res.results : [];
+
+    let idx = -1;
+    const withFlags = items.map((it) => {
+      const lat = Number.isFinite(it?.lat) ? it.lat : Number(it?.coords?.lat);
+      const lon = Number.isFinite(it?.lon) ? it.lon : Number(it?.coords?.lng ?? it?.coords?.lon);
+      if (!(it?.name && Number.isFinite(lat) && Number.isFinite(lon))) return { ...it, matched: !!it?.place_id };
+
+      idx += 1;
+      const r = results[idx];
+      if (r?.matched && r?.place_id) {
+        return {
+          ...it,
+          matched: true,
+          place_id: it.place_id || r.place_id,
+          rating: it.rating ?? r.rating ?? null,
+          opening_hours: it.opening_hours ?? r.opening_hours ?? null,
+        };
+      }
+      return { ...it, matched: !!it?.place_id };
+    });
+
+    withFlags.sort((a, b) => {
+      const ma = a.matched ? 1 : 0;
+      const mb = b.matched ? 1 : 0;
+      if (mb !== ma) return mb - ma; // matched önce
+      const sa = a.source === 'google' || a.source === 'cache' ? 1 : 0;
+      const sb = b.source === 'google' || b.source === 'cache' ? 1 : 0;
+      return sb - sa; // sonra suggest/google overlay
+    });
+
+    return withFlags;
+  } catch {
+    return items;
+  }
 }
 
 export default function TripListQuestion({
@@ -69,8 +158,6 @@ export default function TripListQuestion({
   countryCode = trip?.countryCode || 'TR',
   cityName    = trip?.cityName    || '',
   cityCenter  = trip?.cityCenter  || { lat: 39.92077, lng: 32.85411 },
-
-  // dış sayfa scroll’undan bağımsız, bu kartın içinde scroll edilecek yükseklik
   placesMaxHeight = 360,
 }) {
   const [items, setItems] = useState([]);
@@ -114,7 +201,7 @@ export default function TripListQuestion({
     return () => { mounted = false; };
   }, [countryCode, cityName]);
 
-  // preload local
+  // preload local (+ match annotate)
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -127,8 +214,11 @@ export default function TripListQuestion({
           limit: 20,
         });
         if (!mounted) return;
-        initialLocalRef.current = out || [];
-        setItems(initialLocalRef.current);
+
+        const withFlags = await annotateMatches(out || [], cityName);
+        initialLocalRef.current = withFlags;
+        setItems(withFlags);
+        if (__DEV__) console.log('[TripListQuestion] local preload =', withFlags?.length || 0);
       } catch {
         if (mounted) {
           initialLocalRef.current = [];
@@ -139,7 +229,7 @@ export default function TripListQuestion({
     return () => { mounted = false; };
   }, [activeCat, cityName, countryCode]);
 
-  // arama (local → gerekirse google)
+  // 🔎 Arama (önce suggest.db → yetmezse poi_TR + Google)
   useEffect(() => {
     let mounted = true;
     if (debRef.current) clearTimeout(debRef.current);
@@ -156,6 +246,27 @@ export default function TripListQuestion({
       const myReqId = ++reqIdRef.current;
       setLoading(true);
       try {
+        // 1) SUGGEST (DB-first; gerekiyorsa server Google'a gider ve DB'yi doldurur)
+        const suggestArr = await poiSuggest(qTrim, {
+          city: cityName,
+          lat: cityCenter?.lat,
+          lon: cityCenter?.lng,
+          limit: 20,
+        });
+
+        // SUGGEST sonuçlarını ekrana ver (eşle flag ekle)
+        // Eğer öneri yeterliyse burada kal - maliyet düşer
+        if ((suggestArr?.length || 0) >= SUGGEST_OK_THRESHOLD) {
+          const withFlags = await annotateMatches(suggestArr || [], cityName);
+          if (!mounted || myReqId !== reqIdRef.current) return;
+          setItems(withFlags);
+          // koordinatı olanları sessiz persist
+          persistResultsSilently(withFlags, { city: cityName, category: activeCat }).catch(() => {});
+          setLoading(false);
+          return;
+        }
+
+        // 2) suggest az ise, klasik hibrit aramaya geç (poi_TR + Google text-search)
         const out = await searchPoiHybridThreshold({
           country: countryCode,
           city: cityName,
@@ -167,8 +278,24 @@ export default function TripListQuestion({
           sessionToken: sessionRef.current,
         });
         if (!mounted || myReqId !== reqIdRef.current) return;
-        setItems(out || []);
-      } catch {
+
+        // suggest + hybrid birleştir (uniq by place_id)
+        const mapByPid = new Map();
+        for (const s of (suggestArr || [])) if (s?.place_id) mapByPid.set(s.place_id, s);
+        const merged = [
+          ...(suggestArr || []),
+          ...(out || []).filter(x => !x.place_id || !mapByPid.has(x.place_id))
+        ];
+
+        const withFlags = await annotateMatches(merged || [], cityName);
+        setItems(withFlags);
+        if (__DEV__) console.log('[TripListQuestion] merged items =', withFlags?.length || 0);
+
+        if ((withFlags?.length || 0) > 0) {
+          persistResultsSilently(withFlags, { city: cityName, category: activeCat })
+            .catch(() => {});
+        }
+      } catch (e) {
         if (mounted) setItems(initialLocalRef.current);
       } finally {
         if (mounted) setLoading(false);
@@ -185,8 +312,29 @@ export default function TripListQuestion({
     const cityKey = item.city || cityName;
     const exists = selected.find((x) => x.id === item.id && (x.city || '') === cityKey);
     let next;
-    if (exists) next = selected.filter((x) => !(x.id === item.id && (x.city || '') === cityKey));
-    else next = [...selected, toPlace(item, cityName)];
+    if (exists) {
+      next = selected.filter((x) => !(x.id === item.id && (x.city || '') === cityKey));
+    } else {
+      const fallbackCat = item.category || activeCat || 'sights';
+      // Seçileni hemen yapısallaştır (varsa coords’u taşı)
+      next = [...selected, toPlace(item, cityName, fallbackCat)];
+
+      // place_id + koordinat varsa overlay'e yaz
+      const _lat = Number.isFinite(item.lat) ? item.lat : Number(item.coords?.lat);
+      const _lon = Number.isFinite(item.lon) ? item.lon : Number(item.coords?.lng ?? item.coords?.lon);
+      if (Number.isFinite(_lat) && Number.isFinite(_lon)) {
+        addUserPoi({
+          city: cityName,
+          category: fallbackCat,
+          name: item.name,
+          lat: _lat,
+          lon: _lon,
+          address: item.address || '',
+          place_id: item.place_id || undefined,
+        }).catch(() => {});
+        if (item.place_id) seenPersistIds.add(item.place_id);
+      }
+    }
     setTrip?.({ ...(trip || {}), selectedPlaces: next });
   }
 
@@ -225,7 +373,7 @@ export default function TripListQuestion({
       <View style={styles.searchRow}>
         <Ionicons name="search" size={18} color="#9AA0A6" />
         <TextInput
-          placeholder="Ara (önce veritabanı; azsa Google)…"
+          placeholder="Ara (önce öneri; gerekirse veritabanı + Google)…"
           placeholderTextColor="#6B7280"
           value={query}
           onChangeText={setQuery}
@@ -236,6 +384,11 @@ export default function TripListQuestion({
         />
         {loading ? <ActivityIndicator /> : null}
       </View>
+
+      {/* Mini sayaç */}
+      <Text style={{color:'#9AA0A6', fontSize:12, marginTop:6, marginLeft:2}}>
+        {`Listelenen: ${items?.length || 0}`}
+      </Text>
 
       {/* Places: kart içinde bağımsız scroll (GH FlatList) */}
       <View style={[styles.sheetDark, { maxHeight: placesMaxHeight }]}>
@@ -253,6 +406,11 @@ export default function TripListQuestion({
           renderItem={({ item }) => {
             const cityKey = item.city || cityName;
             const checked = !!selected.find((x) => x.id === item.id && (x.city || '') === cityKey);
+            const catForItem = item.category || activeCat || 'sights';
+
+            const matched = !!item.matched || !!item.place_id;
+            const src = item.source === 'cache' ? 'Öneri' : (item.source === 'google' ? 'Google' : 'Yerel');
+
             return (
               <Pressable
                 onPress={() => toggleSelection(item)}
@@ -265,15 +423,19 @@ export default function TripListQuestion({
 
                   <View style={{ flex: 1 }}>
                     <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
-                   {!!item.address && item.source !== 'google' && (
-                     <Text style={styles.addr} numberOfLines={1}>{item.address}</Text>
-                   )}                  
-                   </View>
+                    {!!item.address && (
+                      <Text style={styles.addr} numberOfLines={1}>{item.address}</Text>
+                    )}
+                  </View>
 
                   <View style={{ alignItems: 'flex-end', gap: 6 }}>
-                    <Badge>{item.source === 'google' ? 'Google' : 'Yerel'}</Badge>
+                    {matched ? <Badge tone="green">Eşleşmiş</Badge> : <Badge>{src}</Badge>}
                     {checked ? <Text style={styles.selectedPill}>Seçili</Text> : null}
                   </View>
+                </View>
+
+                <View style={{ marginTop: 8, flexDirection:'row', gap:6 }}>
+                  <Text style={styles.catTagMini}>{labelForCat(catForItem)}</Text>
                 </View>
               </Pressable>
             );
@@ -289,7 +451,7 @@ export default function TripListQuestion({
         />
       </View>
 
-      {/* Seçilenler — dış sayfayla birlikte kayar (iç scroll kapalı) */}
+      {/* Seçilenler */}
       <View style={{ height: 12 }} />
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Seçilenler {cityName ? `(${cityName})` : ''}</Text>
@@ -302,7 +464,6 @@ export default function TripListQuestion({
           keyExtractor={(it, idx) =>
             (it?.id && String(it.id)) || (it?.place_id && `pid-${it.place_id}`) || `sel-${idx}`
           }
-          // Seçilenler ana sayfayla kayacak → iç scroll kapalı:
           scrollEnabled={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[styles.listContent, { paddingBottom: 6 }]}
@@ -312,10 +473,10 @@ export default function TripListQuestion({
                 <View style={[styles.checkbox, styles.checkboxChecked]}>
                   <Ionicons name="checkmark" size={16} color="#0D0F14" />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={{ flex:1 }}>
                   <View style={styles.titleRow}>
                     <Text style={styles.name} numberOfLines={2}>
-                      {item.name}{item.source === 'google' ? ' · Google' : ''}
+                      {item.name}{item.source === 'google' ? ' · Google' : (item.source === 'cache' ? ' · Öneri' : '')}
                     </Text>
                     {!!item.category && (
                       <Text style={styles.catTag} numberOfLines={1}>
@@ -323,10 +484,10 @@ export default function TripListQuestion({
                       </Text>
                     )}
                   </View>
-                   {!!item.address && item.source !== 'google' && (
-                     <Text style={styles.addr} numberOfLines={1}>{item.address}</Text>
-                   )}                
-                   </View>
+                  {!!item.address && (
+                    <Text style={styles.addr} numberOfLines={1}>{item.address}</Text>
+                  )}
+                </View>
                 <Text style={styles.removeText}>Kaldır</Text>
               </View>
             </Pressable>
@@ -351,7 +512,6 @@ function keyExtractor(it, idx) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#101014' },
 
-  // Sekmeleri az sola kaydır
   tabs: { paddingHorizontal: 8, gap: 8, marginLeft: -4, paddingRight: 6 },
   tab: {
     paddingHorizontal: 12,
@@ -380,7 +540,6 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, color: '#fff' },
 
-  // Kart benzeri kutu
   sheetDark: {
     backgroundColor: '#14161c',
     borderRadius: 12,
@@ -445,7 +604,6 @@ const styles = StyleSheet.create({
   sectionTitle: { color: '#E5E7EB', fontWeight: '800' },
   sectionCount: { color: '#9AA0A6', fontWeight: '700' },
 
-  // Seçilenler: kategori etiketi (yalnızca bu listede)
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   catTag: {
     fontSize: 11,
@@ -454,6 +612,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#60A5FA',
     paddingHorizontal: 8,
     paddingVertical: 3,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  catTagMini: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0D0F14',
+    backgroundColor: '#1FB2A6',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
     borderRadius: 999,
     overflow: 'hidden',
   },

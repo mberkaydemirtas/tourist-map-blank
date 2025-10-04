@@ -1,14 +1,8 @@
 // trips/services/placeResolver.js
-// -------------------------------------------------------------
-// Robust POI Resolver (entegre: early-stop cascade + cache + concurrency)
-// 1) Normalize
-// 2) Server-side batch match (/api/poi/match)
-// 3) Fuzzy fallback (tek kademeli zincir, erken durdurma, cache, limitli paralellik)
-// -------------------------------------------------------------
+import { poiMatch, poiSearch, poiMatchUpsert } from '../../app/lib/api';
+import { addUserPoi } from '../../app/lib/poiHybrid';
 
-import { poiMatch, poiSearch } from '../../app/lib/api';
-
-/* ------------------------- helpers: numeric/geo ------------------------- */
+/* ------------------------- numeric/geo helpers ------------------------- */
 const round5 = (x) => Math.round(Number(x) * 1e5) / 1e5;
 const toRad = (d) => (d * Math.PI) / 180;
 const haversineKm = (a, b) => {
@@ -24,9 +18,9 @@ const haversineKm = (a, b) => {
   return 2 * R * Math.asin(Math.sqrt(h));
 };
 
-/* -------------------------- helpers: string fold ------------------------ */
+/* -------------------------- string helpers ----------------------------- */
 const stripBrackets = (s = '') =>
-  s.replace(/\s*[\(\[\{].*?[\)\]\}]\s*/g, ' ').replace(/\s+/g, ' ').trim();
+  String(s).replace(/\s*[\(\[\{].*?[\)\]\}]\s*/g, ' ').replace(/\s+/g, ' ').trim();
 
 const removeSuffixes = (s = '') => {
   const kill = [
@@ -34,25 +28,35 @@ const removeSuffixes = (s = '') => {
     'bar','pub','coffee','kahve','lokanta','büfe','bufe','branch','şubesi','sube',
     'ankara','istanbul','izmir'
   ];
-  let t = s.toLowerCase();
+  let t = String(s || '').toLowerCase();
   t = t.replace(/[-–—•|]+/g, ' ');
   for (let i = 0; i < 3; i++) t = t.replace(new RegExp(`\\b(${kill.join('|')})\\b`, 'g'), ' ');
   t = t.replace(/\s+/g, ' ').trim();
-  return t.length ? t : s.toLowerCase();
+  return t.length ? t : String(s || '').toLowerCase();
 };
 
-const trFold = (s = '') =>
-  String(s)
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[İIıŞşĞğÜüÖöÇç]/g, (ch) => ({
-      İ: 'I', I: 'I', ı: 'i', Ş: 'S', ş: 's', Ğ: 'G', ğ: 'g', Ü: 'U', ü: 'U', Ö: 'O', ö: 'O', Ç: 'C', ç: 'C'
-    }[ch] || ch))
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim();
+const trFold = (s = '') => {
+  const str = String(s || '');
+  try {
+    return str
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[İIıŞşĞğÜüÖöÇç]/g, ch => ({ İ:'I', I:'I', ı:'i', Ş:'S', ş:'s', Ğ:'G', ğ:'g', Ü:'U', ü:'U', Ö:'O', ö:'O', Ç:'C', ç:'C' }[ch] || ch))
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  } catch {
+    return str
+      .replace(/[İIıŞşĞğÜüÖöÇç]/g, ch => ({ İ:'I', I:'I', ı:'i', Ş:'S', ş:'s', Ğ:'G', ğ:'g', Ü:'U', ü:'U', Ö:'O', ö:'O', Ç:'C', ç:'C' }[ch] || ch))
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+};
 
 const normName = (s = '') => trFold(removeSuffixes(stripBrackets(s)));
+const keyForClient = (name, coords) =>
+  `${trFold(String(name || ''))}@${round5(coords.lat)},${round5(coords.lng)}`;
 
 const ngrams = (s, n = 3) => {
   const t = ` ${s} `;
@@ -72,19 +76,18 @@ const trigramSim = (a, b) => {
 /* ------------------------------- tunables ------------------------------- */
 const NAME_SIM_WEIGHT = 0.65;
 const PROX_WEIGHT = 0.35;
-const NAME_SIM_THRESHOLD = 0.35;   // fuzzy eşik
-const MAX_NEAR_KM = 10;            // proximity normalizasyon üst sınır
+const NAME_SIM_THRESHOLD = 0.35;
+const MAX_NEAR_KM = 10;
 const GOOGLE_TEXT_FALLBACK = true;
 const FALLBACK_TIMEOUT_MS = 9000;
 const CONCURRENCY = 6;
 
-/* ----------------------------- scoring logic ---------------------------- */
+/* -------------------------------- scoring -------------------------------- */
 const scoreCandidate = (qName, qCoord, cand) => {
   const sim = trigramSim(normName(qName), normName(cand.name || ''));
   let prox = 0;
   if (qCoord && cand.coords) {
     const d = haversineKm(qCoord, cand.coords);
-    // 0..1 aralığına sıkıştır (0 = uzak, 1 = aynı nokta)
     prox = Math.max(0, 1 - Math.min(d, MAX_NEAR_KM) / MAX_NEAR_KM);
   }
   return NAME_SIM_WEIGHT * sim + PROX_WEIGHT * prox;
@@ -110,18 +113,21 @@ export function normalizeRaw(item) {
     name: item.name || '—',
     place_id: item.place_id || null,
     coords,
-    category,
+    _seed_coords: coords || null,
     resolved: !!item.place_id,
     opening_hours: item.opening_hours || null,
     rating: item.rating ?? null,
     user_ratings_total: item.user_ratings_total ?? null,
     price_level: item.price_level ?? null,
-    osm_id: item.osm_id ?? item.id ?? null, // eşlemede yedek anahtar
+    osm_id: item.osm_id ?? item.id ?? null,
+    address: item.address || item.formatted_address || item.description || '',
+    city: item.city || '',
+    // ⬇️ yeni: DB eşleşmesi için item_id (unique seed id)
+    item_id: item.item_id || item.id || item.osm_id || null,
   };
 }
 
 /* -------------------------- tiny concurrency limiter -------------------- */
-/** p-limit benzeri mini limiter: limit(fn) -> Promise */
 function createLimiter(concurrency = 6) {
   let active = 0;
   const queue = [];
@@ -139,7 +145,7 @@ function createLimiter(concurrency = 6) {
 const limit = createLimiter(CONCURRENCY);
 
 /* ------------------------------- query cache ---------------------------- */
-const qCache = new Map(); // key -> results[]
+const qCache = new Map();
 const cacheKey = (q, o) => `${q}|${o.lat}|${o.lon}|${o.city}|${o.category || ''}`;
 async function cachedPoiSearch(q, opts) {
   const key = cacheKey(q, opts);
@@ -151,12 +157,11 @@ async function cachedPoiSearch(q, opts) {
 
 /* ------------------------ early-stop text-search chain ------------------ */
 async function textSearchCascade({ name, city, lat, lon, category, timeoutMs = FALLBACK_TIMEOUT_MS }) {
-  // Diakritikleri KORU (Google tarafında daha iyi recall); scoring'de normalize ediyoruz.
   const primary = `${name} ${city}`.trim();
   const variants = [
-    { q: primary,                          category: undefined }, // 1) name + city
-    { q: `${category || ''} ${primary}`.trim(), category },      // 2) category + name + city
-    { q: `${name}`.trim(),                 category: undefined }, // 3) yalnız name
+    { q: primary,                               category: undefined },
+    { q: `${category || ''} ${primary}`.trim(), category },
+    { q: `${name}`.trim(),                      category: undefined },
   ];
 
   for (let i = 0; i < variants.length; i++) {
@@ -168,7 +173,7 @@ async function textSearchCascade({ name, city, lat, lon, category, timeoutMs = F
       category: v.category,
       timeoutMs,
     });
-    if (res && res.length) return res; // erken durdur
+    if (res && res.length) return res;
   }
   return [];
 }
@@ -183,39 +188,44 @@ export async function resolveSingle({ item, city = '' }) {
 export async function resolvePlacesBatch({ items, city = '' }) {
   const normalized = (items || []).map(normalizeRaw);
 
-  // 1) Server-side batch match — sadece place_id olmayan ve koordinatı olanlar
-  const need = normalized.filter((x) => !x.place_id && x.coords);
+  // 1) DB batch match — sadece DB (kesin), Google’a gitme
+  const need = normalized.filter((x) => !x.place_id && x.coords && x.name);
   if (need.length) {
     try {
       const payload = need.map((x) => ({
+        item_id: x.item_id || x.id || x.osm_id || undefined,
         osm_id: x.osm_id,
         name: x.name,
-        lat: round5(x.coords.lat), // client & server aynı rounding
-        lon: round5(x.coords.lng),
+        lat: round5(x._seed_coords?.lat ?? x.coords.lat),
+        lon: round5(x._seed_coords?.lng ?? x.coords.lng),
       }));
-
-      // app/lib/api.js → poiMatch serverAvailable değilse {results: []} döner
       const json = await poiMatch(payload, city);
       const byKey = new Map(
         (json?.results || []).map((m) => {
           const lat5 = round5(m.lat ?? m?.coords?.lat);
           const lon5 = round5(m.lon ?? m?.coords?.lon ?? m?.coords?.lng);
-          const key = m.osm_id ?? `${normName(m.name || '')}@${lat5},${lon5}`;
+          const key = m.key || keyForClient(m.name || '', { lat: lat5, lng: lon5 });
           return [key, m];
         })
       );
 
       for (const x of normalized) {
         if (x.place_id || !x.coords) continue;
-        const key = x.osm_id ?? `${normName(x.name)}@${round5(x.coords.lat)},${round5(x.coords.lng)}`;
+        const key = keyForClient(x.name, { lat: x._seed_coords?.lat ?? x.coords.lat, lng: x._seed_coords?.lng ?? x.coords.lng });
         const m = byKey.get(key);
         if (m?.matched && m.place_id) {
           x.place_id = m.place_id;
           x.resolved = true;
           x.opening_hours = m.opening_hours || x.opening_hours || null;
           x.rating = m.rating ?? x.rating ?? null;
-          x.user_ratings_total = m.user_ratings_total ?? x.user_ratings_total ?? null;
-          x.price_level = m.price_level ?? x.price_level ?? null;
+          // Google koordinatı varsa UI için kullan
+          if (Number.isFinite(Number(m.g_lat)) && Number.isFinite(Number(m.g_lon))) {
+            x._google_coords = { g_lat: Number(m.g_lat), g_lon: Number(m.g_lon) };
+            x.coords = { lat: Number(m.g_lat), lng: Number(m.g_lon) };
+            x.lat    = x.coords.lat;
+            x.lon    = x.coords.lng;
+          }
+          x._resolved_by = 'cache';
         }
       }
     } catch (e) {
@@ -223,77 +233,124 @@ export async function resolvePlacesBatch({ items, city = '' }) {
     }
   }
 
-  // 2) Fuzzy fallback — tek zincir + erken durdurma + cache + paralellik limiti
+  // 2) Google fallback → sadece DB’de eşleşmeyenler için
   if (GOOGLE_TEXT_FALLBACK) {
-    const unresolved = normalized.filter((x) => !x.place_id && x.coords && x.name && String(x.name).trim().length > 1);
-
-    const jobs = unresolved.map((x) =>
-      limit(async () => {
-        try {
-          const hits = await textSearchCascade({
-            name: String(x.name || ''),
-            city: String(city || ''),
-            lat: x.coords.lat,
-            lon: x.coords.lng,
-            category: x.category || '',
-            timeoutMs: FALLBACK_TIMEOUT_MS,
-          });
-
-          if (!hits.length) {
-            x._resolve = { status: 'no_match' };
-            return;
-          }
-
-          // normalize unique candidates by place_id
-          const seen = new Set();
-          const cands = [];
-          for (const c of hits) {
-            const pid = c?.place_id;
-            if (!pid || seen.has(pid)) continue;
-            seen.add(pid);
-            const la = Number(c.lat);
-            const lo = Number(c.lon);
-            cands.push({
-              name: c.name || '—',
-              place_id: pid,
-              coords: Number.isFinite(la) && Number.isFinite(lo) ? { lat: la, lng: lo } : null,
-              opening_hours: c.opening_hours || null,
-              rating: c.rating ?? null,
-              user_ratings_total: c.user_ratings_total ?? null,
-              price_level: c.price_level ?? null,
-            });
-          }
-
-          // skorla ve en iyiyi uygula
-          let best = null;
-          let bestScore = -1;
-          for (const cand of cands) {
-            const sc = scoreCandidate(x.name, x.coords, cand);
-            if (sc > bestScore) {
-              best = cand;
-              bestScore = sc;
-            }
-          }
-
-          if (best && best.place_id && bestScore >= NAME_SIM_THRESHOLD) {
-            x.place_id = best.place_id;
-            x.resolved = true;
-            x.opening_hours = best.opening_hours || x.opening_hours || null;
-            x.rating = best.rating ?? x.rating ?? null;
-            x.user_ratings_total = best.user_ratings_total ?? x.user_ratings_total ?? null;
-            x.price_level = best.price_level ?? x.price_level ?? null;
-            x._resolve = { status: 'matched', score: bestScore };
-          } else {
-            x._resolve = { status: 'no_good_match', tried: cands.length, bestScore };
-          }
-        } catch (e) {
-          console.warn('[placeResolver] fuzzy fallback error', x.name, e?.message || e);
-          x._resolve = { status: 'error', message: e?.message || String(e) };
-        }
-      })
+    const unresolved = normalized.filter((x) =>
+      !x.place_id && x.coords && x.name && String(x.name).trim().length > 1
     );
 
-    await Promise.all(jobs);
+    if (unresolved.length) {
+      const jobs = unresolved.map((x) =>
+        limit(async () => {
+          try {
+            const hits = await textSearchCascade({
+              name: String(x.name || ''),
+              city: String(city || ''),
+              lat: x.coords.lat,
+              lon: x.coords.lng,
+              category: x.category || '',
+              timeoutMs: FALLBACK_TIMEOUT_MS,
+            });
+            if (!hits.length) { x._resolve = { status: 'no_match' }; return; }
+
+            const seen = new Set();
+            const cands = [];
+            for (const c of hits) {
+              const pid = c?.place_id;
+              if (!pid || seen.has(pid)) continue;
+              seen.add(pid);
+              const la = Number(c.lat);
+              const lo = Number(c.lon);
+              cands.push({
+                name: c.name || '—',
+                place_id: pid,
+                coords: Number.isFinite(la) && Number.isFinite(lo) ? { lat: la, lng: lo } : null,
+                opening_hours: c.opening_hours || null,
+                rating: c.rating ?? null,
+                user_ratings_total: c.user_ratings_total ?? null,
+                price_level: c.price_level ?? null,
+                address: c.address || c.formatted_address || '',
+              });
+            }
+
+            let best = null, bestScore = -1;
+            for (const cand of cands) {
+              const sc = scoreCandidate(x.name, x.coords, cand);
+              if (sc > bestScore) { best = cand; bestScore = sc; }
+            }
+
+            if (best && best.place_id && bestScore >= NAME_SIM_THRESHOLD) {
+              x.place_id = best.place_id;
+              x.resolved = true;
+              x.opening_hours = best.opening_hours || x.opening_hours || null;
+              x.rating = best.rating ?? x.rating ?? null;
+              x.user_ratings_total = best.user_ratings_total ?? x.user_ratings_total ?? null;
+              x.price_level = best.price_level ?? x.price_level ?? null;
+              if (best.coords) {
+                x._google_coords = { g_lat: best.coords.lat, g_lon: best.coords.lng };
+                x.coords = { lat: best.coords.lat, lng: best.coords.lng };
+                x.lat    = x.coords.lat;
+                x.lon    = x.coords.lng;
+              }
+              if (best.address && !x.address) x.address = best.address;
+              x._resolve = { status: 'matched', score: bestScore };
+              x._resolved_by = 'google_fallback';
+            } else {
+              x._resolve = { status: 'no_good_match', tried: cands.length, bestScore };
+            }
+          } catch (e) {
+            console.warn('[placeResolver] fuzzy fallback error', x.name, e?.message || e);
+            x._resolve = { status: 'error', message: e?.message || String(e) };
+          }
+        })
+      );
+
+      await Promise.all(jobs);
+    }
+  }
+
+  // 3) DB’ye upsert — anahtar için seed coord; ayrı alan olarak Google coord
+  try {
+    const toUpsert = normalized
+      .filter(x => x.resolved && x.place_id && x._seed_coords)
+      .map(x => ({
+        item_id: x.item_id || x.id || x.osm_id || undefined, // ⬅️ benzersiz seed id
+        name: x.name,
+        lat: x._seed_coords.lat,
+        lon: x._seed_coords.lng,
+        city,
+        place_id: x.place_id,
+        rating: x.rating ?? null,
+        hours: x.opening_hours ?? null,
+        ...(x._google_coords ? {
+          g_lat: x._google_coords.g_lat,
+          g_lon: x._google_coords.g_lon
+        } : null),
+      }));
+    if (toUpsert.length) await poiMatchUpsert(toUpsert);
+  } catch (e) {
+    if (__DEV__) console.warn('[placeResolver] upsert error', e?.message || e);
+  }
+
+  // 4) User overlay’e yaz — sadece seçmeli (UI deneyimi)
+  try {
+    const overlayJobs = normalized
+      .filter(x => x.resolved && x.place_id && x.coords)
+      .map(async (x) => {
+        await addUserPoi({
+          country: 'TR',
+          city: x.city || city || '',
+          category: x.category || 'sights',
+          name: x.name || '',
+          lat: x.coords.lat,
+          lon: x.coords.lng,
+          address: x.address || '',
+          place_id: x.place_id,
+        });
+      });
+    if (overlayJobs.length) await Promise.allSettled(overlayJobs);
+  } catch (e) {
+    if (__DEV__) console.warn('[placeResolver] addUserPoi overlay error', e?.message || e);
   }
 
   return normalized;
