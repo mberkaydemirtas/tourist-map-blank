@@ -1,4 +1,3 @@
-// server/routes/poi.js
 const express = require('express');
 const axios = require('axios');
 const http = require('http');
@@ -52,6 +51,14 @@ const dtCache = new LRUCache({ max: 4000, ttlMs: 24 * 60 * 60 * 1000 });
 router.get('/ping', (req, res) => {
   res.json({ ok: true, ts: Date.now() });
 });
+
+/* ---------- Submit Gate: TextSearch sadece explicit submit ile ---------- */
+function isSubmit(req) {
+  // Header veya query ile izin (ikisi de kabul)
+  const h = (req.get('x-submit-search') || '').trim().toLowerCase();
+  const q = (req.query.submit || '').toString().trim().toLowerCase();
+  return h === '1' || h === 'true' || q === '1' || q === 'true';
+}
 
 /* ===================================================================
    GET /api/poi/google/autocomplete
@@ -107,10 +114,16 @@ router.get('/google/autocomplete', async (req, res) => {
 
 /* ===================================================================
    GET /api/poi/google/search
-   q, lat, lon, city, category
+   q, lat, lon, city, category, submit=1   ← ← YENİ: submit zorunlu
    =================================================================== */
 router.get('/google/search', async (req, res) => {
   if (!PLACES_KEY) return res.status(400).json({ error: 'missing_api_key' });
+
+  // ⛔ Hard Gate: Submit yoksa asla TextSearch yapma
+  if (!isSubmit(req)) {
+    res.setHeader('X-Blocked', 'textsearch_without_submit');
+    return res.status(204).end(); // No Content
+  }
 
   const key = normalizeKey(req);
   const cached = tsCache.get(key);
@@ -142,6 +155,9 @@ router.get('/google/search', async (req, res) => {
     if (lat != null && lon != null) {
       params.location = `${lat},${lon}`;
     }
+
+    console.log('[GOOGLE TS] SUBMIT OK → q="%s" city="%s" category="%s" lat=%s lon=%s → "%s"',
+      q, city, category, String(lat), String(lon), queryStr);
 
     const out = await withCoalescing(key, async () => {
       const g = await httpClient.get(TEXTSEARCH_URL, { params });
