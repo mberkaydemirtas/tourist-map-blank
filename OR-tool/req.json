@@ -1,0 +1,12 @@
+﻿{
+  "day_start_time_min": 540,
+  "day_end_time_min": 1200,
+  "start": {"lat": 41.0082, "lon": 28.9784},
+  "end":   {"lat": 41.0082, "lon": 28.9784},
+  "mode": "driving",
+  "stops": [
+    {"id":"a","name":"Topkapi","coords":{"lat":41.0115,"lon":28.9830},"stay_mins":30},
+    {"id":"b","name":"Hagia",  "coords":{"lat":41.0086,"lon":28.9802},"stay_mins":45},
+    {"id":"c","name":"Basilica","coords":{"lat":41.0083,"lon":28.9779},"stay_mins":40}
+  ]
+}
