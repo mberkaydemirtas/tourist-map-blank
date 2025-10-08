@@ -48,7 +48,7 @@ function toPlace(item, fallbackCity, fallbackCategory) {
   const lon = Number.isFinite(item.lon) ? item.lon : Number(item.coords?.lng ?? item.coords?.lon);
   return {
     id: item.place_id ? `pid-${item.place_id}`
-       : String(item.id ?? Math.random().toString(36).slice(2)),
+       : String(item.id ?? `${(item.name||'x')}-${fallbackCity||''}-${Math.random().toString(36).slice(2)}`),
     name: item.name,
     coords: Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lng: lon } : undefined,
     address: item.address || undefined,
@@ -250,8 +250,9 @@ export default function TripListQuestion({
         if (!mounted) return;
 
         const withFlags = await annotateMatches(out || [], cityName);
-        initialLocalRef.current = withFlags;
-        setItems(withFlags);
+        const finalList = dedupPlaces(withFlags);
+        initialLocalRef.current = finalList;
+        setItems(finalList);
         if (__DEV__) console.log('[TripListQuestion] local preload =', withFlags?.length || 0);
       } catch {
         if (mounted) {
@@ -310,9 +311,9 @@ export default function TripListQuestion({
 
         const ded = dedupPlaces(norm);
         const withFlags = await annotateMatches(ded, cityName);
-
+        const finalList = dedupPlaces(withFlags);
         if (!mounted || myReqId !== reqIdRef.current) return;
-        setItems(withFlags);
+        setItems(finalList);
         if (__DEV__) console.log('[TripListQuestion] AC items =', withFlags?.length || 0);
 
         if (withFlags.length) {
@@ -372,8 +373,8 @@ export default function TripListQuestion({
       setItems(withFlags);
       if (__DEV__) console.log('[TripListQuestion] SUBMIT items =', withFlags?.length || 0);
 
-      if (withFlags.length) {
-        persistGoogleResultsSilently(withFlags, { city: cityName, category: activeCat }).catch(() => {});
+      if (finalList.length) {
+        persistGoogleResultsSilently(finalList, { city: cityName, category: activeCat }).catch(() => {});
       }
     } finally {
       setLoading(false);
@@ -547,8 +548,9 @@ export default function TripListQuestion({
       <View style={[styles.sheetDark, { paddingVertical: 8 }]}>
         <FlatList
           data={selectedCityItems}
-          keyExtractor={(it, idx) => (it?.place_id ? `pid-${it.place_id}` : (it?.id ? `id-${it.id}` : `sel-${idx}`))}
-          scrollEnabled={false}
+          keyExtractor={(it, idx) =>
+            (it?.place_id ? `pid-${it.place_id}` : (it?.id ? `id-${it.id}` : 'sel')) + `#${idx}`
+          }          scrollEnabled={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[styles.listContent, { paddingBottom: 6 }]}
           renderItem={({ item }) => (
@@ -588,16 +590,21 @@ export default function TripListQuestion({
 }
 
 /* list helpers */
-function keyExtractor(it, idx) {
-  if (it?.place_id) return `pid-${it.place_id}`;
-  const la = Number(it?.lat ?? it?.coords?.lat);
-  const lo = Number(it?.lon ?? it?.coords?.lng ?? it?.coords?.lon);
-  if (Number.isFinite(la) && Number.isFinite(lo)) {
-    return `geo-${round5(la)},${round5(lo)}-${(it?.name || '').slice(0,24)}`;
+  function keyExtractor(it, idx) {
+    let base = null;
+    if (it?.place_id) base = `pid-${it.place_id}`;
+    else if (it?.id) base = `id-${it.id}`;
+    else {
+      const la = Number(it?.lat ?? it?.coords?.lat);
+      const lo = Number(it?.lon ?? it?.coords?.lng ?? it?.coords?.lon);
+      if (Number.isFinite(la) && Number.isFinite(lo)) {
+        base = `geo-${round5(la)},${round5(lo)}-${(it?.name || '').slice(0,24)}`;
+      } else {
+        base = 'row';
+      }
+    }
+    return `${base}#${idx}`;
   }
-  if (it?.id) return `id-${it.id}`;
-  return `row-${idx}`;
-}
 
 /* styles */
 const styles = StyleSheet.create({
