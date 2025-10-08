@@ -4,6 +4,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const suggestRouter = require('./routes/suggest');
+const poiGoogleRoutes = require('./routes/poi_google');
 // const connectDB = require('./config/db'); // istersen aç
 
 // 1) .env: server klasöründeki dosyayı açıkça yükle
@@ -51,6 +52,8 @@ app.use('/api/route', require('./routes/directions'));
 app.use('/api/poi', require('./routes/poi'));
 app.use('/api/poi', require('./routes/poiMatch'));
 app.use('/api/poi', suggestRouter);
+app.use(poiGoogleRoutes);
+
 
 // 404
 app.use((req, res, next) => {

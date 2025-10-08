@@ -1,3 +1,4 @@
+// app/lib/api.js
 import { Platform } from "react-native";
 
 /**
@@ -96,7 +97,7 @@ async function fetchJson(
   const url = String(urlStr);
   const isAndroid = Platform.OS === "android";
 
-  const isPoiGoogle = url.includes("/api/poi/google/");
+  const isPoiGoogle = url.includes("/api/poi/google/") || url.includes("/api/places/");
   const isPoiMatch = url.includes("/api/poi/match");
   const forceNoSignal = isAndroid && (isPoiGoogle || isPoiMatch);
 
@@ -180,7 +181,9 @@ const isNetFail = (e) => String(e?.message || "").includes("Network request fail
 /* ========================= SUGGEST-FIRST AYARLAR ========================= */
 
 const MIN_CHARS_SUGGEST = 2;
-const SUGGEST_MIN_TO_SKIP_GOOGLE = 3;
+// Eşikleri makul tutalım: 3+ harfte filtered az ise Google'a geç
+const MIN_PREFIX_FOR_GOOGLE = 3;
+const SUGGEST_MIN_TO_SKIP_GOOGLE = 3; // filtered >= 3 ise Google'ı atla
 const SUGGEST_PREFIX_TTL_MS = 90_000;
 
 function trFold(s = "") {
@@ -276,7 +279,8 @@ function filterSuggestByCategory(items, category) {
   return (items || []).filter((it) => {
     const types = Array.isArray(it?.types) ? it.types : [];
     const cats = new Set(types.map((t) => TYPE_TO_CAT[t]).filter(Boolean));
-    if (!cats.size) return false;
+    // types boşsa eleme — göster (aksi halde liste çok daralıyor)
+    if (!cats.size) return true;
     return cats.has(want);
   });
 }
@@ -340,78 +344,65 @@ async function suggestGateFirst(q, { city, category, limit, timeoutMs, signal })
   const filtered = filterSuggestByCategory(raw, category);
   const filteredCount = (filtered || []).length;
 
-  const satisfied = rawCount >= SUGGEST_MIN_TO_SKIP_GOOGLE;
+  // ❗ Kararı filtered’a göre veriyoruz:
+  const satisfied = filteredCount >= SUGGEST_MIN_TO_SKIP_GOOGLE;
 
   if (satisfied) {
     markPrefixSatisfied(q, city);
-    if (__DEV__) console.log(
-      `[suggestGate] satisfied raw=${rawCount} filtered=${filteredCount} → skip google`
-    );
-  } else {
-    if (__DEV__) console.log(
-      `[suggestGate] not satisfied raw=${rawCount} filtered=${filteredCount} → may fallback to google`
+    if (__DEV__) {
+      console.log(
+        `[suggestGate] satisfied raw=${rawCount} filtered=${filteredCount} min=${SUGGEST_MIN_TO_SKIP_GOOGLE} → SKIP google`
+      );
+    }
+    return { satisfied: true, results: filtered };
+  }
+
+  if (__DEV__) {
+    console.log(
+      `[suggestGate] not satisfied raw=${rawCount} filtered=${filteredCount} min=${SUGGEST_MIN_TO_SKIP_GOOGLE} → MAY fallback to google`
     );
   }
 
-  return { satisfied, results: filteredCount ? filtered : raw };
+  // filtered 0 ise boş dönüyoruz ki Google tetiklensin
+  return { satisfied: false, results: filtered };
 }
+
+const mapSuggest = (results, { city }) =>
+  (results || []).map((s) => ({
+    source: "suggest",
+    name: s.name,
+    place_id: s.place_id,
+    address: s.address || "",
+    city: s.city || city || "",
+    lat: s.lat,
+    lon: s.lon,
+    rating: s.rating,
+    user_ratings_total: s.user_ratings_total,
+  }));
 
 export async function poiAutocomplete(
   q,
   { lat, lon, city, limit = 8, sessionToken, timeoutMs, signal, category } = {}
 ) {
   const qTrim = String(q || "").trim();
+  if (qTrim.length < MIN_CHARS_SUGGEST) return [];
 
-  if (qTrim.length < MIN_CHARS_SUGGEST) {
-    return [];
-  }
+  // Her durumda önce gate: (prefix tatmin edilmiş olsa bile filtered az olabilir)
+  const gate1 = await suggestGateFirst(qTrim, { city, category, limit, timeoutMs, signal });
 
-  if (anySatisfiedPrefix(qTrim, city)) {
-    const { results } = await suggestGateFirst(qTrim, { city, category, limit, timeoutMs, signal });
-    
-    return (results || []).map((s) => ({
-      source: "suggest",
-      name: s.name,
-      place_id: s.place_id,
-      address: s.address || "",
-      city: s.city || city || "",
-      lat: s.lat, lon: s.lon,
-      rating: s.rating, user_ratings_total: s.user_ratings_total
-    }));
-  }
+  // filtered yeterliyse → sadece suggest
+  if (gate1.satisfied) return mapSuggest(gate1.results, { city });
 
-  const { satisfied, results } = await suggestGateFirst(qTrim, {
-    city, category, limit, timeoutMs, signal
-  });
-  if (satisfied) {
-    return (results || []).map((s) => ({
-      source: "suggest",
-      name: s.name,
-      place_id: s.place_id,
-      address: s.address || "",
-      city: s.city || city || "",
-      lat: s.lat, lon: s.lon,
-      rating: s.rating, user_ratings_total: s.user_ratings_total
-    }));
-  }
-    // erken prefix'te Google'ı kes
-   if (qTrim.length < MIN_PREFIX_FOR_GOOGLE) {
-     return (results || []).map((s) => ({
-       source: "suggest",
-       name: s.name,
-       place_id: s.place_id,
-       address: s.address || "",
-       city: s.city || city || "",
-       lat: s.lat, lon: s.lon,
-       rating: s.rating, user_ratings_total: s.user_ratings_total
-     }));   }
+  // 2 harfte Google’a gitme; sadece suggest göster
+  if (qTrim.length < MIN_PREFIX_FOR_GOOGLE) return mapSuggest(gate1.results, { city });
 
+  // Buraya gelindiyse: filtered az + 3+ harf → Google
   const T = Number.isFinite(Number(timeoutMs))
     ? Number(timeoutMs)
     : Math.max(API_TIMEOUT_MS, 9000);
 
-  const build = (base) => {
-    const u = new URL(`${base}/api/poi/google/autocomplete`);
+  const makeUrl = (base, path) => {
+    const u = new URL(`${base}${path}`);
     u.searchParams.set("q", String(qTrim));
     if (lat != null) u.searchParams.set("lat", String(lat));
     if (lon != null) u.searchParams.set("lon", String(lon));
@@ -422,24 +413,21 @@ export async function poiAutocomplete(
     return String(u);
   };
 
-  if (serverAvailable()) {
+  const candidates = [
+    makeUrl(API_BASE, "/api/poi/google/autocomplete"),
+    makeUrl(API_BASE, "/api/places/autocomplete"),
+  ];
+
+  for (const url of candidates) {
     try {
-      const url = build(API_BASE);
       if (__DEV__) console.log("[poiAutocomplete] url=", url);
       const res = await fetchJsonDedup(url, { signal, timeoutMs: T }, T);
-      if (!res.ok)
-        throw new Error(
-          `poiAutocomplete_failed_${res.status}_${await res.text().catch(() => "")}`
-        );
-      const json = await res.json();
-      const arr = toArray(json);
-      return arr;
-    } catch (e1) {
-      // (failover ve direct-google aynı şekilde)
-      return [];
-    }
+      if (res.ok) {
+        const json = await res.json();
+        return toArray(json);
+      }
+    } catch {}
   }
-
   return [];
 }
 
@@ -449,18 +437,14 @@ export async function poiSearch(
   { lat, lon, category, city, timeoutMs, signal, isSubmit = false } = {}
 ) {
   const qTrim = String(q || "").trim();
+  if (qTrim.length < MIN_CHARS_SUGGEST) return [];
 
-  if (qTrim.length < MIN_CHARS_SUGGEST) {
-    return [];
-  }
-
-  // Keystroke sırasında yanlışlıkla çağrılırsa bile sunucuda BLOCK var.
   const T1 = Number.isFinite(Number(timeoutMs))
     ? Number(timeoutMs)
     : Math.max(API_TIMEOUT_MS, 10000);
 
-  const build = (base) => {
-    const u = new URL(`${base}/api/poi/google/search`);
+  const makeUrl = (base, path) => {
+    const u = new URL(`${base}${path}`);
     u.searchParams.set("q", String(qTrim));
     if (lat != null) u.searchParams.set("lat", String(lat));
     if (lon != null) u.searchParams.set("lon", String(lon));
@@ -470,24 +454,30 @@ export async function poiSearch(
     return String(u);
   };
 
+  const candidates = [
+    makeUrl(API_BASE, "/api/poi/google/search"),
+    makeUrl(API_BASE, "/api/places/search"),
+    makeUrl(API_BASE, "/api/places/textsearch"),
+  ];
+
   if (serverAvailable()) {
-    try {
-      const url = build(API_BASE);
-      if (__DEV__) console.log("[poiSearch] url=", url);
-      const res = await fetchJsonDedup(
-        url,
-        { signal, timeoutMs: T1, headers: isSubmit ? { 'x-submit-search': '1' } : undefined },
-        T1
-      );
-      if (res.status === 204) {
-        if (__DEV__) console.warn("[poiSearch] BLOCKED by server (no submit)");
-        return [];
-      }
-      if (!res.ok) throw new Error(`poiSearch_failed_${res.status}`);
-      const json = await res.json();
-      return toArray(json);
-    } catch (e1) {
-      return [];
+    for (const url of candidates) {
+      try {
+        if (__DEV__) console.log("[poiSearch] url=", url);
+        const res = await fetchJsonDedup(
+          url,
+          { signal, timeoutMs: T1, headers: isSubmit ? { "x-submit-search": "1" } : undefined },
+          T1
+        );
+        if (res.status === 204) {
+          if (__DEV__) console.warn("[poiSearch] BLOCKED by server (no submit)");
+          return [];
+        }
+        if (res.ok) {
+          const json = await res.json();
+          return toArray(json);
+        }
+      } catch {}
     }
   }
 
@@ -596,13 +586,26 @@ export async function searchUnified(
 
   if (!isSubmit) {
     const ac = await poiAutocomplete(qTrim, {
-      city, category, lat, lon, sessionToken, limit: Math.min(8, limit), timeoutMs, signal,
+      city,
+      category,
+      lat,
+      lon,
+      sessionToken,
+      limit: Math.min(8, limit),
+      timeoutMs,
+      signal,
     });
     return ac;
   }
 
   const results = await poiSearch(qTrim, {
-    city, category, lat, lon, timeoutMs, signal, isSubmit: true,
+    city,
+    category,
+    lat,
+    lon,
+    timeoutMs,
+    signal,
+    isSubmit: true,
   });
   return results;
 }
