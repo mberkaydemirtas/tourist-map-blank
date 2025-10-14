@@ -1,18 +1,65 @@
 // trips/services/planService.js
 import { suggestMealsForGaps } from './mealSuggest';
 import { API_BASE } from '../../app/lib/api';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 /* ============================== Config ============================== */
-
-// Optimizer base (FastAPI) — env → platform default
-import { Platform } from 'react-native';
+// Optimizer base (FastAPI) — gerçek cihaz + ADB için 127.0.0.1'e zorla
 const LOCALHOST = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
+const IS_DEVICE = !!(Constants && Constants.isDevice);
+
 export const OPTIMIZER_BASE =
   (process.env?.EXPO_PUBLIC_OPTIMIZER_BASE || '').trim() ||
-  `http://${LOCALHOST}:8001`;
+  (IS_DEVICE ? 'http://127.0.0.1:8001' : `http://${LOCALHOST}:8001`);
+
+console.log('[OPTIMIZER] BASE=', OPTIMIZER_BASE);
 
 // Toggle real directions (Google proxy on your Node server)
 const USE_REAL_DIRECTIONS_DEFAULT = true;
+
+// Global request timeout (ms)
+const REQ_TIMEOUT_MS = Math.max(
+  8000,
+  Number(process.env?.EXPO_PUBLIC_API_TIMEOUT_MS || 15000)
+);
+
+/* ============================== fetch helpers ============================== */
+// RN/Android'de AbortController bazı ağ sürümlerinde "Network request failed" tetikleyebiliyor.
+// Optimizer çağrıları için "signal" KULLANMADAN manuel timeout uygula.
+
+async function fetchJsonNoSignal(url, opts = {}, timeoutMs = REQ_TIMEOUT_MS) {
+  let timeoutId;
+  try {
+    const timer = new Promise((_, rej) => {
+      timeoutId = setTimeout(() => rej(new Error(`timeout_${timeoutMs}`)), timeoutMs);
+    });
+    const res = await Promise.race([fetch(url, opts), timer]);
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      throw new Error(`${res.status} ${res.statusText} ${txt || ''}`.trim());
+    }
+    return await res.json();
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
+// Genel amaçlı (directions gibi diğer uçlar) — burada AbortController sorun yaratmıyordu:
+async function fetchJson(url, opts = {}, timeoutMs = REQ_TIMEOUT_MS) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...opts, signal: ctrl.signal });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      throw new Error(`${res.status} ${res.statusText} ${txt || ''}`.trim());
+    }
+    return await res.json();
+  } finally {
+    clearTimeout(t);
+  }
+}
 
 /* ============================== Helpers ============================== */
 
@@ -37,7 +84,7 @@ function pickVisitDuration(place, prefs) {
   return prefs?.defaultDurations?.[cat] ?? 45;
 }
 function toMinutes(hhmm) {
-  const [h, m] = (hhmm || '09:00').split(':').map(Number);
+  const [h, m] = (hhmm || '09:30').split(':').map(Number);
   return h * 60 + m;
 }
 function fromMinutes(min) {
@@ -78,8 +125,7 @@ function ensureActivityIds(day) {
 async function fetchLegPolyline(from, to, mode = 'driving') {
   try {
     const qs = `from=${from.lat},${from.lon}&to=${to.lat},${to.lon}&mode=${mode}`;
-    const res = await fetch(`${API_BASE}/api/directions?${qs}`);
-    const json = await res.json();
+    const json = await fetchJson(`${API_BASE}/api/directions?${qs}`, {}, REQ_TIMEOUT_MS);
 
     if (json?.polyline && Array.isArray(json.polyline)) {
       return json.polyline.map(p => ({
@@ -98,23 +144,149 @@ async function fetchLegPolyline(from, to, mode = 'driving') {
   return [from, to];
 }
 
+/* ---------- Bölgeleme yardımcıları (K-means + süre dengesi) ---------- */
+
+function toMetersProj(lat, lon, lat0) {
+  const mPerDegLat = 111320;
+  const mPerDegLon = 111320 * Math.cos((lat0 * Math.PI) / 180);
+  return { x: lon * mPerDegLon, y: lat * mPerDegLat };
+}
+
+function kmeans(points, k, maxIter = 30) {
+  if (k <= 1 || points.length <= k) {
+    return points.map((p, i) => ({ ...p, _k: Math.min(i, k - 1) }));
+  }
+  const centers = [];
+  centers.push(points[Math.floor(Math.random() * points.length)]);
+  while (centers.length < k) {
+    let bestP = null, bestD = -1;
+    for (const p of points) {
+      const d = Math.min(...centers.map(c => (p.x - c.x) ** 2 + (p.y - c.y) ** 2));
+      if (d > bestD) { bestD = d; bestP = p; }
+    }
+    centers.push(bestP);
+  }
+  for (let it = 0; it < maxIter; it++) {
+    for (const p of points) {
+      let best = 0, bd = Infinity;
+      for (let i = 0; i < k; i++) {
+        const d = (p.x - centers[i].x) ** 2 + (p.y - centers[i].y) ** 2;
+        if (d < bd) { bd = d; best = i; }
+      }
+      p._k = best;
+    }
+    const sums = Array.from({ length: k }, () => ({ x: 0, y: 0, n: 0 }));
+    for (const p of points) { const b = sums[p._k]; b.x += p.x; b.y += p.y; b.n++; }
+    let moved = 0;
+    for (let i = 0; i < k; i++) {
+      if (sums[i].n === 0) continue;
+      const nx = sums[i].x / sums[i].n, ny = sums[i].y / sums[i].n;
+      if (Math.abs(nx - centers[i].x) + Math.abs(ny - centers[i].y) > 1e-6) moved++;
+      centers[i] = { ...centers[i], x: nx, y: ny };
+    }
+    if (!moved) break;
+  }
+  return points;
+}
+
+function rebalanceByDuration(buckets, targetMin) {
+  const over = () => buckets.some(b => b.sum > targetMin * 1.15);
+  let guard = 24;
+  while (over() && guard-- > 0) {
+    let hi = 0, lo = 0;
+    for (let i = 1; i < buckets.length; i++) {
+      if (buckets[i].sum > buckets[hi].sum) hi = i;
+      if (buckets[i].sum < buckets[lo].sum) lo = i;
+    }
+    const move = buckets[hi].items.pop();
+    if (!move) break;
+    buckets[hi].sum -= move.dur;
+    buckets[lo].items.push(move);
+    buckets[lo].sum += move.dur;
+  }
+}
+
+const minutesFor = (place, prefs) => pickVisitDuration(place, prefs);
+
+function assignPlacesToDays(selectedPlaces, days, lodgingsByDate, prefs) {
+  const centerKey = (loc) =>
+    loc && Number.isFinite(loc.lat) && Number.isFinite(loc.lon)
+      ? `${Number(loc.lat).toFixed(5)},${Number(loc.lon).toFixed(5)}`
+      : 'none';
+
+  const groups = new Map();
+  for (const d of days) {
+    const center = lodgingsByDate[d.date]?.location || null;
+    const key = centerKey(center);
+    if (!groups.has(key)) groups.set(key, { center, days: [] });
+    groups.get(key).days.push(d);
+  }
+
+  const entries = Array.from(groups.entries());
+  const attach = new Map(entries.map(([k]) => [k, []]));
+  for (const p of selectedPlaces) {
+    let bestKey = 'none', bestD = Infinity;
+    for (const [k, g] of entries) {
+      if (!g.center) { if (bestKey === 'none') bestD = 0; continue; }
+      const d = haversine(g.center, p.location);
+      if (d < bestD) { bestD = d; bestKey = k; }
+    }
+    attach.get(bestKey).push(p);
+  }
+
+  for (const [key, grp] of entries) {
+    const groupDays = grp.days;
+    if (!groupDays.length) continue;
+
+    const POIS = attach.get(key) || [];
+    if (!POIS.length) continue;
+
+    const K = Math.max(1, groupDays.length);
+
+    const lat0 = grp.center?.lat ?? POIS[0].location.lat;
+    const pts = POIS.map(p => {
+      const { x, y } = toMetersProj(p.location.lat, p.location.lon, lat0);
+      return { x, y, ref: p, dur: minutesFor(p, prefs) };
+    });
+
+    kmeans(pts, K);
+
+    const buckets = Array.from({ length: K }, () => ({ items: [], sum: 0 }));
+    for (const t of pts) {
+      const b = buckets[t._k];
+      b.items.push({ place: t.ref, dur: t.dur });
+      b.sum += t.dur;
+    }
+
+    const daySpan = toMinutes(prefs?.dayEnd || '20:00') - toMinutes(prefs?.dayStart || '09:30');
+    const target = Math.max(60, daySpan * 0.8);
+    rebalanceByDuration(buckets, target);
+
+    for (let i = 0; i < groupDays.length; i++) {
+      const b = buckets[i % buckets.length];
+      for (const it of b.items) {
+        groupDays[i].activities.push({
+          id: it.place.id,
+          type: 'visit',
+          place: it.place,
+          durationMin: it.dur,
+          meta: { category: it.place.category },
+        });
+      }
+    }
+  }
+}
+
 /* ============================== Optimizer Glue ============================== */
 
 function openingToWindow(place, dayStartMin, dayEndMin) {
-  // Very light touch: if place.opening_hours has daily open/close, map it; else default to whole day
-  // You can extend this to parse periods by weekday.
   const oh = place?.opening_hours;
   if (!oh) return { open_min: dayStartMin, close_min: dayEndMin };
-
-  // Accept common shapes:
-  // - {open_now:bool, weekday_text:[...]} → ignore detailed parse, keep day window
-  // - {open:"10:00", close:"18:00"} custom (if you ever store this)
   const openStr = oh.open || null;
   const closeStr = oh.close || null;
   if (openStr && closeStr) {
     const o = toMinutes(openStr);
     const c = toMinutes(closeStr);
-    // Clamp to day
     return { open_min: Math.max(dayStartMin, o), close_min: Math.min(dayEndMin, c) };
   }
   return { open_min: dayStartMin, close_min: dayEndMin };
@@ -122,23 +294,18 @@ function openingToWindow(place, dayStartMin, dayEndMin) {
 
 async function callOptimizer(payload) {
   const url = `${OPTIMIZER_BASE}/optimize-day`;
-  const res = await fetch(url, {
+  // No-signal fetch (manuel timeout)
+  return await fetchJsonNoSignal(url, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const txt = await res.text().catch(() => '');
-    throw new Error(`Optimizer ${res.status}: ${txt || res.statusText}`);
-  }
-  return res.json();
+  }, REQ_TIMEOUT_MS);
 }
 
 function buildOptimizerReqForDay(day, visits, prefs, lodgingsByDate) {
   const dayStartMin = toMinutes(prefs.dayStart || '09:30');
   const dayEndMin   = toMinutes(prefs.dayEnd   || '20:00');
 
-  // Start/End: prefer lodging if present; otherwise first/last visit’s coords
   const lodge = lodgingsByDate[day.date];
   const startCoord =
     lodge?.location ||
@@ -146,11 +313,8 @@ function buildOptimizerReqForDay(day, visits, prefs, lodgingsByDate) {
     { lat: visits[0]?.place?.location?.lat, lon: visits[0]?.place?.location?.lon };
 
   const endCoord =
-    lodge?.location ||
-    visits[visits.length - 1]?.place?.location ||
-    startCoord;
+    lodge?.location || visits[visits.length - 1]?.place?.location || startCoord;
 
-  // Build stops
   const stops = visits.map(v => {
     const stay_mins = v.durationMin ?? pickVisitDuration(v.place, prefs);
     const win = openingToWindow(v.place, dayStartMin, dayEndMin);
@@ -189,7 +353,6 @@ function reorderActivitiesByOptimizer(day, visits, optimizerRes) {
     if (v) seq.push(v);
   });
 
-  // Append any leftovers (shouldn’t happen, but safe)
   if (seq.length < visits.length) {
     const missing = visits.filter(v => !seq.includes(v));
     seq.push(...missing);
@@ -202,7 +365,6 @@ function reorderActivitiesByOptimizer(day, visits, optimizerRes) {
 export async function generatePlan(trip, prefs, opts = {}) {
   const { useRealDirections = USE_REAL_DIRECTIONS_DEFAULT } = opts;
 
-  // 1) Days
   const startISO = trip?.dateRange?.start || trip?._startEndSingle?.start?.date;
   const endISO   = trip?.dateRange?.end   || trip?._startEndSingle?.end?.date;
   const daysISO = enumerateDates(startISO, endISO);
@@ -213,11 +375,13 @@ export async function generatePlan(trip, prefs, opts = {}) {
     category: p.category,
     rating: p.rating || 0,
     address: p.address,
-    opening_hours: p.opening_hours, // carry forward if present
-    location: { lat: p.lat ?? p.location?.lat ?? p?.coords?.lat, lon: p.lon ?? p.location?.lon ?? p?.coords?.lng ?? p?.coords?.lon },
+    opening_hours: p.opening_hours,
+    location: {
+      lat: p.lat ?? p.location?.lat ?? p?.coords?.lat,
+      lon: p.lon ?? p.location?.lon ?? p?.coords?.lng ?? p?.coords?.lon
+    },
   })).filter(p => p.location?.lat != null && p.location?.lon != null);
 
-  // 2) Lodging index (same-day start/end)
   const lodgingsByDate = (trip?.lodgings || []).reduce((acc, l) => {
     const d = l?.date || l?.checkIn;
     if (!d) return acc;
@@ -238,43 +402,24 @@ export async function generatePlan(trip, prefs, opts = {}) {
     route: null,
   }));
 
-  // 3) Rough assignment to days (closest to lodging center if any)
-  for (const place of selectedPlaces) {
-    let bestIdx = 0, bestScore = Infinity;
-    days.forEach((d, i) => {
-      const lodge = lodgingsByDate[d.date];
-      const center = lodge?.location || place.location;
-      const score = haversine(center, place.location);
-      if (score < bestScore) { bestScore = score; bestIdx = i; }
-    });
-    days[bestIdx].activities.push({
-      id: place.id,
-      type: 'visit',
-      place,
-      durationMin: pickVisitDuration(place, prefs),
-      meta: { category: place.category },
-    });
-  }
+  assignPlacesToDays(selectedPlaces, days, lodgingsByDate, prefs);
 
-  // 4) Optimize each day (order + timeline + route)
   for (let d of days) {
     if (!d.activities.length) continue;
 
-    // Only visits go to the optimizer (meals will be inserted later)
     const visits = d.activities.filter(a => a.type === 'visit');
 
-    // Build optimizer request and try to call it, fallback to NN if it fails
     let orderedVisits = visits;
     let optimizerUsed = false;
 
     try {
       const payload = buildOptimizerReqForDay(d, visits, prefs, lodgingsByDate);
-      const res = await callOptimizer(payload); // {order, total_minutes, legs_minutes, ...}
+      const res = await callOptimizer(payload); // {order, total_minutes, ...}
       orderedVisits = reorderActivitiesByOptimizer(d, visits, res);
       optimizerUsed = true;
     } catch (e) {
       console.warn('[planService] optimizer unreachable, using NN fallback →', e?.message || e);
-      // nearest-neighbor fallback
+      // NN fallback
       const startCenter = lodgingsByDate[d.date]?.location || visits[0].place.location;
       const pool = [...visits];
       orderedVisits = [];
@@ -291,10 +436,8 @@ export async function generatePlan(trip, prefs, opts = {}) {
       }
     }
 
-    // Rebuild day's activities with the optimized order (visits only for now)
     d.activities = orderedVisits.map(v => ({ ...v }));
 
-    // Simple sequential timeline (you can refine with optimizer’s service/leg mins if you want)
     let curMin = toMinutes(prefs.dayStart || '09:30');
     for (const a of d.activities) {
       a.start = fromMinutes(curMin);
@@ -303,8 +446,6 @@ export async function generatePlan(trip, prefs, opts = {}) {
       a.end = fromMinutes(curMin);
     }
 
-    // Build route polyline (origin -> v1 -> v2 -> ... -> [end lodging])
-    const legs = [];
     const start = lodgingsByDate[d.date]?.location || d.activities[0].place.location;
     let poly = [];
     let prev = start;
@@ -321,7 +462,6 @@ export async function generatePlan(trip, prefs, opts = {}) {
       } else {
         poly = poly.concat(leg);
       }
-      legs.push({ from: prev, to: a.place.location, points: leg });
       prev = a.place.location;
     }
 
@@ -337,14 +477,12 @@ export async function generatePlan(trip, prefs, opts = {}) {
       } else {
         poly = poly.concat(leg);
       }
-      legs.push({ from: prev, to: endLodge, points: leg });
     }
 
     d.route = { polyline: poly, optimizerUsed };
     ensureActivityIds(d);
   }
 
-  // 5) Meal suggestions AFTER visit order is fixed
   const cityName = (trip?.cities && trip.cities[0]?.name) || trip?.city || '';
   for (let i = 0; i < days.length; i++) {
     days[i] = await suggestMealsForGaps(days[i], {
@@ -355,9 +493,10 @@ export async function generatePlan(trip, prefs, opts = {}) {
     ensureActivityIds(days[i]);
   }
 
+  const tripKey = trip?._id || trip?.id || String(Date.now());
   return {
-    id: `plan:${trip.id}`,
-    tripId: trip.id,
+    id: `plan:${tripKey}`,
+    tripId: tripKey,
     days,
     version: 2,
     updatedAt: Date.now(),
@@ -373,6 +512,5 @@ export async function reoptimizeDay(day, { mode = 'light' } = {}) {
     curMin += dur;
     a.end = fromMinutes(curMin);
   }
-  // route recompute could be added similarly using fetchLegPolyline
   return next;
 }

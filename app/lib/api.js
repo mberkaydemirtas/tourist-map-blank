@@ -13,6 +13,9 @@ const PROD_BASE = "https://tourist-map-blank-12.onrender.com";
 const LOCAL_BASE =
   Platform.OS === "android" ? "http://10.0.2.2:5000" : "http://localhost:5000";
 
+// 🔒 Gerçek cihaz + adb reverse için zorunlu base:
+const REAL_DEVICE_BASE = "http://127.0.0.1:5000";
+
 let isEmulatorOrSim = false;
 try {
   const Constants = require("expo-constants").default;
@@ -26,8 +29,12 @@ const ENV_SERVER_ENABLED_RAW = (process.env?.EXPO_PUBLIC_SERVER_ENABLED || "")
 const ENV_TIMEOUT_RAW = (process.env?.EXPO_PUBLIC_API_TIMEOUT_MS || "").trim();
 const GOOGLE_WEB_KEY = (process.env?.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "").trim();
 
+// ⚠️ ÖNEMLİ: Geliştirmede gerçek cihazsa → 127.0.0.1'e zorla (adb reverse)
 export const API_BASE =
-  ENV_API_BASE || (__DEV__ ? (isEmulatorOrSim ? LOCAL_BASE : PROD_BASE) : PROD_BASE);
+  ENV_API_BASE ||
+  (__DEV__
+    ? (isEmulatorOrSim ? LOCAL_BASE : REAL_DEVICE_BASE)
+    : PROD_BASE);
 
 export const SERVER_ENABLED =
   ENV_SERVER_ENABLED_RAW === "false" ? false : Boolean(API_BASE && API_BASE.length);
@@ -434,7 +441,8 @@ export async function poiAutocomplete(
 /* ========== SEARCH — sadece submit olduğunda çağrılmalı ========== */
 export async function poiSearch(
   q,
-  { lat, lon, category, city, timeoutMs, signal, isSubmit = false } = {}
+  // 🔁 Varsayılanı submit=TRUE yaptık: guard artık tetiklenmeyecek
+  { lat, lon, category, city, timeoutMs, signal, isSubmit = true } = {}
 ) {
   const qTrim = String(q || "").trim();
   if (qTrim.length < MIN_CHARS_SUGGEST) return [];

@@ -3,9 +3,13 @@ const path = require('path');
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+
+// Routers
 const suggestRouter = require('./routes/suggest');
 const poiGoogleRoutes = require('./routes/poi_google');
-// const connectDB = require('./config/db'); // istersen aç
+const poiRouter = require('./routes/poi');
+const poiMatchRouter = require('./routes/poiMatch');
+const directionsRouter = require('./routes/directions');
 
 // 1) .env: server klasöründeki dosyayı açıkça yükle
 const envPath = path.join(__dirname, '.env');
@@ -15,7 +19,7 @@ if (loaded.error) {
 } else {
   console.log('[ENV] yüklendi:', envPath);
   // hızlı teşhis: GOOGLE* değişkenlerini göster
-  const keys = Object.keys(process.env).filter(k => k.includes('GOOGLE'));
+  const keys = Object.keys(process.env).filter(k => k.toUpperCase().includes('GOOGLE'));
   console.log('[ENV] GOOGLE keys:', keys);
 }
 
@@ -24,12 +28,16 @@ app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json());
 
-// baseline health
+// Baseline health
 app.get('/health', (req, res) => res.status(200).json({ ok: true, ts: Date.now() }));
 
-// istek logu (ROUTE'lerden önce)
+// Basit istek logu (ROUTE'lerden önce)
 app.use((req, res, next) => {
-  if (req.path.startsWith('/api/poi/google/')) {
+  if (
+    req.path.startsWith('/api/poi/google/') ||
+    req.path.startsWith('/api/directions') ||
+    req.path.startsWith('/api/route')
+  ) {
     const q = (req.query?.q || '').toString();
     const city = (req.query?.city || '').toString();
     console.log(`[HIT] ${req.method} ${req.path} q="${q}" city="${city}" t=${new Date().toISOString()}`);
@@ -37,7 +45,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// global (yumuşak) timeout
+// Global (yumuşak) timeout
 const REQ_TIMEOUT_MS = Number(process.env.REQ_TIMEOUT_MS || 15000);
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
@@ -47,28 +55,35 @@ app.use((req, res, next) => {
   next();
 });
 
-// ROUTES (tek kez!)
-app.use('/api/route', require('./routes/directions'));
-app.use('/api/poi', require('./routes/poi'));
-app.use('/api/poi', require('./routes/poiMatch'));
+/* ================== ROUTES (tek kez!) ================== */
+
+// Directions: İKİ path altında da aynı router
+app.use('/api/directions', directionsRouter);
+app.use('/api/route', directionsRouter);
+
+// POI ana uçları
+app.use('/api/poi', poiRouter);
+app.use('/api/poi', poiMatchRouter);
 app.use('/api/poi', suggestRouter);
+
+// Google proxy (router kendi base path’ini içeriyorsa çıplak mount)
 app.use(poiGoogleRoutes);
 
+/* ================== 404 & ERROR ================== */
 
-// 404
 app.use((req, res, next) => {
   if (req.path === '/' || req.path === '') return res.status(200).send('OK');
   res.status(404).json({ error: 'not_found', path: req.path });
 });
 
-// error handler
 app.use((err, req, res, next) => {
   console.error('[ERR]', err?.message || err);
   if (res.headersSent) return next(err);
   res.status(500).json({ error: 'internal_error', message: err?.message || String(err) });
 });
 
-// LISTEN (tek kez!)
+/* ================== LISTEN ================== */
+
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || '0.0.0.0';
 app.listen(PORT, HOST, () => {
