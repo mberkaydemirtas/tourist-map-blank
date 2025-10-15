@@ -78,6 +78,7 @@
     "@react-native/eslint-config": "^0.81.0",
     "babel-plugin-module-resolver": "^5.0.2",
     "cross-env": "^10.0.0",
+    "eas-cli": "^16.23.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",

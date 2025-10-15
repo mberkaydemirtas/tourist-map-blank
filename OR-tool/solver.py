@@ -1,7 +1,58 @@
 from typing import List, Tuple, Optional, Sequence
 from ortools.constraint_solver import pywrapcp, routing_enums_pb2
+import math
 
+# ===== Güvenli sabitler =====
+INT_MAX = 10**9
+DAY_HORIZON = 24 * 60  # 1 gün (dakika)
 
+# ===== Yardımcılar: veri doğrulama & sanitizasyon =====
+def _is_bad(x):
+    return x is None or (isinstance(x, float) and (math.isnan(x) or math.isinf(x)))
+
+def sanitize_cost_matrix(mat):
+    n = len(mat)
+    BIG = INT_MAX // 4
+    CAP = INT_MAX // 2
+    out = [[0]*n for _ in range(n)]
+    for i in range(n):
+        row = mat[i]
+        if len(row) != n:
+            raise ValueError(f"time_matrix not square at row {i}: {len(row)} != {n}")
+        for j in range(n):
+            v = row[j]
+            if _is_bad(v):
+                v = BIG
+            if v < 0:
+                v = 0
+            if v > CAP:
+                v = CAP
+            out[i][j] = int(v)
+    return out
+
+def sanitize_service_times(svc):
+    CAP = INT_MAX // 4
+    out = []
+    for v in svc:
+        if _is_bad(v) or v < 0:
+            v = 0
+        if v > CAP:
+            v = CAP
+        out.append(int(v))
+    return out
+
+def clamp_day_range(open_mins, close_mins, horizon=DAY_HORIZON):
+    if not open_mins or not close_mins:
+        return 0, horizon
+    day_start = max(0, min(open_mins))
+    day_end = min(horizon, max(close_mins))
+    if day_end < 0:
+        day_end = 0
+    if day_start > day_end:
+        day_start, day_end = day_end, day_start
+    return int(day_start), int(day_end)
+
+# ===== Çözüm =====
 def _solve_with_params(
     routing: pywrapcp.RoutingModel,
     manager: pywrapcp.RoutingIndexManager,
@@ -9,59 +60,55 @@ def _solve_with_params(
     open_mins: List[int],
     close_mins: List[int],
     *,
-    # soft bounds penalties (dakika başı ceza puanı)
-    penalty_early: int = 0,    # open'dan önce varış (bekleme) için ceza (0 = kapalı)
+    penalty_early: int = 0,    # open'dan önce varış (bekleme) için ceza
     penalty_late: int = 0,     # close'dan sonra varış için ceza
-    penalty_overtime: int = 0, # gün sonunu geçme için ek ceza (end node'da)
+    penalty_overtime: int = 0, # gün sonunu geçme için ek ceza (end node)
     allow_skipping: bool = False,
     skip_penalties: Optional[Sequence[int]] = None,  # node bazlı atlama cezası (1..n-2)
 ) -> Tuple[List[int], List[int]] | None:
-    """
-    Routing modeli çözer; (node_order, legs_travel_minutes) döner.
-    - Soft lower/upper bound'larla erken/geç varış cezaları ekler.
-    - İstenirse disjunction ile node atlama (skip) cezası tanımlar.
-    """
-    # Zaman boyutu: transit = travel (+ service) callback'te
+
+    # Horizon ve gün aralığını güvenli kıl
+    day_start, day_end = clamp_day_range(open_mins, close_mins, DAY_HORIZON)
+    capacity = max(DAY_HORIZON, day_end)
+
+    # Zaman boyutu
     routing.AddDimension(
         cb_idx,
-        24 * 60,   # slack/awaiting (geniş; feasibility'yi arttırır)
-        24 * 60,   # horizon (1 gün)
-        False,     # start zamanını 0'a sabitleme
+        capacity,   # slack
+        capacity,   # horizon
+        False,      # start zamanını 0'a sabitleme
         "Time"
     )
     time_dim = routing.GetDimensionOrDie("Time")
 
     n = manager.GetNumberOfNodes()
 
-    # Sert aralık: gün başlangıcı/sonu (open/close'dan geniş)
-    # Soft bound'lar node bazında “tercih edilen” aralığı cezayla uygular.
-    day_start = min(open_mins) if open_mins else 0
-    day_end   = max(close_mins) if close_mins else 24 * 60
-
+    # Sert aralık + soft cezalar
     for node in range(n):
         idx = manager.NodeToIndex(node)
         time_dim.CumulVar(idx).SetRange(day_start, day_end)
 
-        # Soft lower/upper (erken/ geç ceza)
         if penalty_early > 0:
-            time_dim.SetCumulVarSoftLowerBound(idx, open_mins[node], penalty_early)
+            lo = max(day_start, int(open_mins[node]))
+            time_dim.SetCumulVarSoftLowerBound(idx, lo, int(penalty_early))
         if penalty_late > 0:
-            time_dim.SetCumulVarSoftUpperBound(idx, close_mins[node], penalty_late)
+            hi = min(day_end, int(close_mins[node]))
+            time_dim.SetCumulVarSoftUpperBound(idx, hi, int(penalty_late))
 
-    # Gün sonunu geçmeye ek ceza (opsiyonel, end node'a daha büyük ceza)
+    # Gün sonunu geçmeye ek ceza (end)
     if penalty_overtime > 0:
         end_idx = manager.NodeToIndex(n - 1)
-        time_dim.SetCumulVarSoftUpperBound(end_idx, close_mins[n - 1], penalty_overtime)
+        hi = min(day_end, int(close_mins[n - 1]))
+        time_dim.SetCumulVarSoftUpperBound(end_idx, hi, int(penalty_overtime))
 
-    # Node atlamayı opsiyonel kıl (disjunction). 1..n-2 müşteri düğümleri.
+    # Node atlama (disjunction)
     if allow_skipping:
-        # skip_penalties verilmemişse sabit (ör. 2000) uygula.
         default_skip = 2000
         for node in range(1, n - 1):
             penalty = int(skip_penalties[node - 1]) if (skip_penalties and node - 1 < len(skip_penalties)) else default_skip
-            routing.AddDisjunction([manager.NodeToIndex(node)], penalty)
+            routing.AddDisjunction([manager.NodeToIndex(node)], max(0, penalty))
 
-    # Arama parametreleri (dinamik zaman limiti)
+    # Arama parametreleri
     params = pywrapcp.DefaultRoutingSearchParameters()
     params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
     params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
@@ -88,13 +135,10 @@ def _solve_with_params(
         order.append(node)
         nxt = sol.Value(routing.NextVar(index))
         if not routing.IsEnd(nxt):
-            # Legs sadece travel süresi (service hariç)
             legs.append(routing.GetArcCostForVehicle(index, nxt, 0))
         index = nxt
     order.append(manager.IndexToNode(index))  # end
-
     return order, legs
-
 
 def _build_and_solve(
     time_matrix: List[List[int]],
@@ -118,15 +162,30 @@ def _build_and_solve(
     if n < 2:
         return [0], []
 
+    # Sanitizasyon
+    time_matrix = sanitize_cost_matrix(time_matrix)
+    service_times = sanitize_service_times(service_times)
+
+    if not (len(open_mins) == len(close_mins) == n == len(service_times)):
+        raise ValueError("length mismatch in inputs")
+
+    # (erken patlasın) horizon clamp testi
+    _ds, _de = clamp_day_range(open_mins, close_mins, DAY_HORIZON)
+
     manager = pywrapcp.RoutingIndexManager(n, 1, [0], [n - 1])
     routing = pywrapcp.RoutingModel(manager)
 
     def transit_cb(from_index, to_index):
         i = manager.IndexToNode(from_index)
         j = manager.IndexToNode(to_index)
+        v = int(time_matrix[i][j])
         if include_service:
-            return int(time_matrix[i][j]) + int(service_times[i])
-        return int(time_matrix[i][j])
+            v += int(service_times[i])
+        if v < 0:
+            v = 0
+        elif v > INT_MAX:
+            v = INT_MAX
+        return v
 
     cb_idx = routing.RegisterTransitCallback(transit_cb)
     routing.SetArcCostEvaluatorOfAllVehicles(cb_idx)
@@ -135,8 +194,8 @@ def _build_and_solve(
         routing,
         manager,
         cb_idx,
-        open_mins,
-        close_mins,
+        [int(x) for x in open_mins],
+        [int(x) for x in close_mins],
         penalty_early=penalty_early,
         penalty_late=penalty_late,
         penalty_overtime=penalty_overtime,
@@ -144,44 +203,35 @@ def _build_and_solve(
         skip_penalties=skip_penalties,
     )
 
-
 def solve_day_vrptw(
     time_matrix: List[List[int]],
     service_times: List[int],
     open_mins: List[int],
     close_mins: List[int],
     *,
-    # --- yeni: ceza parametreleri (opsiyonel) ---
-    penalty_early: int = 0,      # örn 3: open'dan önce dakikabaşı 3 ceza
-    penalty_late: int = 0,       # örn 5: close'dan sonra dakikabaşı 5 ceza
-    penalty_overtime: int = 0,   # örn 10: gün sonunu geçme dakikabaşı 10 ceza (end node)
+    penalty_early: int = 0,      # open'dan önce bekleme cezası
+    penalty_late: int = 0,       # close'dan sonra varış cezası
+    penalty_overtime: int = 0,   # gün sonunu geçme cezası (end node)
     allow_skipping: bool = False,
-    node_weights: Optional[Sequence[float]] = None,  # önem katsayıları (1..n-2) — atlama cezasında kullanılabilir
-    skip_base_penalty: int = 2000,                   # yüksek = atlamayı zorlaştırır
+    node_weights: Optional[Sequence[float]] = None,  # önem katsayıları (1..n-2)
+    skip_base_penalty: int = 2000,
 ) -> Tuple[List[int], List[int], int, List[str]]:
     """
     Tek araç: start=0, end=last; duraklar 1..N-2
     Döner: (node_order, legs_travel_minutes, total_minutes(travel+service), warnings)
-
-    Notlar:
-      - Soft bound'lar sayesinde open/close dışına çıkmak mümkün ama pahalı.
-      - allow_skipping=True ise bazı node'lar disjunction ile atlanabilir (ceza ödenir).
-      - node_weights yüksekse (örn 5), atlama cezası büyür; düşükse küçülür.
     """
     warnings: List[str] = []
 
-    # node bazlı atlama cezasını (disjunction) ağırlıkla modüle et
-    skip_penalties = None
+    # node bazlı atlama cezasını ağırlıkla modüle et
+    sp: Optional[List[int]] = None
     if allow_skipping:
-        skip_penalties = []
-        # 1..n-2 müşteri düğümleri için weight → ceza
-        # weight aralığını [0..5] varsayalım; ceza = skip_base_penalty + 200 * weight
+        sp = []
         for idx in range(1, len(time_matrix) - 1):
             w = 0.0
             if node_weights and idx - 1 < len(node_weights) and node_weights[idx - 1] is not None:
                 w = float(node_weights[idx - 1])
             penalty = int(skip_base_penalty + 200.0 * w)
-            skip_penalties.append(penalty)
+            sp.append(penalty)
 
     # 1) Servis dahil
     res = _build_and_solve(
@@ -190,7 +240,7 @@ def solve_day_vrptw(
         penalty_late=penalty_late,
         penalty_overtime=penalty_overtime,
         allow_skipping=allow_skipping,
-        skip_penalties=skip_penalties,
+        skip_penalties=sp,
     )
     if res is not None:
         order, legs = res
@@ -204,7 +254,7 @@ def solve_day_vrptw(
         penalty_late=penalty_late,
         penalty_overtime=penalty_overtime,
         allow_skipping=allow_skipping,
-        skip_penalties=skip_penalties,
+        skip_penalties=sp,
     )
     if res is not None:
         order, legs = res
