@@ -1,5 +1,5 @@
 // trips/screens/TripPlansScreen.js
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Dimensions, ActivityIndicator, Alert,
   BackHandler, LayoutAnimation, Platform, UIManager, ScrollView, TouchableOpacity
@@ -9,29 +9,60 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import SideTimeline from '../components/SideTimeline';
-import { generatePlan, reoptimizeDay } from '../services/planService';
+import GetDirectionsOverlay from '../../map/components/GetDirectionsOverlay';
+import PlaceQuickCard from '../../map/components/PlaceQuickCard';
+
+import { generatePlan } from '../services/planService';
 import { getTripLocal, patchTripLocal } from '../../app/lib/tripsLocal';
 import { getPlanByTripId, savePlan } from '../shared/plansRepo';
 import { formatDate } from '../shared/types';
 import { resolvePlacesBatch } from '../services/placeResolver';
+import { getPlaceDetails } from '../../map/maps';
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+const { width: SCREEN_W } = Dimensions.get('window');
+
+/* ====== THEME ====== */
+const COLORS = {
+  bgApp: '#F3F4F6',
+  bgCard: '#FFFFFF',
+  border: '#E5E7EB',
+  fg: '#111827',
+  fgMuted: '#6B7280',
+  primary: '#111827',         // koyu butonlar
+  accent: '#2563EB',          // rota/aktif gün vurgusu
+  accentDim: '#EFF6FF',
+  warnSoftBg: '#FFF6ED',
+  warnSoftBorder: '#FBD6B6',
+  success: '#4CAF50',
+  neutral: '#607D8B',
+};
+
 const LEFT_OPEN_W = Math.min(380, SCREEN_W * 0.42);
-const LEFT_CLOSED_W = 52;
+const LEFT_CLOSED_W = 0;
+const TOGGLE_PEEK = 12;   // kenardan hafif taşma
+const TOGGLE_SIZE = 44;   // tam daire
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-/* ---------------- helpers (eşleştirme anahtarı ve yer listesi) ---------------- */
-const round5 = (x) => Math.round(Number(x) * 1e-0) / 1e-0; // plan tarafında sadece string key için kullanılacak
-const round5k = (x) => Math.round(Number(x) * 1e5) / 1e5;  // seed-uyumlu (placeResolver ile aynı)
+/* ---------------- helpers ---------------- */
+const round5k = (x) => Math.round(Number(x) * 1e5) / 1e5;
 const keyOf = (x) => {
   const lat = Number(x?.lat ?? x?.coords?.lat);
   const lon = Number(x?.lon ?? x?.coords?.lng ?? x?.coords?.lon);
   const nm  = String(x?.name || '').trim().toLowerCase();
   return `${nm}@${round5k(lat)},${round5k(lon)}`;
 };
+
+function isValidPlaceId(pid) {
+  if (typeof pid !== 'string') return false;
+  if (pid.includes(':')) return false; // tmp:, map: vs.
+  if (pid.length < 20) return false;
+  if (!/^Ch|^Gh|^[A-Za-z0-9_-]{20,}$/.test(pid)) return false;
+  return true;
+}
+
 function getPlacesArray(trip) {
   return Array.isArray(trip?.places) && trip.places.length
     ? trip.places
@@ -44,13 +75,7 @@ function cityNameOfTrip(trip) {
   return '';
 }
 
-/**
- * Plan üretiminden önce güvenlik katmanı:
- * - place_id olmayan (ama name + coords olan) yerler için resolvePlacesBatch çalıştırır,
- * - cache’te varsa g_lat/g_lon alır, yoksa Google fallback ile eşleştirir,
- * - trip içindeki kayda Google koordinatlarını (coords/lat/lon) yazar,
- * - final trip döner (değişim varsa local’e patch’ler).
- */
+/** plan üretiminden önce güvenlik katmanı (resolve & patch) */
 async function ensureResolvedForPlan(trip) {
   if (!trip) return trip;
   const sourceField =
@@ -71,12 +96,7 @@ async function ensureResolvedForPlan(trip) {
 
   const city = cityNameOfTrip(trip) || '';
   let batch = [];
-  try {
-    batch = await resolvePlacesBatch({ items: unresolved, city });
-  } catch (e) {
-    // eşleştirme hatası olsa bile planı varsa üretelim (eldeki coords ile)
-    return trip;
-  }
+  try { batch = await resolvePlacesBatch({ items: unresolved, city }); } catch { return trip; }
 
   const byKey = new Map(batch.map(x => [keyOf(x), x]));
   let changed = false;
@@ -124,6 +144,48 @@ async function ensureResolvedForPlan(trip) {
   return patched;
 }
 
+/* -------- getPlaceDetails cache (foto destekli) -------- */
+const detailsCache = new Map();
+async function getDetailsWithCache(placeId) {
+  if (!placeId || !isValidPlaceId(placeId)) return null;
+  const cached = detailsCache.get(placeId);
+  if (cached && Date.now() - cached.ts < 1000 * 60 * 30) return cached;
+  const det = await getPlaceDetails(placeId);
+  let photos = [];
+  if (Array.isArray(det?.photos)) {
+    photos = det.photos
+      .map((p) => (typeof p === 'string' ? p : (p?.url || p?.uri)))
+      .filter(Boolean);
+  }
+  const norm = det ? { coords: det.coords, name: det.name, address: det.address, photos, ts: Date.now() } : null;
+  if (norm) detailsCache.set(placeId, norm);
+  return norm;
+}
+
+/* ---- Marker child (memo) ---- */
+const NumMarker = React.memo(function NumMarker({ bg, order }) {
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <View style={[styles.numMarkerInner, { backgroundColor: bg }]}>
+        <Text style={styles.numMarkerText}>{order}</Text>
+      </View>
+      <View style={[styles.numMarkerTip, { borderTopColor: bg }]} />
+    </View>
+  );
+});
+
+/* ---- UI helpers ---- */
+function getActName(a, idx) {
+  return (
+    a?.place?.name ||
+    a?.place?.displayName ||
+    a?.label ||
+    a?.title ||
+    a?.place?.formatted_address ||
+    `Durak ${idx + 1}`
+  );
+}
+
 export default function TripPlansScreen({ route, navigation }) {
   const { tripId } = route.params || {};
   const insets = useSafeAreaInsets();
@@ -134,6 +196,27 @@ export default function TripPlansScreen({ route, navigation }) {
   const [dayIndex, setDayIndex] = useState(0);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
 
+  // map & focus
+  const mapRef = useRef(null);
+  const [focusIdx, setFocusIdx] = useState(0);
+  const [selectedActId, setSelectedActId] = useState(null);
+  const markerRefs = useRef({});
+  const setMarkerRef = useCallback((id, ref) => { if (id) markerRefs.current[id] = ref; }, []);
+
+  // search & map-pick
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [insertIndex, setInsertIndex] = useState(null);
+
+  // “nereye eklemek istersin?” modu
+  const [insertMode, setInsertMode] = useState(false);
+  const [pendingAdd, setPendingAdd] = useState(null);
+
+  // QuickCard
+  const [sheetMarker, setSheetMarker] = useState(null);
+  const [sheetVariant, setSheetVariant] = useState('add'); // 'add' | 'preview'
+  const [sheetMeta, setSheetMeta] = useState('');          // Gün/Sıra etiketi
+  const isSheetOpen = !!sheetMarker;
+
   const prefs = useMemo(() => ({
     dayStart: '09:30',
     dayEnd: '20:00',
@@ -141,16 +224,62 @@ export default function TripPlansScreen({ route, navigation }) {
     dinnerAround: '19:00',
     defaultDurations: { museum: 90, sights: 45, restaurants: 60, cafes: 40, parks: 40, bars: 75 },
     tempo: 'normal',
-    travelMode: 'driving',  // isterseniz trip?.travelMode ile senkronlayabilirsiniz
+    travelMode: 'driving',
     mealSearchRadiusMeters: 1200,
     minRating: 4.2,
   }), []);
+
+  /* ====== Haritada seçim akışları ====== */
+
+  // POI’ye dokunma → ADD kartı (foto varsa getir)
+  const handlePoiClick = useCallback(async (e) => {
+    const { coordinate, name, placeId } = e.nativeEvent || {};
+    if (!coordinate) return;
+
+    setIsPanelOpen(false);
+
+    let photoUrls = [];
+    try {
+      if (isValidPlaceId(placeId)) {
+        const det = await getDetailsWithCache(placeId);
+        if (det?.photos?.length) photoUrls = det.photos.slice(0, 2);
+      }
+    } catch {}
+
+    setSheetVariant('add');
+    setSheetMeta('');
+    setSheetMarker({
+      name: name || 'Seçilen yer',
+      address: '',
+      coords: { latitude: coordinate.latitude, longitude: coordinate.longitude },
+      place_id: isValidPlaceId(placeId) ? placeId : null,
+      photoUrls,
+    });
+  }, []);
+
+  // Uzun bas → serbest nokta → ADD kartı
+  const handleMapLongPress = useCallback((e) => {
+    const c = e?.nativeEvent?.coordinate;
+    if (!c) return;
+    setIsPanelOpen(false);
+    setSheetVariant('add');
+    setSheetMeta('');
+    setSheetMarker({
+      name: 'Seçilen konum',
+      coords: { latitude: c.latitude, longitude: c.longitude },
+      address: '',
+      photoUrls: [],
+      place_id: null,
+    });
+  }, []);
 
   useEffect(() => {
     const onBack = () => { navigation.navigate('TripsHome'); return true; };
     const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
     return () => sub.remove();
   }, [navigation]);
+  
+  useEffect(() => { setSheetMarker(null); }, [dayIndex]);
 
   useEffect(() => {
     const sub = navigation.addListener('beforeRemove', (e) => {
@@ -169,16 +298,11 @@ export default function TripPlansScreen({ route, navigation }) {
     (async () => {
       try {
         setLoading(true);
-
-        // 1) Trip’i al
         let t = await getTripLocal(tripId);
         if (!t) { Alert.alert('Plan', 'Trip bulunamadı.'); setLoading(false); return; }
-
-        // 2) Plan öncesi güvence: eşleşmeyeni eşleştir, Google koordinatlarını trip’e yaz
         t = await ensureResolvedForPlan(t);
         setTrip(t);
 
-        // 3) Var olan planı al; yoksa üret & kaydet
         const existing = await getPlanByTripId(tripId);
         if (existing?.days?.length) {
           setPlan(existing);
@@ -199,10 +323,15 @@ export default function TripPlansScreen({ route, navigation }) {
 
   const day = useMemo(() => plan?.days?.[dayIndex] || null, [plan, dayIndex]);
 
+  // Toggle: kart varsa kapat, paneli aç; insert mode varsa iptal et
   const onTogglePanel = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (isSheetOpen) setSheetMarker(null); // kartı kapat
+    setInsertMode(false);
+    setPendingAdd(null);
+    setInsertIndex(null);
     setIsPanelOpen((s) => !s);
-  }, []);
+  }, [isSheetOpen]);
 
   const goReview = useCallback(() => {
     navigation.navigate('TripReview', { tripId });
@@ -212,21 +341,314 @@ export default function TripPlansScreen({ route, navigation }) {
 
   const markers = useMemo(() => {
     if (!day) return [];
-    return day.activities
-      .filter(a => a?.place?.location && Number.isFinite(a.place.location.lat) && Number.isFinite(a.place.location.lon))
-      .map((a, idx) => ({
-        key: a.id || String(idx),
-        coordinate: { latitude: a.place.location.lat, longitude: a.place.location.lon },
-        title: a.place.name || a.label,
-        color: a.type === 'meal' ? '#4CAF50' : (a.type === 'transfer' ? '#607D8B' : '#2196F3'),
-      }));
-  }, [day]);
+    const acts = (day.activities || [])
+      .filter(a => a?.place?.location && Number.isFinite(a.place.location.lat) && Number.isFinite(a.place.location.lon));
+    return acts.map((a, idx) => ({
+      activity: a,
+      activityId: a.id || String(idx),
+      key: a.id || String(idx),
+      coordinate: { latitude: a.place.location.lat, longitude: a.place.location.lon },
+      title: getActName(a, idx),
+      placeId: a.place?.place_id || null,
+      baseColor: a.type === 'meal' ? COLORS.success : (a.type === 'transfer' ? COLORS.neutral : COLORS.accent),
+      order: idx + 1,
+    }));
+  }, [day?.activities]);
 
   const polylineCoords = useMemo(() => {
     const poly = day?.route?.polyline;
     if (!poly || !poly.length) return null;
     return poly.map(p => ({ latitude: p.lat, longitude: p.lon }));
-  }, [day]);
+  }, [day?.route?.polyline]);
+
+  const userCoords = useMemo(() => {
+    const m0 = markers?.[0]?.coordinate;
+    return m0 || { latitude: 39.93, longitude: 32.86 };
+  }, [markers]);
+
+  const fitMapToDay = useCallback(() => {
+    if (!mapRef.current) return;
+    const coords = polylineCoords?.length ? polylineCoords : markers.map(m => m.coordinate);
+    if (!coords || !coords.length) return;
+    try {
+      mapRef.current.fitToCoordinates(coords, { edgePadding: { top: 80, right: 80, bottom: 80, left: 80 }, animated: true });
+    } catch {}
+  }, [polylineCoords, markers]);
+
+  useEffect(() => {
+    setFocusIdx(0);
+    setSelectedActId(null);
+    markerRefs.current = {};
+    const t = setTimeout(fitMapToDay, 120);
+    return () => clearTimeout(t);
+  }, [dayIndex, fitMapToDay]);
+
+  const showMarkerCallout = useCallback((activityId) => {
+    const ref = markerRefs.current[activityId];
+    if (ref && typeof ref.showCallout === 'function') {
+      setTimeout(() => { try { ref.showCallout(); } catch {} }, 50);
+    }
+  }, []);
+
+  // ❗ SideTimeline’dan seçim → SADECE yakınlaştır (kart açma)
+  const focusActivity = useCallback((activity) => {
+    if (!activity || !mapRef.current) return;
+    const loc = activity?.place?.location;
+    if (loc?.lat == null || loc?.lon == null) return;
+
+    const id = activity.id || null;
+    const idx = (day?.activities || []).findIndex(a => (a.id || '') === (activity.id || ''));
+    if (idx >= 0) setFocusIdx(idx);
+    setSelectedActId(id);
+
+    mapRef.current.animateCamera({
+      center: { latitude: loc.lat, longitude: loc.lon },
+      zoom: 15, pitch: 0, heading: 0,
+    }, { duration: 500 });
+
+    if (id) showMarkerCallout(id);
+  }, [day?.activities, showMarkerCallout]);
+
+  /* ---------- zaman & polyline ---------- */
+  const retimeDay = useCallback((d) => {
+    const arr = d.activities || [];
+    let curMin = 9 * 60 + 30;
+    for (const a of arr) {
+      const hh = String(Math.floor(curMin / 60)).padStart(2, '0');
+      const mm = String(curMin % 60).padStart(2, '0');
+      a.start = `${hh}:${mm}`;
+      curMin += a.durationMin || 45;
+      const hh2 = String(Math.floor(curMin / 60)).padStart(2, '0');
+      const mm2 = String(curMin % 60).padStart(2, '0');
+      a.end = `${hh2}:${mm2}`;
+    }
+  }, []);
+
+  const rebuildPolyline = useCallback((d) => {
+    const pts = [];
+    const acts = d.activities || [];
+    for (const a of acts) {
+      const loc = a?.place?.location;
+      if (!loc) continue;
+      pts.push({ lat: loc.lat, lon: loc.lon });
+    }
+    d.route = { ...(d.route || {}), polyline: pts, optimizerUsed: false };
+  }, []);
+
+  const mutatePlanDays = useCallback((updater) => {
+    setPlan((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, days: prev.days.map(d => ({ ...d, activities: [...(d.activities || [])] })) };
+      updater(next);
+      return next;
+    });
+  }, []);
+
+  /* ---------- Add/Replace flow ---------- */
+  const openAddStopAt = useCallback((idx) => {
+    setSheetMarker(null);
+    setInsertIndex(idx ?? 0);
+    setInsertMode(false);
+    if (isPanelOpen) setIsPanelOpen(false);
+   // ekleme aralığını göster
+   requestAnimationFrame(() => focusCorridorAround(idx ?? 0));
+   setSearchVisible(true);  }, [isPanelOpen]);
+
+  const toActivityFromResolved = (resolved, label = 'Seçilen yer') => {
+    const id = resolved?.key || `tmp:${Date.now()}`;
+    const c = resolved?.coords;
+    return {
+      id,
+      type: 'visit',
+      durationMin: 45,
+      place: {
+        id,
+        name: resolved?.description || label,
+        location: (c?.latitude != null && c?.longitude != null)
+          ? { lat: c.latitude, lon: c.longitude }
+          : null,
+        category: 'sights',
+        address: resolved?.address || resolved?.description || '',
+      },
+      meta: { category: 'sights' },
+    };
+  };
+
+  const addResolvedAtIndex = useCallback((idx, resolved) => {
+    if (!resolved) return;
+    const act = toActivityFromResolved(resolved);
+    mutatePlanDays((next) => {
+      const d = next.days?.[dayIndex];
+      if (!d) return;
+      const arr = d.activities || [];
+      const pos = Math.min(Math.max(idx ?? 0, 0), arr.length);
+      arr.splice(pos, 0, act);
+      retimeDay(d);
+      rebuildPolyline(d);
+    });
+  }, [dayIndex, mutatePlanDays, rebuildPolyline, retimeDay]);
+
+  // Search/POI/Map select → QuickCard (add)
+  const presentDetailsForSelection = useCallback(async (sel) => {
+    if (isSheetOpen) setSheetMarker(null);
+
+    let resolved = sel;
+    if (!resolved?.coords && sel?.key) {
+      try {
+        if (isValidPlaceId(sel.key)) {
+          const det = await getDetailsWithCache(sel.key);
+          if (det?.coords) {
+            resolved = {
+              key: sel.key,
+              description: det.name || sel.description,
+              coords: det.coords,
+              address: det.address,
+              photoUrls: (det.photos || []).slice(0, 2),
+            };
+          }
+        }
+      } catch {}
+    }
+    setSearchVisible(false);
+    if (resolved?.coords) {
+      setIsPanelOpen(false);
+         // seçilen noktaya yakınlaş
+    try {
+      mapRef.current?.animateCamera(
+        { center: { latitude: resolved.coords.latitude, longitude: resolved.coords.longitude }, zoom: 15 },
+        { duration: 450 }
+      );
+    } catch {}
+      setSheetVariant('add');
+      setSheetMeta('');
+      setSheetMarker({
+        name: resolved.description,
+        address: resolved.address,
+        coords: resolved.coords,
+        place_id: isValidPlaceId(resolved.key) ? resolved.key : null,
+        photoUrls: resolved.photoUrls || [],
+      });
+    }
+  }, [isSheetOpen]);
+
+  const [editIndex, setEditIndex] = useState(null);
+  const applyReplaceAt = useCallback((index, resolved) => {
+    mutatePlanDays((next) => {
+      const d = next.days?.[dayIndex];
+      if (!d) return;
+      const arr = d.activities || [];
+      if (index < 0 || index >= arr.length) return;
+      const act = toActivityFromResolved(resolved);
+      arr.splice(index, 1, act);
+      retimeDay(d);
+      rebuildPolyline(d);
+      setSelectedActId(act.id);
+    });
+  }, [dayIndex, mutatePlanDays, rebuildPolyline, retimeDay]);
+
+  const startEditAt = useCallback((index) => {
+    setEditIndex(index);
+    setInsertIndex(index); // replace hedefi
+    if (isPanelOpen) setIsPanelOpen(false);
+    setSearchVisible(true);
+  }, [isPanelOpen]);
+
+  const handleOverlayCancel = useCallback(() => setSearchVisible(false), []);
+  const handleOverlayMapSelect = useCallback(() => {
+    setSearchVisible(false);
+    // ekleme hedefi biliniyorsa, o aralıktaki koridora odaklan
+    const idx = (insertIndex ?? focusIdx ?? 0);
+    focusCorridorAround(idx);  }, []);
+
+   const focusCorridorAround = useCallback((idx) => {
+    if (!mapRef.current || !day?.activities?.length) return;
+    const arr = day.activities;
+    const prev = arr[idx - 1]?.place?.location || null;
+    const next = arr[idx]?.place?.location || arr[idx + 1]?.place?.location || null;
+ 
+    let target = null;
+    if (prev && next) target = { latitude: (prev.lat + next.lat) / 2, longitude: (prev.lon + next.lon) / 2 };
+    else if (prev)   target = { latitude: prev.lat, longitude: prev.lon };
+    else if (next)   target = { latitude: next.lat, longitude: next.lon };
+ 
+    if (target) {
+      try {
+        mapRef.current.animateCamera({ center: target, zoom: 14 }, { duration: 450 });
+      } catch {}
+    }
+  }, [day?.activities]);
+
+  // QuickCard CTA (sadece add modunda görünür)
+  const handleQuickCardCta = useCallback((markerLike) => {
+    const c = markerLike?.coords;
+    const sel = {
+      key: markerLike?.place_id || `map:${Math.round((c?.latitude ?? 0) * 1e6)}_${Math.round((c?.longitude ?? 0) * 1e6)}`,
+      description: markerLike?.name || 'Seçilen konum',
+      coords: c,
+      address: markerLike?.address || ''
+    };
+    setSheetMarker(null);
+
+    if (editIndex != null) {
+      applyReplaceAt(editIndex, sel);
+      setEditIndex(null);
+      return;
+    }
+
+    if (insertIndex == null) {
+      setPendingAdd(sel);
+      setInsertMode(true);
+      setIsPanelOpen(true); // kullanıcıdan nereye ekleyeceğini seçmesini iste
+      return;
+    }
+
+    addResolvedAtIndex(insertIndex, sel);
+  }, [editIndex, insertIndex, applyReplaceAt, addResolvedAtIndex]);
+
+  /* ---------- Delete ---------- */
+  const handleDeleteAt = useCallback((index) => {
+    mutatePlanDays((next) => {
+      const d = next.days?.[dayIndex];
+      if (!d) return;
+      const arr = d.activities || [];
+      if (index < 0 || index >= arr.length) return;
+      arr.splice(index, 1);
+      retimeDay(d);
+      rebuildPolyline(d);
+    });
+  }, [dayIndex, mutatePlanDays, rebuildPolyline, retimeDay]);
+
+  /* ---------- Reorder (drag) ---------- */
+  const handleReorder = useCallback((fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
+    mutatePlanDays((next) => {
+      const d = next.days?.[dayIndex];
+      if (!d) return;
+      const arr = d.activities || [];
+      const item = arr.splice(fromIndex, 1)[0];
+      arr.splice(toIndex, 0, item);
+      retimeDay(d);
+      rebuildPolyline(d);
+    });
+  }, [dayIndex, mutatePlanDays, retimeDay, rebuildPolyline]);
+
+  // Header meta
+  const cityLabel = Array.isArray(trip?.cities) && trip.cities.length
+    ? trip.cities.join(' • ')
+    : (trip?.title || 'Gezi Planı');
+
+  const dateLabel = trip?.dateRange?.start && trip?.dateRange?.end
+    ? `${formatDate(trip.dateRange.start)} – ${formatDate(trip.dateRange.end)}`
+    : '';
+
+  const goPrevDay = useCallback(() => {
+    if (!plan?.days?.length) return;
+    setDayIndex(i => Math.max(0, i - 1));
+  }, [plan]);
+  const goNextDay = useCallback(() => {
+    if (!plan?.days?.length) return;
+    setDayIndex(i => Math.min(plan.days.length - 1, i + 1));
+  }, [plan]);
 
   if (loading) {
     return (
@@ -244,28 +666,17 @@ export default function TripPlansScreen({ route, navigation }) {
     );
   }
 
-  // Header meta
-  const cityLabel = Array.isArray(trip?.cities) && trip.cities.length
-    ? trip.cities.join(' • ')
-    : (trip?.title || 'Gezi Planı');
-
-  const dateLabel = trip?.dateRange?.start && trip?.dateRange?.end
-    ? `${formatDate(trip.dateRange.start)} – ${formatDate(trip.dateRange.end)}`
-    : '';
-
   return (
     <View style={styles.screen}>
-      {/* Üst Header (geri + şehir + tarih + Yeniden Planla) */}
-      <View style={[
-        styles.header,
-        { paddingTop: insets.top, minHeight: 56 + insets.top }
-      ]}>
+      {/* Üst Header */}
+      <View style={[styles.header, { paddingTop: insets.top, minHeight: 56 + insets.top }]}>
         <TouchableOpacity
           onPress={() => navigation.navigate('TripsHome')}
           style={styles.backBtn}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityLabel="Geri"
         >
-          <Ionicons name="chevron-back" size={20} color="#111827" />
+          <Ionicons name="chevron-back" size={20} color={COLORS.fg} />
         </TouchableOpacity>
 
         <View style={{ flex: 1, paddingRight: 8 }}>
@@ -273,15 +684,25 @@ export default function TripPlansScreen({ route, navigation }) {
           {!!dateLabel && <Text style={styles.headerDates} numberOfLines={1}>{dateLabel}</Text>}
         </View>
 
-        <TouchableOpacity onPress={goReview} style={styles.replanBtnHeader}>
-          <Ionicons name="chevron-forward" size={16} color="#111827" style={{ marginRight: 6 }} />
+        <TouchableOpacity onPress={goReview} style={styles.replanBtnHeader} hitSlop={8} accessibilityLabel="Yeniden Planla">
+          <Ionicons name="chevron-forward" size={16} color={COLORS.fg} style={{ marginRight: 6 }} />
           <Text style={styles.replanText}>Yeniden Planla</Text>
         </TouchableOpacity>
       </View>
 
       {/* Gün şeridi */}
-      <View style={styles.daysBar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }}>
+      <View style={styles.daysBar} pointerEvents="auto">
+        <View style={styles.dayArrows}>
+          <Pressable onPress={goPrevDay} style={styles.dayArrowBtn} hitSlop={10} accessibilityLabel="Önceki gün">
+            <Ionicons name="caret-back" size={18} color={COLORS.fg} />
+          </Pressable>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: 10, alignItems: 'center' }}
+        >
           {plan.days.map((d, i) => {
             const active = i === dayIndex;
             return (
@@ -289,6 +710,9 @@ export default function TripPlansScreen({ route, navigation }) {
                 key={d.date || i}
                 onPress={() => setDayIndex(i)}
                 style={[styles.dayChip, active && styles.dayChipActive]}
+                hitSlop={8}
+                accessibilityLabel={`Gün ${i + 1}`}
+                accessibilityState={{ selected: active }}
               >
                 <Text style={[styles.dayChipText, active && styles.dayChipTextActive]}>
                   {`Gün ${i + 1}`} • {formatDate(d.date)}
@@ -297,43 +721,79 @@ export default function TripPlansScreen({ route, navigation }) {
             );
           })}
         </ScrollView>
+
+        <View style={styles.dayArrows}>
+          <Pressable onPress={goNextDay} style={styles.dayArrowBtn} hitSlop={10} accessibilityLabel="Sonraki gün">
+            <Ionicons name="caret-forward" size={18} color={COLORS.fg} />
+          </Pressable>
+        </View>
       </View>
 
-      {/* İçerik alanı: Sol panel + Harita */}
+      {/* İçerik alanı */}
       <View style={styles.content}>
         {/* Sol Panel */}
-        <View style={[styles.side, { width: leftW }]}>
+        <View
+          style={[
+            styles.side,
+            {
+              width: isPanelOpen ? LEFT_OPEN_W : LEFT_CLOSED_W,
+              elevation: isSheetOpen ? 0 : 4,
+              zIndex: isSheetOpen ? 0 : 2
+            },
+            (!isPanelOpen || isSheetOpen) && { pointerEvents: 'none' },
+          ]}
+        >
           <SideTimeline
             isOpen={isPanelOpen}
             plan={plan}
             dayIndex={dayIndex}
-            showDayPicker={false}
-            showToggle={false}
+            setDayIndex={setDayIndex}
+            onSelect={focusActivity}
+            selectedActivityId={selectedActId}
+            onInsertAt={openAddStopAt}
+            onEditAt={startEditAt}
+            onDeleteAt={handleDeleteAt}
+            onReorder={handleReorder}
+            insertMode={insertMode}
+            onPickInsertIndex={(idx) => {
+              if (pendingAdd) addResolvedAtIndex(idx, pendingAdd);
+              setPendingAdd(null);
+              setInsertMode(false);
+              setInsertIndex(null);
+            }}
+            onCancelInsertMode={() => {
+              setPendingAdd(null);
+              setInsertMode(false);
+              setInsertIndex(null);
+            }}
           />
         </View>
 
-        {/* Toggle overlay */}
-        <View pointerEvents="box-none" style={styles.toggleOverlay}>
-          <Pressable
-            onPress={onTogglePanel}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        {/* Orta toggle */}
+        <View style={styles.toggleOverlay} pointerEvents="box-none">
+          <View
             style={[
-              styles.panelToggle,
-              { left: (isPanelOpen ? leftW : LEFT_CLOSED_W) - 18 }
+              styles.panelToggleWrapper,
+              isPanelOpen
+                ? { left: (isPanelOpen ? LEFT_OPEN_W : LEFT_CLOSED_W) - TOGGLE_SIZE / 2 + 8 }
+                : { left: -TOGGLE_SIZE / 2 + TOGGLE_PEEK }
             ]}
           >
-            <Ionicons
-              name={isPanelOpen ? 'chevron-back' : 'chevron-forward'}
-              size={18}
-              color="#000"
-            />
-          </Pressable>
+            <Pressable onPress={onTogglePanel} style={styles.panelToggle} hitSlop={8} accessibilityLabel="Paneli Aç/Kapat">
+              <Ionicons name={isPanelOpen ? 'chevron-back' : 'chevron-forward'} size={18} color="#000" />
+            </Pressable>
+          </View>
         </View>
 
         {/* Harita */}
-        <View style={[styles.mapWrap, { width: SCREEN_W - leftW }]}>
+        <View style={[styles.mapWrap, { width: SCREEN_W - (isPanelOpen ? LEFT_OPEN_W : LEFT_CLOSED_W) }]}>
           <MapView
+            ref={mapRef}
             style={styles.map}
+            pointerEvents="auto"               // ❗ her zaman aktif
+            showsPointsOfInterest={true}
+            onPoiClick={handlePoiClick}        // POI seçimi
+            onLongPress={handleMapLongPress}   // uzun basarak serbest seçim
             initialRegion={{
               latitude:  markers?.[0]?.coordinate?.latitude  || 39.93,
               longitude: markers?.[0]?.coordinate?.longitude || 32.86,
@@ -342,35 +802,99 @@ export default function TripPlansScreen({ route, navigation }) {
             }}
           >
             {polylineCoords && <Polyline coordinates={polylineCoords} strokeWidth={5} />}
-            {markers.map(m => (
-              <Marker key={m.key} coordinate={m.coordinate} title={m.title} pinColor={m.color} />
-            ))}
+
+            {/* QuickCard’ın seçtiği nokta için geçici pin istersen buraya eklenebilir */}
+
+            {markers.map(m => {
+              const isSel = m.activityId === selectedActId;
+              const pinBg = isSel ? '#FF7A00' : m.baseColor;
+              return (
+                <Marker
+                  key={m.key}
+                  ref={(ref) => setMarkerRef(m.activityId, ref)}
+                  coordinate={m.coordinate}
+                  title={m.title}
+                  anchor={{ x: 0.5, y: 1 }}
+                  tracksViewChanges={false}
+                  onPress={async () => {
+                    setSelectedActId(m.activityId);
+                    setIsPanelOpen(false);
+                    let photoUrls = [];
+                    try {
+                      if (isValidPlaceId(m.placeId)) {
+                        const det = await getDetailsWithCache(m.placeId);
+                        if (det?.photos?.length) photoUrls = det.photos.slice(0, 2);
+                      }
+                    } catch {}
+                    // Marker → PREVIEW kart
+                    setSheetVariant('preview');
+                    setSheetMeta(`Gün ${dayIndex + 1} • Sıra ${m.order}`);
+                    setSheetMarker({
+                      name: m.title || 'Seçilen konum',
+                      address: '',
+                      coords: { latitude: m.coordinate.latitude, longitude: m.coordinate.longitude },
+                      place_id: isValidPlaceId(m.placeId) ? m.placeId : null,
+                      photoUrls,
+                    });
+                  }}
+                >
+                  <NumMarker bg={pinBg} order={m.order} />
+                </Marker>
+              );
+            })}
           </MapView>
         </View>
       </View>
+
+      {/* Search overlay */}
+      {searchVisible && (
+        <GetDirectionsOverlay
+          userCoords={userCoords}
+          onToSelected={sel => presentDetailsForSelection(sel)}
+          available={false}
+          refreshLocation={() => {}}
+          onCancel={handleOverlayCancel}
+          onMapSelect={handleOverlayMapSelect}
+          historyKey="search_history_stops"
+        />
+      )}
+
+      {/* Quick Card */}
+      <PlaceQuickCard
+        visible={isSheetOpen}
+        marker={sheetMarker}
+        onDismiss={() => setSheetMarker(null)}
+        ctaLabel={editIndex != null ? 'Durağı değiştir' : 'Durak ekle'}
+        onCtaPress={handleQuickCardCta}
+        variant={sheetVariant}
+        metaLabel={sheetMeta}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F3F4F6' },
+  screen: { flex: 1, backgroundColor: COLORS.bgApp },
 
   header: {
-    paddingHorizontal: 10,
-    paddingBottom: 10,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
     flexDirection: 'row',
     alignItems: 'flex-end',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.bgCard,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: COLORS.border,
+    zIndex: 200,
+    elevation: 8,
   },
   backBtn: {
-    width: 34, height: 34, borderRadius: 17,
+    width: 36, height: 36, borderRadius: 18,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#F3F4F6', marginRight: 8,
+    backgroundColor: '#F3F4F6', marginRight: 10,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border,
   },
-  headerCity: { color: '#111827', fontSize: 16, fontWeight: '800', lineHeight: 20 },
-  headerDates: { color: '#6B7280', fontSize: 12, marginTop: 2 },
+  headerCity: { color: COLORS.fg, fontSize: 16, fontWeight: '800', lineHeight: 20 },
+  headerDates: { color: COLORS.fgMuted, fontSize: 12, marginTop: 2 },
 
   replanBtnHeader: {
     flexDirection: 'row',
@@ -378,38 +902,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#EEF2F7',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
   },
-  replanText: { color: '#111827', fontWeight: '800' },
+  replanText: { color: COLORS.fg, fontWeight: '800' },
 
   daysBar: {
-    minHeight: 48,
-    paddingHorizontal: 8,
+    minHeight: 56,
+    paddingHorizontal: 10,
     paddingVertical: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.bgCard,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: COLORS.border,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    zIndex: 190,
+    elevation: 7,
   },
+  dayArrows: { width: 34, alignItems: 'center', justifyContent: 'center' },
+  dayArrowBtn: {
+    width: 30, height: 30, borderRadius: 15,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#F3F4F6',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
+  },
+
   dayChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    marginHorizontal: 4,
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#F9FAFB',
-    marginRight: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: '#F3F4F6',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.border,
   },
-  dayChipActive: { backgroundColor: '#111827', borderColor: '#111827' },
-  dayChipText: { color: '#111827', fontWeight: '700', fontSize: 12 },
-  dayChipTextActive: { color: '#FFFFFF' },
+  dayChipActive: {
+    backgroundColor: COLORS.accent,
+    borderColor: COLORS.accent,
+  },
+  dayChipText: { color: COLORS.fg, fontWeight: '700', fontSize: 12 },
+  dayChipTextActive: { color: '#fff' },
 
   content: { flex: 1, flexDirection: 'row', position: 'relative' },
 
   side: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.bgCard,
     borderRightWidth: 0,
     borderTopRightRadius: 16,
     borderBottomRightRadius: 16,
@@ -425,23 +965,45 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0, bottom: 0, left: 0, right: 0,
     justifyContent: 'center',
+    zIndex: 180,
+    elevation: 6,
+  },
+  panelToggleWrapper: {
+    position: 'absolute',
+    top: '50%',
+    transform: [{ translateY: -TOGGLE_SIZE / 2 }],
   },
   panelToggle: {
     position: 'absolute',
-    width: 36, height: 36, borderRadius: 18,
+    width: TOGGLE_SIZE, height: TOGGLE_SIZE, borderRadius: TOGGLE_SIZE / 2,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.bgCard,
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    elevation: 6,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.border,
+    overflow: 'visible',
+    left: 0,
   },
 
   mapWrap: { backgroundColor: '#EEF2F7' },
-  map: { flex: 1 },
+  map: { flex: 1, zIndex: 0, elevation: 0 },
+
+  numMarkerInner: {
+    minWidth: 26, height: 26, borderRadius: 13, paddingHorizontal: 6,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  numMarkerText: { color: '#fff', fontWeight: '800', fontSize: 13, includeFontPadding: false },
+  numMarkerTip: {
+    width: 0, height: 0,
+    borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8,
+    borderLeftColor: 'transparent', borderRightColor: 'transparent',
+    marginTop: -1,
+    borderTopColor: COLORS.accent,
+  },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0B0D12' },
 });

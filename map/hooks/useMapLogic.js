@@ -96,6 +96,7 @@ export function useMapLogic(mapRef) {
       console.warn('handleSelectPlace hata:', err);
     }
   }, [category, clearRouteState, places, mapRef, route]);
+  
 
   const handleMapPress = useCallback(
     async e => {

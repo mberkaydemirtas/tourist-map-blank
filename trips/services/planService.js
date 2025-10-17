@@ -1,19 +1,103 @@
 // trips/services/planService.js
 import { suggestMealsForGaps } from './mealSuggest';
 import { API_BASE } from '../../app/lib/api';
-import { Platform } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
 import Constants from 'expo-constants';
 
 /* ============================== Config ============================== */
-// Optimizer base (FastAPI) — gerçek cihaz + ADB için 127.0.0.1'e zorla
-const LOCALHOST = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
+
+// Metro dev server IP'sini scriptURL'den çek (örn. 192.168.1.34)
+function getMetroHostFromScriptURL() {
+  try {
+    const url = NativeModules?.SourceCode?.scriptURL || '';
+    const m = url.match(/\/\/([^:]+):\d+\//);
+    return m ? m[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+const METRO_HOST = getMetroHostFromScriptURL();
 const IS_DEVICE = !!(Constants && Constants.isDevice);
+// Emülatör için Android loopback
+const EMU_LOCALHOST = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
 
-export const OPTIMIZER_BASE =
-  (process.env?.EXPO_PUBLIC_OPTIMIZER_BASE || '').trim() ||
-  (IS_DEVICE ? 'http://127.0.0.1:8001' : `http://${LOCALHOST}:8001`);
+// Kullanıcı ENV öncelikli
+const ENV_OPT = (process.env?.EXPO_PUBLIC_OPTIMIZER_BASE || '').trim() || null;
 
-console.log('[OPTIMIZER] BASE=', OPTIMIZER_BASE);
+// Varsayılan (ENV yoksa) ilk denenecek base
+const FIRST_GUESS = ENV_OPT
+  ? ENV_OPT
+  : (IS_DEVICE
+      // Cihazdaysak önce reverse varmış gibi deneyelim
+      ? 'http://127.0.0.1:8001'
+      // Emülatördeysek 10.0.2.2
+      : `http://${EMU_LOCALHOST}:8001`
+    );
+
+// Diğer adaylar (başarısız olursa sırayla denenecek)
+const CANDIDATE_BASES = [
+  FIRST_GUESS,
+  // Emülatör loopback
+  `http://${EMU_LOCALHOST}:8001`,
+  // Cihaz loopback (reverse varsa çalışır)
+  'http://127.0.0.1:8001',
+  // Metro host IP (kablosuz ADB’de çoğunlukla bu işe yarar)
+  ...(METRO_HOST ? [`http://${METRO_HOST}:8001`] : []),
+];
+
+// Çalışan base'i cache'le
+let ACTIVE_OPTIMIZER_BASE = null;
+
+async function tryFetch(url, opts = {}, timeoutMs = 6000) {
+  let timeoutId;
+  const timer = new Promise((_, rej) => {
+    timeoutId = setTimeout(() => rej(new Error(`timeout_${timeoutMs}`)), timeoutMs);
+  });
+  try {
+    const res = await Promise.race([fetch(url, opts), timer]);
+    return res;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
+// Base’i “ulaşılabilir” saymak için herhangi bir HTTP yanıtı (200/404/405 vs.) yeterli;
+// ağ hatası, DNS, CORS/timeout gibi durumlarda başarısız kabul ediyoruz.
+async function isReachableBase(base) {
+  try {
+    const res = await tryFetch(base, { method: 'GET' }, 3000);
+    return !!res; // 404 bile gelse socket kurulduysa ulaşıldı demektir
+  } catch {
+    return false;
+  }
+}
+
+// İlk başarılı base’i bul ve cache’e yaz
+async function resolveOptimizerBase() {
+  if (ACTIVE_OPTIMIZER_BASE) return ACTIVE_OPTIMIZER_BASE;
+  for (const b of CANDIDATE_BASES) {
+    try {
+      const ok = await isReachableBase(b);
+      if (ok) {
+        ACTIVE_OPTIMIZER_BASE = b;
+        console.log('[OPTIMIZER] ✅ base selected =', ACTIVE_OPTIMIZER_BASE);
+        return ACTIVE_OPTIMIZER_BASE;
+      }
+    } catch {}
+  }
+  // Hiçbiri erişilemezse yine de ilk tahmini döndürelim (çağrı sırasında yakalanır)
+  ACTIVE_OPTIMIZER_BASE = FIRST_GUESS;
+  console.warn('[OPTIMIZER] ⚠️ no reachable base found, using FIRST_GUESS =', ACTIVE_OPTIMIZER_BASE);
+  return ACTIVE_OPTIMIZER_BASE;
+}
+
+// Debug çıktısı
+(async () => {
+  console.log('[OPTIMIZER] ENV =', ENV_OPT || '(none)');
+  console.log('[OPTIMIZER] METRO_HOST =', METRO_HOST || '(unknown)');
+  console.log('[OPTIMIZER] candidates =', CANDIDATE_BASES);
+})();
 
 // Toggle real directions (Google proxy on your Node server)
 const USE_REAL_DIRECTIONS_DEFAULT = true;
@@ -27,7 +111,6 @@ const REQ_TIMEOUT_MS = Math.max(
 /* ============================== fetch helpers ============================== */
 // RN/Android'de AbortController bazı ağ sürümlerinde "Network request failed" tetikleyebiliyor.
 // Optimizer çağrıları için "signal" KULLANMADAN manuel timeout uygula.
-
 async function fetchJsonNoSignal(url, opts = {}, timeoutMs = REQ_TIMEOUT_MS) {
   let timeoutId;
   try {
@@ -293,13 +376,32 @@ function openingToWindow(place, dayStartMin, dayEndMin) {
 }
 
 async function callOptimizer(payload) {
-  const url = `${OPTIMIZER_BASE}/optimize-day`;
-  // No-signal fetch (manuel timeout)
-  return await fetchJsonNoSignal(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(payload),
-  }, REQ_TIMEOUT_MS);
+  // ACTIVE_OPTIMIZER_BASE yoksa çöz ve cache’le
+  const firstBase = await resolveOptimizerBase();
+
+  const bases = ACTIVE_OPTIMIZER_BASE
+    ? [ACTIVE_OPTIMIZER_BASE, ...CANDIDATE_BASES.filter(b => b !== ACTIVE_OPTIMIZER_BASE)]
+    : [firstBase, ...CANDIDATE_BASES.filter(b => b !== firstBase)];
+
+  let lastErr;
+  for (const base of bases) {
+    const url = `${base}/optimize-day`;
+    try {
+      console.log('[OPT] POST', url);
+      const json = await fetchJsonNoSignal(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      }, REQ_TIMEOUT_MS);
+      // Başarılı → bu base’i aktif tut
+      ACTIVE_OPTIMIZER_BASE = base;
+      return json;
+    } catch (e) {
+      lastErr = e;
+      console.warn('[OPT] fail @', base, '→', e?.message || e);
+    }
+  }
+  throw lastErr || new Error('optimizer_unreachable');
 }
 
 function buildOptimizerReqForDay(day, visits, prefs, lodgingsByDate) {
@@ -417,6 +519,7 @@ export async function generatePlan(trip, prefs, opts = {}) {
       const res = await callOptimizer(payload); // {order, total_minutes, ...}
       orderedVisits = reorderActivitiesByOptimizer(d, visits, res);
       optimizerUsed = true;
+      console.log('[OPT] ✅ optimizer used for', d.date);
     } catch (e) {
       console.warn('[planService] optimizer unreachable, using NN fallback →', e?.message || e);
       // NN fallback

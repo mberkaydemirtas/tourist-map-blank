@@ -1,5 +1,5 @@
 // components/GetDirectionsOverlay.js
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import {
   View,
   TextInput,
@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { autocomplete, getPlaceDetails } from '../maps';
@@ -24,7 +25,7 @@ function distanceMeters(origin, loc) {
   const toRad = d => (d * Math.PI) / 180;
   const lat1 = origin.latitude, lon1 = origin.longitude;
   const lat2 = loc.lat || loc.latitude, lon2 = loc.lng || loc.longitude;
-  if (!lat2 || !lon2) return null;
+  if (lat2 == null || lon2 == null) return null;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
@@ -105,6 +106,20 @@ const normalizeEntry = (x) => {
   };
 };
 
+async function readJson(key, fallback = []) {
+  try {
+    const raw = key ? await AsyncStorage.getItem(key) : null;
+    return raw ? JSON.parse(raw) : fallback;
+  } catch { return fallback; }
+}
+
+async function writeJson(key, value) {
+  try {
+    if (!key) return;
+    await AsyncStorage.setItem(key, JSON.stringify(value));
+  } catch {}
+}
+
 export default function GetDirectionsOverlay({
   userCoords,
   onFromSelected,
@@ -131,93 +146,79 @@ export default function GetDirectionsOverlay({
     let mounted = true;
 
     const load = async () => {
-      try {
-        const rawH = historyKey ? await AsyncStorage.getItem(historyKey) : null;
-        const rawF = favoritesKey ? await AsyncStorage.getItem(favoritesKey) : null;
+      const arrH = await readJson(historyKey, []);
+      const arrF = await readJson(favoritesKey, []);
 
-        const arrH = rawH ? JSON.parse(rawH) : [];
-        const arrF = rawF ? JSON.parse(rawF) : [];
+      if (!mounted) return;
 
-        if (!mounted) return;
+      const normH = (Array.isArray(arrH) ? arrH : [])
+        .slice(0, MAX_HISTORY)
+        .map(normalizeEntry)
+        .filter(Boolean);
 
-        const normH = (Array.isArray(arrH) ? arrH : [])
-          .slice(0, MAX_HISTORY)
-          .map(normalizeEntry)
-          .filter(Boolean);
+      const normF = (Array.isArray(arrF) ? arrF : [])
+        .map(normalizeEntry)
+        .filter(Boolean);
 
-        const normF = (Array.isArray(arrF) ? arrF : [])
-          .map(normalizeEntry)
-          .filter(Boolean);
-
-        setHistory(normH);
-        setFavorites(normF);
-      } catch {
-        if (!mounted) return;
-        setHistory([]);
-        setFavorites([]);
-      }
+      setHistory(normH);
+      setFavorites(normF);
     };
 
     load();
     return () => { mounted = false; };
   }, [historyKey, favoritesKey]);
 
-/* autocomplete */
-useEffect(() => {
-  let active = true;
-  const run = async () => {
-    if (query.trim().length < 2) {
-      setSuggestions([]);
-      return;
-    }
-    try {
-      // ✅ location + radius ekle
-      const preds = await autocomplete(query.trim(), userCoords);
+  /* autocomplete */
+  useEffect(() => {
+    let active = true;
+    const run = async () => {
+      if (query.trim().length < 2) {
+        setSuggestions([]);
+        return;
+      }
+      try {
+        // API autocomplete (kullanıcı koordinatıyla)
+        const preds = await autocomplete(query.trim(), userCoords);
 
-      if (!active) return;
+        if (!active) return;
 
-      // normalize
-      let items = preds.map(p => ({
-        key: p.place_id,
-        place_id: p.place_id,
-        description: p.description,
-        structured_formatting: p.structured_formatting,
-        geometry: p.geometry, // bazı API yanıtlarında gelebilir
-      }));
+        // normalize
+        let items = preds.map(p => ({
+          key: p.place_id,
+          place_id: p.place_id,
+          description: p.description,
+          structured_formatting: p.structured_formatting,
+          geometry: p.geometry, // bazı API yanıtlarında gelebilir
+        }));
 
-      // ✅ custom scoring: isim benzerliği + mesafe
-      const qLower = query.trim().toLowerCase();
-      items.sort((a, b) => {
-        let scoreA = 0;
-        let scoreB = 0;
+        // isim benzerliği + mesafe skoru
+        const qLower = query.trim().toLowerCase();
+        items.sort((a, b) => {
+          let scoreA = 0, scoreB = 0;
+          const textA = (a.description || '').toLowerCase();
+          const textB = (b.description || '').toLowerCase();
+          if (textA.startsWith(qLower)) scoreA += 2;
+          else if (textA.includes(qLower)) scoreA += 1;
+          if (textB.startsWith(qLower)) scoreB += 2;
+          else if (textB.includes(qLower)) scoreB += 1;
 
-        // isim benzerliği
-        const textA = (a.description || "").toLowerCase();
-        const textB = (b.description || "").toLowerCase();
-        if (textA.startsWith(qLower)) scoreA += 2;
-        else if (textA.includes(qLower)) scoreA += 1;
-        if (textB.startsWith(qLower)) scoreB += 2;
-        else if (textB.includes(qLower)) scoreB += 1;
+          if (userCoords) {
+            const distA = distanceMeters(userCoords, a.geometry?.location);
+            const distB = distanceMeters(userCoords, b.geometry?.location);
+            if (distA != null) scoreA += distA < 5000 ? 1 : 0; // 5 km içi bonus
+            if (distB != null) scoreB += distB < 5000 ? 1 : 0;
+          }
+          return scoreB - scoreA;
+        });
 
-        // mesafe (yakına +)
-        if (userCoords) {
-          const distA = distanceMeters(userCoords, a.geometry?.location);
-          const distB = distanceMeters(userCoords, b.geometry?.location);
-          if (distA != null) scoreA += distA < 5000 ? 1 : 0; // 5 km içindeyse puan
-          if (distB != null) scoreB += distB < 5000 ? 1 : 0;
-        }
-
-        return scoreB - scoreA; // büyükten küçüğe
-      });
-
-      setSuggestions(items);
-    } catch (e) {
-      if (active) setSuggestions([]);
-    }
-  };
-  run();
-  return () => { active = false; };
-}, [query, userCoords]);
+        setSuggestions(items);
+      } catch {
+        if (active) setSuggestions([]);
+      }
+    };
+    run();
+    return () => { active = false; };
+  }, [query, userCoords]);
 
   const emitSelection = (selected) => {
     if (onToSelected) onToSelected(selected);
@@ -236,12 +237,60 @@ useEffect(() => {
         key: placeId,
         description: details?.name || fallbackLabel || 'Seçilen yer',
         coords: coord,
+        place_id: placeId,
+        address: details?.address || '',
       };
     } catch {
       return null;
     }
   };
 
+  /* ---------- HISTORY WRITE HELPERS ---------- */
+  const saveToHistory = useCallback(async (entryRaw) => {
+    if (!historyKey || !entryRaw) return;
+
+    const entry = normalizeEntry(entryRaw);
+    if (!entry) return;
+
+    // güncel listeyi çek
+    const current = (await readJson(historyKey, []))
+      .map(normalizeEntry)
+      .filter(Boolean);
+
+    // dedupe: place_id varsa ona göre, yoksa description lower
+    const pid = entry.place_id || entry.key;
+    const desc = String(entry.description || '').trim().toLowerCase();
+
+    const filtered = current.filter(it => {
+      const itPid = it.place_id || it.key;
+      const itDesc = String(it.description || '').trim().toLowerCase();
+      if (pid && itPid) return itPid !== pid;
+      return itDesc !== desc;
+    });
+
+    const next = [entry, ...filtered].slice(0, MAX_HISTORY);
+    await writeJson(historyKey, next);
+    setHistory(next);
+  }, [historyKey]);
+
+  const clearHistory = useCallback(async () => {
+    if (!historyKey) return;
+    await writeJson(historyKey, []);
+    setHistory([]);
+  }, [historyKey]);
+
+  const removeHistoryItem = useCallback(async (item) => {
+    if (!historyKey) return;
+    const cur = (await readJson(historyKey, []))
+      .map(normalizeEntry)
+      .filter(Boolean);
+    const k = keyOf(item);
+    const next = cur.filter(x => keyOf(x) !== k);
+    await writeJson(historyKey, next);
+    setHistory(next);
+  }, [historyKey]);
+
+  /* ---------- SELECT ---------- */
   const handleSelectItem = async (item) => {
     Keyboard.dismiss();
 
@@ -249,7 +298,9 @@ useEffect(() => {
     if (item?.key === 'current') {
       const c = normalizeCoord(userCoords);
       if (!c) return;
-      emitSelection({ key: 'current', description: 'Konumunuz', coords: c });
+      const selected = { key: 'current', description: 'Konumunuz', coords: c };
+      emitSelection(selected);
+      // konum özel: geçmişe yazmıyoruz
       return;
     }
 
@@ -263,7 +314,7 @@ useEffect(() => {
     // Geçmiş/Favori/Öneri — normalize et
     const hist = normalizeEntry(item);
 
-    // 1) Koordinatı zaten varsa direkt gönder
+    // 1) Koordinatı varsa direkt gönder + geçmişe yaz
     const hasCoords =
       !!hist?.coords ||
       (Number.isFinite(hist?.geometry?.location?.lat) &&
@@ -271,55 +322,86 @@ useEffect(() => {
 
     if (hasCoords) {
       const coord = hist.coords || normalizeCoord(hist.geometry.location);
-      emitSelection({
+      const selected = {
         key: hist.place_id || hist.key || keyOf(hist),
         description: labelOf(hist),
         coords: coord,
-      });
+        place_id: hist.place_id || null,
+        address: hist.address || '',
+      };
+      emitSelection(selected);
+      await saveToHistory(selected);
       return;
     }
 
-    // 2) place_id varsa details ile çöz
+    // 2) place_id varsa details ile çöz + geçmişe yaz
     if (hist?.place_id) {
       const resolved = await resolveByPlaceId(hist.place_id, labelOf(hist));
-      if (resolved) { emitSelection(resolved); return; }
+      if (resolved) {
+        emitSelection(resolved);
+        await saveToHistory(resolved);
+        return;
+      }
     }
 
-    // 3) String / eski kayıt: önce autocomplete ile place_id bulmayı dene
+    // 3) String / eski kayıt: önce autocomplete ile place_id bul
     if (typeof item === 'string' || typeof hist?.description === 'string') {
       const text = typeof item === 'string' ? item : hist.description;
       try {
-        const preds = await autocomplete(text);
+        const preds = await autocomplete(text, userCoords);
         const pid = preds?.[0]?.place_id;
         if (pid) {
           const resolved = await resolveByPlaceId(pid, text);
-          if (resolved) { emitSelection(resolved); return; }
+          if (resolved) {
+            emitSelection(resolved);
+            await saveToHistory(resolved);
+            return;
+          }
         }
       } catch {}
     }
 
-    // 4) En kötü ihtimal — sadece label ile gönder (senin seçici hook’un halleder)
-    emitSelection({
+    // 4) En kötü ihtimal — sadece label ile gönder + geçmişe yaz
+    const fallback = {
       key: hist?.place_id || hist?.key || keyOf(hist),
       description: labelOf(hist),
       coords: undefined,
-    });
+      place_id: hist?.place_id || null,
+      address: hist?.address || '',
+    };
+    emitSelection(fallback);
+    await saveToHistory(fallback);
   };
 
   const sections = useMemo(() => {
     const q = query.trim();
     const arr = [];
     if (q.length >= 2 && suggestions.length) {
-      arr.push({ title: 'Öneriler', data: suggestions });
+      arr.push({ title: 'Öneriler', data: suggestions, kind: 'sugg' });
     }
     if (!q && favorites.length) {
-      arr.push({ title: 'Favoriler', data: favorites });
+      arr.push({ title: 'Favoriler', data: favorites, kind: 'fav' });
     }
     if (!q && history.length) {
-      arr.push({ title: 'Geçmiş', data: history });
+      arr.push({ title: 'Geçmiş', data: history, kind: 'hist' });
     }
     return arr;
   }, [query, suggestions, favorites, history]);
+
+  const renderSectionHeader = ({ section }) => {
+    if (!section.data.length) return null;
+    if (section.kind === 'hist') {
+      return (
+        <View style={styles.sectionRow}>
+          <Text style={styles.section}>Geçmiş</Text>
+          <TouchableOpacity onPress={clearHistory} hitSlop={8}>
+            <Text style={styles.clearBtn}>Temizle</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return <Text style={styles.section}>{section.title}</Text>;
+  };
 
   return (
     <KeyboardAvoidingView
@@ -337,7 +419,7 @@ useEffect(() => {
             onChangeText={setQuery}
             returnKeyType="search"
           />
-          <TouchableOpacity onPress={onCancel} accessibilityLabel="Kapat">
+          <TouchableOpacity onPress={onCancel} accessibilityLabel="Kapat" hitSlop={8}>
             <Text style={styles.cancel}>X</Text>
           </TouchableOpacity>
         </View>
@@ -364,15 +446,12 @@ useEffect(() => {
         <SectionList
           sections={sections}
           keyExtractor={(item, i) => keyOf(item, i)}
-          renderSectionHeader={({ section }) =>
-            section.data.length ? (
-              <Text style={styles.section}>{section.title}</Text>
-            ) : null
-          }
-          renderItem={({ item, index }) => (
+          renderSectionHeader={renderSectionHeader}
+          renderItem={({ item, index, section }) => (
             <TouchableOpacity
               style={styles.item}
               onPress={() => handleSelectItem(item)}
+              onLongPress={() => section.kind === 'hist' ? removeHistoryItem(item) : null}
               activeOpacity={0.8}
               key={keyOf(item, index)}
             >
@@ -407,13 +486,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000',
     backgroundColor: '#fff',
-    elevation: 10,
+    elevation: 8,
   },
   cancel: { marginLeft: 12, fontSize: 18, color: '#007AFF' },
   quickRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 12, paddingHorizontal: 16 },
   quickButton: { backgroundColor: '#f0f0f0', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8 },
   quickText: { fontSize: 16, color: '#000' },
-  section: { fontSize: 14, fontWeight: '600', marginTop: 16, marginLeft: 16, color: '#444' },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginTop: 16 },
+  section: { fontSize: 14, fontWeight: '600', color: '#444' },
+  clearBtn: { color: '#007AFF', fontWeight: '600' },
   item: { paddingVertical: 10, paddingHorizontal: 16 },
   itemText: { fontSize: 16, color: '#000' },
   itemSub: { fontSize: 12, color: '#666', marginTop: 2 },

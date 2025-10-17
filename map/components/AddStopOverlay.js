@@ -1,4 +1,4 @@
-// components/AddStopOverlay.js
+// map/components/AddStopOverlay.js
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   Modal, View, Text, TextInput, TouchableOpacity, FlatList,
