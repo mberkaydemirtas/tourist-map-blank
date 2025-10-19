@@ -26,9 +26,7 @@ export default function PlaceQuickCard({
   onCtaPress,
   ctaLabel = 'Ekle',
   ctaDisabled = false,
-  // 'add' | 'preview'
-  variant = 'add',
-  // Örn: "Gün 2 • Sıra 5"
+  variant = 'add',            // 'add' | 'preview'
   metaLabel = '',
 }) {
   const insets = useSafeAreaInsets();
@@ -36,14 +34,21 @@ export default function PlaceQuickCard({
 
   const name = String(marker?.name || 'Seçilen konum');
   const address = String(marker?.address || '');
-  const photos = normalizePhotos(marker?.photoUrls);
+  // 📸 hızlı fallback (marker.icon/coverPhoto/photoUrl gibi alanları da dene)
+  const photos = (() => {
+    const p = normalizePhotos(marker?.photoUrls);
+    if (p.length) return p;
+    const extras = [marker?.icon, marker?.coverPhoto, marker?.photoUrl].filter(Boolean);
+    return normalizePhotos(extras);
+  })();
+
   const hasCoords = !!(marker?.coords && Number.isFinite(marker.coords.latitude) && Number.isFinite(marker.coords.longitude));
   const isPreview = variant === 'preview';
 
   useEffect(() => {
     Animated.timing(a, {
       toValue: visible ? 1 : 0,
-      duration: visible ? 220 : 140,
+      duration: visible ? 140 : 110,        // ⚡ hızlandırıldı
       easing: visible ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
       useNativeDriver: true,
     }).start();
@@ -51,7 +56,7 @@ export default function PlaceQuickCard({
 
   const cardStyle = useMemo(() => ([
     styles.card,
-    { transform: [{ translateY: a.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }] },
+    { transform: [{ translateY: a.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] }, // 24→16
   ]), [a]);
 
   if (!visible) return <View pointerEvents="none" style={StyleSheet.absoluteFill} />;
@@ -59,7 +64,7 @@ export default function PlaceQuickCard({
   const handleCta = () => { if (!ctaDisabled) onCtaPress?.(marker || {}); };
 
   return (
-    // ❗Backdrop YOK: arka plan grileşmiyor, harita & ekran tamamen etkileşimli
+    // Backdrop yok: arka plan interaktif kalsın
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 10) }]} pointerEvents="box-none">
         <Animated.View style={cardStyle} pointerEvents="auto">
