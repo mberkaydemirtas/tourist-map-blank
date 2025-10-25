@@ -19,6 +19,12 @@ const ROW_TAIL_W = 28;
 const ROW_TAIL_PAD = ROW_TAIL_W + 12;
 
 function rowName(item, index) {
+  // Anchor satırları için sabit isim; normal duraklar için varolan mantık
+  if (item?.type === 'anchor') {
+    if (item.anchorKind === 'start') return item.label || 'Başlangıç';
+    if (item.anchorKind === 'end')   return item.label || 'Bitiş';
+    if (item.anchorKind === 'lodging') return item.label || 'Konaklama';
+  }
   return (
     item?.place?.name ||
     item?.place?.displayName ||
@@ -135,12 +141,32 @@ function LegConnector({ fromIndex, onPickLeg }) {
   );
 }
 
-function RowCore({ item, index, selected, onPress, onReplace, onDeleteAsk, drag, isActive, onOpenMenu }) {
-  const order = (index ?? 0) + 1;
-  const name = rowName(item, index);
-  const time = (item?.start && item?.end) ? `${item.start} – ${item.end}` : null;
-  const category = item?.place?.category || item?.meta?.category || item?.type || '';
-  const longTitle = String(name).length > 34;
+function AnchorBadge({ kind }) {
+  const map = {
+    start: { bg: '#10B981', icon: 'play' },      // yeşil
+    lodging: { bg: '#7C3AED', icon: 'home' },    // mor
+    end:   { bg: '#EF4444', icon: 'stop' },      // kırmızı
+  };
+  const k = map[kind] || map.start;
+  return (
+    <View style={[styles.anchorBadge, { backgroundColor: k.bg }]}>
+      <Ionicons name={k.icon} size={12} color="#fff" />
+    </View>
+  );
+}
+
+function RowCore({
+  item, index, selected,
+  onPress, onReplace, onDeleteAsk,
+  drag, isActive, onOpenMenu
+}) {
+   const order = (index ?? 0) + 1;
+   const name = rowName(item, index);
+   const isAnchor = !!item?.meta?.isAnchor;
+   const time = (!isAnchor && item?.start && item?.end) ? `${item.start} – ${item.end}` : null;
+   const category = isAnchor ? (item.anchorKind?.toUpperCase?.() || 'ANCHOR') : (item?.place?.category || item?.meta?.category || item?.type || '');
+   const longTitle = String(name).length > 34;
+  const displayTitle = isAnchor ? name : `(${name})`;
 
   return (
     <View style={[styles.row, selected && styles.rowSelected, isActive && styles.rowDragging]}>
@@ -148,20 +174,22 @@ function RowCore({ item, index, selected, onPress, onReplace, onDeleteAsk, drag,
 
       <Pressable
         onPress={onPress}
-        onLongPress={drag}
-        delayLongPress={160}
+        onLongPress={isAnchor ? undefined : drag}
+        delayLongPress={isAnchor ? undefined : 160}
         android_ripple={{ color: BORDER }}
         style={styles.rowTap}
       >
         {/* Sol rozet */}
         <View style={styles.rowLead}>
-          <View style={styles.badge}><Text style={styles.badgeTxt}>{order}</Text></View>
+          {isAnchor
+            ? <AnchorBadge kind={item.anchorKind} />
+            : <View style={styles.badge}><Text style={styles.badgeTxt}>{order}</Text></View>}
         </View>
 
         {/* Metin */}
         <View style={styles.textBlock}>
           <Text numberOfLines={TITLE_MAX_LINES} ellipsizeMode="tail" style={styles.title}>
-            {name}
+            {displayTitle}
           </Text>
 
           {!longTitle && (
@@ -172,17 +200,19 @@ function RowCore({ item, index, selected, onPress, onReplace, onDeleteAsk, drag,
           )}
         </View>
 
-        {/* Sağ ⋮ menü */}
-        <View style={styles.rowTailAbs}>
-          <Pressable
-            onPress={() => onOpenMenu?.(name, onReplace, onDeleteAsk)}
-            style={styles.kebabBtn}
-            hitSlop={8}
-            accessibilityLabel="Seçenekler"
-          >
-            <Ionicons name="ellipsis-vertical" size={16} color="#374151" />
-          </Pressable>
-        </View>
+        {/* Sağ ⋮ menü — anchor için gizli */}
+        {!isAnchor && (
+          <View style={styles.rowTailAbs}>
+            <Pressable
+              onPress={() => onOpenMenu?.(name, onReplace, onDeleteAsk)}
+              style={styles.kebabBtn}
+              hitSlop={8}
+              accessibilityLabel="Seçenekler"
+            >
+              <Ionicons name="ellipsis-vertical" size={16} color="#374151" />
+            </Pressable>
+          </View>
+        )}
       </Pressable>
     </View>
   );
@@ -221,11 +251,47 @@ export default function SideTimeline({
   insertMode = false,
   onPickInsertIndex,
   onCancelInsertMode,
-  onPickLeg,     // 🔹 YENİ: i → i+1 arasını seç
+  onPickLeg,     // i → i+1 arasını seç
+  // 🔹 yeni: anchor’lar
+  startAnchor,   // {label, location:{lat,lon}}
+  endAnchor,     // {label, location:{lat,lon}}
+  lodgingAnchor, // {label, location:{lat,lon}} (info amaçlı – aynı noktaysa start/end ile birleşik olabilir)
 }) {
   const days = plan?.days || [];
   const day = days[dayIndex] || null;
-  const listData = (day?.activities || []).map((a, i) => ({ ...a, _key: a?.id || String(i) }));
+
+  // Anchor’ları liste başı/sonuna koy
+  const makeAnchorItem = (k, a) => a ? ({
+    id: `anchor:${k}`,
+    type: 'anchor',
+    anchorKind: k,      // 'start' | 'end' | 'lodging'
+    label: a.label || (k === 'start' ? 'Başlangıç' : k === 'end' ? 'Bitiş' : 'Konaklama'),
+    place: { name: a.label, location: a.location },
+    _key: `anchor:${k}`,
+  }) : null;
+
+  const acts = (day?.activities || []).map((a, i) => ({ ...a, _key: a?.id || String(i) }));
+function coordsEqual(a, b) {
+  return a?.lat === b?.lat && a?.lon === b?.lon;
+}
+
+function lodgingShouldAdd(start, end, lodging) {
+  if (!lodging?.location) return false;
+  return !coordsEqual(lodging.location, start?.location) &&
+         !coordsEqual(lodging.location, end?.location);
+}
+
+const lodgingAdd = lodgingShouldAdd(startAnchor, endAnchor, lodgingAnchor)
+  ? makeAnchorItem('lodging', lodgingAnchor)
+  : null;
+  
+
+const listData = [
+  makeAnchorItem('start', startAnchor),
+  ...acts,
+  lodgingAdd,
+  makeAnchorItem('end', endAnchor),
+].filter(Boolean);
 
   // Menu & Confirm state
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -259,27 +325,43 @@ export default function SideTimeline({
       ? getIndex() ?? 0
       : 0;
 
-    const selected = selectedActivityId && item?.id === selectedActivityId;
+    const isAnchor = item?.type === 'anchor';
+    const selected = !isAnchor && selectedActivityId && item?.id === selectedActivityId;
     const onInsert = insertMode ? onPickInsertIndex : onInsertAt;
+
+    const onPress = () => {
+      if (isAnchor) {
+        // Anchor satırına tıklayınca haritada odaklan
+        const coord = item?.place?.location;
+        onSelect?.({ anchor: item.anchorKind, coord, source: 'timeline' });
+      } else {
+        onSelect?.({ index: safeIndex - (startAnchor ? 1 : 0), source: 'timeline' });
+      }
+    };
 
     return (
       <View key={item._key}>
         <RowCore
           item={item}
-          index={safeIndex}
+          index={isAnchor ? safeIndex : (safeIndex - (startAnchor ? 1 : 0))}
           selected={!!selected}
-          onPress={() => onSelect?.(item)}
-          onReplace={() => onEditAt?.(safeIndex)}
-          onDeleteAsk={() => askDelete(rowName(item, safeIndex), safeIndex)}
-          drag={drag}
+          onPress={onPress}
+          onReplace={isAnchor ? undefined : () => onEditAt?.(safeIndex - (startAnchor ? 1 : 0))}
+          onDeleteAsk={isAnchor ? undefined : () => askDelete(rowName(item, safeIndex), safeIndex - (startAnchor ? 1 : 0))}
+          drag={isAnchor ? undefined : drag}
           isActive={isActive}
-          onOpenMenu={openMenu}
+          onOpenMenu={isAnchor ? undefined : openMenu}
         />
-        {/* 🔹 i → i+1 arasını seçme butonu (leg connector) */}
-        {safeIndex < listData.length - 1 && (
-          <LegConnector fromIndex={safeIndex} onPickLeg={onPickLeg} />
+        {/* Leg connector — anchor satırlarından sonra çizilmez */}
+        {!isAnchor && (safeIndex < listData.length - 1) && (listData[safeIndex + 1]?.type !== 'anchor') && (
+          <LegConnector fromIndex={(safeIndex - (startAnchor ? 1 : 0))} onPickLeg={onPickLeg} />
         )}
-        <Separator insertIndex={safeIndex + 1} onInsert={onInsert} highlight={insertMode} />
+        {/* Ekle ayracı */}
+        <Separator
+          insertIndex={Math.max(0, safeIndex + 1 - (startAnchor ? 1 : 0))}
+          onInsert={onInsert}
+          highlight={insertMode}
+        />
       </View>
     );
   };
@@ -291,7 +373,11 @@ export default function SideTimeline({
         keyExtractor={(item) => item._key}
         activationDistance={12}
         onDragEnd={({ from, to }) => {
-          if (from != null && to != null) onReorder?.(from, to);
+          // Anchor’lar sürüklenemez: güvenlik — drag’ler zaten anchor için kapalı.
+          if (listData[from]?.type === 'anchor' || listData[to]?.type === 'anchor') return;
+          const adjFrom = from - (startAnchor ? 1 : 0);
+          const adjTo   = to   - (startAnchor ? 1 : 0);
+          if (adjFrom != null && adjTo != null) onReorder?.(adjFrom, adjTo);
         }}
         renderItem={renderItem}
         contentContainerStyle={{ padding: 12, paddingBottom: 30 }}
@@ -303,7 +389,7 @@ export default function SideTimeline({
       {renderDraggable || (
         <View style={{ paddingHorizontal: 12, paddingTop: 10 }}>
           {listData.map((item, index) => renderItem({ item, index }))}
-          {listData.length === 0 && (
+          {acts.length === 0 && (
             <View style={styles.empty}>
               <Text style={styles.emptyText}>Bu günde aktivite yok.</Text>
             </View>
@@ -378,6 +464,11 @@ const styles = StyleSheet.create({
     backgroundColor: PRIMARY,
   },
   badgeTxt: { color: '#fff', fontSize: 10, fontWeight: '800' },
+
+  anchorBadge: {
+    minWidth: 18, height: 18, borderRadius: 9,
+    alignItems: 'center', justifyContent: 'center',
+  },
 
   textBlock: {
     flexBasis: 0,

@@ -1,3 +1,4 @@
+// map/utils/locationutils.js
 import * as Location from 'expo-location';
 
 export async function checkLocationReady() {

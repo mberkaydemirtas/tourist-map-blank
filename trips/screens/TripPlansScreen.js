@@ -1,26 +1,32 @@
-// trips/screens/TripPlansScreen.js
+//trips/screens/TripPlansScreen.js
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Dimensions, ActivityIndicator, Alert,
-  BackHandler, LayoutAnimation, Platform, UIManager, ScrollView, TouchableOpacity
+  BackHandler, LayoutAnimation, Platform, UIManager, ScrollView, TouchableOpacity, Linking
 } from 'react-native';
+import * as Location from 'expo-location';
+import * as IntentLauncher from 'expo-intent-launcher';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 
+// Bileşenleri ve servisleri import et
 import SideTimeline from '../components/SideTimeline';
 import GetDirectionsOverlay from '../../map/components/GetDirectionsOverlay';
 import PlaceQuickCard from '../../map/components/PlaceQuickCard';
 import TripRouteSheet from '../components/TripRouteSheet';
-import { getRouteDirections } from '../services/RouteDirectionService';
+import PermissionPromptModal from '../../map/components/PermissionPromptModal';
 
+import { getRouteDirections } from '../services/RouteDirectionService';
 import { generatePlan } from '../services/planService';
 import { getTripLocal, patchTripLocal } from '../../app/lib/tripsLocal';
 import { getPlanByTripId, savePlan } from '../shared/plansRepo';
 import { formatDate } from '../shared/types';
 import { resolvePlacesBatch } from '../services/placeResolver';
 import { getPlaceDetails } from '../../map/maps';
+import { optimizeDayWithAnchors } from '../services/dayOptimizer';
+import { getAnchorsForDayDetailed } from '../shared/anchors';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -57,7 +63,6 @@ const keyOf = (x) => {
   return `${nm}@${round5k(lat)},${round5k(lon)}`;
 };
 
-// 🔒 daha sıkı placeId
 function isStrictPlaceId(pid) {
   if (typeof pid !== 'string') return false;
   return /^(ChIJ|Gh)[A-Za-z0-9_-]{8,}$/.test(pid);
@@ -156,7 +161,7 @@ async function getDetailsWithCache(placeId) {
   if (!isStrictPlaceId(placeId)) return null;
 
   const cached = detailsCache.get(placeId);
-  if (cached && Date.now() - cached.ts < 1000 * 60 * 30) return cached;
+  if (cached && Date.now() - cached.ts < 1000 * 60 * 30) return cached.data;
 
   if (inFlightDetails.has(placeId)) return inFlightDetails.get(placeId);
 
@@ -166,14 +171,14 @@ async function getDetailsWithCache(placeId) {
       let photos = [];
       if (Array.isArray(det?.photos)) {
         photos = det.photos
-          .map((p) => (typeof p === 'string' ? p : (p?.url || p?.uri)))
+          .map((p) => (typeof p === 'string' ? p : (p?.url || p?.uri || p?.photoUrl || p?.src || p?.photo_reference)))
           .filter(Boolean);
       }
-      const norm = det ? { coords: det.coords, name: det.name, address: det.address, photos, ts: Date.now() } : null;
-      if (norm) detailsCache.set(placeId, norm);
+      const norm = det ? { coords: det.coords, name: det.name, address: det.address, photos } : null;
+      if (norm) detailsCache.set(placeId, { data: norm, ts: Date.now() });
       return norm;
     } catch {
-      return null; // INVALID_REQUEST vs. -> UI akışı bozulmasın
+      return null;
     } finally {
       inFlightDetails.delete(placeId);
     }
@@ -183,7 +188,7 @@ async function getDetailsWithCache(placeId) {
   return p;
 }
 
-/* 📸 Activity içinden foto toplama (çok formatlı) */
+/* 📸 Activity içinden foto toplama */
 function extractPhotoUrlsFromActivity(a) {
   const out = [];
   const pushAny = (v) => {
@@ -194,6 +199,7 @@ function extractPhotoUrlsFromActivity(a) {
       else if (v.uri) out.push(v.uri);
       else if (v.photoUrl) out.push(v.photoUrl);
       else if (v.src) out.push(v.src);
+      else if (v.photo_reference) out.push(v.photo_reference);
     }
   };
   if (Array.isArray(a?.place?.photos)) a.place.photos.forEach(pushAny);
@@ -214,6 +220,46 @@ function extractPossiblePlaceIdFromActivity(a) {
     a?.place?.id,
   ].filter(Boolean);
   return candidates.find(isStrictPlaceId) || null;
+}
+
+/** Google Places photo_reference -> tam URL */
+function buildGooglePhotoUrl(photoRef, apiKey, { maxwidth = 800 } = {}) {
+  if (!photoRef || !apiKey) return null;
+  const base = 'https://maps.googleapis.com/maps/api/place/photo';
+  const p = new URLSearchParams({ photoreference: String(photoRef), maxwidth: String(maxwidth), key: apiKey });
+  return `${base}?${p.toString()}`;
+}
+
+/** Karışık girdi -> https URL listesi */
+function coercePhotoInputsToUrls(list, apiKey, { maxwidth = 800 } = {}) {
+  const out = [];
+  for (const v of list || []) {
+    if (!v) continue;
+    if (typeof v === 'string') {
+      if (/^https?:\/\//i.test(v)) out.push(v);
+      else if (/^[A-Za-z0-9_-]{20,}$/.test(v)) {
+        const u = buildGooglePhotoUrl(v, apiKey, { maxwidth });
+        if (u) out.push(u);
+      } else if (/place\/photo/i.test(v) && !/(\?|&)key=/.test(v) && apiKey) {
+        const sep = v.includes('?') ? '&' : '?';
+        out.push(`${v}${sep}key=${apiKey}`);
+      }
+    } else if (typeof v === 'object') {
+      const url = v.url || v.uri || v.src || v.photoUrl;
+      if (url && /^https?:\/\//i.test(url)) out.push(url);
+      else if (v.photo_reference) {
+        const u = buildGooglePhotoUrl(v.photo_reference, apiKey, { maxwidth });
+        if (u) out.push(u);
+      }
+    }
+  }
+  return Array.from(new Set(out));
+}
+
+function uniqHttps(arr) {
+  return Array.from(new Set((arr || [])
+    .map(String)
+    .filter(u => /^https?:\/\//i.test(u))));
 }
 
 /* ---- Marker child (memo) ---- */
@@ -240,53 +286,47 @@ function getActName(a, idx) {
   );
 }
 
-/** Nested navigator fark etmeksizin NavigationScreen'e gitmeyi dener */
+/** ✅ Çapraz tab → Keşfet tab’ındaki NavigationScreen'e git */
 function navigateToTurnByTurn(navigation, params) {
-  const tryPaths = [
-    { path: ['NavigationScreen'] },
-    { path: ['Navigation', 'NavigationScreen'] },
-    { path: ['NavigationStack', 'NavigationScreen'] },
-    { path: ['Nav', 'NavigationScreen'] },
-    { path: ['Root', 'Navigation', 'NavigationScreen'] },
-    { path: ['Root', 'NavigationStack', 'NavigationScreen'] },
-    { path: ['Main', 'Navigation', 'NavigationScreen'] },
-    { path: ['Main', 'NavigationStack', 'NavigationScreen'] },
-  ];
-
-  const buildPayload = (segments, p) => {
-    if (segments.length === 1) return { name: segments[0], params: p };
-    if (segments.length === 2) return { name: segments[0], params: { screen: segments[1], params: p } };
-    if (segments.length === 3) return { name: segments[0], params: { screen: segments[1], params: { screen: segments[2], params: p } } };
-    return null;
-  };
-
-  for (const cand of tryPaths) {
-    const payload = buildPayload(cand.path, params);
-    try {
-      navigation.navigate(payload.name, payload.params);
+  try {
+    const state = navigation.getState?.();
+    const names = (state?.routes || []).map(r => r.name);
+    if (names.includes('NavigationScreen')) {
+      navigation.navigate('NavigationScreen', params);
       return;
-    } catch {}
+    }
+  } catch {}
+
+  let parent = navigation;
+  while (parent?.getParent) parent = parent.getParent();
+  const rootNav = parent || navigation;
+
+  try {
+    rootNav.navigate('Keşfet', { screen: 'NavigationScreen', params });
+    return;
+  } catch (e) {
+    console.warn('[navigateToTurnByTurn] cross-tab navigate hata:', e?.message);
   }
 
-  // Debug ağacını logla
   try {
     let cur = navigation;
     const lines = [];
     while (cur && typeof cur.getState === 'function') {
       const st = cur.getState();
       const names = (st?.routes || []).map(r => r.name);
-      lines.push(`• Level routes: [${names.join(', ')}] (index=${st?.index})`);
+      lines.push(`• Routes: [${names.join(', ')}], index=${st?.index}`);
       cur = cur.getParent?.();
     }
-    console.warn('[Navigator Tree]\n' + lines.join('\n'));
+    console.warn('[Navigator tree]\n' + lines.join('\n'));
   } catch {}
-
-  Alert.alert('Navigasyon', 'NavigationScreen bulunamadı. Navigator isimlerini kontrol edin. Konsola mevcut route adları yazdırıldı.');
+  Alert.alert('Navigasyon', 'NavigationScreen’a giden yolu bulamadım. Tab adı "Keşfet", screen adı "NavigationScreen" olmalı.');
 }
 
 export default function TripPlansScreen({ route, navigation }) {
   const { tripId } = route.params || {};
   const insets = useSafeAreaInsets();
+
+  const anchorInfo = getAnchorsForDayDetailed(trip, day);
 
   const [loading, setLoading] = useState(true);
   const [trip, setTrip] = useState(null);
@@ -294,8 +334,52 @@ export default function TripPlansScreen({ route, navigation }) {
   const [dayIndex, setDayIndex] = useState(0);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
 
+  async function resolvePlaceIdByCoordsAndName({ name, coords, apiKey }) {
+    if (!apiKey || !coords?.latitude || !coords?.longitude) return null;
+
+    const loc = `${coords.latitude},${coords.longitude}`;
+    const radius = 200;
+    const lang = 'tr';
+
+    try {
+      const nearbyUrl =
+        `https://maps.googleapis.com/maps/api/place/nearbysearch/json` +
+        `?location=${encodeURIComponent(loc)}` +
+        `&radius=${radius}` +
+        `&keyword=${encodeURIComponent(name || '')}` +
+        `&language=${lang}&key=${apiKey}`;
+
+      let res = await fetch(nearbyUrl);
+      let json = await res.json();
+
+      if (Array.isArray(json?.results) && json.results.length) {
+        const best = json.results[0];
+        if (best?.place_id) return best.place_id;
+      }
+
+      const textUrl =
+        `https://maps.googleapis.com/maps/api/place/textsearch/json` +
+        `?query=${encodeURIComponent(name || '')}` +
+        `&location=${encodeURIComponent(loc)}` +
+        `&radius=${radius}` +
+        `&language=${lang}&key=${apiKey}`;
+
+      res = await fetch(textUrl);
+      json = await res.json();
+
+      if (Array.isArray(json?.results) && json.results.length) {
+        const best = json.results[0];
+        if (best?.place_id) return best.place_id;
+      }
+    } catch (e) {
+      console.warn('[PID resolve] error:', e?.message || e);
+    }
+    return null;
+  }
+
   // map & focus
   const mapRef = useRef(null);
+  const lastMarkerClickRef = useRef(0);
   const [focusIdx, setFocusIdx] = useState(0);
   const [selectedActId, setSelectedActId] = useState(null);
   const markerRefs = useRef({});
@@ -305,7 +389,10 @@ export default function TripPlansScreen({ route, navigation }) {
   const [searchVisible, setSearchVisible] = useState(false);
   const [insertIndex, setInsertIndex] = useState(null);
 
-  // “nereye eklemek istersin?” modu
+  function limitPhotos(arr, n = 2) {
+    return Array.isArray(arr) ? arr.slice(0, n) : [];
+  }
+
   const [insertMode, setInsertMode] = useState(false);
   const [pendingAdd, setPendingAdd] = useState(null);
 
@@ -315,12 +402,18 @@ export default function TripPlansScreen({ route, navigation }) {
   const [sheetMeta, setSheetMeta] = useState('');
   const isSheetOpen = !!sheetMarker;
 
-  // Route Sheet & Directions (yalnızca seçili iki durak arası)
+  // Route Sheet & Directions
   const [routeData, setRouteData] = useState(null);
   const [routeSheetOpen, setRouteSheetOpen] = useState(false);
   const [legSel, setLegSel] = useState(null); // {from:i, to:i+1}
-  const [legWaypoints, setLegWaypoints] = useState(null); // ✅ TripRouteSheet için
-  const [legActs, setLegActs] = useState(null);           // ✅ nav payload için
+  const [legWaypoints, setLegWaypoints] = useState(null);
+  const [legActs, setLegActs] = useState(null);
+  
+  // İzin Modalı State'i
+  const [permissionPrompt, setPermissionPrompt] = useState(null);
+
+  // Gün segmentleri
+  const [segments, setSegments] = useState([]);
 
   const DIRECTIONS_API_KEY =
     Constants?.expoConfig?.extra?.GOOGLE_MAPS_API_KEY ||
@@ -343,8 +436,9 @@ export default function TripPlansScreen({ route, navigation }) {
 
   /* ===== Haritada seçim akışları ===== */
 
-  // POI’ye dokunma → ADD kartı (foto varsa getir)
   const handlePoiClick = useCallback(async (e) => {
+    if (Date.now() - lastMarkerClickRef.current < 100) return;
+
     const { coordinate, name, placeId } = e.nativeEvent || {};
     if (!coordinate) return;
 
@@ -354,9 +448,16 @@ export default function TripPlansScreen({ route, navigation }) {
     try {
       if (isStrictPlaceId(placeId)) {
         const det = await getDetailsWithCache(placeId);
-        if (det?.photos?.length) photoUrls = det.photos.slice(0, 6);
+        if (det?.photos?.length) {
+          photoUrls = limitPhotos(
+            coercePhotoInputsToUrls(det.photos, DIRECTIONS_API_KEY),
+            2
+          );
+        }
       }
-    } catch {}
+    } catch (err) {
+      console.warn('[POI] details error:', err?.message || err);
+    }
 
     setSheetVariant('add');
     setSheetMeta('');
@@ -367,9 +468,8 @@ export default function TripPlansScreen({ route, navigation }) {
       place_id: isStrictPlaceId(placeId) ? placeId : null,
       photoUrls,
     });
-  }, []);
+  }, [DIRECTIONS_API_KEY]);
 
-  // Uzun bas → serbest nokta → ADD kartı
   const handleMapLongPress = useCallback((e) => {
     const c = e?.nativeEvent?.coordinate;
     if (!c) return;
@@ -433,12 +533,51 @@ export default function TripPlansScreen({ route, navigation }) {
     })();
   }, [tripId, prefs]);
 
-  const day = useMemo(() => plan?.days?.[dayIndex] || null, [plan, dayIndex]);
+  const day = useMemo(() => (Array.isArray(plan?.days) ? plan.days[dayIndex] : null) || null, [plan, dayIndex]);
 
-  // Toggle: kart varsa kapat, paneli aç; insert mode varsa iptal et
+  // UI için, günün başına ve sonuna anchor eklenmiş “görüntü” listesi
+const uiActivities = useMemo(() => {
+  if (!day) return [];
+  const { start, end, lodge, startLabel, endLabel } = getAnchorsForDayDetailed(trip, day);
+
+  const startA   = makeAnchorActivity('start',   start,   startLabel);
+  const lodgingA = lodge && (!coordsEqual(lodge, start) && !coordsEqual(lodge, end))
+                    ? makeAnchorActivity('lodging', lodge, 'Konaklama')
+                    : null;
+  const endA     = makeAnchorActivity('end',     end,     endLabel);
+
+  return [startA, ...(day.activities || []), lodgingA, endA].filter(Boolean);
+}, [day, trip]);
+
+function coordsEqual(a, b) {
+  return a?.lat === b?.lat && a?.lon === b?.lon;
+}
+
+
+const planForUi = useMemo(() => {
+  if (!plan || !Array.isArray(plan?.days)) return plan;
+  const days = plan.days.map((d, i) => {
+    const acts = i === dayIndex ? (uiActivities || []) : (d?.activities || []);
+    return { ...d, activities: acts, items: acts }; // items alias’ı
+  });
+  return { ...plan, days };
+}, [plan, dayIndex, uiActivities]);
+
+// UI->Gerçek indeks dönüşümü (baş anchor varsa gerçek indeks = uiIndex - 1)
+const hasStartAnchor = uiActivities.length && uiActivities[0]?.meta?.isAnchor;
+const hasEndAnchor   = uiActivities.length && uiActivities[uiActivities.length-1]?.meta?.isAnchor;
+const uiToReal = useCallback((uiIndex) => {
+  if (hasStartAnchor && uiIndex === 0) return null;                    // anchor
+  if (hasEndAnchor   && uiIndex === uiActivities.length - 1) return null; // anchor
+  return uiIndex - (hasStartAnchor ? 1 : 0);
+}, [uiActivities, hasStartAnchor, hasEndAnchor]);
+
+const guardAnchorAction = (uiIndex) => uiToReal(uiIndex) == null; // true ise anchor: sil/değiştir/insert yok
+
+
   const onTogglePanel = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    if (isSheetOpen) setSheetMarker(null); // kartı kapat
+    if (isSheetOpen) setSheetMarker(null);
     setInsertMode(false);
     setPendingAdd(null);
     setInsertIndex(null);
@@ -451,21 +590,38 @@ export default function TripPlansScreen({ route, navigation }) {
 
   const leftW = isPanelOpen ? LEFT_OPEN_W : LEFT_CLOSED_W;
 
-  const markers = useMemo(() => {
-    if (!day) return [];
-    const acts = (day.activities || [])
-      .filter(a => a?.place?.location && Number.isFinite(a.place.location.lat) && Number.isFinite(a.place.location.lon));
-    return acts.map((a, idx) => ({
+const markers = useMemo(() => {
+  const acts = uiActivities || [];
+  return acts.map((a, idx) => {
+    const loc = a?.place?.location;
+    if (!loc || !Number.isFinite(loc.lat) || !Number.isFinite(loc.lon)) return null;
+
+    const isAnchor = a?.meta?.isAnchor;
+    const kind = a?.meta?.category; // 'start' | 'lodging' | 'end' | undefined
+
+    // Renk ve rozet
+    let baseColor = COLORS.accent;
+    let orderLabel = String(idx + 1); // default numara
+    if (isAnchor && kind === 'start') { baseColor = '#10B981'; orderLabel = 'S'; }
+    else if (isAnchor && kind === 'end') { baseColor = '#EF4444'; orderLabel = 'B'; }
+    else if (a?.type === 'meal') { baseColor = COLORS.success; }
+    else if (a?.type === 'transfer') { baseColor = COLORS.neutral; }
+
+    return {
       activity: a,
       activityId: a.id || String(idx),
       key: a.id || String(idx),
-      coordinate: { latitude: a.place.location.lat, longitude: a.place.location.lon },
+      coordinate: { latitude: loc.lat, longitude: loc.lon },
       title: getActName(a, idx),
       placeId: extractPossiblePlaceIdFromActivity(a),
-      baseColor: a.type === 'meal' ? COLORS.success : (a.type === 'transfer' ? COLORS.neutral : COLORS.accent),
-      order: idx + 1,
-    }));
-  }, [day?.activities]);
+      baseColor,
+      order: orderLabel,     // 🔹 harf de olabilir
+      isAnchor,
+      kind,
+    };
+  }).filter(Boolean);
+}, [uiActivities]);
+
 
   const polylineCoords = useMemo(() => {
     const poly = day?.route?.polyline;
@@ -498,6 +654,7 @@ export default function TripPlansScreen({ route, navigation }) {
     setSelectedActId(null);
     setLegSel(null);
     setRouteData(null);
+    setSegments([]);
     setLegWaypoints(null);
     setLegActs(null);
     markerRefs.current = {};
@@ -505,33 +662,6 @@ export default function TripPlansScreen({ route, navigation }) {
     return () => clearTimeout(t);
   }, [dayIndex, fitMapToDay]);
 
-  const showMarkerCallout = useCallback((activityId) => {
-    const ref = markerRefs.current[activityId];
-    if (ref && typeof ref.showCallout === 'function') {
-      setTimeout(() => { try { ref.showCallout(); } catch {} }, 50);
-    }
-  }, []);
-
-  // ❗ SideTimeline’dan seçim → yakınlaştır (kart açma yok)
-  const focusActivity = useCallback((activity) => {
-    if (!activity || !mapRef.current) return;
-    const loc = activity?.place?.location;
-    if (loc?.lat == null || loc?.lon == null) return;
-
-    const id = activity.id || null;
-    const idx = (day?.activities || []).findIndex(a => (a.id || '') === (activity.id || ''));
-    if (idx >= 0) setFocusIdx(idx);
-    setSelectedActId(id);
-
-    mapRef.current.animateCamera({
-      center: { latitude: loc.lat, longitude: loc.lon },
-      zoom: 15, pitch: 0, heading: 0,
-    }, { duration: 500 });
-
-    if (id) showMarkerCallout(id);
-  }, [day?.activities, showMarkerCallout]);
-
-  /* ---------- zaman & polyline ---------- */
   const retimeDay = useCallback((d) => {
     const arr = d.activities || [];
     let curMin = 9 * 60 + 30;
@@ -546,6 +676,26 @@ export default function TripPlansScreen({ route, navigation }) {
     }
   }, []);
 
+  const optimizeCurrentDay = useCallback(() => {
+  mutatePlanDays((next)=>{
+    const d = next.days?.[dayIndex];
+    if (!d) return;
+    const ordered = optimizeDayWithAnchors(d, trip, getAnchorsForDayDetailed);
+    d.activities = ordered;
+
+    // polyline’ı da start→…→end düz çizgiye alın (veya getRouteDirections ile çek)
+    const { start, end } = getAnchorsForDayDetailed(trip, d);
+    const wps = [];
+    if (start) wps.push({ lat:start.lat, lng:start.lon });
+    for (const a of d.activities) {
+      const l = a?.place?.location;
+      if (l) wps.push({ lat:l.lat, lng:l.lon });
+    }
+    if (end) wps.push({ lat:end.lat, lng:end.lon });
+    d.route = { ...(d.route||{}), polyline: wps.map(p=>({lat:p.lat, lon:p.lng})), optimizerUsed: true };
+  });
+}, [mutatePlanDays, dayIndex, trip]);
+
   const rebuildPolyline = useCallback((d) => {
     const pts = [];
     const acts = d.activities || [];
@@ -557,6 +707,157 @@ export default function TripPlansScreen({ route, navigation }) {
     d.route = { ...(d.route || {}), polyline: pts, optimizerUsed: false };
   }, []);
 
+  const buildWaypointFromAct = useCallback((act) => {
+    const pid = act?.place?.place_id || act?.meta?.place_id || act?.gPlaceId;
+    const loc = act?.place?.location;
+    if (pid && typeof pid === 'string') return { place_id: pid };
+    if (loc?.lat != null && loc?.lon != null) return { lat: loc.lat, lng: loc.lon };
+    return null;
+  }, []);
+
+  /** konaklama + start/end hub’larını çıkar */
+function mapLodgingsByDate(trip
+) {
+   const normalizeDate = (d) => {
+    if (!d) return null;
+    try {
+      return new Date(d).toISOString().split('T')[0];  // 'YYYY-MM-DD'
+    } catch {
+      return null;
+    }
+  };
+  console.log('mapLodgingsByDate →', mapLodgingsByDate(trip));
+  const out = {};
+  for (const l of Array.isArray(trip?.lodgings) ? trip.lodgings : []) {
+    const dRaw = l?.date || l?.checkIn || l?.check_in || l?.checkInDate || l?.start;
+    const d = normalizeDate(dRaw);
+    if (!d) continue;
+
+    const lat = Number(l?.location?.lat ?? l?.coords?.lat ?? l?.lat);
+    const lng = Number(l?.location?.lng ?? l?.location?.lon ?? l?.coords?.lng ?? l?.coords?.lon ?? l?.lng ?? l?.lon);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      out[d] = { location: { lat, lon: lng } };
+    }
+  }
+  return out;
+}
+
+  function startEndForDay(tripObj, dday) {
+    const byDate = mapLodgingsByDate(tripObj);
+    const se = tripObj?._startEndSingle || {};
+    const isStartDay = se?.start?.date === dday?.date;
+    const isEndDay   = se?.end?.date   === dday?.date;
+    const startHub = isStartDay && se?.start?.hub?.location
+      ? { lat: se.start.hub.location.lat, lon: se.start.hub.location.lng }
+      : null;
+    const endHub = isEndDay && se?.end?.hub?.location
+      ? { lat: se.end.hub.location.lat,   lon: se.end.hub.location.lng }
+      : null;
+    const start = startHub || byDate[dday?.date]?.location || null;
+    const end   = endHub   || byDate[dday?.date]?.location || null;
+    return { start, end };
+  }
+
+/** UI’da göstermek için sentetik anchor-activity oluşturur (timeline + marker) */
+function makeAnchorActivity(kind, coords, label) {
+  if (!coords) return null;
+  const id = `anchor:${kind}:${label}:${coords.lat},${coords.lon}`;
+  return {
+    id,
+    type: 'anchor',
+    durationMin: 0,
+    start: null,
+    end: null,
+    place: {
+      id,
+      name: label || (kind === 'start' ? 'Başlangıç' : kind === 'end' ? 'Bitiş' : 'Konaklama'),
+      location: { lat: coords.lat, lon: coords.lon },
+      category: kind, // 'start' | 'lodging' | 'end'
+      address: '',
+      photos: [],
+    },
+    meta: { category: kind, isAnchor: true },
+  };
+}
+
+  const computeDaySegments = useCallback(async () => {
+    const acts = day?.activities || [];
+    if ((!acts.length) || !DIRECTIONS_API_KEY) { setSegments([]); return; }
+
+    const nextSegs = [];
+
+    // 0) start → first (opsiyonel)
+    const { start, end } = getAnchorsForDayDetailed(trip, day);
+    if (start && acts[0]?.place?.location) {
+      try {
+        const d = await getRouteDirections({
+          waypoints:[{ lat:start.lat, lng:start.lon }, buildWaypointFromAct(acts[0])],
+          mode:'driving',
+          apiKey:DIRECTIONS_API_KEY
+        });
+        const coords = (d?.polylineCoords || []).map(c => ({ latitude:c.latitude, longitude:c.longitude }));
+        if (coords.length >= 2) nextSegs.push({ ok:true, coords });
+      } catch {}
+    }
+
+    // 1) act → act
+    if (acts.length >= 2) {
+      for (let i = 0; i < acts.length - 1; i++) {
+        const a = acts[i], b = acts[i + 1];
+        const w1 = buildWaypointFromAct(a);
+        const w2 = buildWaypointFromAct(b);
+        const la = a?.place?.location, lb = b?.place?.location;
+
+        if (!w1 || !w2 || !la || !lb) {
+          nextSegs.push({ ok:false, coords:[
+            { latitude: la?.lat ?? 0, longitude: la?.lon ?? 0 },
+            { latitude: lb?.lat ?? 0, longitude: lb?.lon ?? 0 },
+          ].filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude)) });
+          continue;
+        }
+        try {
+          const d = await getRouteDirections({ waypoints:[w1,w2], mode:'driving', apiKey:DIRECTIONS_API_KEY });
+          const coords = (d?.polylineCoords || []).map(c => ({ latitude:c.latitude, longitude:c.longitude }));
+          nextSegs.push(coords.length >= 2 ? { ok:true, coords } : {
+            ok:false, coords:[
+              { latitude: la.lat, longitude: la.lon },
+              { latitude: lb.lat, longitude: lb.lon },
+            ]
+          });
+        } catch {
+          nextSegs.push({
+            ok:false, coords:[
+              { latitude: la.lat, longitude: la.lon },
+              { latitude: lb.lat, longitude: lb.lon },
+            ]
+          });
+        }
+      }
+    }
+
+    // 2) last → end (opsiyonel)
+    const last = acts[acts.length - 1];
+    if (end && last?.place?.location) {
+      try {
+        const d = await getRouteDirections({
+          waypoints:[buildWaypointFromAct(last), { lat:end.lat, lng:end.lon }],
+          mode:'driving',
+          apiKey:DIRECTIONS_API_KEY
+        });
+        const coords = (d?.polylineCoords || []).map(c => ({ latitude:c.latitude, longitude:c.longitude }));
+        if (coords.length >= 2) nextSegs.push({ ok:true, coords });
+      } catch {}
+    }
+
+    setSegments(nextSegs);
+  }, [day?.activities, DIRECTIONS_API_KEY, buildWaypointFromAct, trip, day]);
+
+  useEffect(() => {
+    if (!day?.activities?.length) { setSegments([]); return; }
+    computeDaySegments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dayIndex, JSON.stringify(day?.activities || [])]);
+
   const mutatePlanDays = useCallback((updater) => {
     setPlan((prev) => {
       if (!prev) return prev;
@@ -566,7 +867,6 @@ export default function TripPlansScreen({ route, navigation }) {
     });
   }, []);
 
-  /* ---------- Add/Replace flow ---------- */
   const openAddStopAt = useCallback((idx) => {
     setSheetMarker(null);
     setInsertIndex(idx ?? 0);
@@ -611,7 +911,6 @@ export default function TripPlansScreen({ route, navigation }) {
     });
   }, [dayIndex, mutatePlanDays, rebuildPolyline, retimeDay]);
 
-  /* --------- SEARCH → QuickCard (foto garantili) --------- */
   function extractPossiblePlaceId(sel) {
     const cands = [sel?.place_id, sel?.key, sel?.data?.place_id, sel?.place?.place_id, sel?.gPlaceId, sel?.id].filter(Boolean);
     return cands.find(isStrictPlaceId) || null;
@@ -633,7 +932,7 @@ export default function TripPlansScreen({ route, navigation }) {
             description: det.name || sel.description || sel.name || 'Seçilen yer',
             coords: det.coords || sel.coords,
             address: det.address || sel.address,
-            photoUrls: (det.photos || []).slice(0, 6),
+            photoUrls: coercePhotoInputsToUrls(det.photos, DIRECTIONS_API_KEY).slice(0, 6),
           };
         }
       }
@@ -657,7 +956,7 @@ export default function TripPlansScreen({ route, navigation }) {
         photoUrls: resolved.photoUrls || [],
       });
     }
-  }, [isSheetOpen]);
+  }, [isSheetOpen, DIRECTIONS_API_KEY]);
 
   const [editIndex, setEditIndex] = useState(null);
   const applyReplaceAt = useCallback((index, resolved) => {
@@ -676,7 +975,7 @@ export default function TripPlansScreen({ route, navigation }) {
 
   const startEditAt = useCallback((index) => {
     setEditIndex(index);
-    setInsertIndex(index); // replace hedefi
+    setInsertIndex(index);
     if (isPanelOpen) setIsPanelOpen(false);
     setSearchVisible(true);
   }, [isPanelOpen]);
@@ -702,14 +1001,14 @@ export default function TripPlansScreen({ route, navigation }) {
     }
   }, [day?.activities]);
 
-  // QuickCard CTA (sadece add modunda görünür)
   const handleQuickCardCta = useCallback((markerLike) => {
     const c = markerLike?.coords;
     const sel = {
       key: markerLike?.place_id || `map:${Math.round((c?.latitude ?? 0) * 1e6)}_${Math.round((c?.longitude ?? 0) * 1e6)}`,
       description: markerLike?.name || 'Seçilen konum',
       coords: c,
-      address: markerLike?.address || ''
+      address: markerLike?.address || '',
+      photoUrls: markerLike?.photoUrls || [],
     };
     setSheetMarker(null);
 
@@ -722,14 +1021,13 @@ export default function TripPlansScreen({ route, navigation }) {
     if (insertIndex == null) {
       setPendingAdd(sel);
       setInsertMode(true);
-      setIsPanelOpen(true); // kullanıcıdan nereye ekleyeceğini seçmesini iste
+      setIsPanelOpen(true);
       return;
     }
 
     addResolvedAtIndex(insertIndex, sel);
   }, [editIndex, insertIndex, applyReplaceAt, addResolvedAtIndex]);
 
-  /* ---------- Delete ---------- */
   const handleDeleteAt = useCallback((index) => {
     mutatePlanDays((next) => {
       const d = next.days?.[dayIndex];
@@ -742,7 +1040,6 @@ export default function TripPlansScreen({ route, navigation }) {
     });
   }, [dayIndex, mutatePlanDays, rebuildPolyline, retimeDay]);
 
-  /* ---------- Reorder (drag) ---------- */
   const handleReorder = useCallback((fromIndex, toIndex) => {
     if (fromIndex === toIndex) return;
     mutatePlanDays((next) => {
@@ -755,8 +1052,97 @@ export default function TripPlansScreen({ route, navigation }) {
       rebuildPolyline(d);
     });
   }, [dayIndex, mutatePlanDays, retimeDay, rebuildPolyline]);
+  
+  const focusActivity = useCallback((indexOrId) => {
+    if (!day?.activities?.length) return;  // 👈 ekle
+    const fromTimeline =
+      indexOrId && typeof indexOrId === 'object' && indexOrId.source === 'timeline';
 
-  // Header meta
+    if (!day?.activities?.length || !mapRef.current) return;
+
+    let index = -1;
+    if (typeof indexOrId === 'number') {
+      index = indexOrId;
+    } else if (typeof indexOrId === 'string') {
+      index = (day.activities || []).findIndex(a => (a.id || '') === indexOrId);
+    } else if (indexOrId && typeof indexOrId === 'object' && Number.isFinite(indexOrId.index)) {
+      index = indexOrId.index;
+    }
+    if (index < 0 || index >= (day.activities || []).length) return;
+
+    const activity = day.activities[index];
+    const actId = activity.id || String(index);
+    const loc = activity?.place?.location;
+    if (!loc || !Number.isFinite(loc.lat) || !Number.isFinite(loc.lon)) return;
+
+    const coordinate = { latitude: loc.lat, longitude: loc.lon };
+
+    setSelectedActId(actId);
+    setLegSel(null);
+    setRouteData(null);
+
+    if (!fromTimeline) {
+      try {
+        const ref = markerRefs.current[actId];
+        ref?.showCallout?.();
+      } catch {}
+    }
+    if (!fromTimeline && isPanelOpen) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setIsPanelOpen(false);
+    }
+
+    try { mapRef.current?.animateCamera({ center: coordinate, zoom: 16 }, { duration: 350 }); } catch {}
+    setTimeout(() => {
+      try { mapRef.current?.animateCamera({ center: coordinate, zoom: 16 }, { duration: 350 }); } catch {}
+      setTimeout(() => {
+        try {
+          mapRef.current?.animateToRegion({
+            latitude: coordinate.latitude,
+            longitude: coordinate.longitude,
+            latitudeDelta: 0.02,
+            longitudeDelta: 0.02,
+          }, 350);
+        } catch {}
+      }, 150);
+    }, 280);
+
+    if (fromTimeline) {
+      setSheetMarker(null);
+      return;
+    }
+
+    (async () => {
+      const placeId = extractPossiblePlaceIdFromActivity(activity);
+
+      let photoRaw = extractPhotoUrlsFromActivity(activity);
+      let photoUrls = limitPhotos(
+        coercePhotoInputsToUrls(photoRaw, DIRECTIONS_API_KEY),
+        2
+      );
+
+      if (photoUrls.length === 0 && placeId && isStrictPlaceId(placeId)) {
+        const det = await getDetailsWithCache(placeId);
+        if (det?.photos?.length) {
+          photoUrls = limitPhotos(
+            coercePhotoInputsToUrls(det.photos, DIRECTIONS_API_KEY),
+            2
+          );
+        }
+      }
+
+      setSheetVariant('preview');
+      setSheetMeta(`Gün ${dayIndex + 1} • Sıra ${index + 1}`);
+      setSheetMarker({
+        name: getActName(activity, index) || 'Seçilen konum',
+        address: activity?.place?.address || '',
+        coords: coordinate,
+        place_id: placeId,
+        photoUrls,
+      });
+    })();
+  }, [day, dayIndex, isPanelOpen, DIRECTIONS_API_KEY]);
+
   const cityLabel = Array.isArray(trip?.cities) && trip.cities.length
     ? trip.cities.join(' • ')
     : (trip?.title || 'Gezi Planı');
@@ -774,12 +1160,87 @@ export default function TripPlansScreen({ route, navigation }) {
     setDayIndex(i => Math.min(plan.days.length - 1, i + 1));
   }, [plan]);
 
-  /* ---------- LEG: sadece iki durak arası rota ---------- */
-  const buildWaypointFromAct = useCallback((act) => {
-    const pid = act?.place?.place_id || act?.meta?.place_id || act?.gPlaceId;
-    const loc = act?.place?.location;
-    if (pid && typeof pid === 'string') return { place_id: pid };
-    if (loc?.lat != null && loc?.lon != null) return { lat: loc.lat, lng: loc.lon };
+  // GPS/İzin modalları
+  async function promptToEnableGPS() {
+    return new Promise(async (resolve) => {
+      setPermissionPrompt({
+        title: 'GPS kapalı',
+        message: 'Navigasyonu başlatmak için cihazın konum servisi (GPS) açık olmalı.',
+        onDismiss: () => resolve(false), 
+        actions: [
+          { text: 'Vazgeç', style: 'secondary', onPress: () => { setPermissionPrompt(null); resolve(false); } },
+          { text: Platform.OS === 'android' ? 'GPS’i aç' : 'Ayarlar', style: 'primary',
+            onPress: async () => {
+              setPermissionPrompt(null);
+              try {
+                if (Platform.OS === 'android') {
+                  await IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.LOCATION_SOURCE_SETTINGS);
+                } else {
+                  await Linking.openURL('app-settings:');
+                }
+              } catch {}
+              resolve(false);
+            } },
+        ],
+      });
+    });
+  }
+
+  async function ensureLocationBeforeStart() {
+    try {
+      const perm = await Location.getForegroundPermissionsAsync();
+      const granted = perm?.status === 'granted';
+
+      if (!granted) {
+        return new Promise(async (resolve) => {
+          setPermissionPrompt({
+            title: 'Konum izni gerekli',
+            message: 'Navigasyonu başlatmak için konum izni gerekir.',
+            onDismiss: () => resolve(false), 
+            actions: [
+              { text: 'Vazgeç', style: 'secondary', onPress: () => { setPermissionPrompt(null); resolve(false); } },
+              { text: 'İzin ver', style: 'primary',
+                onPress: async () => {
+                  setPermissionPrompt(null);
+                  const req = await Location.requestForegroundPermissionsAsync();
+                  if (req?.status !== 'granted') return resolve(false);
+                  const ok = await Location.hasServicesEnabledAsync();
+                  if (ok) return resolve(true);
+                  resolve(await promptToEnableGPS());
+                } },
+            ],
+          });
+        });
+      }
+
+      const services = await Location.hasServicesEnabledAsync();
+      if (!services) return await promptToEnableGPS();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** ✅ Cihaz konumunu güvenli şekilde al */
+  const getCurrentDeviceLatLng = useCallback(async () => {
+    try {
+      const last = await Location.getLastKnownPositionAsync();
+      if (last?.coords?.latitude && last?.coords?.longitude) {
+        return { lat: last.coords.latitude, lng: last.coords.longitude };
+      }
+    } catch {}
+    try {
+      const cur = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+        maximumAge: 5000,
+        timeout: 6000,
+      });
+      if (cur?.coords?.latitude && cur?.coords?.longitude) {
+        return { lat: cur.coords.latitude, lng: cur.coords.longitude };
+      }
+    } catch (e) {
+      console.warn('[getCurrentDeviceLatLng] error', e?.message);
+    }
     return null;
   }, []);
 
@@ -794,9 +1255,9 @@ export default function TripPlansScreen({ route, navigation }) {
     if (!w1 || !w2 || !DIRECTIONS_API_KEY) return;
 
     setLegSel({ from: fromIdx, to: fromIdx + 1 });
-    setLegActs({ a, b });                 // ✅ navigation payload için
-    setLegWaypoints([w1, w2]);            // ✅ TripRouteSheet için
-    setIsPanelOpen(false);                // ✅ leg seçilince panel kapanır
+    setLegActs({ a, b });
+    setLegWaypoints([w1, w2]);
+    setIsPanelOpen(false);
 
     try {
       const data = await getRouteDirections({
@@ -807,7 +1268,6 @@ export default function TripPlansScreen({ route, navigation }) {
       setRouteData(data);
       setRouteSheetOpen(true);
 
-      // Haritayı bu segmente yaklaştır
       if (data?.polylineCoords?.length) {
         fitToCoords(data.polylineCoords);
       } else {
@@ -823,8 +1283,68 @@ export default function TripPlansScreen({ route, navigation }) {
     } catch (e) {
       console.warn('[LegDirections] err', e?.message);
       setRouteData(null);
+      setRouteSheetOpen(true);
     }
   }, [day?.activities, buildWaypointFromAct, DIRECTIONS_API_KEY, fitToCoords]);
+
+  const pickLegFromStartAnchor = useCallback(async () => {
+  const acts = day?.activities || [];
+  if (!acts.length || !DIRECTIONS_API_KEY) return;
+
+  const { start } = getAnchorsForDayDetailed(trip, day);
+  const first = acts[0];
+  if (!start || !first?.place?.location) return;
+
+  setLegSel({ from: -1, to: 0 });
+  setLegActs({ a: { place: { location: { lat: start.lat, lon: start.lon } }, place_id: null },
+               b: first });
+
+  const w1 = { lat: start.lat, lng: start.lon };
+  const w2 = buildWaypointFromAct(first);
+  setIsPanelOpen(false);
+
+  try {
+    const data = await getRouteDirections({ waypoints: [w1, w2], mode: 'driving', apiKey: DIRECTIONS_API_KEY });
+    setRouteData(data);
+    setRouteSheetOpen(true);
+    if (data?.polylineCoords?.length) fitToCoords(data.polylineCoords);
+  } catch {
+    const ca = { latitude: start.lat, longitude: start.lon };
+    const cb = { latitude: first.place.location.lat, longitude: first.place.location.lon };
+    fitToCoords([ca, cb]);
+    setRouteData(null);
+    setRouteSheetOpen(true);
+  }
+}, [day, trip, DIRECTIONS_API_KEY, buildWaypointFromAct, fitToCoords]);
+
+const pickLegToEndAnchor = useCallback(async () => {
+  const acts = day?.activities || [];
+  if (!acts.length || !DIRECTIONS_API_KEY) return;
+
+  const { end } = getAnchorsForDayDetailed(trip, day);
+  const last = acts[acts.length - 1];
+  if (!end || !last?.place?.location) return;
+
+  setLegSel({ from: acts.length - 1, to: acts.length }); // last → end
+  setLegActs({ a: last, b: { place: { location: { lat: end.lat, lon: end.lon } }, place_id: null } });
+
+  const w1 = buildWaypointFromAct(last);
+  const w2 = { lat: end.lat, lng: end.lon };
+  setIsPanelOpen(false);
+
+  try {
+    const data = await getRouteDirections({ waypoints: [w1, w2], mode: 'driving', apiKey: DIRECTIONS_API_KEY });
+    setRouteData(data);
+    setRouteSheetOpen(true);
+    if (data?.polylineCoords?.length) fitToCoords(data.polylineCoords);
+  } catch {
+    const ca = { latitude: last.place.location.lat, longitude: last.place.location.lon };
+    const cb = { latitude: end.lat, longitude: end.lon };
+    fitToCoords([ca, cb]);
+    setRouteData(null);
+    setRouteSheetOpen(true);
+  }
+}, [day, trip, DIRECTIONS_API_KEY, buildWaypointFromAct, fitToCoords]);
 
   if (loading) {
     return (
@@ -834,7 +1354,7 @@ export default function TripPlansScreen({ route, navigation }) {
       </View>
     );
   }
-  if (!trip || !plan) {
+  if (!trip || !plan || !Array.isArray(plan?.days)) {
     return (
       <View style={styles.center}>
         <Text style={{ color: '#ddd' }}>Plan bulunamadı.</Text>
@@ -879,7 +1399,7 @@ export default function TripPlansScreen({ route, navigation }) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingRight: 10, alignItems: 'center' }}
         >
-          {plan.days.map((d, i) => {
+          {(plan?.days || []).map((d, i) => {
             const active = i === dayIndex;
             return (
               <Pressable
@@ -919,37 +1439,84 @@ export default function TripPlansScreen({ route, navigation }) {
             (!isPanelOpen || isSheetOpen) && { pointerEvents: 'none' },
           ]}
         >
-          <SideTimeline
-            isOpen={isPanelOpen}
-            plan={plan}
-            dayIndex={dayIndex}
-            setDayIndex={setDayIndex}
-            onSelect={focusActivity}
-            selectedActivityId={selectedActId}
-            onInsertAt={openAddStopAt}
-            onEditAt={(idx) => { setEditIndex(idx); setInsertIndex(idx); if (isPanelOpen) setIsPanelOpen(false); setSearchVisible(true); }}
-            onDeleteAt={handleDeleteAt}
-            onReorder={handleReorder}
-            insertMode={insertMode}
-            onPickInsertIndex={(idx) => {
-              if (pendingAdd) addResolvedAtIndex(idx, pendingAdd);
-              setPendingAdd(null);
-              setInsertMode(false);
-              setInsertIndex(null);
-            }}
-            onCancelInsertMode={() => {
-              setPendingAdd(null);
-              setInsertMode(false);
-              setInsertIndex(null);
-            }}
-            onPickLeg={(i) => {
-              // UX: tıklanan leg’e yakınlaştır + o leg’in süre/mesafe bilgisini getir
-              pickLeg(i);
-            }}
-          />
+<SideTimeline
+  isOpen={isPanelOpen}
+  plan={planForUi}                    // 👈 değişti
+  dayIndex={dayIndex}
+  setDayIndex={setDayIndex}
+onSelect={(payload) => {
+        if (payload && payload.anchor) {
+          if (payload.anchor === 'start' && day?.activities?.length) focusActivity({ index: 0, source: 'timeline' });
+          if (payload.anchor === 'end' && day?.activities?.length) focusActivity({ index: day.activities.length - 1, source: 'timeline' });
+          return;
+        }
+        const uiIdx = typeof payload === 'object' ? payload.index : payload;  // Anchor’a tıklanırsa: gün boş olabilir → guard
+  if (guardAnchorAction(uiIdx)) {
+    if ((day?.activities || []).length > 0) {
+      // Anchor → ilk gerçek durağı fokusla
+      focusActivity(0);
+    } else {
+      // o gün hiç aktivite yoksa sadece haritayı konaklamaya fit edebilirsin (opsiyonel)
+    }
+    return;
+  }
+  const real = uiToReal(uiIdx);
+  if (real != null) focusActivity(real);
+}}
+
+  onInsertAt={(uiIdx) => {
+    if (guardAnchorAction(uiIdx)) return;       // anchor arası insert yok
+    openAddStopAt(uiToReal(uiIdx));             // gerçek indekse insert
+  }}
+  onEditAt={(uiIdx) => {
+    if (guardAnchorAction(uiIdx)) return;       // anchor edit yok
+    startEditAt(uiToReal(uiIdx));
+  }}
+  onDeleteAt={(uiIdx) => {
+    if (guardAnchorAction(uiIdx)) return;       // anchor silme yok
+    handleDeleteAt(uiToReal(uiIdx));
+  }}
+  onReorder={(fromUi, toUi) => {
+    // anchor’ların üstünden/üstüne sürüklemeyi engelle
+    if (guardAnchorAction(fromUi) || guardAnchorAction(toUi)) return;
+    handleReorder(uiToReal(fromUi), uiToReal(toUi));
+  }}
+  insertMode={insertMode}
+  onPickInsertIndex={(uiIdx) => {
+    if (guardAnchorAction(uiIdx)) return;
+    const real = uiToReal(uiIdx);
+    if (pendingAdd) addResolvedAtIndex(real, pendingAdd);
+    setPendingAdd(null);
+    setInsertMode(false);
+    setInsertIndex(null);
+  }}
+  onCancelInsertMode={() => {
+    setPendingAdd(null);
+    setInsertMode(false);
+    setInsertIndex(null);
+  }}
+  onPickLeg={(uiFrom) => {
+   // Başlangıç(anchor) → ilk gerçek durak
+   if (hasStartAnchor && uiFrom === 0) {
+     pickLegFromStartAnchor();
+     return;
+   }
+   // Son durak → bitiş(anchor) (opsiyonel: istersen aktif et)
+   if (hasEndAnchor && uiFrom === uiActivities.length - 2) {
+     pickLegToEndAnchor();
+     return;
+   }
+   if (guardAnchorAction(uiFrom) || guardAnchorAction(uiFrom + 1)) return;
+   pickLeg(uiToReal(uiFrom));
+  }}
+    startAnchor={anchorInfo.start ? { label: anchorInfo.startLabel, location: anchorInfo.start } : null}
+  endAnchor={anchorInfo.end ? { label: anchorInfo.endLabel, location: anchorInfo.end } : null}
+  lodgingAnchor={anchorInfo.lodge ? { label: 'Konaklama', location: anchorInfo.lodge } : null}
+/>
+
         </View>
 
-        {/* Orta toggle — geniş hit zone */}
+        {/* Orta toggle */}
         <View style={styles.toggleOverlay} pointerEvents="box-none">
           <View
             style={[
@@ -983,19 +1550,44 @@ export default function TripPlansScreen({ route, navigation }) {
               longitudeDelta: 0.15,
             }}
           >
-            {/* Yalnızca seçili leg’in polyline’ı çizilsin */}
+            {/* Seçili leg varsa onu, yoksa günlük çizgiler */}
             {routeData?.polylineCoords?.length ? (
               <Polyline
                 coordinates={routeData.polylineCoords}
                 strokeWidth={6}
                 tappable
                 onPress={() => setRouteSheetOpen(true)}
+                zIndex={1}
               />
-            ) : (polylineCoords && <Polyline coordinates={polylineCoords} strokeWidth={5} />)}
+            ) : segments.length ? (
+              segments.map((s, idx) => (
+                <Polyline
+                  key={`seg-${idx}`}
+                  coordinates={s.coords}
+                  strokeWidth={5}
+                  strokeColor={s.ok ? undefined : '#888'}
+                   tappable={true}
+                   onPress={() => {
+                     // Segmente tıklanınca önizleme için tüm günü birleştir (hafifçe)
+                     const merged = { polylineCoords: s.coords };
+                     setRouteData(merged);
+                     setRouteSheetOpen(true);
+                   }}                  zIndex={0}
+                />
+              ))
+            ) : (polylineCoords && (
+              <Polyline
+                coordinates={polylineCoords}
+                strokeWidth={5}
+                tappable={false}
+                zIndex={0}
+              />
+            ))}
 
             {markers.map(m => {
               const isSel = m.activityId === selectedActId;
               const pinBg = isSel ? '#FF7A00' : m.baseColor;
+
               return (
                 <Marker
                   key={m.key}
@@ -1004,25 +1596,49 @@ export default function TripPlansScreen({ route, navigation }) {
                   title={m.title}
                   anchor={{ x: 0.5, y: 1 }}
                   tracksViewChanges={false}
+                  zIndex={10}
                   onPress={async () => {
+                    lastMarkerClickRef.current = Date.now();
+
                     setSelectedActId(m.activityId);
                     setIsPanelOpen(false);
-                    setLegSel(null); // marker seçildiyse leg seçimi iptal
+                    setLegSel(null);
                     setRouteData(null);
 
-                    // FOTO GARANTİ: activity içi → yoksa details
-                    let photoUrls = extractPhotoUrlsFromActivity(m.activity);
-                    if (photoUrls.length === 0 && isStrictPlaceId(m.placeId)) {
-                      const det = await getDetailsWithCache(m.placeId);
-                      if (det?.photos?.length) photoUrls = det.photos.slice(0, 6);
+                    let photoRaw = extractPhotoUrlsFromActivity(m.activity);
+                    let photoUrls = limitPhotos(
+                      coercePhotoInputsToUrls(photoRaw, DIRECTIONS_API_KEY),
+                      2
+                    );
+
+                    if (!isStrictPlaceId(m.placeId)) {
+                      const pid = await resolvePlaceIdByCoordsAndName({
+                        name: m.title,
+                        coords: { latitude: m.coordinate.latitude, longitude: m.coordinate.longitude },
+                        apiKey: DIRECTIONS_API_KEY,
+                      });
+                      if (pid) m.placeId = pid;
                     }
 
-                    // Marker → PREVIEW kart
+                    if (photoUrls.length === 0 && isStrictPlaceId(m.placeId)) {
+                      try {
+                        const det = await getDetailsWithCache(m.placeId);
+                        if (det?.photos?.length) {
+                          photoUrls = limitPhotos(
+                            coercePhotoInputsToUrls(det.photos, DIRECTIONS_API_KEY),
+                            2
+                          );
+                        }
+                      } catch (err) {
+                        console.warn('[Marker] details error:', err?.message || err);
+                      }
+                    }
+
                     setSheetVariant('preview');
                     setSheetMeta(`Gün ${dayIndex + 1} • Sıra ${m.order}`);
                     setSheetMarker({
                       name: m.title || 'Seçilen konum',
-                      address: '',
+                      address: m.activity?.place?.address || '',
                       coords: { latitude: m.coordinate.latitude, longitude: m.coordinate.longitude },
                       place_id: isStrictPlaceId(m.placeId) ? m.placeId : null,
                       photoUrls,
@@ -1051,58 +1667,131 @@ export default function TripPlansScreen({ route, navigation }) {
       )}
 
       {/* Quick Card */}
-      <PlaceQuickCard
-        visible={isSheetOpen}
-        marker={sheetMarker}
-        onDismiss={() => setSheetMarker(null)}
-        ctaLabel={editIndex != null ? 'Durağı değiştir' : 'Durak ekle'}
-        onCtaPress={handleQuickCardCta}
-        variant={sheetVariant}
-        metaLabel={sheetMeta}
-      />
+      <View style={styles.quickLayer} pointerEvents="box-none">
+        <PlaceQuickCard
+          visible={isSheetOpen}
+          marker={sheetMarker}
+          onDismiss={() => setSheetMarker(null)}
+          ctaLabel={editIndex != null ? 'Durağı değiştir' : 'Durak ekle'}
+          onCtaPress={handleQuickCardCta}
+          variant={sheetVariant}
+          metaLabel={sheetMeta}
+        />
+      </View>
 
-      {/* Route Sheet (Modal – her zaman panelin önünde) */}
+      {/* Route Sheet — önizleme iki durak arası */}
       <TripRouteSheet
         visible={routeSheetOpen}
-        waypoints={legWaypoints}                 // ✅ TripRouteSheet'in süreleri hesaplaması için
-        apiKey={DIRECTIONS_API_KEY}             // ✅
+        waypoints={legWaypoints}
+        apiKey={DIRECTIONS_API_KEY}
         preferredMode="driving"
+        previewData={routeData}
+        previewTitle={
+          (legActs?.a && legActs?.b)
+            ? `${getActName(legActs.a, legSel?.from ?? 0)} → ${getActName(legActs.b, legSel?.to ?? 0)}`
+            : undefined
+        }
         onClose={() => {
-          // ✅ İSTENEN: sheet kapanınca polyline silinsin + SideTimeline açılsın
           setRouteSheetOpen(false);
-          setRouteData(null);        // polyline temizle
-          setIsPanelOpen(true);      // paneli aç
+          setRouteData(null);
+          setIsPanelOpen(true);
         }}
-        onStart={(mode) => {
+        onStart={async (mode) => {
+          const ok = await ensureLocationBeforeStart();
+          if (!ok) return;
           setRouteSheetOpen(false);
 
           try {
-            const a = legActs?.a;
-            const b = legActs?.b;
-            if (!a || !b) return;
+            const b = legActs?.b; // hedef
+            const a = legActs?.a; // önceki durak
+            if (!b?.place?.location) return;
 
-            const nameA = getActName(a, legSel?.from ?? 0);
+            // 1) Cihaz konumu
+            const cur = await getCurrentDeviceLatLng();
+            if (!cur) { Alert.alert('Konum', 'Mevcut konum alınamadı.'); return; }
+
+            const la = { lat: cur.lat, lon: cur.lng }; // from = cihaz
+            const lb = b.place.location;               // to   = hedef
+
+            // 2) Taze rota
+            let navRoute = null;
+            try {
+              navRoute = await getRouteDirections({
+                waypoints: [{ lat: la.lat, lng: la.lon }, { lat: lb.lat, lng: lb.lon }],
+                mode: mode || 'driving',
+                apiKey: DIRECTIONS_API_KEY,
+              });
+            } catch (e) { console.warn('[Nav fresh route] error', e?.message); }
+
+            const asEncodedString = (rd) => {
+              if (!rd) return null;
+              if (typeof rd.polyline === 'string' && rd.polyline.trim()) return rd.polyline.trim();
+              if (typeof rd.encoded === 'string' && rd.encoded.trim()) return rd.encoded.trim();
+              const op = rd.overview_polyline;
+              if (typeof op === 'string' && op.trim()) return op.trim();
+              if (op && typeof op === 'object' && typeof op.points === 'string' && op.points.trim()) return op.points.trim();
+              return null;
+            };
+
+            const encoded = asEncodedString(navRoute);
+            const polylineCoordsSafe = Array.isArray(navRoute?.polylineCoords) ? navRoute.polylineCoords : null;
+            const stepsSafe = Array.isArray(navRoute?.legs) ? navRoute.legs : null;
+
             const nameB = getActName(b, legSel?.to ?? 0);
-            const pidA = extractPossiblePlaceIdFromActivity(a);
-            const pidB = extractPossiblePlaceIdFromActivity(b);
-            const la = a?.place?.location;
-            const lb = b?.place?.location;
-            if (!la || !lb) return;
+            const pidB = extractPossiblePlaceIdFromActivity(b) || null;
+            const nameA = getActName(a, legSel?.from ?? 0);
+
+            const destOrderNum = (legSel?.to ?? 0) + 1;
 
             const navPayload = {
               entryPoint: 'turn-by-turn',
-              from: { latitude: la.lat, longitude: la.lon, name: nameA, place_id: pidA || null },
-              to:   { latitude: lb.lat, longitude: lb.lon, name: nameB, place_id: pidB || null },
-              waypoints: [],
+
+              // cihaz konumu (marker yok, OS mavi nokta var)
+              from: { latitude: la.lat, longitude: la.lon, name: 'Mevcut Konum', place_id: null },
+
+              // hedef
+              to:   { latitude: lb.lat, longitude: lb.lon, name: nameB, place_id: pidB },
+
+              // önceki durak marker’ı (siyah)
+              prevStop: a?.place?.location
+                ? { latitude: a.place.location.lat, longitude: a.place.location.lon, order: (legSel?.from ?? 0) + 1, name: nameA }
+                : null,
+
+              // hedef durak marker’ı (kırmızı) → NavigationScreen dest marker’ı için sıra no
+              nextStop: { latitude: lb.lat, longitude: lb.lon, order: destOrderNum, name: nameB },
+
+              waypoints: [{ lat: la.lat, lng: la.lon }, { lat: lb.lat, lng: lb.lon }],
               mode: mode || 'driving',
-              polyline: routeData?.polylineCoords || null,
-              steps: routeData?.legs || null,
+
+              polylineEncoded: encoded || null,
+              polyline: encoded || null,
+              polylineCoords: polylineCoordsSafe,
+              steps: stepsSafe,
+
+              ui: {
+                showUserMarker: false,
+                showDestinationMarker: true,
+                showPrevStopMarker: true,
+                prevStopNumber: (legSel?.from ?? 0) + 1,
+              },
             };
 
             navigateToTurnByTurn(navigation, navPayload);
           } catch (e) {
             console.warn('[NavigationStart] payload error', e?.message);
           }
+        }}
+      />
+      
+      {/* İzin Modalı */}
+      <PermissionPromptModal
+        visible={!!permissionPrompt}
+        title={permissionPrompt?.title}
+        message={permissionPrompt?.message}
+        actions={permissionPrompt?.actions}
+        onDismiss={() => {
+          setPermissionPrompt(null);
+          permissionPrompt?.onDismiss?.();
         }}
       />
     </View>
@@ -1131,6 +1820,13 @@ const styles = StyleSheet.create({
   },
   headerCity: { color: COLORS.fg, fontSize: 16, fontWeight: '800', lineHeight: 20 },
   headerDates: { color: COLORS.fgMuted, fontSize: 12, marginTop: 2 },
+
+  quickLayer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 2000,
+    elevation: 2000,
+    pointerEvents: 'box-none',
+  },
 
   replanBtnHeader: {
     flexDirection: 'row',
@@ -1197,7 +1893,6 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
 
-  /* Toggle Overlay: yüksek z-index + geniş hit zone */
   toggleOverlay: {
     position: 'absolute',
     top: 0, bottom: 0, left: 0, right: 0,

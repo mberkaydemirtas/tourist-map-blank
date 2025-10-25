@@ -12,6 +12,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { Calendar } from 'react-native-calendars';
+import { DeviceEventEmitter } from 'react-native';
+const EVT_CLOSE_DROPDOWNS = 'CLOSE_ALL_DROPDOWNS';
 
 const BTN = '#2563EB';
 const BORDER = '#23262F';
@@ -91,6 +93,7 @@ export default function LodgingQuestion({
     if (!start || !end) return; // tripRange yoksa
 
     lastIndexRef.current = index;
+    DeviceEventEmitter.emit(EVT_CLOSE_DROPDOWNS);
     try {
       const picked = await onMapPick?.({ index, center: cityCenter, cityName, startDate: start, endDate: end });
       if (picked === undefined) return; // iptal

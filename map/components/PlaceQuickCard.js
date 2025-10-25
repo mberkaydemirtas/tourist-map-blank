@@ -1,4 +1,4 @@
-// map/components/PlaceQuickCard
+// map/components/PlaceQuickCard.js
 import React, { useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing, Pressable, Image, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,133 +14,213 @@ const C = {
 
 function normalizePhotos(arr) {
   if (!Array.isArray(arr)) return [];
-  return arr
-    .map(p => (typeof p === 'string' ? p : (p?.url || p?.uri)))
-    .filter(Boolean);
+  const urls = arr
+    .map(p => (typeof p === 'string' ? p : (p?.url || p?.uri || p?.src || p?.photoUrl)))
+    .filter(u => !!u && /^https?:\/\//i.test(String(u)));
+  return Array.from(new Set(urls));
 }
 
 export default function PlaceQuickCard({
-  visible,
+  visible = false,
   marker,
   onDismiss,
   onCtaPress,
   ctaLabel = 'Ekle',
   ctaDisabled = false,
-  variant = 'add',            // 'add' | 'preview'
+  variant = 'add', // 'add' | 'preview'
   metaLabel = '',
 }) {
   const insets = useSafeAreaInsets();
-  const a = useRef(new Animated.Value(0)).current;
+  const anim = useRef(new Animated.Value(0)).current;
 
+  // Kart verileri
   const name = String(marker?.name || 'Seçilen konum');
   const address = String(marker?.address || '');
-  // 📸 hızlı fallback (marker.icon/coverPhoto/photoUrl gibi alanları da dene)
-  const photos = (() => {
+
+  const photos = useMemo(() => {
     const p = normalizePhotos(marker?.photoUrls);
     if (p.length) return p;
     const extras = [marker?.icon, marker?.coverPhoto, marker?.photoUrl].filter(Boolean);
     return normalizePhotos(extras);
-  })();
+  }, [marker?.photoUrls, marker?.icon, marker?.coverPhoto, marker?.photoUrl]);
 
-  const hasCoords = !!(marker?.coords && Number.isFinite(marker.coords.latitude) && Number.isFinite(marker.coords.longitude));
+  const hasCoords =
+    !!(marker?.coords &&
+    Number.isFinite(Number(marker.coords.latitude)) &&
+    Number.isFinite(Number(marker.coords.longitude)));
+
   const isPreview = variant === 'preview';
 
+  // Animasyon
   useEffect(() => {
-    Animated.timing(a, {
+    Animated.timing(anim, {
       toValue: visible ? 1 : 0,
-      duration: visible ? 140 : 110,        // ⚡ hızlandırıldı
+      duration: visible ? 140 : 110,
       easing: visible ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
       useNativeDriver: true,
     }).start();
-  }, [visible]);
+  }, [visible, anim]);
 
   const cardStyle = useMemo(() => ([
     styles.card,
-    { transform: [{ translateY: a.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] }, // 24→16
-  ]), [a]);
+    { transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] },
+  ]), [anim]);
 
-  if (!visible) return <View pointerEvents="none" style={StyleSheet.absoluteFill} />;
-
-  const handleCta = () => { if (!ctaDisabled) onCtaPress?.(marker || {}); };
+  const handleCta = () => {
+    if (!ctaDisabled) onCtaPress?.(marker || {});
+  };
 
   return (
-    // Backdrop yok: arka plan interaktif kalsın
-    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 10) }]} pointerEvents="box-none">
-        <Animated.View style={cardStyle} pointerEvents="auto">
-          <View style={styles.top}>
-            <View style={{ flex: 1, paddingRight: 6 }}>
-              <Text numberOfLines={1} style={styles.title}>{name}</Text>
-              {!!metaLabel && <Text numberOfLines={1} style={styles.meta}>{metaLabel}</Text>}
-            </View>
-            <Pressable onPress={onDismiss} hitSlop={8} style={styles.close} accessibilityLabel="Kapat">
-              <Ionicons name="close" size={18} color={C.fg} />
-            </Pressable>
-          </View>
+    <View
+      style={[
+        StyleSheet.absoluteFillObject,
+        visible ? { zIndex: 9999, elevation: 9999 } : { zIndex: -1, elevation: 0 },
+      ]}
+      pointerEvents={visible ? 'box-none' : 'none'}
+    >
+      {visible && (
+        <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 10) }]} pointerEvents="box-none">
+          <Animated.View
+            style={[cardStyle, { zIndex: 10000, elevation: 10000 }]}
+            pointerEvents="auto"
+          >
+            {/* Üst Başlık */}
+            <View style={styles.top}>
+              <View style={{ flex: 1, paddingRight: 6 }}>
+                <Text numberOfLines={1} style={styles.title}>
+                  {name}
+                </Text>
+                {!!metaLabel && (
+                  <Text numberOfLines={1} style={styles.meta}>
+                    {String(metaLabel)}
+                  </Text>
+                )}
+              </View>
 
-          {!!address && <Text numberOfLines={2} style={styles.addr}>{address}</Text>}
-          {hasCoords && (
-            <Text numberOfLines={1} style={styles.coord}>
-              {marker.coords.latitude.toFixed(5)}, {marker.coords.longitude.toFixed(5)}
-            </Text>
-          )}
-
-          {photos.length > 0 && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.scroller}
-              contentContainerStyle={{ gap: 8, paddingVertical: 2 }}
-            >
-              {photos.slice(0, 6).map((uri, i) => (
-                <Image
-                  key={`${uri}-${i}`}
-                  source={{ uri: String(uri) }}
-                  style={styles.photo}
-                  resizeMode="cover"
-                />
-              ))}
-            </ScrollView>
-          )}
-
-          {!isPreview && (
-            <View style={styles.actions}>
-              <Pressable style={[styles.btn, styles.secondary]} onPress={onDismiss}>
-                <Text style={styles.btnT2}>Vazgeç</Text>
-              </Pressable>
               <Pressable
-                style={[styles.btn, styles.primary, ctaDisabled && styles.btnDisabled]}
-                onPress={handleCta}
-                disabled={ctaDisabled}
+                onPress={onDismiss}
+                hitSlop={8}
+                style={styles.close}
+                accessibilityRole="button"
+                accessibilityLabel="Kapat"
               >
-                <Ionicons name="add" size={16} color="#fff" style={{ marginRight: 6 }} />
-                <Text style={styles.btnT1}>{ctaLabel}</Text>
+                <Ionicons name="close" size={18} color={C.fg} />
               </Pressable>
             </View>
-          )}
-        </Animated.View>
-      </View>
+
+            {!!address && (
+              <Text numberOfLines={2} style={styles.addr}>
+                {address}
+              </Text>
+            )}
+
+            {hasCoords && (
+              <Text numberOfLines={1} style={styles.coord}>
+                {Number(marker.coords.latitude).toFixed(5)}, {Number(marker.coords.longitude).toFixed(5)}
+              </Text>
+            )}
+
+            {/* Fotoğraflar (varsa) */}
+            {photos.length > 0 && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.scroller}
+                contentContainerStyle={styles.scrollerContent}
+              >
+                {photos.slice(0, 6).map((uri, i) => (
+                  <Image
+                    key={`${uri}-${i}`}
+                    source={{ uri: String(uri) }}
+                    style={[styles.photo, i > 0 && { marginLeft: 8 }]}
+                    resizeMode="cover"
+                  />
+                ))}
+              </ScrollView>
+            )}
+
+            {/* Eylem Butonları */}
+            {!isPreview && (
+              <View style={styles.actions}>
+                <Pressable
+                  style={[styles.btn, styles.secondary]}
+                  onPress={onDismiss}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.btnT2}>Vazgeç</Text>
+                </Pressable>
+
+                <View style={{ width: 8 }} />
+
+                <Pressable
+                  style={[styles.btn, styles.primary, ctaDisabled && styles.btnDisabled]}
+                  onPress={handleCta}
+                  disabled={ctaDisabled}
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="add" size={16} color="#fff" style={{ marginRight: 6 }} />
+                  <Text style={styles.btnT1}>{String(ctaLabel)}</Text>
+                </Pressable>
+              </View>
+            )}
+          </Animated.View>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center' },
+  wrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+  },
   card: {
-    width: '96%', maxWidth: 640, backgroundColor: C.card, borderRadius: 14,
-    padding: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border,
-    shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 8,
+    width: '96%',
+    maxWidth: 640,
+    backgroundColor: C.card,
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 10000, // Map & overlay üstü
   },
   top: { flexDirection: 'row', alignItems: 'center' },
   title: { color: C.fg, fontWeight: '800', fontSize: 16 },
   meta: { color: C.fg2, fontSize: 12, marginTop: 2 },
-  close: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6' },
+  close: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F3F4F6',
+  },
   addr: { color: C.fg2, marginTop: 8 },
   coord: { color: C.fg2, marginTop: 2, fontSize: 12 },
   scroller: { marginTop: 10, minHeight: 82 },
+  scrollerContent: { paddingVertical: 2, paddingRight: 2 },
   photo: { width: 110, height: 80, borderRadius: 8, backgroundColor: '#F3F4F6' },
-  actions: { marginTop: 10, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
-  btn: { minHeight: 40, paddingHorizontal: 14, borderRadius: 10, flexDirection: 'row', alignItems: 'center' },
+  actions: {
+    marginTop: 10,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  btn: {
+    minHeight: 40,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   secondary: { backgroundColor: '#F3F4F6' },
   primary: { backgroundColor: C.primary },
   btnDisabled: { opacity: 0.6 },

@@ -1,10 +1,11 @@
 // src/screens/NavigationScreen.js
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { View, StyleSheet, PermissionsAndroid, Platform, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, Platform, TouchableOpacity, Text } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
+import * as Location from 'expo-location';
 
 import {
   decodePolyline,
@@ -12,7 +13,7 @@ import {
   getRoute,
   getNearbyPlaces,
   getPlaceDetails,
-} from '../maps'; // ✅ düzeltildi
+} from '../maps';
 
 import StepInstructionsModal from '../navigation/components/StepInstructionsModal';
 import LaneGuidanceBar from '../navigation/components/LaneGuidanceBar';
@@ -67,17 +68,9 @@ const toLL = (p) => {
 };
 
 const baseSpeak = async (text) => {
-  try {
-    Speech.stop();
-    Speech.speak(text, { language: 'tr-TR', pitch: 1.0, rate: 1.0 });
-  } catch {}
+  try { Speech.stop(); Speech.speak(text, { language: 'tr-TR', pitch: 1.0, rate: 1.0 }); } catch {}
 };
-
-const buzz = async () => {
-  try {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  } catch {}
-};
+const buzz = async () => { try { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {} };
 
 /* --------------------------------- Ekran --------------------------------- */
 export default function NavigationScreen() {
@@ -89,20 +82,31 @@ export default function NavigationScreen() {
   // ---- Parametreler ----
   const {
     from: initialFrom,
+    initialFrom: fallbackFrom,
     to: initialTo,
     polyline,
+    polylineEncoded,
+    polylineCoords,
     steps: initialSteps = [],
     mode: initialMode = 'driving',
     waypoints: initialWaypoints = [],
+    prevStop,
+    nextStop,
+    destOrder,
+    toOrder,
+    ui,
   } = route.params ?? {};
-  // Sadece bir kez logla (veya değer değişirse)
+
+  // Sadece bir kez logla
   const loggedRef = useRef(false);
   useEffect(() => {
     if (__DEV__ && !loggedRef.current) {
       console.log('[Nav] initialWaypoints', initialWaypoints);
+      console.log('[Nav] initialFrom:', initialFrom);
+      console.log('[Nav] fallbackFrom:', fallbackFrom);
       loggedRef.current = true;
     }
-  }, [initialWaypoints]);
+  }, [initialWaypoints, initialFrom, fallbackFrom]);
 
   // ---- Refs / Flags ----
   const followBackSuppressedRef = useRef(false);
@@ -123,10 +127,9 @@ export default function NavigationScreen() {
   }, []);
 
   const [showSteps, setShowSteps] = useState(false);
-
   const [heading, setHeading] = useState(null);
-
   const [steps, setSteps] = useState(Array.isArray(initialSteps) ? initialSteps : []);
+
   const norm = (p) =>
     p
       ? {
@@ -134,6 +137,7 @@ export default function NavigationScreen() {
           longitude: p?.coords?.longitude ?? p.longitude ?? p.lng,
         }
       : null;
+
   const [from, setFrom] = useState(norm(initialFrom));
   const [to, setTo] = useState(norm(initialTo));
   const [mode, setMode] = useState(initialMode);
@@ -144,8 +148,6 @@ export default function NavigationScreen() {
   const mutedRef = useRef(false);
   useEffect(() => { mutedRef.current = muted; }, [muted]);
   const speak = useCallback((text) => { if (!mutedRef.current) baseSpeak(text); }, []);
-
-  // konuşma throttling
   const lastSpeechAtRef = useRef(0);
   const speechHoldUntilRef = useRef(0);
   const safeSpeak = useCallback((text, cooldownMs = 1500) => {
@@ -155,18 +157,13 @@ export default function NavigationScreen() {
     speak(text);
   }, [speak]);
 
-  // konuşma flag’leri
   const [spokenFlags, setSpokenFlags] = useState({});
   const spokenRef = useRef({});
   useEffect(() => { spokenRef.current = spokenFlags; }, [spokenFlags]);
 
   // Waypoints yönetimi
-  const {
-    waypoints,
-    setWaypoints,
-    waypointsRef,
-    resolvePlace,
-  } = useWaypointsManager({ initialWaypoints, getPlaceDetails });
+  const { waypoints, setWaypoints, waypointsRef, resolvePlace } =
+    useWaypointsManager({ initialWaypoints, getPlaceDetails });
 
   useEffect(() => { addStopOpenRef.current = addStopOpen; }, [addStopOpen]);
 
@@ -203,18 +200,32 @@ export default function NavigationScreen() {
     };
   }, []);
 
-  // Base polyline (ilk render)
+  // Base polyline
   const baseRouteCoordinates = useMemo(() => {
-    if (polyline) {
-      return decodePolyline(polyline).map((c) => [c.longitude, c.latitude]); // [lng,lat]
+    // 1) polylineCoords (array)
+    if (Array.isArray(polylineCoords) && polylineCoords.length > 1) {
+      const normed = polylineCoords
+        .map(p => {
+          const lat = p.latitude ?? p.lat;
+          const lng = p.longitude ?? p.lng ?? p.lon;
+          return [lng, lat];
+        })
+        .filter(([lng, lat]) => Number.isFinite(lat) && Number.isFinite(lng));
+      if (normed.length > 1) return normed;
     }
+    // 2) encoded string
+    const enc = (typeof polylineEncoded === 'string' && polylineEncoded.trim())
+      ? polylineEncoded.trim()
+      : (typeof polyline === 'string' && polyline.trim() ? polyline.trim() : null);
+    if (enc) return decodePolyline(enc).map(c => [c.longitude, c.latitude]);
+    // 3) fallback two-point
     const toLngLat = (p) => (p ? [p.longitude ?? p.lng, p.latitude ?? p.lat] : null);
     const a = toLngLat(from);
     const b = toLngLat(to);
     return a && b ? [a, b] : [];
-  }, [polyline, from, to]);
+  }, [polyline, polylineEncoded, polylineCoords, from, to]);
 
-  // pauseFollowing proxy (TDZ kırmak için)
+  // pauseFollowing proxy
   const pauseFollowingRef = useRef((/* ms */) => {});
   const pauseFollowingStable = useCallback((ms = 2500) => {
     return pauseFollowingRef.current?.(ms);
@@ -257,7 +268,6 @@ export default function NavigationScreen() {
     onRouteReset,
   });
 
-  // begin/finalize kimliklerini sabitle
   const beginRouteUpdateRef = useRef(beginRouteUpdate);
   useEffect(() => { beginRouteUpdateRef.current = beginRouteUpdate; }, [beginRouteUpdate]);
   const finalizeRouteStepsRef = useRef(finalizeRouteSteps);
@@ -265,59 +275,75 @@ export default function NavigationScreen() {
   const beginRouteUpdateStable = useCallback((...a) => beginRouteUpdateRef.current?.(...a), []);
   const finalizeRouteStepsStable = useCallback((...a) => finalizeRouteStepsRef.current?.(...a), []);
 
+  // ✅ Hedef koordinatı ve sıra no (daha sağlam)
+  const destLL = useMemo(() => {
+    const cand = to || initialTo || (nextStop && {
+      latitude: nextStop.latitude ?? nextStop.lat,
+      longitude: nextStop.longitude ?? nextStop.lng ?? nextStop.lon
+    });
+    if (!cand) return null;
+    const lat = cand.latitude ?? cand.lat;
+    const lng = cand.longitude ?? cand.lng ?? cand.lon;
+    return Number.isFinite(lat) && Number.isFinite(lng) ? { latitude: lat, longitude: lng } : null;
+  }, [to, initialTo, nextStop]);
+
+  const destinationOrder =
+    (nextStop?.order != null ? nextStop.order : null) ??
+    (typeof destOrder === 'number' ? destOrder : null) ??
+    (typeof toOrder   === 'number' ? toOrder   : null);
+
   const rnPolyline = useMemo(
     () => (Array.isArray(routeCoordinates) ? routeCoordinates.map(([lng, lat]) => ({ latitude: lat, longitude: lng })) : []),
     [routeCoordinates]
   );
   const safePolylineCoords = useSafePolyline(routeCoordinates);
 
-  // 🔧 TEK ve STABİL routeCoordsRef
   const routeCoordsRef = useRef(routeCoordinates);
   useEffect(() => { routeCoordsRef.current = routeCoordinates; }, [routeCoordinates]);
 
-  // İzin
+  // Konum izni / fallback
   useEffect(() => {
-    async function requestPermission() {
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
-        );
-        setLocationPermission(granted === PermissionsAndroid.RESULTS.GRANTED);
-      } else {
-        setLocationPermission(true);
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        const ok = status === 'granted';
+        setLocationPermission(ok);
+        if (!ok && !initialFrom && fallbackFrom) {
+          console.log('[Nav] İzin reddedildi, from -> fallback');
+          setFrom(norm(fallbackFrom));
+        }
+      } catch {
+        if (!initialFrom && fallbackFrom) {
+          console.log('[Nav] İzin hatası, from -> fallback');
+          setFrom(norm(fallbackFrom));
+        }
       }
-    }
-    requestPermission();
-  }, []);
+    })();
+  }, [fallbackFrom, initialFrom]);
 
-  // Navigation core — routeInfo’yu memo’la
+  // Navigation core
   const routeInfo = useMemo(() => {
     if (!primaryRoute) return null;
-    const d = primaryRoute.distance;
-    const t = primaryRoute.duration;
-    return { distance: d, duration: t };
+    return { distance: primaryRoute.distance, duration: primaryRoute.duration };
   }, [primaryRoute?.distance, primaryRoute?.duration]);
 
-  // --- FIX: recalcRoute değişimini ref’e aynala ve onOffRoute’u STABİL yap ---
   const recalcRouteRef = useRef(recalcRoute);
   useEffect(() => { recalcRouteRef.current = recalcRoute; }, [recalcRoute]);
-
   const onOffRouteCb = useCallback(async (user) => {
-    // Her zaman aynı kimlikte kalsın; içerde güncel fonksiyona ref’ten eriş.
     await recalcRouteRef.current?.({
       originLat: user.latitude,
       originLng: user.longitude,
       keepSpeak: true,
     });
-  }, []); // ❗ bağımlılık yok → kimlik sabit
+  }, []);
 
   const nav = useNavigationLogic({
     mapRef,
     routeCoords: rnPolyline,
-    routeInfo,                 // sabit obje
+    routeInfo,
     selectedMode: mode,
     offRouteThresholdM: 50,
-    onOffRoute: onOffRouteCb,  // sabit callback (FIX)
+    onOffRoute: onOffRouteCb,
     voice: false,
     externalFeed: true,
   });
@@ -326,12 +352,12 @@ export default function NavigationScreen() {
   useEffect(() => { if (nav?.location) lastLocRef.current = nav.location; }, [nav?.location]);
 
   // Turn-by-turn
-   const {
-     currentStepIndex,
-     distanceToManeuver,
-     liveRemain,
-     speakBanner,
-   } = useTurnByTurn({
+  const {
+    currentStepIndex,
+    distanceToManeuver,
+    liveRemain,
+    speakBanner,
+  } = useTurnByTurn({
     steps,
     heading,
     location: nav?.location ?? null,
@@ -349,20 +375,16 @@ export default function NavigationScreen() {
       getTwoStageThresholds,
       calcRemaining,
     }), []),
-    // FIX: onArrive kimliğini sabitle
-    onArrive: useCallback(() => {
-      speak('Varış noktasına ulaştınız.');
-    }, [speak]),
+    onArrive: useCallback(() => { speak('Varış noktasına ulaştınız.'); }, [speak]),
   });
 
-   const shownStep = steps?.[currentStepIndex];
-   const nextStep  = steps?.[currentStepIndex + 1] || null;
-   const next2Step = steps?.[currentStepIndex + 2] || null;
- 
-   // 🔧 Banner: canlı kalan mesafe (distanceToManeuver) → azalır
-   const distForBanner = Number.isFinite(distanceToManeuver) ? distanceToManeuver : null;
-   // 🔧 Chip: bir SONRAKİ adımın tahmini uzunluğu (sabit kalabilir)
-   const distForChip   = next2Step ? getStepDistanceValue(next2Step) : null;
+  const shownStep = steps?.[currentStepIndex];
+  const nextStep  = steps?.[currentStepIndex + 1] || null;
+  const next2Step = steps?.[currentStepIndex + 2] || null;
+
+  const distForBanner = Number.isFinite(distanceToManeuver) ? distanceToManeuver : null;
+  const distForChip   = next2Step ? getStepDistanceValue(next2Step) : null;
+
   // Kamera + follow
   const {
     camZoom, camPitch,
@@ -375,26 +397,9 @@ export default function NavigationScreen() {
     location: nav?.location,
     distanceToManeuver,
     followBackSuppressedRef,
-    manualReenter: true, // ✅ sadece hizala ile geri dön
+    manualReenter: true,
   });
 
-  useEffect(() => {
-    if (simActive) {
-      setIsFollowing(false);     // otomatik takip OFF
-      setIsMapTouched(true);     // 📍 Hizala butonu görünsün
-    }
-  }, [simActive, setIsFollowing, setIsMapTouched]);
-
-  // proxy'yi gerçek fonksiyonla bağla + reset sonrası follow aç
-  useEffect(() => { pauseFollowingRef.current = pauseFollowing; }, [pauseFollowing]);
-  useEffect(() => {
-    if (forceFollowRef.current) {
-      setIsFollowing(true);
-      forceFollowRef.current = false;
-    }
-  }, [setIsFollowing]);
-
-  // Snap-to-route (ghost)
   const { snapCoord } = useSnapToRoute({
     routeCoordinates,
     location: nav?.location ? { latitude: nav.location.latitude, longitude: nav.location.longitude } : null,
@@ -402,12 +407,7 @@ export default function NavigationScreen() {
     maxSnapM: 20,
   });
 
-  // Simülasyon
-  const {
-    simActive, setSimActive,
-    simSpeedKmh, setSimSpeedKmh,
-    simCoord
-  } = useNavSim({
+  const { simActive, setSimActive, simSpeedKmh, setSimSpeedKmh, simCoord } = useNavSim({
     routeCoordinates,
     metersBetween: getDistanceMeters,
     onTick: ({ lat, lng, heading, speed }) => {
@@ -415,17 +415,20 @@ export default function NavigationScreen() {
     },
   });
 
-  // İlk route fetch (kimlik sabit; sadece mapReady olduğunda 1 kez)
+  // İlk route fetch
   const fetchRouteRef = useRef(fetchRoute);
   useEffect(() => { fetchRouteRef.current = fetchRoute; }, [fetchRoute]);
   const didFetchInitialRef = useRef(false);
   useEffect(() => {
     if (!mapReady || didFetchInitialRef.current) return;
-    didFetchInitialRef.current = true;
-    fetchRouteRef.current?.();
-  }, [mapReady]);
+    if (from && to) {
+      console.log('[Nav] mapReady & from,to hazır → rota çek');
+      didFetchInitialRef.current = true;
+      fetchRouteRef.current?.();
+    }
+  }, [mapReady, from, to]);
 
-  // Steps ilk çekim guard
+  // Steps guard
   const triedStepsFetchRef = useRef(false);
   useEffect(() => {
     const hasAnyGeometry =
@@ -450,15 +453,13 @@ export default function NavigationScreen() {
         } catch {}
       })();
     }
-  }, [steps, from, to, getTurnByTurnSteps]);
+  }, [steps, from, to]);
 
-  /* ------------ onInsertStop: stabil wrapper + iç mantık (ref) ------------ */
+  /* ------------ onInsertStop: stabil wrapper + iç mantık ------------ */
   const insertOrAppendStopRef = useRef(null);
-  const onInsertStop = useCallback((payload) => {
-    return insertOrAppendStopRef.current?.(payload);
-  }, []);
+  const onInsertStop = useCallback((payload) => insertOrAppendStopRef.current?.(payload), []);
 
-  // POI arama/ekleme (hook)
+  // POI arama/ekleme
   const {
     poiActive,
     stablePoiList,
@@ -477,15 +478,16 @@ export default function NavigationScreen() {
     pauseFollowing: pauseFollowingStable,
     getNearbyPlaces,
     getPlaceDetails,
-    onInsertStop, // sabit
+    onInsertStop,
     metersBetween: getDistanceMeters,
     distanceToPolylineMeters,
     addStopOpen,
   });
 
-  // Follow suppression (POI/overlay açıkken)
+  // Follow suppression
   useEffect(() => { poiActiveRef.current = poiActive; }, [poiActive]);
   useEffect(() => {
+    addStopOpenRef.current = addStopOpen;
     followBackSuppressedRef.current =
       addStopOpen || !!selectedId || !!candidateStop ||
       !!poiActive.type || !!poiActive.query;
@@ -507,7 +509,6 @@ export default function NavigationScreen() {
   useEffect(() => { insertIndexRef.current = insertIndex; }, [insertIndex]);
   const pendingInsertRef = useRef(null);
 
-  // Gerçek iş mantığı — ref’e yazılacak
   const insertOrAppendStopInner = useCallback(({ lat, lng, name, place_id, address }) => {
     const payload = { lat, lng, place_id, name, address };
     focusOn(cameraRef, (ms) => pauseFollowingRef.current?.(ms), lng, lat, 18);
@@ -532,7 +533,6 @@ export default function NavigationScreen() {
         return next;
       });
 
-      // cleanup
       pendingOpRef.current = null;
       replaceModeRef.current = false;
       pendingInsertRef.current = null;
@@ -612,7 +612,6 @@ export default function NavigationScreen() {
     return Math.max(0, Math.min(100, Math.round(pct)));
   }, [nav?.totalM, nav?.remainingM, effDist, primaryRoute?.distance]);
 
-  // 👇 Sadece burada değişiklik: sim açıkken gerçek mavi dot'ı gizliyoruz
   const showOSUser = !!locationPermission && !simActive;
 
   /* --- Step konuşma yardımcıları --- */
@@ -645,46 +644,88 @@ export default function NavigationScreen() {
         androidHardwareAccelerationDisabled={false}
         onMapReady={() => setMapReady(true)}
         initialRegion={{
-          latitude: from?.latitude ?? 39.92,
-          longitude: from?.longitude ?? 32.85,
+          latitude: from?.latitude ?? fallbackFrom?.latitude ?? 39.92,
+          longitude: from?.longitude ?? fallbackFrom?.longitude ?? 32.85,
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         }}
-        /* 🔧 ÖNEMLİ: Simülasyon açıkken OS mavi noktasını tamamen kapat. */
         showsUserLocation={showOSUser}
         onUserLocationChange={(e) => {
-          if (simActive) return; // simdeyken gerçek akışı yeme
+          if (simActive) return;
           const c = e?.nativeEvent?.coordinate;
-          if (c) nav.ingestExternalLocation?.({
+          if (!c) return;
+          nav.ingestExternalLocation?.({
             latitude: c.latitude,
             longitude: c.longitude,
             heading: c.heading,
             speed: c.speed,
           });
+          if (!initialFrom && !from && locationPermission) {
+            console.log('[Nav] İlk konum alındı, from set');
+            setFrom({ latitude: c.latitude, longitude: c.longitude });
+          }
         }}
         onPress={onMapPress}
         onPanDrag={onPanDrag}
       >
-        {/* Başlangıç / Varış */}
-        {from && <Marker coordinate={{ latitude: from.latitude, longitude: from.longitude }} />}
-        {to && <Marker coordinate={{ latitude: to.latitude, longitude: to.longitude }} />}
+        {/* ----- MARKERLAR ----- */}
+
+        {/* Başlangıç Markeri: sadece ÖNCEKİ DURAK (siyah rozet) */}
+        {prevStop &&
+          Number.isFinite(prevStop.latitude) &&
+          Number.isFinite(prevStop.longitude) && (
+          <Marker
+            coordinate={{ latitude: prevStop.latitude, longitude: prevStop.longitude }}
+            anchor={{ x: 0.5, y: 1 }}
+            tracksViewChanges={false}
+          >
+            <View style={{ alignItems:'center', justifyContent:'center' }}>
+              <View style={{ minWidth:26, height:26, borderRadius:13, paddingHorizontal:6, alignItems:'center', justifyContent:'center', backgroundColor:'#111827' }}>
+                <Text style={{ color:'#fff', fontWeight:'800', fontSize:13 }}>{prevStop.order ?? 1}</Text>
+              </View>
+              <View style={{ width:0, height:0, borderLeftWidth:6, borderRightWidth:6, borderTopWidth:8, borderLeftColor:'transparent', borderRightColor:'transparent', marginTop:-1, borderTopColor:'#111827' }} />
+            </View>
+          </Marker>
+        )}
+
+        {/* Bitiş Markeri: numaralı (kırmızı rozet) */}
+        {destLL && Number.isFinite(destinationOrder) && (
+          <Marker coordinate={destLL} anchor={{ x: 0.5, y: 1 }} tracksViewChanges={false}>
+            <View style={{ alignItems:'center', justifyContent:'center' }}>
+              <View style={{ minWidth:26, height:26, borderRadius:13, paddingHorizontal:6, alignItems:'center', justifyContent:'center', backgroundColor:'#DC3545' }}>
+                <Text style={{ color:'#fff', fontWeight:'800', fontSize:13 }}>{destinationOrder}</Text>
+              </View>
+              <View style={{ width:0, height:0, borderLeftWidth:6, borderRightWidth:6, borderTopWidth:8, borderLeftColor:'transparent', borderRightColor:'transparent', marginTop:-1, borderTopColor:'#DC3545' }} />
+            </View>
+          </Marker>
+        )}
 
         {/* Aday durak */}
-        {candidateStop && Number.isFinite(candidateStop.lat) && Number.isFinite(candidateStop.lng) && (
-          <Marker coordinate={{ latitude: candidateStop.lat, longitude: candidateStop.lng }}>
+        {candidateStop &&
+          Number.isFinite(candidateStop.lat) &&
+          Number.isFinite(candidateStop.lng) && (
+          <Marker coordinate={{ latitude: candidateStop.lat, longitude: candidateStop.lng }} tracksViewChanges={false}>
             <View style={styles.candidateDotOuter}><View style={styles.candidateDotInner} /></View>
           </Marker>
         )}
-        
-        {/* Waypoints */}
-        <WaypointMarkers
-          waypoints={(waypoints || []).map(w => ({
+
+        {/* Waypoints — from/to ile çakışanları çıkar */}
+        {(() => {
+          const wp = (waypoints || []).map(w => ({
             latitude:  w.latitude ?? w.lat,
             longitude: w.longitude ?? w.lng,
             name: w.name,
             place_id: w.place_id
-          }))}
-        />
+          })).filter(p => {
+            const isStart = from && Math.abs((from.latitude ?? 0) - p.latitude)  < 1e-5
+                                && Math.abs((from.longitude ?? 0) - p.longitude) < 1e-5;
+            const isEnd   = destLL && Math.abs((destLL.latitude ?? 0) - p.latitude)  < 1e-5
+                                   && Math.abs((destLL.longitude ?? 0) - p.longitude) < 1e-5;
+            return !(isStart || isEnd);
+          });
+          return wp.length ? <WaypointMarkers waypoints={wp} /> : null;
+        })()}
+
         {/* POI’ler */}
         <PoiMarkers
           stablePoiList={stablePoiList}
@@ -710,16 +751,16 @@ export default function NavigationScreen() {
           applyAlternative={applyAlternative}
         />
 
-        {/* Simülasyon kullanıcı noktası — sim açıkken TEK konum bu */}
+        {/* Simülasyon kullanıcı noktası */}
         {simActive && simCoord && (
-          <Marker coordinate={{ latitude: simCoord.lat, longitude: simCoord.lng }}>
+          <Marker coordinate={{ latitude: simCoord.lat, longitude: simCoord.lng }} tracksViewChanges={false}>
             <View style={styles.simUserDotOuter}><View style={styles.simUserDotInner} /></View>
           </Marker>
         )}
 
         {/* Snap-to-route hayalet */}
         {snapCoord && isFollowing && (
-          <Marker coordinate={{ latitude: snapCoord.lat, longitude: snapCoord.lng }}>
+          <Marker coordinate={{ latitude: snapCoord.lat, longitude: snapCoord.lng }} tracksViewChanges={false}>
             <View style={styles.snapDot} />
           </Marker>
         )}
@@ -728,23 +769,15 @@ export default function NavigationScreen() {
       {isRerouting && (
         <View style={styles.rerouteBadge}><Text style={styles.rerouteText}>Rota güncelleniyor…</Text></View>
       )}
- 
+
       {/* Harita üstü kontroller */}
       <View style={styles.topControls} pointerEvents="box-none">
         {(() => {
-          const altBtnDisabled = isAddingStop; // sadece ekleme akışında kilit
-          const altIcon = altBtnDisabled
-            ? '⛔'
-            : altMode
-              ? (altFetching ? '⏳' : '✖️')
-              : '🛣️';
+          const altBtnDisabled = isAddingStop;
+          const altIcon = altBtnDisabled ? '⛔' : altMode ? (altFetching ? '⏳' : '✖️') : '🛣️';
           return (
             <TouchableOpacity
-              style={[
-                styles.topBtn,
-                altMode && !altBtnDisabled && styles.topBtnActive,
-                altBtnDisabled && styles.topBtnDisabled,
-              ]}
+              style={[styles.topBtn, altMode && !altBtnDisabled && styles.topBtnActive, altBtnDisabled && styles.topBtnDisabled]}
               onPress={toggleAlternatives}
               disabled={altBtnDisabled}
             >
@@ -769,15 +802,12 @@ export default function NavigationScreen() {
         <View style={styles.bannerStack}>
           <LaneGuidanceBar step={shownStep} iconsOnly style={{ marginBottom: 6 }} />
           <Text style={styles.bannerTitle}>
-              {formatInstructionRelativeTR(heading, shownStep)}
-              {Number.isFinite(distForBanner) ? ` • ${metersFmt(distForBanner)}` : ''}
+            {formatInstructionRelativeTR(heading, shownStep)}
+            {Number.isFinite(distForBanner) ? ` • ${metersFmt(distForBanner)}` : ''}
           </Text>
         </View>
         {!!nextStep && (
-          <NextManeuverChip
-             step={nextStep}
-             distance={distForChip}
-          />
+          <NextManeuverChip step={nextStep} distance={distForChip} />
         )}
       </TouchableOpacity>
 
@@ -836,7 +866,7 @@ export default function NavigationScreen() {
           style={styles.alignButton}
           onPress={() => {
             goFollowNow();
-            nav.alignNow({ distToManeuver: distanceToManeuver }); // ✅ stabil parametrelerle çağır
+            nav.alignNow({ distToManeuver: distanceToManeuver });
           }}
         >
           <Text style={styles.alignText}>📍 Hizala</Text>
@@ -848,9 +878,12 @@ export default function NavigationScreen() {
         <TouchableOpacity
           style={[styles.actionBtn, { position: 'absolute', right: 16, bottom: 200 }]}
           onPress={() => {
-            const fromStop = { lat: from.latitude, lng: from.longitude, name: 'Başlangıç' };
-            const toStop = { lat: to.latitude, lng: to.longitude, name: 'Bitiş' };
-            setDraftStops([fromStop, ...waypoints, toStop]);
+            const fromCoord = from ? { lat: from.latitude, lng: from.longitude } : { lat: 0, lng: 0 };
+            const toCoord = destLL ? { lat: destLL.latitude, lng: destLL.longitude }
+                                   : (to ? { lat: to.latitude, lng: to.longitude } : { lat: 0, lng: 0 });
+            const fromStopSafe = { ...fromCoord, name: 'Başlangıç' };
+            const toStopSafe = { ...toCoord, name: 'Bitiş' };
+            setDraftStops([fromStopSafe, ...waypoints, toStopSafe]);
             setEditStopsOpen(true);
           }}
           activeOpacity={0.9}
@@ -950,7 +983,7 @@ export default function NavigationScreen() {
         }}
       />
 
-      {/* 📜 Step listesi modalı (gelişmiş) */}
+      {/* 📜 Step listesi modalı */}
       <StepInstructionsModal
         visible={showSteps}
         onClose={() => setShowSteps(false)}
@@ -958,7 +991,6 @@ export default function NavigationScreen() {
         currentIndex={currentStepIndex}
         onSpeakStep={speakStepMessage}
         onJumpToIndex={(i) => {
-          setCurrentStepIndex?.(i);
           setShowSteps(false);
           setTimeout(() => speakStepMessage(i), 150);
         }}
@@ -1073,16 +1105,11 @@ const styles = StyleSheet.create({
   topBtnDisabled: { opacity: 0.4 },
   topBtnIcon: { fontSize: 18 },
 
-  // Aday durak
   candidateDotOuter: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 22, height: 22, borderRadius: 11,
     backgroundColor: 'rgba(220,53,69,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(220,53,69,0.5)',
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: 'rgba(220,53,69,0.5)',
   },
   candidateDotInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#DC3545' },
 

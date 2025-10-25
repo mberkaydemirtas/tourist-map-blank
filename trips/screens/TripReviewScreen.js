@@ -103,6 +103,45 @@ export default function TripReviewScreen() {
   const [saving, setSaving] = useState(false);
   const [booting, setBooting] = useState(!tripId); // parametre yoksa fallback denenecek
 
+  function addDaysISO(s, n) { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function nightsBetween(start, end) {
+  const out=[]; if(!start||!end||start>=end) return out;
+  let cur=start; while(cur<end){ out.push(cur); cur=addDaysISO(cur,1); } return out;
+}
+function segmentsToLodgingsAllCities(trip) {
+  const wa = trip?._whereAnswer;
+  if (!wa) return [];
+
+  const collect = (segments=[]) => {
+    const out = [];
+    (segments || []).forEach((seg, idx) => {
+      if (!seg?.place?.location || !seg?.start || !seg?.end) return;
+      const loc = seg.place.location;
+      for (const date of nightsBetween(seg.start, seg.end)) {
+        out.push({
+          id: seg.id || `lodg:${idx}:${date}`,
+          name: seg.place.name || 'Lodging',
+          address: seg.place.address || null,
+          date,
+          location: { lat: loc.lat, lon: (loc.lng ?? loc.lon) },
+        });
+      }
+    });
+    return out;
+  };
+
+  if (wa.mode === 'single') {
+    return collect(trip?._lodgingSingle || []);
+  }
+  const items = (wa.items || []).filter(it => it.city?.place_id);
+  let all = [];
+  items.forEach(it => {
+    const key = it.city.place_id;
+    all = all.concat(collect(trip?._lodgingByCity?.[key] || []));
+  });
+  return all;
+}
+
   // Parametre yoksa en güncel geziyi otomatik seç
   useEffect(() => {
     let mounted = true;
@@ -343,7 +382,7 @@ export default function TripReviewScreen() {
       // 2) Geziyi finalize et → completed (ardından plan)
       const when = new Date().toISOString();
       await patchTripLocal(key, { status: 'completed', wizardStep: null, updatedAt: when, __dirty: true });
-      const completedTrip = ensureIds({
+      let completedTrip = ensureIds({
         ...trip,
         [sourceField]: mergedPlaces,
         status: 'completed',
@@ -364,6 +403,18 @@ export default function TripReviewScreen() {
       // 3) Plan üret + kaydet (eşleşmiş yerlerle)
       const uiMode = trip?.travelMode || 'walk_transport';
       const routingMode = uiMode === 'car_taxi' ? 'driving' : 'walking';
+      
+// 🔹 Lodging’leri garanti et (tüm şehirler)
+       let lodgingsAll = Array.isArray(completedTrip?.lodgings) ? completedTrip.lodgings : [];
+       if (!lodgingsAll.length) {
+         lodgingsAll = segmentsToLodgingsAllCities(completedTrip);
+         if (lodgingsAll.length) {
+           const key2 = completedTrip._id ?? completedTrip.id;
+           await patchTripLocal(key2, { lodgings: lodgingsAll, updatedAt: new Date().toISOString(), __dirty: true });
+           completedTrip = { ...completedTrip, lodgings: lodgingsAll };
+         }
+       }
+
       const prefs = {
         dayStart: '09:30',
         dayEnd: '20:00',
