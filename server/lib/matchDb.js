@@ -54,25 +54,23 @@ function canonicalName(s = '') {
 }
 
 function ensureSchema() {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS poi_match (
-      key         TEXT PRIMARY KEY,          -- canonical(name)@lat5,lon5   (seed anahtar)
-      name_norm   TEXT,                      -- normalize edilmiş ad
-      lat5        REAL,                      -- seed lat (round5)
-      lon5        REAL,                      -- seed lon (round5)
-      city        TEXT,                      -- opsiyonel
-
-      place_id    TEXT NOT NULL,             -- Google place_id
-      rating      REAL,                      -- opsiyonel
-      hours_json  TEXT,                      -- JSON string (açılış saatleri)
-      g_lat5      REAL,                      -- Google lat (round5)
-      g_lon5      REAL,                      -- Google lon (round5)
-
-      item_id     TEXT,                      -- ⬅️ benzersiz seed id/osm_id (client’ın gönderdiği)
-      created_ms  INTEGER,
-      updated_ms  INTEGER
-    );
-  `);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS poi_match (
+    key         TEXT PRIMARY KEY,
+    name_norm   TEXT,
+    lat5        REAL,
+    lon5        REAL,
+    city        TEXT,
+    place_id    TEXT NOT NULL,
+    rating      REAL,
+    hours_json  TEXT,
+    g_lat5      REAL,
+    g_lon5      REAL,
+    item_id     TEXT UNIQUE,               -- item_id'yi UNIQUE yapabiliriz
+    created_ms  INTEGER,
+    updated_ms  INTEGER
+  );
+`);
 
   // Yeni kolonlar için non-destructive migration
   const cols = db.prepare(`PRAGMA table_info(poi_match)`).all();
@@ -120,7 +118,7 @@ function toRow({ name, lat, lon, city, place_id, rating, hours, g_lat, g_lon, it
     hours_json: hours ? JSON.stringify(hours) : null,
     g_lat5,
     g_lon5,
-    item_id: item_id || null,
+    item_id: item_id || place_id || `uid_${Date.now()}_${Math.random().toString(36).substr(2)}`,
     created_ms: Date.now(),
     updated_ms: Date.now(),
   };
@@ -142,7 +140,6 @@ function getManyByItemId(ids) {
   return stmt.all(uniq);
 }
 
-// Batch upsert
 function upsertMany(rows) {
   const insert = db.prepare(`
     INSERT INTO poi_match
@@ -155,7 +152,7 @@ function upsertMany(rows) {
       g_lat5=excluded.g_lat5,
       g_lon5=excluded.g_lon5,
       city=COALESCE(excluded.city, poi_match.city),
-      item_id=COALESCE(excluded.item_id, poi_match.item_id),
+      item_id=COALESCE(excluded.item_id, poi_match.item_id), -- item_id burada güncelleniyor
       updated_ms=excluded.updated_ms
   `);
   const trx = db.transaction((arr) => {

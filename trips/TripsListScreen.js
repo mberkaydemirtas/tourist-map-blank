@@ -2,7 +2,7 @@
 import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Alert,
-  RefreshControl, Platform, Dimensions, Modal, Pressable, DeviceEventEmitter
+  RefreshControl, Platform, Dimensions, Modal, Pressable, DeviceEventEmitter, TextInput
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
@@ -29,6 +29,11 @@ export default function TripsListScreen() {
   const firstLoadedRef = useRef(false);
   const [menuFor, setMenuFor] = useState(null); // { id, title, status } | null
   const [menuAnchor, setMenuAnchor] = useState(null); // { x, y, width, height }
+
+  // NEW: “Yeni Gezi” seçim modalı ve “Ad Gir” modalı
+  const [newTripSheetOpen, setNewTripSheetOpen] = useState(false);
+  const [nameModalOpen, setNameModalOpen] = useState(false);
+  const [scratchName, setScratchName] = useState('');
 
   const onSelectPlaces = (id) => {
     nav.navigate('TripPlacesScreen', { id });
@@ -116,10 +121,43 @@ export default function TripsListScreen() {
     );
   }
 
-  // === Buton davranışı: Wizard akışı
-  const startNewTrip = useCallback(() => {
-    nav.navigate('CreateTripWizard');
-  }, [nav]);
+  // === ESKİ: tek buton → Wizard akışı
+  // const startNewTrip = useCallback(() => {
+  //   nav.navigate('CreateTripWizard');
+  // }, [nav]);
+
+  // === YENİ: “Yeni Gezi” → seçenek sayfası
+  const openNewTripSheet = useCallback(() => setNewTripSheetOpen(true), []);
+  const closeNewTripSheet = useCallback(() => setNewTripSheetOpen(false), []);
+
+  // Start From Scratch akışı
+  const createScratchAndOpen = useCallback(async () => {
+    const title = (scratchName || '').trim();
+    if (title.length < 2) {
+      Alert.alert('Gezi adı', 'Lütfen en az 2 karakterlik bir isim girin.');
+      return;
+    }
+    try {
+      // Sadece temel alanlarla taslak trip
+      const t = await createTripLocal({
+        title,
+        status: 'active',              // boş plan için direkt aktif diyebiliriz
+        wizardStep: null,              // wizard yok
+        cities: [],
+        dateRange: { start: null, end: null },
+        places: [],
+        dailyPlan: [],
+      });
+
+      // TripPlans'e SCRATCH modunda git
+      nav.navigate('TripPlans', { tripId: t._id ?? t.id, mode: 'scratch' });
+      setNameModalOpen(false);
+      setNewTripSheetOpen(false);
+      setScratchName('');
+    } catch (e) {
+      Alert.alert('Yeni gezi', 'Gezi oluşturulurken bir hata oluştu.');
+    }
+  }, [scratchName, nav]);
 
   const onDelete = (id, title) => {
     Alert.alert('Geziyi Sil', `"${title}" silinsin mi?`, [
@@ -234,7 +272,7 @@ export default function TripsListScreen() {
     <View style={styles.container}>
       <View style={styles.topBar}>
         <Text style={styles.screenTitle}>Gezilerim</Text>
-        <TouchableOpacity onPress={startNewTrip} style={styles.newBtn} activeOpacity={0.9}>
+        <TouchableOpacity onPress={openNewTripSheet} style={styles.newBtn} activeOpacity={0.9}>
           <Ionicons name="add" size={20} color="#fff" />
           <Text style={styles.newBtnText}>Yeni Gezi</Text>
         </TouchableOpacity>
@@ -258,6 +296,7 @@ export default function TripsListScreen() {
         contentContainerStyle={{ paddingBottom: 24 }}
       />
 
+      {/* Satır menüsü */}
       <RowActionMenu
         visible={!!menuFor}
         title={menuFor?.title}
@@ -270,9 +309,93 @@ export default function TripsListScreen() {
           if (row?.status === 'draft') nav.navigate('CreateTripWizard', { resumeId: menuFor.id });
           else nav.navigate('TripPlans', { tripId: menuFor.id });
           setMenuFor(null);
-        }}       
+        }}
         onDelete={() => { if (menuFor) onDelete(menuFor.id, menuFor.title); setMenuFor(null); }}
       />
+
+      {/* “Yeni Gezi” seçenek sayfası */}
+      <Modal visible={newTripSheetOpen} transparent animationType="fade" onRequestClose={closeNewTripSheet}>
+        <Pressable style={styles.menuBackdrop} onPress={closeNewTripSheet} />
+        <View style={[styles.sheetCard]}>
+          <Text style={styles.sheetTitle}>Yeni gezi başlat</Text>
+
+          <TouchableOpacity
+            style={styles.sheetItem}
+            onPress={() => {
+              // Start From Scratch → ad gir modalı
+              setNameModalOpen(true);
+            }}
+          >
+            <Ionicons name="document-text-outline" size={18} color="#fff" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sheetItemTitle}>Start From Scratch</Text>
+              <Text style={styles.sheetItemSub}>Boş planla başla; durakları ve günleri kendin ekle.</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.sheetItem}
+            onPress={() => {
+              // Guided Plan = önceki “start from scratch” otomasyon akışı
+              setNewTripSheetOpen(false);
+              nav.navigate('CreateTripWizard'); // otomasyon
+            }}
+          >
+            <Ionicons name="sparkles-outline" size={18} color="#fff" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sheetItemTitle}>Guided Plan</Text>
+              <Text style={styles.sheetItemSub}>Soruları cevapla, rotan otomatik oluşturulsun.</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.sheetItem}
+            onPress={() => Alert.alert('Templates', 'Template seçimi yakında eklenecek.')}
+          >
+            <Ionicons name="albums-outline" size={18} color="#fff" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sheetItemTitle}>Start With Template</Text>
+              <Text style={styles.sheetItemSub}>Hazır şablondan kopyala ve düzenle.</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.sheetItem}
+            onPress={() => Alert.alert('AI Planner', 'AI planlama yakında eklenecek.')}
+          >
+            <Ionicons name="bulb-outline" size={18} color="#fff" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sheetItemTitle}>Start With AI</Text>
+              <Text style={styles.sheetItemSub}>Yapay zekâ ile akıllı önerilerle başla.</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* Ad gir modalı (Start From Scratch) */}
+      <Modal visible={nameModalOpen} transparent animationType="fade" onRequestClose={() => setNameModalOpen(false)}>
+        <Pressable style={styles.menuBackdrop} onPress={() => setNameModalOpen(false)} />
+        <View style={styles.nameCard}>
+          <Text style={styles.sheetTitle}>Gezi adı</Text>
+          <TextInput
+            placeholder="Örn: Ankara Sonbahar"
+            placeholderTextColor="#6B7280"
+            value={scratchName}
+            onChangeText={setScratchName}
+            style={styles.nameInput}
+            autoFocus
+            maxLength={80}
+          />
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+            <TouchableOpacity style={[styles.secondaryBtn, { flex: 1 }]} onPress={() => setNameModalOpen(false)}>
+              <Text style={styles.secondaryText}>Vazgeç</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.primaryBtn, { flex: 1 }]} onPress={createScratchAndOpen}>
+              <Text style={styles.primaryText}>Oluştur</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -336,13 +459,33 @@ const styles = StyleSheet.create({
   newBtnText: { color: '#fff', fontWeight: '700' },
 
   /* Action menu */
-  menuBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.25)' },
-  menuCardBase: { position: 'absolute', minWidth: 180 },
-  menuHeader: { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderColor: BORDER },
-  menuHeaderText: { color: '#9AA0A6', fontSize: 12 },
-  menuItem: { paddingHorizontal: 12, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  menuItemText: { color: '#fff', fontWeight: '700' },
-  dangerText: { color: '#ef4444', fontWeight: '800' },
+  menuBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)' },
+
+  sheetCard: {
+    position: 'absolute', left: 16, right: 16, bottom: 24,
+    backgroundColor: '#0D0F14',
+    borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 12,
+  },
+  sheetTitle: { color: '#fff', fontWeight: '800', fontSize: 16, marginBottom: 6 },
+  sheetItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 10, paddingVertical: 12, borderRadius: 10, borderWidth: 1, borderColor: BORDER, marginTop: 8 },
+  sheetItemTitle: { color: '#fff', fontWeight: '700' },
+  sheetItemSub: { color: '#9AA0A6', fontSize: 12, marginTop: 2 },
+
+  nameCard: {
+    position: 'absolute', left: 16, right: 16, bottom: 24,
+    backgroundColor: '#0D0F14',
+    borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 12,
+  },
+  nameInput: {
+    marginTop: 8,
+    borderWidth: 1, borderColor: BORDER, borderRadius: 10, padding: 12, color: '#fff',
+  },
+
+  /* Reuse buttons */
+  secondaryBtn: { paddingHorizontal: 14, paddingVertical: 12, borderRadius: 10, borderColor: BORDER, borderWidth: 1, backgroundColor: '#0D0F14' },
+  secondaryText: { color: '#fff', fontWeight: '700' },
+  primaryBtn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10, backgroundColor: '#2563EB' },
+  primaryText: { color: '#fff', fontWeight: '700' },
 });
 
 /* --- satır sonunda: menü komponenti --- */
@@ -361,24 +504,24 @@ function RowActionMenu({ visible, title, anchor, onClose, onCopy, onEdit, onDele
   }
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.menuBackdrop} onPress={onClose} />
-      <View style={[styles.menuCardBase, { top, left, width: MENU_W }]}>
+      <Pressable style={{ ...styles.menuBackdrop }} onPress={onClose} />
+      <View style={{ position: 'absolute', top, left, width: MENU_W, backgroundColor: '#0D0F14', borderRadius: 12, borderWidth: 1, borderColor: BORDER }}>
         {!!title && (
-          <View style={styles.menuHeader}>
-            <Text style={styles.menuHeaderText} numberOfLines={1}>{title}</Text>
+          <View style={{ paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderColor: BORDER }}>
+            <Text style={{ color: '#9AA0A6', fontSize: 12 }} numberOfLines={1}>{title}</Text>
           </View>
         )}
-        <TouchableOpacity onPress={onCopy} style={styles.menuItem}>
+        <TouchableOpacity onPress={onCopy} style={{ paddingHorizontal: 12, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Ionicons name="copy-outline" size={18} color="#fff" />
-          <Text style={styles.menuItemText}>Kopyala</Text>
+          <Text style={{ color: '#fff', fontWeight: '700' }}>Kopyala</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onEdit} style={styles.menuItem}>
+        <TouchableOpacity onPress={onEdit} style={{ paddingHorizontal: 12, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Ionicons name="pencil-outline" size={18} color="#fff" />
-          <Text style={styles.menuItemText}>Düzenle</Text>
+          <Text style={{ color: '#fff', fontWeight: '700' }}>Düzenle</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onDelete} style={styles.menuItem}>
+        <TouchableOpacity onPress={onDelete} style={{ paddingHorizontal: 12, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Ionicons name="trash-outline" size={18} color="#ef4444" />
-          <Text style={styles.dangerText}>Sil</Text>
+          <Text style={{ color: '#ef4444', fontWeight: '800' }}>Sil</Text>
         </TouchableOpacity>
       </View>
     </Modal>

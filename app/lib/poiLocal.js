@@ -350,18 +350,20 @@ export async function addUserPoi({
 
   if (!name || !Number.isFinite(Number(lat)) || !Number.isFinite(Number(lon))) return false;
 
-  const rec = {
-    id: place_id ? `pid:${place_id}` : `u:${Date.now()}:${Math.random().toString(36).slice(2)}`,
-    country,
-    city: city || null,
-    category,
-    name,
-    nameNorm: normalizeText(`${name} ${address}`),
-    lat: Number(lat),
-    lon: Number(lon),
-    address: address || '',
-    place_id: place_id || null,
-  };
+const rec = {
+  id: place_id ? `pid:${place_id}` : `u:${Date.now()}:${Math.random().toString(36).slice(2)}`,
+  country,
+  city: city || null,
+  category,
+  name,
+  nameNorm: normalizeText(`${name} ${address}`),
+  lat: Number(lat),
+  lon: Number(lon),
+  address: address || '',
+  place_id: place_id || null,
+  item_id: place_id ? `pid:${place_id}` : `u:${Date.now()}:${Math.random().toString(36).slice(2)}`, // Buraya item_id ekliyoruz
+};
+
 
   const sql = `
     INSERT OR REPLACE INTO poi_user
