@@ -30,11 +30,7 @@ const ENV_TIMEOUT_RAW = (process.env?.EXPO_PUBLIC_API_TIMEOUT_MS || "").trim();
 const GOOGLE_WEB_KEY = (process.env?.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "").trim();
 
 // ⚠️ ÖNEMLİ: Geliştirmede gerçek cihazsa → 127.0.0.1'e zorla (adb reverse)
-export const API_BASE =
-  ENV_API_BASE ||
-  (__DEV__
-    ? (isEmulatorOrSim ? LOCAL_BASE : REAL_DEVICE_BASE)
-    : PROD_BASE);
+export const API_BASE = "http://10.0.2.2:5000";
 
 export const SERVER_ENABLED =
   ENV_SERVER_ENABLED_RAW === "false" ? false : Boolean(API_BASE && API_BASE.length);
