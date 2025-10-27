@@ -67,9 +67,10 @@ async function tryFetch(url, opts = {}, timeoutMs = 6000) {
 // Base’i “ulaşılabilir” saymak için herhangi bir HTTP yanıtı (200/404/405 vs.) yeterli;
 // ağ hatası, DNS, CORS/timeout gibi durumlarda başarısız kabul ediyoruz.
 async function isReachableBase(base) {
+  const url = `${base.replace(/\/+$/,'')}/health`;
   try {
-    const res = await tryFetch(base, { method: 'GET' }, 3000);
-    return !!res; // 404 bile gelse socket kurulduysa ulaşıldı demektir
+    const res = await tryFetch(url, { method: 'GET' }, 2000);
+    return !!res; // 200/404 farketmez; TCP kurulduysa ulaşılabilir
   } catch {
     return false;
   }
@@ -78,20 +79,28 @@ async function isReachableBase(base) {
 // İlk başarılı base’i bul ve cache’e yaz
 async function resolveOptimizerBase() {
   if (ACTIVE_OPTIMIZER_BASE) return ACTIVE_OPTIMIZER_BASE;
+
+  // uniq candidates
+  const seen = new Set();
+  const uniqCandidates = [];
   for (const b of CANDIDATE_BASES) {
+    if (!b || seen.has(b)) continue;
+    seen.add(b);
+    uniqCandidates.push(b);
+  }
+
+  for (const b of uniqCandidates) {
     try {
-      const ok = await isReachableBase(b);
-      if (ok) {
+      if (await isReachableBase(b)) {
         ACTIVE_OPTIMIZER_BASE = b;
-        console.log('[OPTIMIZER] ✅ base selected =', ACTIVE_OPTIMIZER_BASE);
-        return ACTIVE_OPTIMIZER_BASE;
+        console.log('[OPTIMIZER] ✅ base selected =', b);
+        return b;
       }
     } catch {}
   }
-  // Hiçbiri erişilemezse yine de ilk tahmini döndürelim (çağrı sırasında yakalanır)
-  ACTIVE_OPTIMIZER_BASE = FIRST_GUESS;
-  console.warn('[OPTIMIZER] ⚠️ no reachable base found, using FIRST_GUESS =', ACTIVE_OPTIMIZER_BASE);
-  return ACTIVE_OPTIMIZER_BASE;
+
+  console.warn('[OPTIMIZER] ⚠️ no reachable base found (health failed for all).');
+  return null; // <= ÖNEMLİ: artık FIRST_GUESS’ı zorla seçmiyoruz
 }
 
 // Debug çıktısı
@@ -240,7 +249,7 @@ function toMetersProj(lat, lon, lat0) {
 
 function kmeans(points, k, maxIter = 30) {
   if (k <= 1 || points.length <= k) {
-    return points.map((p, i) => ({ ...p, _k: Math.min(i, k - 1) }));
+    return points.map((p, i) => ({ ...p, _k: Math.min(i, k - 1) })); 
   }
   const centers = [];
   centers.push(points[Math.floor(Math.random() * points.length)]);
@@ -379,16 +388,13 @@ function openingToWindow(place, dayStartMin, dayEndMin) {
 }
 
 async function callOptimizer(payload) {
-  // ACTIVE_OPTIMIZER_BASE yoksa çöz ve cache’le
   const firstBase = await resolveOptimizerBase();
-
-  const bases = ACTIVE_OPTIMIZER_BASE
-    ? [ACTIVE_OPTIMIZER_BASE, ...CANDIDATE_BASES.filter(b => b !== ACTIVE_OPTIMIZER_BASE)]
-    : [firstBase, ...CANDIDATE_BASES.filter(b => b !== firstBase)];
+  const bases = (ACTIVE_OPTIMIZER_BASE ? [ACTIVE_OPTIMIZER_BASE] : [])
+    .concat(CANDIDATE_BASES.filter(b => b && b !== ACTIVE_OPTIMIZER_BASE));
 
   let lastErr;
   for (const base of bases) {
-    const url = `${base}/optimize-day`;
+    const url = `${base.replace(/\/+$/,'')}/optimize-day`;
     try {
       console.log('[OPT] POST', url);
       const json = await fetchJsonNoSignal(url, {
@@ -396,7 +402,6 @@ async function callOptimizer(payload) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),
       }, REQ_TIMEOUT_MS);
-      // Başarılı → bu base’i aktif tut
       ACTIVE_OPTIMIZER_BASE = base;
       return json;
     } catch (e) {
@@ -418,82 +423,70 @@ function dayBoundsFor(day, prefs, startEndSingle) {
   return { dayStartMin, dayEndMin };
 }
 
+/**
+ * Başlangıç/Bitiş koordinatlarını **her durumda** doldurur.
+ * Öncelik: (o güne özel hub) → (o günün konaklaması) → (ilk ziyaret / Ankara fallback)
+ * Dönen isimler optimizer şemasıyla bire bir: { start, end }
+ */
 function pickStartEndCoordsForDay(day, visits, lodgingsByDate, startEndSingle) {
   const lodge = lodgingsByDate[day.date];
   const isStartDay = !!(startEndSingle?.start?.date && startEndSingle.start.date === day.date);
   const isEndDay   = !!(startEndSingle?.end?.date   && startEndSingle.end.date   === day.date);
 
-  const startHub = isStartDay && startEndSingle?.start?.hub?.location
-    ? { lat: startEndSingle.start.hub.location.lat, lon: startEndSingle.start.hub.location.lng }
+  const hubStart = isStartDay && startEndSingle?.start?.hub?.location
+    ? { lat: startEndSingle.start.hub.location.lat, lon: (startEndSingle.start.hub.location.lon ?? startEndSingle.start.hub.location.lng) }
     : null;
 
-  const endHub = isEndDay && startEndSingle?.end?.hub?.location
-    ? { lat: startEndSingle.end.hub.location.lat, lon: startEndSingle.end.hub.location.lng }
+  const hubEnd = isEndDay && startEndSingle?.end?.hub?.location
+    ? { lat: startEndSingle.end.hub.location.lat, lon: (startEndSingle.end.hub.location.lon ?? startEndSingle.end.hub.location.lng) }
     : null;
 
-  const fallback = visits?.[0]?.place?.location || { lat: 39.9208, lon: 32.8541 }; // Ankara fallback
-  const startCoord = startHub || lodge?.location || fallback;
-  const endCoord   = endHub   || lodge?.location || fallback;
+  const firstVisitLoc = visits?.[0]?.place?.location || null;
+  const fallback = firstVisitLoc || { lat: 39.9208, lon: 32.8541 }; // Ankara fallback
 
-  return { startCoord, endCoord };
+  const lodgeLoc = lodge?.location;
+
+  const start = hubStart || lodgeLoc || fallback;
+  const end   = hubEnd   || lodgeLoc || fallback;
+
+  return { start, end };
 }
 
 
-function buildOptimizerReqForDay(day, visits, prefs, lodgingsByDate, startEndSingle) {
-  const { dayStartMin, dayEndMin } = dayBoundsFor(day, prefs, startEndSingle);
-  const { startCoord, endCoord } = pickStartEndCoordsForDay(day, visits, lodgingsByDate, startEndSingle);
-  const validCoord = (c) => c && Number.isFinite(c.lat) && Number.isFinite(c.lon);
+function buildOptimizerReqForDay(day, visits, prefs, lodgingsByDate, anchorData) {
+  const { start, end } = pickStartEndCoordsForDay(day, visits, lodgingsByDate, anchorData);
 
-  const stops = [];
+  const round5 = (v) => Math.round(Number(v) * 1e5) / 1e5;
+  const { dayStartMin, dayEndMin } = dayBoundsFor(day, prefs, anchorData);
 
-  if (validCoord(startCoord)) {
-    stops.push({
-      id: 'start-lodging',
-      name: 'Başlangıç (Konaklama)',
-      coords: { lat: startCoord.lat, lon: startCoord.lon },
-      stay_mins: 0,
-      open_min: dayStartMin,
-      close_min: dayEndMin,
-      fixed: true,
-    });
-  }
-
-  for (const v of visits) {
-    const stay_mins = v.durationMin ?? pickVisitDuration(v.place, prefs);
-    const win = openingToWindow(v.place, dayStartMin, dayEndMin);
-    stops.push({
-      id: v.id || v.place?.id || `${v.place?.location?.lat},${v.place?.location?.lon}`,
-      name: v.place?.name || 'Visit',
-      coords: { lat: v.place.location.lat, lon: v.place.location.lon },
-      stay_mins,
-      open_min: win.open_min,
-      close_min: win.close_min,
-      fixed: false,
-    });
-  }
-
-  if (validCoord(endCoord)) {
-    stops.push({
-      id: 'end-lodging',
-      name: 'Bitiş (Konaklama)',
-      coords: { lat: endCoord.lat, lon: endCoord.lon },
-      stay_mins: 0,
-      open_min: dayStartMin,
-      close_min: dayEndMin,
-      fixed: true,
-    });
-  }
+  const filtered = visits.filter(v => {
+    const loc = v.place?.location;
+    if (!loc || !Number.isFinite(loc.lat) || !Number.isFinite(loc.lon)) return false;
+    const lat = round5(loc.lat), lon = round5(loc.lon);
+    const sameAsStart = start && round5(start.lat) === lat && round5(start.lon) === lon;
+    const sameAsEnd   = end   && round5(end.lat)   === lat && round5(end.lon)   === lon;
+    return !sameAsStart && !sameAsEnd;
+  });
 
   return {
-    day_start_time_min: dayStartMin,
-    day_end_time_min: dayEndMin,
-    start: validCoord(startCoord) ? { lat: startCoord.lat, lon: startCoord.lon } : undefined,
-    end:   validCoord(endCoord)   ? { lat: endCoord.lat,   lon: endCoord.lon   } : undefined,
-    mode: (prefs.travelMode === 'driving' ? 'driving' : 'walking'),
-    stops,
+     day_start_time_min: dayStartMin,
+     day_end_time_min:   dayEndMin,
+    start, // ← artık guaranteed
+    end,   // ← artık guaranteed
+    mode: prefs.travelMode,
+     stops: filtered.map((v, idx) => {
+       const { open_min, close_min } = openingToWindow(v.place, dayStartMin, dayEndMin);
+       return {
+         id: v.id || `a${idx}`,
+         name: v.place?.name || v.title || `Durak ${idx + 1}`,
+         coords: { lat: v.place.location.lat, lon: v.place.location.lon },
+         stay_mins: v.durationMin || 45,
+         open_min,
+         close_min,
+       };
+     })
   };
 }
-
 
 function reorderActivitiesByOptimizer(day, visits, optimizerRes) {
   const idOrder = optimizerRes?.order || [];
@@ -517,16 +510,31 @@ function reorderActivitiesByOptimizer(day, visits, optimizerRes) {
   return seq;
 }
 
+export function timeStrToMinutes(str) {
+  if (!str || typeof str !== 'string') return 0;
+  const [h, m] = str.split(':').map((x) => parseInt(x, 10));
+  return (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
+}
+
 /* ============================== Public API ============================== */
 
-// Plan objesinin tripId'yi içerdiğinden emin oluyoruz
+// Güvenli ISO: YYYY-MM-DD pattern yakala (bozuk tarihleri eler)
+function safeISO(d) {
+  if (!d) return null;
+  const m = String(d).match(/\d{4}-\d{2}-\d{2}/);
+  return m ? m[0] : null;
+}
+
 // Plan objesinin tripId'yi içerdiğinden emin oluyoruz
 export async function generatePlan(trip, prefs, opts = {}) {
   const { useRealDirections = USE_REAL_DIRECTIONS_DEFAULT } = opts;
 
-  const startISO = trip?.dateRange?.start || trip?._startEndSingle?.start?.date;
-  const endISO   = trip?.dateRange?.end   || trip?._startEndSingle?.end?.date;
-  const daysISO = enumerateDates(startISO, endISO);
+  const startISO = safeISO(trip?.dateRange?.start || trip?._startEndSingle?.start?.date);
+  const endISO   = safeISO(trip?.dateRange?.end   || trip?._startEndSingle?.end?.date) || startISO;
+  let daysISO = enumerateDates(startISO, endISO);
+  if (!daysISO.length && startISO) daysISO = [startISO]; // min 1 gün
+
+  // console.log('[GP] daysISO=', daysISO);
 
   const selectedPlaces = (trip?.selectedPlaces || trip?.places || []).map(p => ({
     id: p.id || p.placeId || `${p.lat},${p.lon}`,
@@ -536,10 +544,12 @@ export async function generatePlan(trip, prefs, opts = {}) {
     address: p.address,
     opening_hours: p.opening_hours,
     location: {
-      lat: p.lat ?? p.location?.lat ?? p?.coords?.lat,
-      lon: p.lon ?? p.location?.lon ?? p?.coords?.lng ?? p?.coords?.lon
+      lat: p.lat ?? p.location?.lat ?? p.coords?.lat ?? p.coords?.latitude,
+      lon: p.lon ?? p.location?.lon ?? p.location?.lng ?? p.coords?.lon ?? p.coords?.lng ?? p.coords?.longitude,
     },
-  })).filter(p => p.location?.lat != null && p.location?.lon != null);
+  })).filter(p => Number.isFinite(p?.location?.lat) && Number.isFinite(p?.location?.lon));
+
+  // console.log('[GP] selectedPlaces=', selectedPlaces.length);
 
   const lodgingsByDate = (trip?.lodgings || []).reduce((acc, l) => {
     const d = l?.date || l?.checkIn;
@@ -573,8 +583,20 @@ export async function generatePlan(trip, prefs, opts = {}) {
     let orderedVisits = visits;
     let optimizerUsed = false;
 
-    try {
-      const payload = buildOptimizerReqForDay(d, visits, prefs, lodgingsByDate, trip?._startEndSingle);
+     try {
+       const payload = buildOptimizerReqForDay(d, visits, prefs, lodgingsByDate, trip?._startEndSingle);
+       // ⛳ stops boşsa optimizer’a göndermeyelim (aksi halde 422 alıyoruz)
+       if (!payload?.stops?.length) {
+         // sadece start → end çizgisi (veya hiç polyline gerekmez)
+         const { start, end } = payload;
+         let poly = [];
+         if (start && end) {
+           poly = await fetchLegPolyline(start, end, prefs.travelMode || 'driving');
+         }
+         d.route = { polyline: poly, optimizerUsed: false, start, end };
+         ensureActivityIds(d);
+         continue;
+       }
       const res = await callOptimizer(payload); // {order, total_minutes, ...}
       orderedVisits = reorderActivitiesByOptimizer(d, visits, res);
       optimizerUsed = true;
@@ -582,9 +604,14 @@ export async function generatePlan(trip, prefs, opts = {}) {
     } catch (e) {
       console.warn('[planService] optimizer unreachable, using NN fallback →', e?.message || e);
       // NN fallback
+      const isStartDay = (trip?._startEndSingle?.start?.date === d.date);
+      const hubStart = isStartDay && trip?._startEndSingle?.start?.hub?.location
+        ? { lat: trip._startEndSingle.start.hub.location.lat, lon: (trip._startEndSingle.start.hub.location.lon ?? trip._startEndSingle.start.hub.location.lng) }
+        : null;
+
       const startCenter =
-        (trip?._startEndSingle?.start?.date === d.date && trip?._startEndSingle?.start?.hub?.location)
-          ? { lat: trip._startEndSingle.start.hub.location.lat, lon: trip._startEndSingle.start.hub.location.lng }
+        hubStart
+          ? hubStart
           : (lodgingsByDate[d.date]?.location || visits[0].place.location);
 
       const pool = [...visits];
@@ -615,7 +642,7 @@ export async function generatePlan(trip, prefs, opts = {}) {
     }
 
     // Polyline: start/end hub veya lodging
-    const { startCoord: start, endCoord: endNode } =
+    const { start, end } =
       pickStartEndCoordsForDay(d, d.activities, lodgingsByDate, trip?._startEndSingle);
 
     let poly = [];
@@ -636,10 +663,10 @@ export async function generatePlan(trip, prefs, opts = {}) {
       prev = a.place.location;
     }
 
-    if (endNode) {
+    if (end) {
       const leg = useRealDirections
-        ? await fetchLegPolyline(prev, endNode, prefs.travelMode || 'driving')
-        : [prev, endNode];
+        ? await fetchLegPolyline(prev, end, prefs.travelMode || 'driving')
+        : [prev, end];
       if (poly.length && leg.length) {
         const last = poly[poly.length - 1];
         const head = leg[0];
@@ -649,9 +676,12 @@ export async function generatePlan(trip, prefs, opts = {}) {
       }
     }
 
-    d.route = { polyline: poly, optimizerUsed };
+    d.route = { polyline: poly, optimizerUsed, start, end };
     ensureActivityIds(d);
   }
+
+  // UI uyumluluğu: activities → items alias ekle
+  days = days.map(d => ({ ...d, items: d.activities }));
 
   const cityName = (trip?.cities && trip.cities[0]?.name) || trip?.city || '';
   for (let i = 0; i < days.length; i++) {
@@ -679,8 +709,6 @@ export async function generatePlan(trip, prefs, opts = {}) {
     updatedAt: Date.now(),
   };
 }
-
- 
 
 export async function reoptimizeDay(day, { mode = 'light' } = {}) {
   const next = { ...day, activities: day.activities.map(a => ({ ...a })) };

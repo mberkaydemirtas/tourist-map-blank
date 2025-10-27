@@ -61,8 +61,8 @@ import AltRoutesLayer from '../navigation/components/AltRoutesLayer';
 /* -------------------------- Basit yardımcılar -------------------------- */
 const toLL = (p) => {
   if (!p) return null;
-  const lat = p.lat ?? p.latitude;
-  const lng = p.lng ?? p.longitude;
+   const lat = p.lat ?? p.latitude ?? p?.coords?.latitude;
+   const lng = p.lng ?? p.lon ?? p.longitude ?? p?.coords?.longitude;
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
   return { lat, lng };
 };
@@ -133,8 +133,8 @@ export default function NavigationScreen() {
   const norm = (p) =>
     p
       ? {
-          latitude: p?.coords?.latitude ?? p.latitude ?? p.lat,
-          longitude: p?.coords?.longitude ?? p.longitude ?? p.lng,
+         latitude:  p?.coords?.latitude ?? p.latitude ?? p.lat,
+         longitude: p?.coords?.longitude ?? p.longitude ?? p.lng ?? p.lon,
         }
       : null;
 
@@ -219,7 +219,7 @@ export default function NavigationScreen() {
       : (typeof polyline === 'string' && polyline.trim() ? polyline.trim() : null);
     if (enc) return decodePolyline(enc).map(c => [c.longitude, c.latitude]);
     // 3) fallback two-point
-    const toLngLat = (p) => (p ? [p.longitude ?? p.lng, p.latitude ?? p.lat] : null);
+    const toLngLat = (p) => (p ? [p.longitude ?? p.lng ?? p.lon, p.latitude ?? p.lat] : null);
     const a = toLngLat(from);
     const b = toLngLat(to);
     return a && b ? [a, b] : [];
@@ -644,8 +644,8 @@ export default function NavigationScreen() {
         androidHardwareAccelerationDisabled={false}
         onMapReady={() => setMapReady(true)}
         initialRegion={{
-          latitude: from?.latitude ?? fallbackFrom?.latitude ?? 39.92,
-          longitude: from?.longitude ?? fallbackFrom?.longitude ?? 32.85,
+        latitude:  from?.latitude ?? fallbackFrom?.latitude ?? fallbackFrom?.lat ?? 39.92,
+        longitude: from?.longitude ?? fallbackFrom?.longitude ?? fallbackFrom?.lng ?? fallbackFrom?.lon ?? 32.85,
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         }}
@@ -711,9 +711,9 @@ export default function NavigationScreen() {
 
         {/* Waypoints — from/to ile çakışanları çıkar */}
         {(() => {
-          const wp = (waypoints || []).map(w => ({
-            latitude:  w.latitude ?? w.lat,
-            longitude: w.longitude ?? w.lng,
+        const wp = (waypoints || []).map(w => ({
+          latitude:  w.latitude ?? w.lat,
+          longitude: w.longitude ?? w.lng ?? w.lon,
             name: w.name,
             place_id: w.place_id
           })).filter(p => {

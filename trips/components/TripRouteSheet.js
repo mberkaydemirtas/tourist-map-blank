@@ -1,5 +1,5 @@
 // trips/components/TripRouteSheet.js
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet, Animated, Easing, ActivityIndicator } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getModeSummaries } from '../services/RouteDirectionService';
@@ -14,19 +14,45 @@ const C = {
   rowActive: '#EEF2FF',
 };
 
+/** Küçük yardımcı: {lat,lon} → {lat,lng} normalizasyonu */
+function toLatLng(p) {
+  if (!p) return null;
+  const lat = p.lat ?? p.latitude ?? p?.location?.lat ?? p?.location?.latitude;
+  const lon = p.lon ?? p.lng ?? p.longitude ?? p?.location?.lng ?? p?.location?.longitude;
+  if (typeof lat === 'number' && typeof lon === 'number') return { lat, lng: lon };
+  return null;
+}
+
+/** leg → waypoints (start, end) */
+function waypointsFromLeg(leg) {
+  if (!leg?.from?.loc || !leg?.to?.loc) return null;
+  const a = toLatLng(leg.from.loc);
+  const b = toLatLng(leg.to.loc);
+  if (!a || !b) return null;
+  return [a, b];
+}
+
 export default function TripRouteSheet({
   visible,
-  waypoints,          // [{lat,lng} | {place_id}]
+  leg,                // { from:{loc:{lat,lon}, kind}, to:{loc,kind} }
+  waypoints,          // [{lat,lng} | {place_id}] (opsiyonel – leg yoksa kullan)
   apiKey,
   onClose,
-  onStart,            // (mode) => void
+  onStart,            // (payload) => void  payload: { mode, leg, waypoints, summary }
   preferredMode = 'driving',
-  legLabel = '',      // opsiyonel: "Durak 2 → Durak 3" gibi
+  legLabel = '',
+  previewTitle,
 }) {
   const a = useRef(new Animated.Value(0)).current;
   const [summ, setSumm] = useState({ driving: null, walking: null, transit: null });
   const [loading, setLoading] = useState(false);
   const [selectedMode, setSelectedMode] = useState(preferredMode);
+
+  // final waypoints: leg öncelikli
+  const finalWaypoints = useMemo(() => {
+    const fromLeg = waypointsFromLeg(leg);
+    return fromLeg || waypoints || null;
+  }, [leg, waypoints]);
 
   useEffect(() => {
     Animated.timing(a, {
@@ -43,10 +69,14 @@ export default function TripRouteSheet({
   useEffect(() => {
     let ok = true;
     if (!visible) return;
+    if (!finalWaypoints || finalWaypoints.length < 2) {
+      setSumm({ driving: null, walking: null, transit: null });
+      return;
+    }
     (async () => {
       try {
         setLoading(true);
-        const res = await getModeSummaries({ waypoints, apiKey });
+        const res = await getModeSummaries({ waypoints: finalWaypoints, apiKey });
         if (ok) setSumm(res);
       } catch {
         if (ok) setSumm({ driving: null, walking: null, transit: null });
@@ -55,11 +85,11 @@ export default function TripRouteSheet({
       }
     })();
     return () => { ok = false; };
-  }, [visible, apiKey, JSON.stringify(waypoints)]);
+  }, [visible, apiKey, JSON.stringify(finalWaypoints)]);
 
   if (!visible) return null;
-  const t = { transform: [{ translateY: a.interpolate({ inputRange: [0,1], outputRange: [20,0] }) }], opacity: a };
 
+  const t = { transform: [{ translateY: a.interpolate({ inputRange: [0,1], outputRange: [20,0] }) }], opacity: a };
   const anySumm = summ.driving || summ.walking || summ.transit;
   const totalDistanceText =
     summ.driving?.distanceText || summ.walking?.distanceText || summ.transit?.distanceText || '—';
@@ -84,14 +114,33 @@ export default function TripRouteSheet({
     );
   };
 
+  const handleStart = () => {
+    if (!onStart) return;
+    const summary =
+      (selectedMode === 'walking' && summ.walking) ? summ.walking :
+      (selectedMode === 'transit'  && summ.transit) ? summ.transit :
+      summ.driving || null;
+
+    onStart({
+      mode: selectedMode,
+      leg: leg || null,
+      waypoints: finalWaypoints || null,
+      summary, // { distanceText, durationText, ... } RouteDirectionService ne döndürüyorsa
+    });
+  };
+
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       <View style={{ position:'absolute', left:0, right:0, bottom:0, alignItems:'center', paddingBottom:10 }}>
         <Animated.View style={[styles.card, t]} pointerEvents="auto">
           <View style={styles.top}>
             <View style={{ flex: 1, paddingRight: 8 }}>
-              <Text style={styles.title}>Rota Özeti</Text>
-              {!!legLabel && <Text numberOfLines={1} style={styles.metaMinor}>{legLabel}</Text>}
+              {/* Başlık önceliği: previewTitle → legLabel → "Rota Özeti" */}
+              <Text style={styles.title}>{previewTitle || legLabel || 'Rota Özeti'}</Text>
+              {/* hem previewTitle hem legLabel varsa, ikincisini küçük satır olarak göster */}
+              {!!(previewTitle && legLabel) && (
+                <Text numberOfLines={1} style={styles.metaMinor}>{legLabel}</Text>
+              )}
             </View>
             <Pressable onPress={onClose} style={styles.x} hitSlop={8} accessibilityLabel="Kapat">
               <Ionicons name="close" size={18} color={C.fg} />
@@ -115,10 +164,9 @@ export default function TripRouteSheet({
 
           <View style={styles.actions}>
             <Pressable
-              onPress={() => onStart?.(selectedMode)}
-              style={[styles.primary, (!anySumm && !loading) && { opacity: 0.6 }]}
-              disabled={!anySumm && !loading}
-              accessibilityLabel="Rotayı Başlat"
+              onPress={handleStart}
+              disabled={false}
+              style={styles.primary}
             >
               <Ionicons name="navigate" size={16} color="#fff" style={{ marginRight:6 }} />
               <Text style={{ color:'#fff', fontWeight:'800' }}>

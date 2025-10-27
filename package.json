@@ -18,7 +18,7 @@
     "format": "prettier -w src/**/*.{js,jsx,ts,tsx,json,md}",
     "prepare": "husky",
     "dev:adb": "adb reverse tcp:5000 tcp:5000 || exit 0",
-    "start:local": "npm run dev:adb && cross-env EXPO_PUBLIC_API_BASE=http://localhost:5000 EXPO_PUBLIC_SERVER_ENABLED=true expo start -c",
+    "start:local": "npm run dev:adb && cross-env EXPO_PUBLIC_API_BASE=http://192.168.1.108:5000 EXPO_PUBLIC_SERVER_ENABLED=true expo start -c",
     "start:prod": "expo start -c"
   },
   "expo": {
@@ -31,6 +31,7 @@
     "@gorhom/portal": "^1.0.14",
     "@mapbox/polyline": "^1.2.1",
     "@react-native-async-storage/async-storage": "^2.1.2",
+    "@react-native-community/datetimepicker": "^8.5.0",
     "@react-native-community/geolocation": "^3.4.0",
     "@react-navigation/bottom-tabs": "^7.4.6",
     "@react-navigation/native": "^7.1.17",

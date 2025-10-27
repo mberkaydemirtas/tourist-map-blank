@@ -1,89 +1,91 @@
-// trips/shared/anchors.js
+// shared/anchors.js
 
-/** Tarihi 'YYYY-MM-DD' normalize eder */
-function normalizeDate(d) {
-  if (!d) return null;
-  try {
-    return new Date(d).toISOString().split('T')[0];
-  } catch {
-    return null;
-  }
+export function iso(d) {
+  // YYYY-MM-DD pattern’ini yakala; bozuk tarihleri (ör. 20025-10-29) eleyip null döndür.
+  const m = String(d || '').match(/\d{4}-\d{2}-\d{2}/);
+  return m ? m[0] : null;
 }
 
-/** trip.lodgings → { [YYYY-MM-DD]: { location:{lat,lon} } } */
-export function mapLodgingsByDate(trip) {
+export function sameCoord(a, b) {
+  if (!a || !b) return false;
+  const alon = a.lon ?? a.lng; const blon = b.lon ?? b.lng;
+  return a.lat === b.lat && alon === blon;
+}
+
+/** Lodging’leri { [YYYY-MM-DD]: { location, label? } } şekline getirir */
+function lodgingsByDate(trip) {
   const out = {};
   for (const l of Array.isArray(trip?.lodgings) ? trip.lodgings : []) {
-    const dRaw = l?.date || l?.checkIn || l?.check_in || l?.checkInDate || l?.start;
-    const d = normalizeDate(dRaw);
+    const d = iso(l?.date || l?.checkIn || l?.check_in || l?.checkInDate || l?.start);
     if (!d) continue;
-
     const lat = Number(l?.location?.lat ?? l?.coords?.lat ?? l?.lat);
-    const lon = Number(
-      l?.location?.lng ?? l?.location?.lon ?? l?.coords?.lng ??
-      l?.coords?.lon ?? l?.lng ?? l?.lon
-    );
-
-    if (Number.isFinite(lat) && Number.isFinite(lon)) {
-      out[d] = { location: { lat, lon } };
+    const lng = Number(l?.location?.lng ?? l?.location?.lon ?? l?.coords?.lng ?? l?.coords?.lon ?? l?.lng ?? l?.lon);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      out[d] = { location: { lat, lon: lng }, label: l?.name || l?.label || l?.title || 'Konaklama' };
     }
   }
   return out;
 }
 
-/**
- * UI + optimizer için o günün sabit noktalarını çıkarır.
- * @returns {
- *   start: {lat,lon}|null,
- *   end:   {lat,lon}|null,
- *   lodge: {lat,lon}|null,
- *   startLabel: string,
- *   endLabel:   string
- * }
- */
-export function getAnchorsForDayDetailed(trip, day) {
+/** Wizard’ın start/end verisi (single mod) */
+function startEndSingle(trip) {
+  const se = trip?._startEndSingle || {};
+  const get = (pt) => {
+    const d = iso(pt?.date);
+    const hub = pt?.hub;
+    const lat = Number(hub?.location?.lat);
+    const lng = Number(hub?.location?.lng ?? hub?.location?.lon);
+    return (d && Number.isFinite(lat) && Number.isFinite(lng))
+      ? { date: d, label: hub?.name || (pt?.type === 'airport' ? 'Havaalanı' : 'Başlangıç/Bitiş'), location: { lat, lon: lng } }
+      : null;
+  };
+  return { start: get(se.start), end: get(se.end) };
+}
+
+/** Tek şehir değilse (multi) -> _startEndByCity[k] ile benzer şekilde çekilir (opsiyonel) */
+function startEndMultiByDate(trip) {
   const wa = trip?._whereAnswer;
-  const seSingle = trip?._startEndSingle || null;
-  const byDate = mapLodgingsByDate(trip);
-
-  const dayISO = day?.date;
-  if (!dayISO) {
-    return {
-      start: null,
-      end: null,
-      lodge: null,
-      startLabel: 'Başlangıç',
-      endLabel: 'Bitiş',
+  if (!wa || wa.mode === 'single') return {};
+  const out = {};
+  const byCity = trip?._startEndByCity || {};
+  (wa.items || []).forEach(it => {
+    const k = it?.city?.place_id;
+    const se = byCity[k] || {};
+    const put = (pt, kind) => {
+      const d = iso(pt?.date); const hub = pt?.hub;
+      const lat = Number(hub?.location?.lat);
+      const lng = Number(hub?.location?.lng ?? hub?.location?.lon);
+      if (!d || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      out[d] = out[d] || {};
+      out[d][kind] = { date: d, label: hub?.name || (kind === 'start' ? 'Başlangıç' : 'Bitiş'), location: { lat, lon: lng } };
     };
-  }
+    if (se?.start) put(se.start, 'start');
+    if (se?.end)   put(se.end,   'end');
+  });
+  return out;
+}
 
-  const lodge = byDate[dayISO]?.location || null;
-  let start = lodge || null;
-  let end = lodge || null;
-  let startLabel = lodge ? 'Başlangıç (Konaklama)' : 'Başlangıç';
-  let endLabel   = lodge ? 'Bitiş (Konaklama)'     : 'Bitiş';
+/** 🔑 Ana seçici: Gün için start/end/lodge verir */
+export function getAnchorsForDayDetailed(trip, day) {
+  const dayISO = iso(day?.date);
+  const lodg = lodgingsByDate(trip);
+  const single = startEndSingle(trip);
+  const multiByDate = startEndMultiByDate(trip);
 
-  if (wa?.mode === 'single' && seSingle) {
-    const isStartDay = seSingle?.start?.date === dayISO;
-    const isEndDay   = seSingle?.end?.date === dayISO;
+  // start/end: önce multi (güne özel), sonra single’a bak
+  let start = multiByDate[dayISO]?.start?.location ?? (single.start?.date === dayISO ? single.start.location : null);
+  let end   = multiByDate[dayISO]?.end?.location   ?? (single.end?.date   === dayISO ? single.end.location   : null);
 
-    const hubLoc = (p) =>
-      p?.hub?.location
-        ? { lat: p.hub.location.lat, lon: p.hub.location.lng }
-        : null;
+  // lodging: trip.lodgings’ten
+  const lodge = lodg[dayISO]?.location || null;
 
-    if (isStartDay) {
-      const hub = hubLoc(seSingle.start);
-      start = hub || lodge || null;
-      startLabel = hub ? 'Başlangıç (Hub)' : (lodge ? 'Başlangıç (Konaklama)' : 'Başlangıç');
-    }
+  // etiketler
+  const startLabel = multiByDate[dayISO]?.start?.label || (single.start?.date === dayISO ? (single.start?.label || 'Başlangıç') : 'Başlangıç');
+  const endLabel   = multiByDate[dayISO]?.end?.label   || (single.end?.date   === dayISO ? (single.end?.label   || 'Bitiş')    : 'Bitiş');
 
-    if (isEndDay) {
-      const hub = hubLoc(seSingle.end);
-      end = hub || lodge || null;
-      endLabel = hub ? 'Bitiş (Hub)' : (lodge ? 'Bitiş (Konaklama)' : 'Bitiş');
-    }
-  }
+  // fallback: start/end yoksa konaklama koordinatını day anchor olarak kullan
+  if (!start && lodge) start = lodge;
+  if (!end && lodge)   end   = lodge;
 
   return { start, end, lodge, startLabel, endLabel };
 }

@@ -3,6 +3,7 @@ const path = require('path');
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const compression = require('compression');
 
 // Routers
 const suggestRouter = require('./routes/suggest');
@@ -18,7 +19,6 @@ if (loaded.error) {
   console.warn('[ENV] .env yüklenemedi:', loaded.error.message);
 } else {
   console.log('[ENV] yüklendi:', envPath);
-  // hızlı teşhis: GOOGLE* değişkenlerini göster
   const keys = Object.keys(process.env).filter(k => k.toUpperCase().includes('GOOGLE'));
   console.log('[ENV] GOOGLE keys:', keys);
 }
@@ -26,13 +26,31 @@ if (loaded.error) {
 const app = express();
 app.set('trust proxy', 1);
 app.use(cors());
-app.use(express.json());
+
+// 2) Sıkıştırma (opsiyonel ama önerilir – büyük JSON’larda nefes aldırır)
+app.use(compression());
+
+// 3) **Body limit** → 413 “request entity too large” için kritik
+//    JSON ve form body’leri büyüt. (Gerekiyorsa 50mb yapabilirsin.)
+const BODY_LIMIT = process.env.BODY_LIMIT || '25mb';
+app.use(express.json({ limit: BODY_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: BODY_LIMIT }));
+
+// 3.1) Büyük payload’ları teşhis etmek için mini logger (opsiyonel)
+app.use((req, _res, next) => {
+  const len = req.headers['content-length'];
+  if (len && Number(len) > 200 * 1024) { // >200KB
+    console.warn('[BIG]', req.method, req.url, 'size=', len);
+  }
+  next();
+});
 
 // Baseline health
-app.get('/health', (req, res) => res.status(200).json({ ok: true, ts: Date.now() }));
+app.get('/health', (_req, res) => res.status(200).json({ ok: true, ts: Date.now() }));
 
 // Basit istek logu (ROUTE'lerden önce)
-app.use((req, res, next) => {
+app.use((req, _res, next) => {
+  // “/api/directions” tarafında boş q ile spam log’u azalt
   if (
     req.path.startsWith('/api/poi/google/') ||
     req.path.startsWith('/api/directions') ||
@@ -40,7 +58,12 @@ app.use((req, res, next) => {
   ) {
     const q = (req.query?.q || '').toString();
     const city = (req.query?.city || '').toString();
-    console.log(`[HIT] ${req.method} ${req.path} q="${q}" city="${city}" t=${new Date().toISOString()}`);
+    // q tamamen boşsa çok gürültü yapmasın
+    if (q || req.path !== '/api/directions') {
+      console.log(
+        `[HIT] ${req.method} ${req.path} q="${q}" city="${city}" t=${new Date().toISOString()}`
+      );
+    }
   }
   next();
 });
@@ -76,9 +99,21 @@ app.use((req, res, next) => {
   res.status(404).json({ error: 'not_found', path: req.path });
 });
 
+// 413 (payload too large) için anlaşılır yanıt
 app.use((err, req, res, next) => {
-  console.error('[ERR]', err?.message || err);
-  if (res.headersSent) return next(err);
+  if (err && (err.type === 'entity.too.large' || err.status === 413)) {
+    console.error('[413] payload too large', req.method, req.url, 'size=', req.headers['content-length']);
+    if (!res.headersSent) {
+      return res.status(413).json({ ok: false, error: 'Payload too large', max: BODY_LIMIT });
+    }
+  }
+  next(err);
+});
+
+// Genel hata yakalayıcı
+app.use((err, _req, res, _next) => {
+  console.error('[ERR]', err?.stack || err?.message || err);
+  if (res.headersSent) return;
   res.status(500).json({ error: 'internal_error', message: err?.message || String(err) });
 });
 

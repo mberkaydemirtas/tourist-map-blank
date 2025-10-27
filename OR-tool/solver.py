@@ -65,6 +65,7 @@ def _solve_with_params(
     penalty_overtime: int = 0, # gün sonunu geçme için ek ceza (end node)
     allow_skipping: bool = False,
     skip_penalties: Optional[Sequence[int]] = None,  # node bazlı atlama cezası (1..n-2)
+    time_limit_sec: int = 8,
 ) -> Tuple[List[int], List[int]] | None:
 
     # Horizon ve gün aralığını güvenli kıl
@@ -113,14 +114,11 @@ def _solve_with_params(
     params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
     params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
 
-    if n <= 10:
-        params.time_limit.seconds = 1
-    elif n <= 18:
-        params.time_limit.seconds = 2
-    elif n <= 30:
-        params.time_limit.seconds = 3
-    else:
-        params.time_limit.seconds = 5
+    # Dışarıdan gelen limit → asıl limit
+    # (güvenlik için 1..30 aralığına sıkıştıralım)
+    hard_limit = max(1, min(int(time_limit_sec), 30))
+    params.time_limit.seconds = hard_limit
+    # params.log_search = False  # debug gerekirse True
 
     sol = routing.SolveWithParameters(params)
     if sol is None:
@@ -152,6 +150,7 @@ def _build_and_solve(
     penalty_overtime: int = 0,
     allow_skipping: bool = False,
     skip_penalties: Optional[Sequence[int]] = None,
+    time_limit_sec: int = 8,
 ) -> Tuple[List[int], List[int]] | None:
     """
     include_service=True  -> transit = travel(i->j) + service(i)
@@ -201,6 +200,7 @@ def _build_and_solve(
         penalty_overtime=penalty_overtime,
         allow_skipping=allow_skipping,
         skip_penalties=skip_penalties,
+        time_limit_sec=time_limit_sec,
     )
 
 def solve_day_vrptw(
@@ -215,6 +215,7 @@ def solve_day_vrptw(
     allow_skipping: bool = False,
     node_weights: Optional[Sequence[float]] = None,  # önem katsayıları (1..n-2)
     skip_base_penalty: int = 2000,
+    time_limit_sec: int = 8,
 ) -> Tuple[List[int], List[int], int, List[str]]:
     """
     Tek araç: start=0, end=last; duraklar 1..N-2
@@ -241,6 +242,7 @@ def solve_day_vrptw(
         penalty_overtime=penalty_overtime,
         allow_skipping=allow_skipping,
         skip_penalties=sp,
+        time_limit_sec=time_limit_sec,
     )
     if res is not None:
         order, legs = res
@@ -255,6 +257,7 @@ def solve_day_vrptw(
         penalty_overtime=penalty_overtime,
         allow_skipping=allow_skipping,
         skip_penalties=sp,
+        time_limit_sec=time_limit_sec,
     )
     if res is not None:
         order, legs = res
