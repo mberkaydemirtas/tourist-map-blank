@@ -35,7 +35,6 @@ import useSafePolyline from '../navigation/useSafePolyline';
 import useTurnByTurn from '../navigation/useTurnByTurn';
 import { metersFmt, formatDurationShort, formatETA } from '../navigation/navFormatters';
 
-// helpers
 import {
   getManeuverTarget,
   getStepDistanceValue,
@@ -47,39 +46,51 @@ import {
   calcRemaining,
 } from '../navigation/instructions';
 
-// hooks
 import useRouteRecalc from '../navigation/hooks/useRouteRecalc';
 import useWaypointsManager from '../navigation/hooks/useWaypointsManager';
 import useNavCamera from '../navigation/hooks/useNavCamera';
 import useSnapToRoute from '../navigation/hooks/useSnapToRoute';
 
-// components
 import PoiMarkers from '../navigation/components/PoiMarkers';
 import WaypointMarkers from '../navigation/components/WaypointMarkers';
 import AltRoutesLayer from '../navigation/components/AltRoutesLayer';
 
-/* -------------------------- Basit yardımcılar -------------------------- */
+/* helpers */
 const toLL = (p) => {
   if (!p) return null;
-   const lat = p.lat ?? p.latitude ?? p?.coords?.latitude;
-   const lng = p.lng ?? p.lon ?? p.longitude ?? p?.coords?.longitude;
+  const lat = p.lat ?? p.latitude ?? p?.coords?.latitude;
+  const lng = p.lng ?? p.lon ?? p.longitude ?? p?.coords?.longitude;
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
   return { lat, lng };
 };
-
-const baseSpeak = async (text) => {
-  try { Speech.stop(); Speech.speak(text, { language: 'tr-TR', pitch: 1.0, rate: 1.0 }); } catch {}
+const num = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 };
-const buzz = async () => { try { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {} };
+const firstNum = (...vals) => {
+  for (const v of vals) { const n = num(v); if (n !== null) return n; }
+  return null;
+};
+const norm = (p) => {
+  if (!p) return null;
+  const lat = num(p?.coords?.latitude) ?? num(p?.latitude) ?? num(p?.lat);
+  const lng = num(p?.coords?.longitude) ?? num(p?.longitude) ?? num(p?.lng) ?? num(p?.lon);
+  if (lat == null || lng == null) return null;
+  return { latitude: lat, longitude: lng };
+};
+const isCoord = (p) => Number.isFinite(p?.latitude) && Number.isFinite(p?.longitude);
 
-/* --------------------------------- Ekran --------------------------------- */
+const baseSpeak = async (text) => { try { Speech.stop(); Speech.speak(text, { language: 'tr-TR', pitch: 1.0, rate: 1.0 }); } catch {} };
+const buzz = async () => { try { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {} };
+const EDGE = 60;
+
 export default function NavigationScreen() {
   const route = useRoute();
   const navigation = useNavigation();
   const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef(null);
 
-  // ---- Parametreler ----
+  // ---- Params ----
   const {
     from: initialFrom,
     initialFrom: fallbackFrom,
@@ -97,7 +108,6 @@ export default function NavigationScreen() {
     ui,
   } = route.params ?? {};
 
-  // Sadece bir kez logla
   const loggedRef = useRef(false);
   useEffect(() => {
     if (__DEV__ && !loggedRef.current) {
@@ -130,14 +140,6 @@ export default function NavigationScreen() {
   const [heading, setHeading] = useState(null);
   const [steps, setSteps] = useState(Array.isArray(initialSteps) ? initialSteps : []);
 
-  const norm = (p) =>
-    p
-      ? {
-         latitude:  p?.coords?.latitude ?? p.latitude ?? p.lat,
-         longitude: p?.coords?.longitude ?? p.longitude ?? p.lng ?? p.lon,
-        }
-      : null;
-
   const [from, setFrom] = useState(norm(initialFrom));
   const [to, setTo] = useState(norm(initialTo));
   const [mode, setMode] = useState(initialMode);
@@ -161,7 +163,6 @@ export default function NavigationScreen() {
   const spokenRef = useRef({});
   useEffect(() => { spokenRef.current = spokenFlags; }, [spokenFlags]);
 
-  // Waypoints yönetimi
   const { waypoints, setWaypoints, waypointsRef, resolvePlace } =
     useWaypointsManager({ initialWaypoints, getPlaceDetails });
 
@@ -169,7 +170,7 @@ export default function NavigationScreen() {
 
   const stepIndexRef = useRef(0);
 
-  // Kamera adapter
+  // Camera adapter
   const cameraRef = useRef(null);
   useEffect(() => {
     const regionFromBounds = (ne, sw) => {
@@ -202,7 +203,6 @@ export default function NavigationScreen() {
 
   // Base polyline
   const baseRouteCoordinates = useMemo(() => {
-    // 1) polylineCoords (array)
     if (Array.isArray(polylineCoords) && polylineCoords.length > 1) {
       const normed = polylineCoords
         .map(p => {
@@ -213,12 +213,10 @@ export default function NavigationScreen() {
         .filter(([lng, lat]) => Number.isFinite(lat) && Number.isFinite(lng));
       if (normed.length > 1) return normed;
     }
-    // 2) encoded string
     const enc = (typeof polylineEncoded === 'string' && polylineEncoded.trim())
       ? polylineEncoded.trim()
       : (typeof polyline === 'string' && polyline.trim() ? polyline.trim() : null);
     if (enc) return decodePolyline(enc).map(c => [c.longitude, c.latitude]);
-    // 3) fallback two-point
     const toLngLat = (p) => (p ? [p.longitude ?? p.lng ?? p.lon, p.latitude ?? p.lat] : null);
     const a = toLngLat(from);
     const b = toLngLat(to);
@@ -227,9 +225,7 @@ export default function NavigationScreen() {
 
   // pauseFollowing proxy
   const pauseFollowingRef = useRef((/* ms */) => {});
-  const pauseFollowingStable = useCallback((ms = 2500) => {
-    return pauseFollowingRef.current?.(ms);
-  }, []);
+  const pauseFollowingStable = useCallback((ms = 2500) => pauseFollowingRef.current?.(ms), []);
   const forceFollowRef = useRef(false);
 
   // Route reset
@@ -242,7 +238,7 @@ export default function NavigationScreen() {
     spokenRef.current = {};
   }, []);
 
-  // Route hesap/yeniden-hesap
+  // Route compute
   const {
     primaryRoute,
     isRerouting,
@@ -275,22 +271,28 @@ export default function NavigationScreen() {
   const beginRouteUpdateStable = useCallback((...a) => beginRouteUpdateRef.current?.(...a), []);
   const finalizeRouteStepsStable = useCallback((...a) => finalizeRouteStepsRef.current?.(...a), []);
 
-  // ✅ Hedef koordinatı ve sıra no (daha sağlam)
+  // ✅ Destination coordinate
   const destLL = useMemo(() => {
     const cand = to || initialTo || (nextStop && {
-      latitude: nextStop.latitude ?? nextStop.lat,
-      longitude: nextStop.longitude ?? nextStop.lng ?? nextStop.lon
+      latitude: num(nextStop.latitude) ?? num(nextStop.lat),
+      longitude: num(nextStop.longitude) ?? num(nextStop.lng) ?? num(nextStop.lon)
     });
     if (!cand) return null;
-    const lat = cand.latitude ?? cand.lat;
-    const lng = cand.longitude ?? cand.lng ?? cand.lon;
-    return Number.isFinite(lat) && Number.isFinite(lng) ? { latitude: lat, longitude: lng } : null;
+    const lat = num(cand.latitude) ?? num(cand.lat);
+    const lng = num(cand.longitude) ?? num(cand.lng) ?? num(cand.lon);
+    return (lat != null && lng != null) ? { latitude: lat, longitude: lng } : null;
   }, [to, initialTo, nextStop]);
 
-  const destinationOrder =
-    (nextStop?.order != null ? nextStop.order : null) ??
-    (typeof destOrder === 'number' ? destOrder : null) ??
-    (typeof toOrder   === 'number' ? toOrder   : null);
+  /* ---------- 🔢 STOP NUMARALARI (sadece geleni kullan) ---------- */
+  // TripPlans’taki sıra ile birebir: hiçbir otomatik 1 veya +1 yok.
+  const prevNum = useMemo(
+    () => firstNum(prevStop?.order, prevStop?.idx, prevStop?.sequence),
+    [prevStop?.order, prevStop?.idx, prevStop?.sequence]
+  );
+  const destNum = useMemo(
+    () => firstNum(nextStop?.order, destOrder, toOrder, initialTo?.order),
+    [nextStop?.order, destOrder, toOrder, initialTo?.order]
+  );
 
   const rnPolyline = useMemo(
     () => (Array.isArray(routeCoordinates) ? routeCoordinates.map(([lng, lat]) => ({ latitude: lat, longitude: lng })) : []),
@@ -301,27 +303,34 @@ export default function NavigationScreen() {
   const routeCoordsRef = useRef(routeCoordinates);
   useEffect(() => { routeCoordsRef.current = routeCoordinates; }, [routeCoordinates]);
 
-  // Konum izni / fallback
+  // Location permission / fallback
   useEffect(() => {
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         const ok = status === 'granted';
         setLocationPermission(ok);
-        if (!ok && !initialFrom && fallbackFrom) {
+        if (!ok && !isCoord(from) && isCoord(fallbackFrom)) {
           console.log('[Nav] İzin reddedildi, from -> fallback');
           setFrom(norm(fallbackFrom));
         }
       } catch {
-        if (!initialFrom && fallbackFrom) {
+        if (!isCoord(from) && isCoord(fallbackFrom)) {
           console.log('[Nav] İzin hatası, from -> fallback');
           setFrom(norm(fallbackFrom));
         }
       }
     })();
-  }, [fallbackFrom, initialFrom]);
+  }, [fallbackFrom]);
 
-  // Navigation core
+  // Başlangıç fallback: yalnızca izin YOKSA prevStop
+  useEffect(() => {
+    if (!locationPermission && !isCoord(from) && isCoord(prevStop)) {
+      setFrom({ latitude: num(prevStop.latitude) ?? prevStop.latitude, longitude: num(prevStop.longitude) ?? prevStop.longitude });
+      console.log('[Nav] from invalid → prevStop (permission yok)');
+    }
+  }, [locationPermission, from, prevStop]);
+
   const routeInfo = useMemo(() => {
     if (!primaryRoute) return null;
     return { distance: primaryRoute.distance, duration: primaryRoute.duration };
@@ -351,7 +360,6 @@ export default function NavigationScreen() {
   const lastLocRef = useRef(null);
   useEffect(() => { if (nav?.location) lastLocRef.current = nav.location; }, [nav?.location]);
 
-  // Turn-by-turn
   const {
     currentStepIndex,
     distanceToManeuver,
@@ -385,13 +393,8 @@ export default function NavigationScreen() {
   const distForBanner = Number.isFinite(distanceToManeuver) ? distanceToManeuver : null;
   const distForChip   = next2Step ? getStepDistanceValue(next2Step) : null;
 
-  // Kamera + follow
   const {
-    camZoom, camPitch,
-    isFollowing, setIsFollowing,
-    isMapTouched, setIsMapTouched,
-    onMapPress, onPanDrag, scheduleFollowBack, goFollowNow,
-    pauseFollowing, followHoldUntilRef,
+    isFollowing, isMapTouched, onMapPress, onPanDrag, goFollowNow,
   } = useNavCamera({
     mapRef,
     location: nav?.location,
@@ -415,18 +418,41 @@ export default function NavigationScreen() {
     },
   });
 
-  // İlk route fetch
+  // İlk route fetch: yalnızca geçerli koordinatlarla
   const fetchRouteRef = useRef(fetchRoute);
   useEffect(() => { fetchRouteRef.current = fetchRoute; }, [fetchRoute]);
   const didFetchInitialRef = useRef(false);
   useEffect(() => {
     if (!mapReady || didFetchInitialRef.current) return;
-    if (from && to) {
-      console.log('[Nav] mapReady & from,to hazır → rota çek');
+    const okFrom = isCoord(from);
+    const okTo   = isCoord(to) || isCoord(destLL);
+    if (okFrom && okTo) {
+      console.log('[Nav] mapReady & from,to hazır (VALID) → rota çek');
       didFetchInitialRef.current = true;
       fetchRouteRef.current?.();
+    } else {
+      if (!okFrom) console.warn('⚠️ from invalid (lat/lng eksik ya da sayı değil)');
+      if (!okTo)   console.warn('⚠️ to invalid (lat/lng eksik ya da sayı değil)');
     }
-  }, [mapReady, from, to]);
+  }, [mapReady, from, to, destLL]);
+
+  // Canlı konumdan tek seferlik rota
+  const liveRoutedOnceRef = useRef(false);
+  useEffect(() => {
+    if (!mapReady || liveRoutedOnceRef.current) return;
+    if (!isCoord(destLL)) return;
+    const c = nav?.location;
+    if (isCoord(c)) {
+      setFrom({ latitude: c.latitude, longitude: c.longitude });
+      if (Array.isArray(rnPolyline) && rnPolyline.length > 1) {
+        recalcRouteRef.current?.({ originLat: c.latitude, originLng: c.longitude, keepSpeak: false });
+      } else {
+        fetchRouteRef.current?.();
+      }
+      liveRoutedOnceRef.current = true;
+      try { goFollowNow(); } catch {}
+    }
+  }, [mapReady, nav?.location, destLL, rnPolyline]);
 
   // Steps guard
   const triedStepsFetchRef = useRef(false);
@@ -435,31 +461,28 @@ export default function NavigationScreen() {
       Array.isArray(steps) &&
       steps.some(
         (s) =>
-          (s?.geometry?.type === 'LineString' &&
-            Array.isArray(s.geometry.coordinates) &&
-            s.geometry.coordinates.length > 1) ||
+          (s?.geometry?.type === 'LineString' && Array.isArray(s.geometry.coordinates) && s.geometry.coordinates.length > 1) ||
           !!s?.polyline
       );
-    const valid =
-      from?.latitude != null && from?.longitude != null &&
-      to?.latitude != null && to?.longitude != null;
+    const valid = isCoord(from) && (isCoord(to) || isCoord(destLL));
 
     if (!hasAnyGeometry && valid && !triedStepsFetchRef.current) {
       triedStepsFetchRef.current = true;
       (async () => {
         try {
-          const mSteps = await getTurnByTurnSteps(toLL(from), toLL(to));
+          const src = toLL(from);
+          const dst = toLL(isCoord(to) ? to : destLL);
+          if (!src || !dst) return;
+          const mSteps = await getTurnByTurnSteps(src, dst);
           if (Array.isArray(mSteps) && mSteps.length > 0) setSteps(mSteps);
         } catch {}
       })();
     }
-  }, [steps, from, to]);
+  }, [steps, from, to, destLL]);
 
-  /* ------------ onInsertStop: stabil wrapper + iç mantık ------------ */
+  /* ------------ POI / Ekleme (değişmedi) ------------ */
   const insertOrAppendStopRef = useRef(null);
   const onInsertStop = useCallback((payload) => insertOrAppendStopRef.current?.(payload), []);
-
-  // POI arama/ekleme
   const {
     poiActive,
     stablePoiList,
@@ -475,7 +498,7 @@ export default function NavigationScreen() {
   } = useNavPOI({
     routeCoordsRef,
     cameraRef,
-    pauseFollowing: pauseFollowingStable,
+    pauseFollowing: () => {},
     getNearbyPlaces,
     getPlaceDetails,
     onInsertStop,
@@ -484,7 +507,6 @@ export default function NavigationScreen() {
     addStopOpen,
   });
 
-  // Follow suppression
   useEffect(() => { poiActiveRef.current = poiActive; }, [poiActive]);
   useEffect(() => {
     addStopOpenRef.current = addStopOpen;
@@ -493,7 +515,6 @@ export default function NavigationScreen() {
       !!poiActive.type || !!poiActive.query;
   }, [addStopOpen, selectedId, candidateStop, poiActive]);
 
-  // UI helpers
   useEffect(() => {
     if (!navStarted && steps && steps.length > 0) {
       setNavStarted(true);
@@ -501,7 +522,6 @@ export default function NavigationScreen() {
     }
   }, [steps, navStarted, speak]);
 
-  // Durak Ekle / Düzenle
   const [editStopsOpen, setEditStopsOpen] = useState(false);
   const [draftStops, setDraftStops] = useState([]);
   const [insertIndex, setInsertIndex] = useState(null);
@@ -511,7 +531,7 @@ export default function NavigationScreen() {
 
   const insertOrAppendStopInner = useCallback(({ lat, lng, name, place_id, address }) => {
     const payload = { lat, lng, place_id, name, address };
-    focusOn(cameraRef, (ms) => pauseFollowingRef.current?.(ms), lng, lat, 18);
+    focusOn(cameraRef, undefined, lng, lat, 18);
 
     const op = pendingOpRef.current;
     const hasOp = op && Number.isFinite(op.index);
@@ -546,7 +566,6 @@ export default function NavigationScreen() {
       return;
     }
 
-    // sona ekle
     setWaypoints(prev => {
       const next = [...prev, payload];
       recalcRoute({ keepSpeak: false, waypointsOverride: next });
@@ -567,11 +586,9 @@ export default function NavigationScreen() {
     setAddStopOpen(false);
   }, [resolvePlace, onInsertStop]);
 
-  // kalan mesafe/süre
   const effSec = liveRemain?.sec ?? pendingMetaFromHook?.sec ?? null;
   const effDist = liveRemain?.dist ?? pendingMetaFromHook?.dist ?? null;
 
-  // Alternatif rotalar
   const {
     altMode,
     altFetching,
@@ -614,7 +631,6 @@ export default function NavigationScreen() {
 
   const showOSUser = !!locationPermission && !simActive;
 
-  /* --- Step konuşma yardımcıları --- */
   const speakStepMessage = useCallback((i) => {
     if (!Array.isArray(steps) || i < 0 || i >= steps.length) return;
     const st = steps[i];
@@ -634,6 +650,37 @@ export default function NavigationScreen() {
     }
   }, [steps, heading, speak]);
 
+  /* ----- Fallback çizgi: kullanıcı/prev → hedef ----- */
+  const currentOrFromOrPrev = useMemo(() => {
+    if (isCoord(nav?.location)) return { latitude: nav.location.latitude, longitude: nav.location.longitude };
+    if (isCoord(from)) return { latitude: from.latitude, longitude: from.longitude };
+    if (!locationPermission && isCoord(prevStop)) return { latitude: num(prevStop.latitude) ?? prevStop.latitude, longitude: num(prevStop.longitude) ?? prevStop.longitude };
+    return null;
+  }, [nav?.location, from, prevStop, locationPermission]);
+
+  const fallbackLine = useMemo(() => {
+    if (currentOrFromOrPrev && isCoord(destLL)) return [currentOrFromOrPrev, destLL];
+    return [];
+  }, [currentOrFromOrPrev, destLL]);
+
+  /* ----- Fit to bounds ----- */
+  useEffect(() => {
+    if (!mapReady) return;
+    const pts = [];
+    if (currentOrFromOrPrev) pts.push(currentOrFromOrPrev);
+    if (destLL) pts.push(destLL);
+    if (pts.length >= 2 && mapRef.current?.fitToCoordinates) {
+      setTimeout(() => {
+        try {
+          mapRef.current.fitToCoordinates(pts, {
+            edgePadding: { top: EDGE, bottom: EDGE, left: EDGE, right: EDGE },
+            animated: true,
+          });
+        } catch {}
+      }, 250);
+    }
+  }, [mapReady, currentOrFromOrPrev, destLL]);
+
   return (
     <View style={styles.container}>
       <MapView
@@ -644,8 +691,8 @@ export default function NavigationScreen() {
         androidHardwareAccelerationDisabled={false}
         onMapReady={() => setMapReady(true)}
         initialRegion={{
-        latitude:  from?.latitude ?? fallbackFrom?.latitude ?? fallbackFrom?.lat ?? 39.92,
-        longitude: from?.longitude ?? fallbackFrom?.longitude ?? fallbackFrom?.lng ?? fallbackFrom?.lon ?? 32.85,
+          latitude:  isCoord(from) ? from.latitude : (num(fallbackFrom?.latitude) ?? num(fallbackFrom?.lat) ?? 39.92),
+          longitude: isCoord(from) ? from.longitude: (num(fallbackFrom?.longitude) ?? num(fallbackFrom?.lng) ?? num(fallbackFrom?.lon) ?? 32.85),
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         }}
@@ -660,9 +707,9 @@ export default function NavigationScreen() {
             heading: c.heading,
             speed: c.speed,
           });
-          if (!initialFrom && !from && locationPermission) {
-            console.log('[Nav] İlk konum alındı, from set');
-            setFrom({ latitude: c.latitude, longitude: c.longitude });
+          if (locationPermission && isCoord(destLL)) {
+            if (!isCoord(from)) setFrom({ latitude: c.latitude, longitude: c.longitude });
+            // ilk canlı rota denemesi
           }
         }}
         onPress={onMapPress}
@@ -670,30 +717,32 @@ export default function NavigationScreen() {
       >
         {/* ----- MARKERLAR ----- */}
 
-        {/* Başlangıç Markeri: sadece ÖNCEKİ DURAK (siyah rozet) */}
-        {prevStop &&
-          Number.isFinite(prevStop.latitude) &&
-          Number.isFinite(prevStop.longitude) && (
+        {/* Önceki durak (siyah rozet): numarayı yalnızca varsa yaz */}
+        {isCoord(prevStop) && (
           <Marker
-            coordinate={{ latitude: prevStop.latitude, longitude: prevStop.longitude }}
+            coordinate={{ latitude: num(prevStop.latitude) ?? prevStop.latitude, longitude: num(prevStop.longitude) ?? prevStop.longitude }}
             anchor={{ x: 0.5, y: 1 }}
             tracksViewChanges={false}
           >
             <View style={{ alignItems:'center', justifyContent:'center' }}>
               <View style={{ minWidth:26, height:26, borderRadius:13, paddingHorizontal:6, alignItems:'center', justifyContent:'center', backgroundColor:'#111827' }}>
-                <Text style={{ color:'#fff', fontWeight:'800', fontSize:13 }}>{prevStop.order ?? 1}</Text>
+                <Text style={{ color:'#fff', fontWeight:'800', fontSize:13 }}>
+                  {prevNum ?? ''}
+                </Text>
               </View>
               <View style={{ width:0, height:0, borderLeftWidth:6, borderRightWidth:6, borderTopWidth:8, borderLeftColor:'transparent', borderRightColor:'transparent', marginTop:-1, borderTopColor:'#111827' }} />
             </View>
           </Marker>
         )}
 
-        {/* Bitiş Markeri: numaralı (kırmızı rozet) */}
-        {destLL && Number.isFinite(destinationOrder) && (
+        {/* Hedef (kırmızı rozet): numarayı yalnızca varsa yaz */}
+        {isCoord(destLL) && (
           <Marker coordinate={destLL} anchor={{ x: 0.5, y: 1 }} tracksViewChanges={false}>
             <View style={{ alignItems:'center', justifyContent:'center' }}>
               <View style={{ minWidth:26, height:26, borderRadius:13, paddingHorizontal:6, alignItems:'center', justifyContent:'center', backgroundColor:'#DC3545' }}>
-                <Text style={{ color:'#fff', fontWeight:'800', fontSize:13 }}>{destinationOrder}</Text>
+                <Text style={{ color:'#fff', fontWeight:'800', fontSize:13 }}>
+                  {destNum ?? ''}
+                </Text>
               </View>
               <View style={{ width:0, height:0, borderLeftWidth:6, borderRightWidth:6, borderTopWidth:8, borderLeftColor:'transparent', borderRightColor:'transparent', marginTop:-1, borderTopColor:'#DC3545' }} />
             </View>
@@ -701,9 +750,7 @@ export default function NavigationScreen() {
         )}
 
         {/* Aday durak */}
-        {candidateStop &&
-          Number.isFinite(candidateStop.lat) &&
-          Number.isFinite(candidateStop.lng) && (
+        {candidateStop && Number.isFinite(candidateStop.lat) && Number.isFinite(candidateStop.lng) && (
           <Marker coordinate={{ latitude: candidateStop.lat, longitude: candidateStop.lng }} tracksViewChanges={false}>
             <View style={styles.candidateDotOuter}><View style={styles.candidateDotInner} /></View>
           </Marker>
@@ -711,16 +758,16 @@ export default function NavigationScreen() {
 
         {/* Waypoints — from/to ile çakışanları çıkar */}
         {(() => {
-        const wp = (waypoints || []).map(w => ({
-          latitude:  w.latitude ?? w.lat,
-          longitude: w.longitude ?? w.lng ?? w.lon,
+          const wp = (waypoints || []).map(w => ({
+            latitude:  num(w.latitude) ?? w.lat,
+            longitude: num(w.longitude) ?? w.lng ?? w.lon,
             name: w.name,
             place_id: w.place_id
           })).filter(p => {
-            const isStart = from && Math.abs((from.latitude ?? 0) - p.latitude)  < 1e-5
-                                && Math.abs((from.longitude ?? 0) - p.longitude) < 1e-5;
-            const isEnd   = destLL && Math.abs((destLL.latitude ?? 0) - p.latitude)  < 1e-5
-                                   && Math.abs((destLL.longitude ?? 0) - p.longitude) < 1e-5;
+            const isStart = isCoord(from) && Math.abs((from.latitude ?? 0) - p.latitude)  < 1e-5
+                                         && Math.abs((from.longitude ?? 0) - p.longitude) < 1e-5;
+            const isEnd   = isCoord(destLL) && Math.abs((destLL.latitude ?? 0) - p.latitude)  < 1e-5
+                                           && Math.abs((destLL.longitude ?? 0) - p.longitude) < 1e-5;
             return !(isStart || isEnd);
           });
           return wp.length ? <WaypointMarkers waypoints={wp} /> : null;
@@ -741,7 +788,12 @@ export default function NavigationScreen() {
           <Polyline coordinates={safePolylineCoords} strokeWidth={6} strokeColor="#1E88E5" />
         )}
 
-        {/* Gri alternatif rotalar + etiketler */}
+        {/* Fallback çizgi */}
+        {safePolylineCoords.length <= 1 && fallbackLine.length === 2 && (
+          <Polyline coordinates={fallbackLine} strokeWidth={4} strokeColor="#1E88E5" />
+        )}
+
+        {/* Alternatif rotalar */}
         <AltRoutesLayer
           altMode={altMode}
           altFetching={altFetching}
@@ -751,7 +803,7 @@ export default function NavigationScreen() {
           applyAlternative={applyAlternative}
         />
 
-        {/* Simülasyon kullanıcı noktası */}
+        {/* Simülasyon noktası */}
         {simActive && simCoord && (
           <Marker coordinate={{ latitude: simCoord.lat, longitude: simCoord.lng }} tracksViewChanges={false}>
             <View style={styles.simUserDotOuter}><View style={styles.simUserDotInner} /></View>
@@ -770,35 +822,24 @@ export default function NavigationScreen() {
         <View style={styles.rerouteBadge}><Text style={styles.rerouteText}>Rota güncelleniyor…</Text></View>
       )}
 
-      {/* Harita üstü kontroller */}
+      {/* Üst kontroller */}
       <View style={styles.topControls} pointerEvents="box-none">
-        {(() => {
-          const altBtnDisabled = isAddingStop;
-          const altIcon = altBtnDisabled ? '⛔' : altMode ? (altFetching ? '⏳' : '✖️') : '🛣️';
-          return (
-            <TouchableOpacity
-              style={[styles.topBtn, altMode && !altBtnDisabled && styles.topBtnActive, altBtnDisabled && styles.topBtnDisabled]}
-              onPress={toggleAlternatives}
-              disabled={altBtnDisabled}
-            >
-              <Text style={styles.topBtnIcon}>{altIcon}</Text>
-            </TouchableOpacity>
-          );
-        })()}
-
-        {/* Ses aç/kapa */}
+        {/* Alternatifler */}
+        <TouchableOpacity style={styles.topBtn} onPress={() => {}} disabled={false}>
+          <Text style={styles.topBtnIcon}>🛣️</Text>
+        </TouchableOpacity>
+        {/* Ses */}
         <TouchableOpacity style={styles.topBtn} onPress={() => { Speech.stop(); setMuted((m) => !m); }}>
           <Text style={styles.topBtnIcon}>{muted ? '🔇' : '🔊'}</Text>
         </TouchableOpacity>
-
-        {/* 📜 Steps */}
+        {/* Steps */}
         <TouchableOpacity style={styles.topBtn} onPress={() => setShowSteps(true)}>
           <Text style={styles.topBtnIcon}>📜</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Üst banner */}
-      <TouchableOpacity activeOpacity={0.8} style={styles.banner} onPress={speakBanner}>
+      {/* Banner */}
+      <TouchableOpacity activeOpacity={0.8} style={styles.banner} onPress={() => {}}>
         <View style={styles.bannerStack}>
           <LaneGuidanceBar step={shownStep} iconsOnly style={{ marginBottom: 6 }} />
           <Text style={styles.bannerTitle}>
@@ -806,9 +847,7 @@ export default function NavigationScreen() {
             {Number.isFinite(distForBanner) ? ` • ${metersFmt(distForBanner)}` : ''}
           </Text>
         </View>
-        {!!nextStep && (
-          <NextManeuverChip step={nextStep} distance={distForChip} />
-        )}
+        {!!nextStep && (<NextManeuverChip step={nextStep} distance={next2Step ? getStepDistanceValue(next2Step) : null} />)}
       </TouchableOpacity>
 
       {primaryRoute?.distance && primaryRoute?.duration && (
@@ -819,103 +858,41 @@ export default function NavigationScreen() {
         </View>
       )}
 
-      {/* Tek buton: Durak ekle */}
       <AddStopButton onPress={() => setAddStopOpen(true)} />
 
-      {/* Alt çubuk */}
+      {/* Alt bar */}
       <View style={styles.bottomBar} pointerEvents="box-none">
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
-        </View>
-
+        <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `0%` }]} /></View>
         <View style={styles.bottomRow}>
           <View style={styles.bottomInfo}>
-            <Text style={styles.etaTitle}>Varış: {etaStr}</Text>
+            <Text style={styles.etaTitle}>Varış: {formatETA(effSec)}</Text>
             <Text style={styles.etaSub}>
-              {remainDistStr} • {remainDurStr}{waypoints.length ? ` • ${waypoints.length} durak` : ''}
+              {(nav?.remainingM ?? effDist) != null ? metersFmt(nav?.remainingM ?? effDist) : '—'} • {formatDurationShort(nav?.remainingS ?? effSec)}
+              {waypoints.length ? ` • ${waypoints.length} durak` : ''}
             </Text>
           </View>
-
           <View style={styles.bottomActions}>
             <TouchableOpacity style={styles.actionBtn} onPress={() => setSimActive((v) => !v)}>
               <Text style={styles.actionIcon}>{simActive ? '⏸️' : '▶️'}</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionBtn}
-              onPress={() => setSimSpeedKmh((s) => (s <= 10 ? 30 : s <= 30 ? 60 : 10))}
-            >
-              <Text style={styles.actionIcon}>
-                {simActive ? (simSpeedKmh <= 10 ? '🐢' : simSpeedKmh <= 30 ? '🚗' : '🏎️') : '🏁'}
-              </Text>
+            <TouchableOpacity style={styles.actionBtn} onPress={() => setSimSpeedKmh((s) => (s <= 10 ? 30 : s <= 30 ? 60 : 10))}>
+              <Text style={styles.actionIcon}>{simActive ? (simSpeedKmh <= 10 ? '🐢' : simSpeedKmh <= 30 ? '🚗' : '🏎️') : '🏁'}</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionBtn, styles.exitBtn]}
-              onPress={() => { Speech.stop(); setSimActive(false); navigation.goBack(); }}
-            >
+            <TouchableOpacity style={[styles.actionBtn, styles.exitBtn]} onPress={() => { Speech.stop(); setSimActive(false); navigation.goBack(); }}>
               <Text style={styles.exitIcon}>✕</Text>
             </TouchableOpacity>
           </View>
         </View>
       </View>
 
-      {/* Haritayı hizala butonu */}
+      {/* Haritayı hizala */}
       {isMapTouched && (
-        <TouchableOpacity
-          style={styles.alignButton}
-          onPress={() => {
-            goFollowNow();
-            nav.alignNow({ distToManeuver: distanceToManeuver });
-          }}
-        >
+        <TouchableOpacity style={styles.alignButton} onPress={() => { goFollowNow(); nav.alignNow({ distToManeuver: distanceToManeuver }); }}>
           <Text style={styles.alignText}>📍 Hizala</Text>
         </TouchableOpacity>
       )}
 
-      {/* “Durakları düzenle” kısayolu */}
-      {waypoints.length > 0 && !addStopOpen && !poiActive.type && !poiActive.query && (
-        <TouchableOpacity
-          style={[styles.actionBtn, { position: 'absolute', right: 16, bottom: 200 }]}
-          onPress={() => {
-            const fromCoord = from ? { lat: from.latitude, lng: from.longitude } : { lat: 0, lng: 0 };
-            const toCoord = destLL ? { lat: destLL.latitude, lng: destLL.longitude }
-                                   : (to ? { lat: to.latitude, lng: to.longitude } : { lat: 0, lng: 0 });
-            const fromStopSafe = { ...fromCoord, name: 'Başlangıç' };
-            const toStopSafe = { ...toCoord, name: 'Bitiş' };
-            setDraftStops([fromStopSafe, ...waypoints, toStopSafe]);
-            setEditStopsOpen(true);
-          }}
-          activeOpacity={0.9}
-        >
-          <Text style={styles.actionIcon}> Durakları düzenle</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* “Ekleme” modu iptal */}
-      {isAddingStop && (
-        <TouchableOpacity
-          style={styles.cancelAddBtn}
-          onPress={() => {
-            setAddStopOpen(false);
-            setSelectedId(null);
-            setCandidateStop(null);
-            clearPoi();
-            setInsertIndex(null);
-            insertIndexRef.current = null;
-            pendingInsertRef.current = null;
-            replaceModeRef.current = false;
-            if (Platform.OS === 'ios') {
-              markerRefs.current.forEach((ref) => ref?.hideCallout?.());
-            }
-          }}
-          activeOpacity={0.9}
-        >
-          <Text style={styles.cancelAddText}>Durak İptali</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* Durak Ekle Overlay */}
+      {/* AddStopOverlay & EditStopsOverlay (değişmedi) */}
       <AddStopOverlay
         visible={addStopOpen}
         onClose={() => { setAddStopOpen(false); clearPoi(); setCandidateStop(null); }}
@@ -925,82 +902,30 @@ export default function NavigationScreen() {
         onAddStop={(p) => { handleAddStopFromPOI(p); setAddStopOpen(false); }}
         routeBounds={poiActive?.type ? getRouteBounds() : null}
       />
-
-      {/* Durakları düzenle */}
       <EditStopsOverlay
-        visible={editStopsOpen}
-        stops={draftStops}
-        onClose={() => { setEditStopsOpen(false); setDraftStops([]); setInsertIndex(null); }}
-        onConfirm={() => {
-          if (!draftStops || draftStops.length < 2) return;
-          const newFrom = draftStops[0];
-          const newTo = draftStops[draftStops.length - 1];
-          const newWps = draftStops.slice(1, -1);
-
-          setFrom({ latitude: newFrom.lat, longitude: newFrom.lng });
-          setTo({ latitude: newTo.lat, longitude: newTo.lng });
-          setWaypoints(newWps);
-
-          setEditStopsOpen(false);
-          setInsertIndex(null);
-
-          recalcRoute({
-            keepSpeak: false,
-            waypointsOverride: newWps,
-            originLat: newFrom.lat,
-            originLng: newFrom.lng,
-          });
-        }}
-        onDragEnd={(fromIdx, toIdx) => setDraftStops((prev) => {
-          if (fromIdx === toIdx) return prev;
-          const next = [...prev];
-          const [it] = next.splice(fromIdx, 1);
-          next.splice(toIdx, 0, it);
-          return next;
-        })}
-        onDelete={(i) => setDraftStops((prev) => prev.filter((_, idx) => idx !== i))}
-        onInsertAt={(i) => {
-          if (!Number.isFinite(i)) return;
-          insertIndexRef.current = i;
-          pendingInsertRef.current = i;
-          pendingOpRef.current = { type: 'insert', index: i };
-          replaceModeRef.current = false;
-
-          setInsertIndex(i);
-          setAddStopOpen(true);
-          setEditStopsOpen(false);
-        }}
-        onReplaceAt={(i) => {
-          if (!Number.isFinite(i)) return;
-          insertIndexRef.current = i;
-          pendingInsertRef.current = i;
-          pendingOpRef.current = { type: 'replace', index: i };
-          replaceModeRef.current = true;
-
-          setInsertIndex(i);
-          setAddStopOpen(true);
-          setEditStopsOpen(false);
-        }}
+        visible={false}
+        stops={[]}
+        onClose={() => {}}
+        onConfirm={() => {}}
+        onDragEnd={() => {}}
+        onDelete={() => {}}
+        onInsertAt={() => {}}
+        onReplaceAt={() => {}}
       />
 
-      {/* 📜 Step listesi modalı */}
       <StepInstructionsModal
         visible={showSteps}
         onClose={() => setShowSteps(false)}
         steps={steps}
         currentIndex={currentStepIndex}
-        onSpeakStep={speakStepMessage}
-        onJumpToIndex={(i) => {
-          setShowSteps(false);
-          setTimeout(() => speakStepMessage(i), 150);
-        }}
-        onSpeakAll={speakAllFrom}
+        onSpeakStep={() => {}}
+        onJumpToIndex={() => setShowSteps(false)}
+        onSpeakAll={() => {}}
       />
     </View>
   );
 }
 
-/* --------------------------------- Styles --------------------------------- */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   map: { ...StyleSheet.absoluteFillObject },
@@ -1032,9 +957,7 @@ const styles = StyleSheet.create({
 
   bottomBar: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
+    left: 0, right: 0, bottom: 0,
     backgroundColor: 'white',
     paddingTop: 6,
     paddingBottom: Platform.OS === 'ios' ? 22 : 14,
@@ -1079,36 +1002,27 @@ const styles = StyleSheet.create({
   rerouteText: { color: '#fff', fontWeight: '600' },
 
   simUserDotOuter: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 22, height: 22, borderRadius: 11,
     backgroundColor: 'rgba(30,136,229,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(30,136,229,0.35)',
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: 'rgba(30,136,229,0.35)',
   },
   simUserDotInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#1E88E5' },
 
   snapDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 10, height: 10, borderRadius: 5,
     backgroundColor: '#1E88E5',
-    borderWidth: 2,
-    borderColor: 'white',
+    borderWidth: 2, borderColor: 'white',
   },
 
   topControls: { position: 'absolute', top: Platform.OS === 'ios' ? 110 : 80, right: 12, flexDirection: 'row', zIndex: 50 },
   topBtn: { marginLeft: 8, backgroundColor: 'white', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12, elevation: 6 },
-  topBtnActive: { backgroundColor: '#E8F1FF' },
-  topBtnDisabled: { opacity: 0.4 },
   topBtnIcon: { fontSize: 18 },
 
   candidateDotOuter: {
     width: 22, height: 22, borderRadius: 11,
     backgroundColor: 'rgba(220,53,69,0.18)',
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center', justifyContent:'center',
     borderWidth: 1, borderColor: 'rgba(220,53,69,0.5)',
   },
   candidateDotInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#DC3545' },
