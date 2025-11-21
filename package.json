@@ -18,7 +18,7 @@
     "format": "prettier -w src/**/*.{js,jsx,ts,tsx,json,md}",
     "prepare": "husky",
     "dev:adb": "adb reverse tcp:5000 tcp:5000 || exit 0",
-    "start:local": "npm run dev:adb && cross-env EXPO_PUBLIC_API_BASE=http://192.168.1.108:5000 EXPO_PUBLIC_SERVER_ENABLED=true expo start -c",
+    "start:local": "npm run dev:adb && cross-env EXPO_PUBLIC_API_BASE=http://192.168.1.101:5000 EXPO_PUBLIC_SERVER_ENABLED=true expo start -c",
     "start:prod": "expo start -c"
   },
   "expo": {
@@ -78,6 +78,7 @@
     "@babel/core": "^7.20.0",
     "@react-native/eslint-config": "^0.81.0",
     "babel-plugin-module-resolver": "^5.0.2",
+    "baseline-browser-mapping": "^2.8.29",
     "cross-env": "^10.0.0",
     "eas-cli": "^16.23.0",
     "eslint": "^8.57.1",

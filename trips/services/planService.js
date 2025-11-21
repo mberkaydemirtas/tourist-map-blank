@@ -1,10 +1,10 @@
 // trips/services/planService.js
 import { suggestMealsForGaps } from './mealSuggest';
-import { API_BASE } from '../../app/lib/api';
+// import { API_BASE } from '../../app/lib/api'; // ARTIK KULLANILMIYOR
 import { Platform, NativeModules } from 'react-native';
 import Constants from 'expo-constants';
 import { getAnchorsForDayDetailed } from '../shared/anchors';
-
+import { getRouteDirections } from './RouteDirectionService';
 
 /* ============================== Config ============================== */
 
@@ -50,6 +50,21 @@ const CANDIDATE_BASES = [
 
 // Çalışan base'i cache'le
 let ACTIVE_OPTIMIZER_BASE = null;
+
+// Directions için kullanılacak key (Map tarafıyla aynı pattern)
+const DIRECTIONS_API_KEY =
+  Constants?.expoConfig?.extra?.GOOGLE_MAPS_API_KEY ||
+  Constants?.manifest?.extra?.GOOGLE_MAPS_API_KEY ||
+  process.env.GOOGLE_MAPS_API_KEY ||
+  global?.GOOGLE_MAPS_API_KEY ||
+  '';
+
+/* Küçük debug istersen açık bırakabilirsin
+console.log(
+  '[planService] DIRECTIONS_API_KEY present =',
+  DIRECTIONS_API_KEY ? 'yes' : 'no'
+);
+*/
 
 async function tryFetch(url, opts = {}, timeoutMs = 6000) {
   let timeoutId;
@@ -139,22 +154,6 @@ async function fetchJsonNoSignal(url, opts = {}, timeoutMs = REQ_TIMEOUT_MS) {
   }
 }
 
-// Genel amaçlı (directions gibi diğer uçlar) — burada AbortController sorun yaratmıyordu:
-async function fetchJson(url, opts = {}, timeoutMs = REQ_TIMEOUT_MS) {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, { ...opts, signal: ctrl.signal });
-    if (!res.ok) {
-      const txt = await res.text().catch(() => '');
-      throw new Error(`${res.status} ${res.statusText} ${txt || ''}`.trim());
-    }
-    return await res.json();
-  } finally {
-    clearTimeout(t);
-  }
-}
-
 /* ============================== Helpers ============================== */
 
 function enumerateDates(startDateISO, endDateISO) {
@@ -188,25 +187,6 @@ function fromMinutes(min) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-// Decode Google encoded polyline → [{lat,lon}, ...]
-function decodePolyline(enc = '') {
-  let index = 0, lat = 0, lng = 0, coordinates = [];
-  while (index < enc.length) {
-    let b, shift = 0, result = 0;
-    do { b = enc.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
-    const dlat = (result & 1) ? ~(result >> 1) : (result >> 1);
-    lat += dlat;
-
-    shift = 0; result = 0;
-    do { b = enc.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
-    const dlng = (result & 1) ? ~(result >> 1) : (result >> 1);
-    lng += dlng;
-
-    coordinates.push({ lat: lat / 1e5, lon: lng / 1e5 });
-  }
-  return coordinates;
-}
-
 function ensureActivityIds(day) {
   if (!day?.activities) return day;
   day.activities = day.activities.map((a, i) => {
@@ -217,24 +197,57 @@ function ensureActivityIds(day) {
   return day;
 }
 
+/**
+ * 🔁 ESKİ HALİ:
+ *  - API_BASE üzerinden Node server `/api/directions` çağırıyordu
+ *  - Oradan polyline çekmeye çalışıyordu → hatalar & "fallback Aborted"
+ *
+ * ✅ YENİ HAL:
+ *  - Doğrudan client-side RouteDirectionService üzerinden
+ *    Google Directions API çağırıyoruz.
+ */
 async function fetchLegPolyline(from, to, mode = 'driving') {
   try {
-    const qs = `from=${from.lat},${from.lon}&to=${to.lat},${to.lon}&mode=${mode}`;
-    const json = await fetchJson(`${API_BASE}/api/directions?${qs}`, {}, REQ_TIMEOUT_MS);
+    if (!from || !to) return [from, to];
 
-    if (json?.polyline && Array.isArray(json.polyline)) {
-      return json.polyline.map(p => ({
-        lat: p.lat ?? p.latitude,
-        lon: p.lon ?? p.longitude,
-      })).filter(p => p.lat != null && p.lon != null);
+    const waypoints = [
+      { lat: from.lat, lng: from.lon ?? from.lng },
+      { lat: to.lat, lng: to.lon ?? to.lng },
+    ];
+
+    if (!DIRECTIONS_API_KEY) {
+      console.warn('[planService] fetchLegPolyline: DIRECTIONS_API_KEY missing, using straight line fallback');
+      return [from, to];
     }
-    const pts = json?.routes?.[0]?.overview_polyline?.points;
-    if (typeof pts === 'string' && pts.length > 0) {
-      return decodePolyline(pts);
+
+    console.log(
+      '[planService] fetchLegPolyline via getRouteDirections mode=',
+      mode,
+      'from=',
+      waypoints[0],
+      'to=',
+      waypoints[1]
+    );
+
+    const data = await getRouteDirections({
+      waypoints,
+      mode: mode || 'driving',
+      apiKey: DIRECTIONS_API_KEY,
+    });
+
+    if (Array.isArray(data?.polylineCoords) && data.polylineCoords.length) {
+      // RouteDirectionService polylineCoords: [{latitude, longitude}, ...]
+      return data.polylineCoords.map((c) => ({
+        lat: c.latitude,
+        lon: c.longitude,
+      }));
     }
+
+    console.warn('[planService] fetchLegPolyline: no polylineCoords in response, using straight line fallback');
   } catch (e) {
     console.warn('[planService] directions fetch failed → fallback', e?.message || e);
   }
+
   // Fallback: straight line
   return [from, to];
 }
@@ -452,7 +465,6 @@ function pickStartEndCoordsForDay(day, visits, lodgingsByDate, startEndSingle) {
   return { start, end };
 }
 
-
 function buildOptimizerReqForDay(day, visits, prefs, lodgingsByDate, anchorData) {
   const { start, end } = pickStartEndCoordsForDay(day, visits, lodgingsByDate, anchorData);
 
@@ -464,27 +476,27 @@ function buildOptimizerReqForDay(day, visits, prefs, lodgingsByDate, anchorData)
     if (!loc || !Number.isFinite(loc.lat) || !Number.isFinite(loc.lon)) return false;
     const lat = round5(loc.lat), lon = round5(loc.lon);
     const sameAsStart = start && round5(start.lat) === lat && round5(start.lon) === lon;
-    const sameAsEnd   = end   && round5(end.lat)   === lat && round5(end.lon)   === lon;
+    const sameAsEnd   = end   && round5(end.lat) === lat && round5(end.lon) === lon;
     return !sameAsStart && !sameAsEnd;
   });
 
   return {
-     day_start_time_min: dayStartMin,
-     day_end_time_min:   dayEndMin,
+    day_start_time_min: dayStartMin,
+    day_end_time_min:   dayEndMin,
     start, // ← artık guaranteed
     end,   // ← artık guaranteed
     mode: prefs.travelMode,
-     stops: filtered.map((v, idx) => {
-       const { open_min, close_min } = openingToWindow(v.place, dayStartMin, dayEndMin);
-       return {
-         id: v.id || `a${idx}`,
-         name: v.place?.name || v.title || `Durak ${idx + 1}`,
-         coords: { lat: v.place.location.lat, lon: v.place.location.lon },
-         stay_mins: v.durationMin || 45,
-         open_min,
-         close_min,
-       };
-     })
+    stops: filtered.map((v, idx) => {
+      const { open_min, close_min } = openingToWindow(v.place, dayStartMin, dayEndMin);
+      return {
+        id: v.id || `a${idx}`,
+        name: v.place?.name || v.title || `Durak ${idx + 1}`,
+        coords: { lat: v.place.location.lat, lon: v.place.location.lon },
+        stay_mins: v.durationMin || 45,
+        open_min,
+        close_min,
+      };
+    })
   };
 }
 
@@ -534,8 +546,6 @@ export async function generatePlan(trip, prefs, opts = {}) {
   let daysISO = enumerateDates(startISO, endISO);
   if (!daysISO.length && startISO) daysISO = [startISO]; // min 1 gün
 
-  // console.log('[GP] daysISO=', daysISO);
-
   const selectedPlaces = (trip?.selectedPlaces || trip?.places || []).map(p => ({
     id: p.id || p.placeId || `${p.lat},${p.lon}`,
     name: p.name,
@@ -548,8 +558,6 @@ export async function generatePlan(trip, prefs, opts = {}) {
       lon: p.lon ?? p.location?.lon ?? p.location?.lng ?? p.coords?.lon ?? p.coords?.lng ?? p.coords?.longitude,
     },
   })).filter(p => Number.isFinite(p?.location?.lat) && Number.isFinite(p?.location?.lon));
-
-  // console.log('[GP] selectedPlaces=', selectedPlaces.length);
 
   const lodgingsByDate = (trip?.lodgings || []).reduce((acc, l) => {
     const d = l?.date || l?.checkIn;
@@ -583,20 +591,20 @@ export async function generatePlan(trip, prefs, opts = {}) {
     let orderedVisits = visits;
     let optimizerUsed = false;
 
-     try {
-       const payload = buildOptimizerReqForDay(d, visits, prefs, lodgingsByDate, trip?._startEndSingle);
-       // ⛳ stops boşsa optimizer’a göndermeyelim (aksi halde 422 alıyoruz)
-       if (!payload?.stops?.length) {
-         // sadece start → end çizgisi (veya hiç polyline gerekmez)
-         const { start, end } = payload;
-         let poly = [];
-         if (start && end) {
-           poly = await fetchLegPolyline(start, end, prefs.travelMode || 'driving');
-         }
-         d.route = { polyline: poly, optimizerUsed: false, start, end };
-         ensureActivityIds(d);
-         continue;
-       }
+    try {
+      const payload = buildOptimizerReqForDay(d, visits, prefs, lodgingsByDate, trip?._startEndSingle);
+      // ⛳ stops boşsa optimizer’a göndermeyelim (aksi halde 422 alıyoruz)
+      if (!payload?.stops?.length) {
+        // sadece start → end çizgisi (veya hiç polyline gerekmez)
+        const { start, end } = payload;
+        let poly = [];
+        if (start && end) {
+          poly = await fetchLegPolyline(start, end, prefs.travelMode || 'driving');
+        }
+        d.route = { polyline: poly, optimizerUsed: false, start, end };
+        ensureActivityIds(d);
+        continue;
+      }
       const res = await callOptimizer(payload); // {order, total_minutes, ...}
       orderedVisits = reorderActivitiesByOptimizer(d, visits, res);
       optimizerUsed = true;
@@ -683,7 +691,6 @@ export async function generatePlan(trip, prefs, opts = {}) {
   // UI uyumluluğu: activities → items alias ekle
   days = days.map(d => ({ ...d, items: d.activities }));
 
-  const cityName = (trip?.cities && trip.cities[0]?.name) || trip?.city || '';
   for (let i = 0; i < days.length; i++) {
     const anchor = getAnchorsForDayDetailed(trip, days[i]);
     days[i].anchor = {

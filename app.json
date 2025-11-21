@@ -47,6 +47,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
+      "GOOGLE_MAPS_API_KEY": "AIzaSyBP0UQMQsLeyJNQLfGrmEEWkoB8QhWY4V8",
       "eas": {
         "projectId": "41040319-5f6b-4da2-a348-e59078d93d15"
       }

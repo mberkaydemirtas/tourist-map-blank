@@ -9,24 +9,46 @@ const cache = new Map();    // key -> { ts, data }
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30dk
 
 function decodePolyline(str) {
-  let index = 0, lat = 0, lng = 0, coords = [];
+  let index = 0,
+    lat = 0,
+    lng = 0,
+    coords = [];
   while (index < str.length) {
-    let b, shift = 0, result = 0;
-    do { b = str.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
-    const dlat = (result & 1) ? ~(result >> 1) : (result >> 1); lat += dlat;
-    shift = 0; result = 0;
-    do { b = str.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
-    const dlng = (result & 1) ? ~(result >> 1) : (result >> 1); lng += dlng;
+    let b,
+      shift = 0,
+      result = 0;
+    do {
+      b = str.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlat = (result & 1) ? ~(result >> 1) : (result >> 1);
+    lat += dlat;
+    shift = 0;
+    result = 0;
+    do {
+      b = str.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlng = (result & 1) ? ~(result >> 1) : (result >> 1);
+    lng += dlng;
     coords.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
   }
   return coords;
 }
+
 function fmtLL(o) {
-  return o.place_id ? `place_id:${o.place_id}` : `${o.lat},${o.lng}`;
+  return o?.place_id ? `place_id:${o.place_id}` : `${o.lat},${o.lng}`;
 }
+
 export function routeKey(waypoints, mode) {
   const core = (waypoints || [])
-    .map(p => (p?.place_id ? `pid:${p.place_id}` : `${Number(p?.lat).toFixed(6)},${Number(p?.lng).toFixed(6)}`))
+    .map((p) =>
+      p?.place_id
+        ? `pid:${p.place_id}`
+        : `${Number(p?.lat).toFixed(6)},${Number(p?.lng).toFixed(6)}`
+    )
     .join('|');
   return `${mode}|${core}`;
 }
@@ -64,9 +86,66 @@ async function fetchChunk({ pts, mode, apiKey, signal }) {
   params.set('key', apiKey);
 
   const url = `${BASE}?${params.toString()}`;
-  const res = await fetch(url, { signal });
-  const json = await res.json();
+
+
+
+  let res;
+  try {
+    res = await fetch(url, { signal });
+  } catch (e) {
+    if (e?.name === 'AbortError') {
+      console.warn('[Directions] ABORTED by controller');
+    } else {
+      console.warn('[Directions] NETWORK error:', e?.message);
+    }
+    throw e;
+  }
+
+  let json;
+  try {
+    json = await res.json();
+  } catch (e) {
+    console.warn(
+      '[Directions] JSON parse error',
+      'httpStatus=',
+      res?.status,
+      'msg=',
+      e?.message
+    );
+    throw e;
+  }
+
+  if (!res.ok) {
+    console.warn(
+      '[Directions] HTTP not OK',
+      'status=',
+      res.status,
+      'body.status=',
+      json?.status,
+      'body.error_message=',
+      json?.error_message
+    );
+    const err = new Error(`HTTP_${res.status}`);
+    err.code = `HTTP_${res.status}`;
+    err.httpStatus = res.status;
+    err.apiStatus = json?.status;
+    err.apiMessage = json?.error_message;
+    throw err;
+  }
+
   if (json.status !== 'OK') {
+    console.warn(
+      '[Directions] API status != OK',
+      'status=',
+      json.status,
+      'error_message=',
+      json.error_message
+    );
+    try {
+      const short = JSON.stringify(json).slice(0, 600);
+      console.warn('[Directions] RAW JSON (short):', short);
+    } catch {}
+
     const err = new Error(json.error_message || json.status || 'Directions error');
     err.code = json.status;
     throw err;
@@ -77,7 +156,8 @@ async function fetchChunk({ pts, mode, apiKey, signal }) {
     distanceText: leg.distance?.text,
     distanceVal: leg.distance?.value ?? 0,
     durationText: leg.duration_in_traffic?.text || leg.duration?.text,
-    durationVal: (leg.duration_in_traffic?.value ?? leg.duration?.value) ?? 0,
+    durationVal:
+      (leg.duration_in_traffic?.value ?? leg.duration?.value) ?? 0,
   }));
 
   const overviewPolyline = route?.overview_polyline?.points
@@ -86,6 +166,7 @@ async function fetchChunk({ pts, mode, apiKey, signal }) {
 
   const distanceVal = legs.reduce((a, l) => a + (l.distanceVal || 0), 0);
   const durationVal = legs.reduce((a, l) => a + (l.durationVal || 0), 0);
+
 
   return {
     summary: {
@@ -101,34 +182,55 @@ async function fetchChunk({ pts, mode, apiKey, signal }) {
 }
 
 /** Çok duraklı ana rota (tek mod) — polyline + legs */
-export async function getRouteDirections({ waypoints, mode = 'driving', apiKey }) {
+export async function getRouteDirections({
+  waypoints,
+  mode = 'driving',
+  apiKey,
+}) {
   if (!apiKey) throw new Error('Directions API key gerekli');
-  if (!Array.isArray(waypoints) || waypoints.length < 2) throw new Error('En az origin & destination gerekli');
+  if (!Array.isArray(waypoints) || waypoints.length < 2)
+    throw new Error('En az origin & destination gerekli');
 
   const key = routeKey(waypoints, mode);
   const cached = cache.get(key);
-  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) return cached.data;
+  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+    return cached.data;
+  }
 
   if (inFlight.has(key)) {
-    try { inFlight.get(key).abort(); } catch {}
+    try {
+      inFlight.get(key).abort();
+    } catch {}
     inFlight.delete(key);
   }
   const controller = new AbortController();
   inFlight.set(key, controller);
 
+
   try {
     const chunks = chunkWaypoints(waypoints);
     const parts = [];
     for (const pts of chunks) {
-      const part = await fetchChunk({ pts, mode, apiKey, signal: controller.signal });
+      const part = await fetchChunk({
+        pts,
+        mode,
+        apiKey,
+        signal: controller.signal,
+      });
       parts.push(part);
     }
 
     // stitch
-    const polylineCoords = parts.flatMap(p => p.overviewPolyline);
-    const legs = parts.flatMap(p => p.legs);
-    const distanceVal = parts.reduce((a, p) => a + (p.summary.distanceVal || 0), 0);
-    const durationVal = parts.reduce((a, p) => a + (p.summary.durationVal || 0), 0);
+    const polylineCoords = parts.flatMap((p) => p.overviewPolyline);
+    const legs = parts.flatMap((p) => p.legs);
+    const distanceVal = parts.reduce(
+      (a, p) => a + (p.summary.distanceVal || 0),
+      0
+    );
+    const durationVal = parts.reduce(
+      (a, p) => a + (p.summary.durationVal || 0),
+      0
+    );
 
     const data = {
       polylineCoords,
@@ -142,6 +244,7 @@ export async function getRouteDirections({ waypoints, mode = 'driving', apiKey }
       providerMeta: { provider: 'google', chunks: parts.length },
     };
     cache.set(key, { ts: Date.now(), data });
+
     return data;
   } finally {
     inFlight.delete(key);
@@ -149,7 +252,11 @@ export async function getRouteDirections({ waypoints, mode = 'driving', apiKey }
 }
 
 /** Arabayla / Yürüyerek / Toplu taşıma özetleri (dakika + km) */
-export async function getModeSummaries({ waypoints, apiKey, modes = ['driving', 'walking', 'transit'] }) {
+export async function getModeSummaries({
+  waypoints,
+  apiKey,
+  modes = ['driving', 'walking', 'transit'],
+}) {
   const out = {};
   await Promise.all(
     modes.map(async (m) => {
@@ -161,7 +268,13 @@ export async function getModeSummaries({ waypoints, apiKey, modes = ['driving', 
           durationVal: d.summary.durationVal,
           durationText: d.summary.durationText,
         };
-      } catch {
+      } catch (e) {
+        console.warn(
+          '[Directions] mode summary failed',
+          m,
+          '→',
+          e?.code || e?.message
+        );
         out[m] = null; // bu mod desteklemiyorsa/başarısızsa boş bırak
       }
     })

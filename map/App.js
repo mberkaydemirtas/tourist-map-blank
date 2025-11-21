@@ -24,7 +24,6 @@ import CreateTripWizardScreen from '../trips/CreateTripWizardScreen';
 import TripPlacesScreen from '../trips/screens/TripPlacesScreen';
 import TripReviewScreen from '../trips/screens/TripReviewScreen';
 import TripPlansScreen from '../trips/screens/TripPlansScreen';
-import StartScratchEditor from '../trips/start/StartScratchEditor';
 
 // Repo kurulumları
 import { setTripsDriver } from '../trips/shared/tripsRepo';
@@ -59,7 +58,6 @@ function TripsNavigator() {
         <TripsStack.Screen name="TripReview" component={TripReviewScreen} options={{ title: 'Review' }} />
         {/* ⬇️ Burada sadece 'Planlar' başlığını değil, tüm header barını kapatıyoruz */}
         <TripsStack.Screen name="TripPlans" component={TripPlansScreen} options={{ headerShown: false }} />
-        <TripsStack.Screen name="StartScratchEditor" component={StartScratchEditor} options={{ headerShown: false }} />
       </TripsStack.Navigator>
     );
   }

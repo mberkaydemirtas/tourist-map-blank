@@ -15,7 +15,11 @@ const C = {
 function normalizePhotos(arr) {
   if (!Array.isArray(arr)) return [];
   const urls = arr
-    .map(p => (typeof p === 'string' ? p : (p?.url || p?.uri || p?.src || p?.photoUrl)))
+    .map(p =>
+      typeof p === 'string'
+        ? p
+        : (p?.url || p?.uri || p?.src || p?.photoUrl)
+    )
     .filter(u => !!u && /^https?:\/\//i.test(String(u)));
   return Array.from(new Set(urls));
 }
@@ -37,17 +41,40 @@ export default function PlaceQuickCard({
   const name = String(marker?.name || 'Seçilen konum');
   const address = String(marker?.address || '');
 
+  // 🔧 Foto kaynağını genişlettik
   const photos = useMemo(() => {
-    const p = normalizePhotos(marker?.photoUrls);
-    if (p.length) return p;
+    // 1) En önce doğrudan verilen photoUrls
+    let collected = normalizePhotos(marker?.photoUrls);
+    if (collected.length) return collected;
+
+    // 2) Eğer marker.photos varsa (örneğin [{url: ...}])
+    collected = normalizePhotos(marker?.photos);
+    if (collected.length) return collected;
+
+    // 3) place içinden gelebilecek varyantlar
+    collected = normalizePhotos(marker?.place?.photoUrls);
+    if (collected.length) return collected;
+
+    collected = normalizePhotos(marker?.place?.photos);
+    if (collected.length) return collected;
+
+    // 4) Son çare: icon / coverPhoto / photoUrl
     const extras = [marker?.icon, marker?.coverPhoto, marker?.photoUrl].filter(Boolean);
     return normalizePhotos(extras);
-  }, [marker?.photoUrls, marker?.icon, marker?.coverPhoto, marker?.photoUrl]);
+  }, [
+    marker?.photoUrls,
+    marker?.photos,
+    marker?.place?.photoUrls,
+    marker?.place?.photos,
+    marker?.icon,
+    marker?.coverPhoto,
+    marker?.photoUrl,
+  ]);
 
   const hasCoords =
     !!(marker?.coords &&
-    Number.isFinite(Number(marker.coords.latitude)) &&
-    Number.isFinite(Number(marker.coords.longitude)));
+      Number.isFinite(Number(marker.coords.latitude)) &&
+      Number.isFinite(Number(marker.coords.longitude)));
 
   const isPreview = variant === 'preview';
 
@@ -61,10 +88,22 @@ export default function PlaceQuickCard({
     }).start();
   }, [visible, anim]);
 
-  const cardStyle = useMemo(() => ([
-    styles.card,
-    { transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] },
-  ]), [anim]);
+  const cardStyle = useMemo(
+    () => ([
+      styles.card,
+      {
+        transform: [
+          {
+            translateY: anim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [16, 0],
+            }),
+          },
+        ],
+      },
+    ]),
+    [anim]
+  );
 
   const handleCta = () => {
     if (!ctaDisabled) onCtaPress?.(marker || {});
@@ -79,7 +118,10 @@ export default function PlaceQuickCard({
       pointerEvents={visible ? 'box-none' : 'none'}
     >
       {visible && (
-        <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 10) }]} pointerEvents="box-none">
+        <View
+          style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 10) }]}
+          pointerEvents="box-none"
+        >
           <Animated.View
             style={[cardStyle, { zIndex: 10000, elevation: 10000 }]}
             pointerEvents="auto"
@@ -116,7 +158,8 @@ export default function PlaceQuickCard({
 
             {hasCoords && (
               <Text numberOfLines={1} style={styles.coord}>
-                {Number(marker.coords.latitude).toFixed(5)}, {Number(marker.coords.longitude).toFixed(5)}
+                {Number(marker.coords.latitude).toFixed(5)},{' '}
+                {Number(marker.coords.longitude).toFixed(5)}
               </Text>
             )}
 
@@ -128,7 +171,7 @@ export default function PlaceQuickCard({
                 style={styles.scroller}
                 contentContainerStyle={styles.scrollerContent}
               >
-                {photos.slice(0, 6).map((uri, i) => (
+                {photos.slice(0, 2).map((uri, i) => (
                   <Image
                     key={`${uri}-${i}`}
                     source={{ uri: String(uri) }}
@@ -153,12 +196,21 @@ export default function PlaceQuickCard({
                 <View style={{ width: 8 }} />
 
                 <Pressable
-                  style={[styles.btn, styles.primary, ctaDisabled && styles.btnDisabled]}
+                  style={[
+                    styles.btn,
+                    styles.primary,
+                    ctaDisabled && styles.btnDisabled,
+                  ]}
                   onPress={handleCta}
                   disabled={ctaDisabled}
                   accessibilityRole="button"
                 >
-                  <Ionicons name="add" size={16} color="#fff" style={{ marginRight: 6 }} />
+                  <Ionicons
+                    name="add"
+                    size={16}
+                    color="#fff"
+                    style={{ marginRight: 6 }}
+                  />
                   <Text style={styles.btnT1}>{String(ctaLabel)}</Text>
                 </Pressable>
               </View>
@@ -207,7 +259,12 @@ const styles = StyleSheet.create({
   coord: { color: C.fg2, marginTop: 2, fontSize: 12 },
   scroller: { marginTop: 10, minHeight: 82 },
   scrollerContent: { paddingVertical: 2, paddingRight: 2 },
-  photo: { width: 110, height: 80, borderRadius: 8, backgroundColor: '#F3F4F6' },
+  photo: {
+    width: 110,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+  },
   actions: {
     marginTop: 10,
     flexDirection: 'row',
