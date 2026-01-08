@@ -75,7 +75,7 @@ export default function SideTimeline({
   function coordsEqual(a, b) {
     const alon = a?.lon ?? a?.lng;
     const blon = b?.lon ?? b?.lng;
-    return (a?.lat === b?.lat) && (alon === blon);
+    return a?.lat === b?.lat && alon === blon;
   }
 
   const startIsLodge =
@@ -264,19 +264,51 @@ export default function SideTimeline({
     const onPress = () => {
       const coord = extractCoord(item);
       const kind = isAnchor ? getAnchorKind(item) : null;
+
+      // UI içindeki gerçek “activity index’i”
       const actIndex = isAnchor ? -1 : listIdx - actOffset;
 
-      if (typeof onFocus === 'function') {
-        onFocus({ coord, kind, index: actIndex, item });
-      } else if (typeof onSelect === 'function') {
-        onSelect({
-          coordOnly: true,
-          coord,
-          index: actIndex,
-          item,
-          source: 'timeline',
-        });
-      }
+      const place = item?.place || item;
+
+      // --- FOTO TOPLAMA ---
+      const rawPhotos = Array.isArray(place?.photos)
+        ? place.photos
+        : Array.isArray(item?.photos)
+        ? item.photos
+        : [];
+
+      const fromPhotoUrls = Array.isArray(place?.photoUrls)
+        ? place.photoUrls
+        : Array.isArray(item?.photoUrls)
+        ? item.photoUrls
+        : [];
+
+      const photos = [
+        ...rawPhotos,
+        ...fromPhotoUrls.map((url) => ({ url })),
+      ];
+
+      const photoUrls = photos
+        .map((p) => p.url || p.uri || p.src || p.photoUrl)
+        .filter(Boolean);
+
+      // --- PAYLOAD ---
+      const payload = {
+        coordOnly: false,
+        coord,
+        index: listIdx,      // ✅ UI index (uiToReal bununla çalışıyor)
+        uiIndex: listIdx,    // ekstra bilgi (şimdilik kullanılmıyor)
+        realIndex: actIndex, // gerçek activity index’i (gerekirse kullanılır)
+        item,
+        kind,
+        isAnchor,
+        photos,
+        photoUrls,
+        source: 'timeline',
+      };
+
+      if (typeof onFocus === 'function') onFocus(payload);
+      else if (typeof onSelect === 'function') onSelect(payload);
     };
 
     // Anchor kartı üzerindeki küçük rota butonu (örn. "0 → 1")

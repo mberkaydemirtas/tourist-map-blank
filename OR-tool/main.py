@@ -1,16 +1,19 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
-from typing import List, Optional, Literal, Annotated, Tuple, Sequence
+from typing import List, Optional, Literal, Annotated, Tuple
 from dotenv import load_dotenv
 import logging, os, math, traceback, time, asyncio
 from multiprocessing import Process, Queue
 import platform
+from pathlib import Path
 
 from matrix import build_time_distance_matrix, build_haversine_matrix
 from solver import solve_day_vrptw
 
-load_dotenv()
+# ✅ .env yolunu main.py'nin yanına sabitle
+ENV_PATH = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=ENV_PATH, override=True)
 
 app = FastAPI(title="TouristMap Optimizer", version="0.3.2")
 
@@ -25,16 +28,17 @@ TravelMode = Literal["driving", "walking", "bicycling", "transit"]
 
 # --- env knobs ---
 OPT_MAX_NODES = int(os.getenv("OPT_MAX_NODES", "64"))
-USE_HAVERSINE_ONLY = os.getenv("USE_HAVERSINE_ONLY","").lower() in ("1","true","on","yes")
+USE_HAVERSINE_ONLY = os.getenv("USE_HAVERSINE_ONLY", "").lower() in ("1", "true", "on", "yes")
 OPT_SOLVER_MODE = (os.getenv("OPT_SOLVER_MODE", "") or "").lower()  # "ortools" | "nn" | "greedy" | "auto"
 OPT_SOLVER_TIMEOUT_SEC = int(os.getenv("OPT_SOLVER_TIMEOUT_SEC", "8"))
 OPT_GREEDY_UNTIL_N = int(os.getenv("OPT_GREEDY_UNTIL_N", "4"))      # küçük N'de direkt NN
-HAS_GMAPS_KEY = bool(os.getenv("GOOGLE_MAPS_API_KEY"))
+HAS_GMAPS_KEY = bool((os.getenv("GOOGLE_MAPS_API_KEY") or "").strip())
 MATRIX_HARD_MAX_ELEMENTS = int(os.getenv("MATRIX_HARD_MAX_ELEMENTS", "100"))
-OPT_SOLVER_ISOLATE = os.getenv("OPT_SOLVER_ISOLATE", "").lower() in ("1","true","on","yes")
+OPT_SOLVER_ISOLATE = os.getenv("OPT_SOLVER_ISOLATE", "").lower() in ("1", "true", "on", "yes")
+
 # Windows’ta varsayılanı güvenlik için True yapalım
 if platform.system().lower().startswith("win"):
-    OPT_SOLVER_ISOLATE = True if os.getenv("OPT_SOLVER_ISOLATE","") == "" else OPT_SOLVER_ISOLATE
+    OPT_SOLVER_ISOLATE = True if os.getenv("OPT_SOLVER_ISOLATE", "") == "" else OPT_SOLVER_ISOLATE
 
 # ------------------------------------------------------------
 # Middleware: giriş/çıkış log + süre
@@ -116,7 +120,8 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"ok": True, "version": app.version}
+    # ✅ hızlı test için has_key'i dön
+    return {"ok": True, "version": app.version, "has_gmaps_key": HAS_GMAPS_KEY}
 
 @app.get("/status")
 def status():
@@ -131,6 +136,8 @@ def status():
         "opt_max_nodes": OPT_MAX_NODES,
         "solver_isolate": OPT_SOLVER_ISOLATE,
         "platform": platform.platform(),
+        "env_path": str(ENV_PATH),
+        "env_loaded": ENV_PATH.exists(),
     }
 
 # ------------------------------------------------------------
@@ -170,7 +177,6 @@ def _solver_entry(q: Queue,
                   penalty_overtime: int,
                   allow_skipping: bool,
                   time_limit_sec: int):
-    """Alt süreçte çalışır; sonucu Queue ile ana sürece yollar."""
     try:
         res = solve_day_vrptw(
             matrix_minutes,
@@ -188,7 +194,6 @@ def _solver_entry(q: Queue,
         q.put(("err", "".join(traceback.format_exception(e))))
 
 async def run_solver_isolated(matrix_minutes, service, opens, closes, *, time_limit_sec: int) -> Tuple[List[int], List[int], int, List[str]]:
-    """OR-Tools'u alt süreçte çalıştır; timeout'ta veya crash’te exception at."""
     q: Queue = Queue()
     p = Process(
         target=_solver_entry,
@@ -197,19 +202,17 @@ async def run_solver_isolated(matrix_minutes, service, opens, closes, *, time_li
             int(os.getenv("OPT_PENALTY_EARLY", "3")),
             int(os.getenv("OPT_PENALTY_LATE", "5")),
             int(os.getenv("OPT_PENALTY_OVERTIME", "10")),
-            (os.getenv("OPT_ALLOW_SKIPPING", "false").lower() in ("1","true","on")),
+            (os.getenv("OPT_ALLOW_SKIPPING", "false").lower() in ("1", "true", "on")),
             int(time_limit_sec),
         ),
         daemon=True,
     )
     p.start()
     try:
-        # Queue.get blocking → thread'e verelim ki event loop bloklanmasın
         status, payload = await asyncio.to_thread(q.get, True, max(1, int(time_limit_sec) + 1))
         if status == "ok":
-            return payload  # (order_idx, legs_travel, total, warnings)
-        else:
-            raise RuntimeError(f"OR-Tools (subprocess) failed:\n{payload}")
+            return payload
+        raise RuntimeError(f"OR-Tools (subprocess) failed:\n{payload}")
     except Exception as e:
         try:
             if p.is_alive():
@@ -243,7 +246,6 @@ async def optimize_day(req: OptimizeDayRequest):
     print(f"[OPT] => /optimize-day start | stops={len(req.stops)} | mode={req.mode}")
 
     try:
-        # 0) basic validation
         if req.day_end_time_min <= req.day_start_time_min:
             raise HTTPException(status_code=400, detail="day_end_time_min > day_start_time_min olmalı.")
         if not req.stops:
@@ -251,9 +253,8 @@ async def optimize_day(req: OptimizeDayRequest):
         if len(req.stops) + 2 > OPT_MAX_NODES:
             raise HTTPException(status_code=400, detail=f"Çok fazla nokta (>{OPT_MAX_NODES}).")
 
-        # 1) points & windows
         points = [req.start] + [s.coords for s in req.stops] + [req.end]
-        n = len(points)  # includes start & end
+        n = len(points)
         elements = _elements(n)
         print(f"[OPT] points={n} (includes start/end), matrix_elements={elements}")
 
@@ -265,18 +266,15 @@ async def optimize_day(req: OptimizeDayRequest):
             int(s.close_min) if s.close_min is not None else int(req.day_end_time_min) for s in req.stops
         ] + [int(req.day_end_time_min)]
 
-        if not (len(service) == len(opens) == len(closes) == n):
-            raise HTTPException(status_code=400, detail="service/open/close uzunlukları uyuşmuyor")
         for k, (o, c) in enumerate(zip(opens, closes)):
             if o > c:
                 raise HTTPException(status_code=400, detail=f"time window hatası: node {k} için open>close")
 
-        # 2) tiny instances: use greedy (instant) to avoid any solver stall
-        force_greedy = (OPT_SOLVER_MODE in ("nn","greedy","1","true","on")) or (len(req.stops) <= OPT_GREEDY_UNTIL_N)
+        force_greedy = (OPT_SOLVER_MODE in ("nn", "greedy", "1", "true", "on")) or (len(req.stops) <= OPT_GREEDY_UNTIL_N)
 
-        # 3) time matrix
         t1 = time.time()
         print(f"[OPT] matrix building... haversine_only={USE_HAVERSINE_ONLY} has_key={HAS_GMAPS_KEY}")
+
         if USE_HAVERSINE_ONLY or (HAS_GMAPS_KEY and elements > MATRIX_HARD_MAX_ELEMENTS):
             if HAS_GMAPS_KEY and elements > MATRIX_HARD_MAX_ELEMENTS:
                 logging.warning(f"[OPT] elements={elements} > {MATRIX_HARD_MAX_ELEMENTS}; using haversine.")
@@ -293,12 +291,8 @@ async def optimize_day(req: OptimizeDayRequest):
 
         print(f"[OPT] matrix done in {(time.time() - t1):.2f}s")
 
-        # 3.1) trivial case: 1 stop → start->stop->end (gerçek bacak süreleriyle)
         if len(req.stops) == 1:
-            legs = [
-                int(matrix_minutes[0][1]),
-                int(matrix_minutes[1][n - 1]),
-            ]
+            legs = [int(matrix_minutes[0][1]), int(matrix_minutes[1][n - 1])]
             total = int(sum(legs) + sum(int(x) for x in service))
             print(f"[OPT] trivial (1 stop) done in {(time.time() - t0):.2f}s")
             return OptimizeDayResponse(
@@ -309,7 +303,6 @@ async def optimize_day(req: OptimizeDayRequest):
                 warnings=["Trivial day (1 stop)."],
             )
 
-        # 3.5) If greedy forced, return greedy now (fast & deterministic)
         if force_greedy:
             print(f"[OPT] greedy path (len(stops)={len(req.stops)}, mode={OPT_SOLVER_MODE or 'auto'})")
             order_idx = _nn_order(matrix_minutes, n)
@@ -326,7 +319,6 @@ async def optimize_day(req: OptimizeDayRequest):
                 warnings=["Greedy (NN) kullanıldı."],
             )
 
-        # 4) OR-Tools with hard timeout → isolated subprocess to avoid crashes
         t2 = time.time()
         print(f"[OPT] solver start (timeout={OPT_SOLVER_TIMEOUT_SEC}s | isolate={OPT_SOLVER_ISOLATE})")
         try:
@@ -335,7 +327,6 @@ async def optimize_day(req: OptimizeDayRequest):
                     matrix_minutes, service, opens, closes, time_limit_sec=OPT_SOLVER_TIMEOUT_SEC
                 )
             else:
-                # Eski yol (thread) — Windows’ta crash ederse isolate açın
                 async def run_solver_thread():
                     return await asyncio.to_thread(
                         solve_day_vrptw,
@@ -346,10 +337,9 @@ async def optimize_day(req: OptimizeDayRequest):
                         penalty_early=int(os.getenv("OPT_PENALTY_EARLY", "3")),
                         penalty_late=int(os.getenv("OPT_PENALTY_LATE", "5")),
                         penalty_overtime=int(os.getenv("OPT_PENALTY_OVERTIME", "10")),
-                        allow_skipping=(os.getenv("OPT_ALLOW_SKIPPING", "false").lower() in ("1","true","on")),
+                        allow_skipping=(os.getenv("OPT_ALLOW_SKIPPING", "false").lower() in ("1", "true", "on")),
                         time_limit_sec=OPT_SOLVER_TIMEOUT_SEC,
                     )
-                # Küçük bir marj: wait_for süresi solver süresinden +1 sn fazla olsun
                 order_idx, legs_travel, total, warnings = await asyncio.wait_for(
                     run_solver_thread(), timeout=max(1, OPT_SOLVER_TIMEOUT_SEC + 1)
                 )
@@ -394,5 +384,5 @@ async def optimize_day(req: OptimizeDayRequest):
 # ------------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
-    # gerçek cihaz için 0.0.0.0
-    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=False, log_level="debug")
+    # ✅ LAN + cihaz için doğru host: 0.0.0.0
+    uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("PORT", "8001")), reload=False, log_level="debug")

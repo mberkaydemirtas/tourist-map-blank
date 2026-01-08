@@ -1,26 +1,38 @@
 // app/lib/api.js
-import { Platform } from "react-native";
+import { Platform, NativeModules } from "react-native";
+import Constants from "expo-constants";
 
 /**
  * ENV:
- * - EXPO_PUBLIC_API_BASE            : https://… (tam URL)
+ * - EXPO_PUBLIC_API_BASE            : http://192.168.1.102:5000 (tam URL)
  * - EXPO_PUBLIC_SERVER_ENABLED      : "true" | "false"
  * - EXPO_PUBLIC_API_TIMEOUT_MS      : sayı (ms)
  * - EXPO_PUBLIC_GOOGLE_MAPS_API_KEY : (opsiyonel) client-side fallback için
  */
 
 const PROD_BASE = "https://tourist-map-blank-12.onrender.com";
-const LOCAL_BASE =
+
+// Emulator defaults
+const EMULATOR_BASE =
   Platform.OS === "android" ? "http://10.0.2.2:5000" : "http://localhost:5000";
 
-// 🔒 Gerçek cihaz + adb reverse için zorunlu base:
-const REAL_DEVICE_BASE = "http://127.0.0.1:5000";
+// ADB reverse kullanıyorsan (USB ADB ile) cihazdan PC’ye 127.0.0.1:5000 çalışabilir.
+// Wi-Fi ADB’de reverse çoğu zaman yok → bu yüzden bunu otomatik “ilk tercih” yapmıyoruz.
+const REAL_DEVICE_REVERSE_BASE = "http://127.0.0.1:5000";
 
-let isEmulatorOrSim = false;
-try {
-  const Constants = require("expo-constants").default;
-  isEmulatorOrSim = !Constants.isDevice;
-} catch {}
+// Metro host’u scriptURL’den çek (örn. 192.168.1.102)
+function getMetroHostFromScriptURL() {
+  try {
+    const url = NativeModules?.SourceCode?.scriptURL || "";
+    const m = url.match(/\/\/([^:]+):\d+\//);
+    return m ? m[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+const METRO_HOST = getMetroHostFromScriptURL();
+const IS_DEVICE = !!Constants?.isDevice;
 
 const ENV_API_BASE = (process.env?.EXPO_PUBLIC_API_BASE || "").trim();
 const ENV_SERVER_ENABLED_RAW = (process.env?.EXPO_PUBLIC_SERVER_ENABLED || "")
@@ -29,11 +41,38 @@ const ENV_SERVER_ENABLED_RAW = (process.env?.EXPO_PUBLIC_SERVER_ENABLED || "")
 const ENV_TIMEOUT_RAW = (process.env?.EXPO_PUBLIC_API_TIMEOUT_MS || "").trim();
 const GOOGLE_WEB_KEY = (process.env?.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "").trim();
 
-// ⚠️ ÖNEMLİ: Geliştirmede gerçek cihazsa → 127.0.0.1'e zorla (adb reverse)
-export const API_BASE = "http://10.0.2.2:5000";
+/**
+ * API_BASE seçim sırası (en güvenlisi):
+ * 1) ENV varsa -> onu kullan (en doğru ve sabit yöntem)
+ * 2) PROD değilsek:
+ *    - Cihazda: Metro host varsa -> http://<METRO_HOST>:5000
+ *    - Emulator: 10.0.2.2 / localhost
+ * 3) Prod: PROD_BASE
+ */
+function resolveApiBase() {
+  if (ENV_API_BASE) return ENV_API_BASE;
+
+  if (!__DEV__) return PROD_BASE;
+
+  // Dev mod
+  if (IS_DEVICE) {
+    // Gerçek cihazda en sağlamı: Metro host IP (LAN)
+    if (METRO_HOST) return `http://${METRO_HOST}:5000`;
+
+    // Metro host yoksa son çare: adb reverse varsayımı
+    return REAL_DEVICE_REVERSE_BASE;
+  }
+
+  // Emulator / simulator
+  return EMULATOR_BASE;
+}
+
+export const API_BASE = resolveApiBase();
 
 export const SERVER_ENABLED =
-  ENV_SERVER_ENABLED_RAW === "false" ? false : Boolean(API_BASE && API_BASE.length);
+  ENV_SERVER_ENABLED_RAW === "false"
+    ? false
+    : Boolean(API_BASE && String(API_BASE).length);
 
 const _tParsed = Number(ENV_TIMEOUT_RAW);
 export const API_TIMEOUT_MS =
@@ -41,8 +80,10 @@ export const API_TIMEOUT_MS =
 
 if (__DEV__) {
   console.log(
-    `[API] BASE=${API_BASE} TIMEOUT=${API_TIMEOUT_MS}ms SERVER_ENABLED=${SERVER_ENABLED} `
+    `[API] BASE=${API_BASE} TIMEOUT=${API_TIMEOUT_MS}ms SERVER_ENABLED=${SERVER_ENABLED}`
   );
+  console.log("[API] ENV_API_BASE =", ENV_API_BASE || "(none)");
+  console.log("[API] IS_DEVICE =", IS_DEVICE, "METRO_HOST =", METRO_HOST || "(none)");
 }
 
 /* ------------------------------------------------------------------ */
@@ -76,6 +117,7 @@ function composeAbortController(upstream, timeoutMs = API_TIMEOUT_MS) {
   const T = Number.isFinite(Number(timeoutMs)) ? Number(timeoutMs) : API_TIMEOUT_MS;
 
   if (T > 0) timer = setTimeout(() => controller.abort(), T);
+
   if (upstreamSignal) {
     if (upstreamSignal.aborted) controller.abort();
     else upstreamSignal.addEventListener("abort", onUpstreamAbort, { once: true });
@@ -93,6 +135,12 @@ function composeAbortController(upstream, timeoutMs = API_TIMEOUT_MS) {
   };
 }
 
+/**
+ * fetchJson:
+ * - Suggest endpoint için signal kullanılabilir → request birikmesi azalır.
+ * - Sadece gerçekten problemli endpoint’lerde “no signal + manual timeout” moduna geçer.
+ * - cleanup tek yerde çalışır.
+ */
 async function fetchJson(
   urlStr,
   { method = "GET", headers, body, signal, timeoutMs } = {}
@@ -102,18 +150,29 @@ async function fetchJson(
 
   const isPoiGoogle = url.includes("/api/poi/google/") || url.includes("/api/places/");
   const isPoiMatch = url.includes("/api/poi/match");
-  const forceNoSignal = isAndroid && (isPoiGoogle || isPoiMatch);
+  const isSuggest = url.includes("/api/poi/suggest");
+
+  // ✅ suggest endpoint'i için asla forceNoSignal yapma (yazarken çok çağrılıyor → birikme yapar)
+  const forceNoSignal = isAndroid && !isSuggest && (isPoiGoogle || isPoiMatch);
 
   const T = Number.isFinite(Number(timeoutMs)) ? Number(timeoutMs) : API_TIMEOUT_MS;
-  const { signal: finalSignal, cleanup } = forceNoSignal
-    ? { signal: undefined, cleanup: () => {} }
-    : composeAbortController(signal, T);
+
+  // signal/cleanup set
+  const ctrl = forceNoSignal ? null : composeAbortController(signal, T);
+  const finalSignal = ctrl?.signal;
 
   const h = { Accept: "application/json", ...(headers || {}) };
   if (isPoiGoogle || isPoiMatch) h["Accept-Encoding"] = "identity";
   const baseOpts = { method, headers: h, body };
 
+  const cleanupOnce = () => {
+    try {
+      ctrl?.cleanup?.();
+    } catch {}
+  };
+
   try {
+    // Force no-signal (manual timeout) — sadece problemli endpointlerde
     if (forceNoSignal) {
       const p = fetch(url, baseOpts);
       const t = new Promise((_, rej) =>
@@ -121,33 +180,37 @@ async function fetchJson(
       );
       return await Promise.race([p, t]);
     }
+
     return await fetch(url, { ...baseOpts, signal: finalSignal });
   } catch (e) {
     const msg = String(e?.message || "");
     const looksLikeSignalUnsupported =
       msg.includes("Property 'signal' doesn't exist") ||
-      msg.includes("invalid value for signal") ||
-      (msg.includes("signal") && msg.includes("not"));
+      msg.includes("invalid value for signal");
+
+    // RN bazen AbortController vs. yüzünden “Network request failed” fırlatabiliyor.
     const looksLikeAbortOrRnBug =
       e?.name === "AbortError" || msg.includes("Network request failed");
 
-    if (looksLikeSignalUnsupported || looksLikeAbortOrRnBug || forceNoSignal) {
+    // retry only if we actually attempted with signal
+    const canRetryWithoutSignal = !forceNoSignal && !!finalSignal;
+
+    if ((looksLikeSignalUnsupported || looksLikeAbortOrRnBug) && canRetryWithoutSignal) {
       try {
-        if (__DEV__)
-          console.warn("[fetchJson] re-try without signal due to:", msg || "(forced)");
+        if (__DEV__) console.warn("[fetchJson] re-try without signal due to:", msg || "(unknown)");
         const p2 = fetch(url, baseOpts);
         const t2 = new Promise((_, rej) =>
           setTimeout(() => rej(new Error(`tmout_retry_no_signal_${T}`)), T)
         );
         return await Promise.race([p2, t2]);
       } finally {
-        cleanup();
+        cleanupOnce();
       }
     }
-    cleanup();
+
     throw e;
   } finally {
-    cleanup();
+    cleanupOnce();
   }
 }
 
@@ -179,14 +242,11 @@ function toArray(json) {
   return [];
 }
 
-const isNetFail = (e) => String(e?.message || "").includes("Network request failed");
-
 /* ========================= SUGGEST-FIRST AYARLAR ========================= */
 
 const MIN_CHARS_SUGGEST = 2;
-// Eşikleri makul tutalım: 3+ harfte filtered az ise Google'a geç
 const MIN_PREFIX_FOR_GOOGLE = 3;
-const SUGGEST_MIN_TO_SKIP_GOOGLE = 3; // filtered >= 3 ise Google'ı atla
+const SUGGEST_MIN_TO_SKIP_GOOGLE = 3;
 const SUGGEST_PREFIX_TTL_MS = 90_000;
 
 function trFold(s = "") {
@@ -240,29 +300,13 @@ function uniqByPlaceId(arr) {
   return out;
 }
 
-const _prefixSatisfy = new Map(); // key: city|normPrefix → expireTs
+const _prefixSatisfy = new Map();
 
 function markPrefixSatisfied(q, city) {
   const norm = trFold(q);
   const c = normCity(city);
   const key = `${c}|${norm}`;
   _prefixSatisfy.set(key, Date.now() + SUGGEST_PREFIX_TTL_MS);
-}
-
-function anySatisfiedPrefix(q, city) {
-  const norm = trFold(q);
-  const c = normCity(city);
-  const now = Date.now();
-  for (const [k, exp] of _prefixSatisfy.entries()) {
-    if (exp < now) {
-      _prefixSatisfy.delete(k);
-      continue;
-    }
-    const [kc, kp] = k.split("|");
-    if (kc !== c) continue;
-    if (norm.startsWith(kp)) return true;
-  }
-  return false;
 }
 
 /* -------------------- Kategori filtreleme (suggest) -------------------- */
@@ -316,6 +360,7 @@ export async function poiSuggest(
     const json = await res.json();
     const arr = toArray(json);
     const uniq = uniqByPlaceId(arr);
+
     if (__DEV__) {
       try {
         console.log("[poiSuggest] status=", res.status, "len=", uniq.length);
@@ -347,7 +392,6 @@ async function suggestGateFirst(q, { city, category, limit, timeoutMs, signal })
   const filtered = filterSuggestByCategory(raw, category);
   const filteredCount = (filtered || []).length;
 
-  // ❗ Kararı filtered’a göre veriyoruz:
   const satisfied = filteredCount >= SUGGEST_MIN_TO_SKIP_GOOGLE;
 
   if (satisfied) {
@@ -366,7 +410,6 @@ async function suggestGateFirst(q, { city, category, limit, timeoutMs, signal })
     );
   }
 
-  // filtered 0 ise boş dönüyoruz ki Google tetiklensin
   return { satisfied: false, results: filtered };
 }
 
@@ -390,16 +433,19 @@ export async function poiAutocomplete(
   const qTrim = String(q || "").trim();
   if (qTrim.length < MIN_CHARS_SUGGEST) return [];
 
-  // Her durumda önce gate: (prefix tatmin edilmiş olsa bile filtered az olabilir)
-  const gate1 = await suggestGateFirst(qTrim, { city, category, limit, timeoutMs, signal });
+  const gate1 = await suggestGateFirst(qTrim, {
+    city,
+    category,
+    limit,
+    timeoutMs,
+    signal,
+  });
 
-  // filtered yeterliyse → sadece suggest
   if (gate1.satisfied) return mapSuggest(gate1.results, { city });
 
   // 2 harfte Google’a gitme; sadece suggest göster
   if (qTrim.length < MIN_PREFIX_FOR_GOOGLE) return mapSuggest(gate1.results, { city });
 
-  // Buraya gelindiyse: filtered az + 3+ harf → Google
   const T = Number.isFinite(Number(timeoutMs))
     ? Number(timeoutMs)
     : Math.max(API_TIMEOUT_MS, 9000);
@@ -437,7 +483,6 @@ export async function poiAutocomplete(
 /* ========== SEARCH — sadece submit olduğunda çağrılmalı ========== */
 export async function poiSearch(
   q,
-  // 🔁 Varsayılanı submit=TRUE yaptık: guard artık tetiklenmeyecek
   { lat, lon, category, city, timeoutMs, signal, isSubmit = true } = {}
 ) {
   const qTrim = String(q || "").trim();
@@ -470,7 +515,11 @@ export async function poiSearch(
         if (__DEV__) console.log("[poiSearch] url=", url);
         const res = await fetchJsonDedup(
           url,
-          { signal, timeoutMs: T1, headers: isSubmit ? { "x-submit-search": "1" } : undefined },
+          {
+            signal,
+            timeoutMs: T1,
+            headers: isSubmit ? { "x-submit-search": "1" } : undefined,
+          },
           T1
         );
         if (res.status === 204) {
@@ -565,17 +614,7 @@ const _strokeGuard = new Map();
 
 export async function searchUnified(
   q,
-  {
-    city,
-    category,
-    lat,
-    lon,
-    sessionToken,
-    isSubmit = false,
-    limit = 12,
-    timeoutMs,
-    signal,
-  } = {}
+  { city, category, lat, lon, sessionToken, isSubmit = false, limit = 12, timeoutMs, signal } = {}
 ) {
   const qTrim = String(q || "").trim();
   if (qTrim.length < MIN_CHARS_SUGGEST) return [];
@@ -583,13 +622,11 @@ export async function searchUnified(
   const guardKey = `${city || ""}|${qTrim}`;
   const now = Date.now();
   const last = _strokeGuard.get(guardKey) || 0;
-  if (now - last < 250) {
-    return [];
-  }
+  if (now - last < 250) return [];
   _strokeGuard.set(guardKey, now);
 
   if (!isSubmit) {
-    const ac = await poiAutocomplete(qTrim, {
+    return await poiAutocomplete(qTrim, {
       city,
       category,
       lat,
@@ -599,10 +636,9 @@ export async function searchUnified(
       timeoutMs,
       signal,
     });
-    return ac;
   }
 
-  const results = await poiSearch(qTrim, {
+  return await poiSearch(qTrim, {
     city,
     category,
     lat,
@@ -611,5 +647,4 @@ export async function searchUnified(
     signal,
     isSubmit: true,
   });
-  return results;
 }

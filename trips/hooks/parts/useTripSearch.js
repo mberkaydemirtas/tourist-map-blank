@@ -77,8 +77,10 @@ export function useTripSearch({
 
   const handleEditActivityAt = useCallback(
     (uiIdx) => {
-      if (guardAnchorAction(uiIdx)) return;
-      const realIdx = uiToReal(uiIdx);
+      const uiIndex =
+        typeof uiIdx === 'object' && uiIdx !== null ? uiIdx.index : uiIdx;
+      if (guardAnchorAction(uiIndex)) return;
+      const realIdx = uiToReal(uiIndex);
       setEditIndex(realIdx);
       setInsertIndex(realIdx);
       setIsPanelOpen(false);
@@ -89,7 +91,9 @@ export function useTripSearch({
 
   const onPickInsertIndex = useCallback(
     (uiIdx) => {
-      const realIdx = uiToReal(uiIdx);
+      const uiIndex =
+        typeof uiIdx === 'object' && uiIdx !== null ? uiIdx.index : uiIdx;
+      const realIdx = uiToReal(uiIndex);
       if (realIdx != null) {
         if (pendingAdd) addResolvedAtIndex(realIdx, pendingAdd);
         setPendingAdd(null);
@@ -213,6 +217,7 @@ export function useTripSearch({
     mapSearchQ,
     setMapSearchQ,
     searchMarkers,
+    setSearchMarkers,
     searchBusy,
 
     sheetMarker,

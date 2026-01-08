@@ -41,10 +41,6 @@ import {
   toISODateSafe,
   formatDate,
   getActName,
-  isStrictPlaceId,
-  getDetailsWithCache,
-  coercePhotoInputsToUrls,
-  limitPhotos,
   extractPossiblePlaceIdFromActivity,
   navigateToTurnByTurn,
 } from '../components/TripPlanHelpers';
@@ -60,6 +56,87 @@ const NumMarker = React.memo(function NumMarker({ bg, order }) {
     </View>
   );
 });
+
+/**
+ * Tek yerde tüm koordinatları normalize eden yardımcı fonksiyon.
+ * Ne gelirse gelsin (coords, location, geometry, lat/lng, latitude/longitude)
+ * buradan { latitude, longitude } çıkarıyoruz.
+ */
+function resolveCoords(markerLike) {
+  if (!markerLike) return null;
+
+  // 1) markerLike.coords
+  let c = markerLike.coords;
+  if (c) {
+    const lat = c.latitude ?? c.lat;
+    const lon = c.longitude ?? c.lon ?? c.lng;
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      return { latitude: lat, longitude: lon };
+    }
+  }
+
+  // 2) markerLike.location
+  if (markerLike.location) {
+    const lat = markerLike.location.latitude ?? markerLike.location.lat;
+    const lon =
+      markerLike.location.longitude ??
+      markerLike.location.lon ??
+      markerLike.location.lng;
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      return { latitude: lat, longitude: lon };
+    }
+  }
+
+  // 3) markerLike.place?.location
+  if (markerLike.place && markerLike.place.location) {
+    const lat =
+      markerLike.place.location.latitude ?? markerLike.place.location.lat;
+    const lon =
+      markerLike.place.location.longitude ??
+      markerLike.place.location.lon ??
+      markerLike.place.location.lng;
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      return { latitude: lat, longitude: lon };
+    }
+  }
+
+  // 4) Google Places tipik geometry.location
+  if (markerLike.geometry && markerLike.geometry.location) {
+    const lat =
+      markerLike.geometry.location.latitude ??
+      markerLike.geometry.location.lat;
+    const lon =
+      markerLike.geometry.location.longitude ??
+      markerLike.geometry.location.lng ??
+      markerLike.geometry.location.lon;
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      return { latitude: lat, longitude: lon };
+    }
+  }
+
+  // 5) Düz lat / lng alanları
+  if (markerLike.lat != null && (markerLike.lng != null || markerLike.lon != null)) {
+    const lat = markerLike.lat;
+    const lon = markerLike.lng ?? markerLike.lon;
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      return { latitude: lat, longitude: lon };
+    }
+  }
+
+  // 6) latitude / longitude
+  if (
+    markerLike.latitude != null &&
+    (markerLike.longitude != null || markerLike.lon != null)
+  ) {
+    const lat = markerLike.latitude;
+    const lon = markerLike.longitude ?? markerLike.lon;
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      return { latitude: lat, longitude: lon };
+    }
+  }
+
+  return null;
+}
 
 export default function TripPlansScreen({ route, navigation }) {
   const { tripId } = route.params || {};
@@ -181,7 +258,7 @@ export default function TripPlansScreen({ route, navigation }) {
 
       setIsPanelOpen(false);
       setSheetVariant('add');
-      setSheetMeta('');
+      setSheetMeta('map-long-press');
 
       const coords = { latitude: lat, longitude: lng };
 
@@ -201,7 +278,16 @@ export default function TripPlansScreen({ route, navigation }) {
   const handleQuickCardCta = useCallback(
     (markerLike) => {
       if (!markerLike) return;
-      const c = markerLike?.coords;
+
+      // 🔹 TÜM KOORDİNATLARI TEK YERDEN ÇEK
+      const coords = resolveCoords(markerLike);
+      if (!coords) {
+        Alert.alert(
+          'Hata',
+          'Bu yerin konumu alınamadı. Lütfen haritadan tekrar seçmeyi dene.'
+        );
+        return;
+      }
 
       // Hem photoUrls hem photos'tan normalize et
       const fromPhotoUrls =
@@ -220,29 +306,45 @@ export default function TripPlansScreen({ route, navigation }) {
           .filter(Boolean),
       ];
 
+      // 🔹 İSİM / BAŞLIK — mümkün olduğunca gerçek isim, en son çare "Seçilen konum"
+      const mainName =
+        markerLike?.name ||
+        markerLike?.title ||
+        markerLike?.primaryText ||
+        markerLike?.address ||
+        'Seçilen konum';
+
       const sel = {
         key:
           markerLike?.place_id ||
-          `map:${Math.round((c?.latitude ?? 0) * 1e6)}_${Math.round(
-            (c?.longitude ?? 0) * 1e6
+          `map:${Math.round((coords.latitude ?? 0) * 1e6)}_${Math.round(
+            (coords.longitude ?? 0) * 1e6
           )}`,
-        description: markerLike?.name || 'Seçilen konum',
-        coords: c,
+        description: mainName,
+        coords,
         address: markerLike?.address || '',
         photoUrls: mergedPhotoUrls,
       };
 
+      // QuickCard'ı kapat
       setSheetMarker(null);
 
+      // Polyline & rota preview eskiye göre kalmasın
+      setRouteData(null);
+      setRouteSheetOpen(false);
+
       if (editIndex != null) {
-        // Düzenleme Modu
+        // 🟢 1) DÜZENLEME MODU: Var olan durağı değiştir
         mutatePlanDays((next) => {
           const d = next.days?.[dayIndex];
           if (!d) return;
           const arr = d.activities || [];
           if (editIndex < 0 || editIndex >= arr.length) return;
 
-          const id = sel.key || `tmp:${Date.now()}`;
+          // Mevcut id'yi koru ki marker eşlemesi şaşmasın
+          const existingId = arr[editIndex]?.id;
+          const id = existingId || sel.key || `tmp:${Date.now()}`;
+
           const act = {
             id,
             type: 'visit',
@@ -250,12 +352,10 @@ export default function TripPlansScreen({ route, navigation }) {
             place: {
               id,
               name: sel.description || 'Seçilen yer',
-              location: sel.coords
-                ? {
-                    lat: sel.coords.latitude,
-                    lon: sel.coords.longitude,
-                  }
-                : null,
+              location: {
+                lat: sel.coords.latitude,
+                lon: sel.coords.longitude,
+              },
               category: 'sights',
               address: sel.address || '',
               photos: Array.isArray(sel.photoUrls)
@@ -270,33 +370,68 @@ export default function TripPlansScreen({ route, navigation }) {
           rebuildPolyline(d);
           setSelectedActId(act.id);
         });
+
         setEditIndex(null);
-      } else {
-        // Ekleme Modu
-        const len = day?.activities?.length || 0;
-        const pickIndex = (() => {
-          if (!len) return 0;
-          if (typeof insertIndex === 'number')
-            return Math.min(Math.max(insertIndex, 0), len);
-          if (
-            typeof logic.focusIdx === 'number' &&
-            logic.focusIdx >= 0 &&
-            logic.focusIdx <= len - 1
-          ) {
-            return Math.min(logic.focusIdx + 1, len);
-          }
-          return len;
-        })();
-        addResolvedAtIndex(pickIndex, sel);
+        setPendingAdd(null);
+        setInsertMode(false);
+        setSearchBarVisible(false);
+        setInsertIndex(null);
+        setMapSearchQ('');
+        setSearchMarkers([]);
+        setIsPanelOpen(true);
+
+        // Haritayı yeni durağa doğru ortala
+        if (mapRef.current) {
+          try {
+            mapRef.current.animateToRegion(
+              {
+                latitude: coords.latitude,
+                longitude: coords.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              },
+              300
+            );
+          } catch {}
+        }
+
+        return;
       }
 
-      setPendingAdd(null);
-      setInsertMode(false);
-      setIsPanelOpen(true);
+      // 🟢 2) SIDE TIMELINE'DAN "DURAK EKLE" SENARYOSU
+      if (typeof insertIndex === 'number') {
+        addResolvedAtIndex(insertIndex, sel);
+        setPendingAdd(null);
+        setInsertMode(false);
+        setIsPanelOpen(true);
+        setSearchBarVisible(false);
+        setMapSearchQ('');
+        setSearchMarkers([]);
+        setInsertIndex(null);
+
+        if (mapRef.current) {
+          try {
+            mapRef.current.animateToRegion(
+              {
+                latitude: coords.latitude,
+                longitude: coords.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              },
+              300
+            );
+          } catch {}
+        }
+
+        return;
+      }
+
+      // 🟢 3) POI / HARİTA ÜZERİNDEN "DURAK EKLE" SENARYOSU
+      setPendingAdd(sel);
+      setInsertMode(true);
+      setIsPanelOpen(true); // SideTimeline açılsın
       setSearchBarVisible(false);
-      setInsertIndex(null);
-      setMapSearchQ('');
-      setSearchMarkers([]);
+      // Bu modda search sonuçlarını temizlemiyoruz, sadece mod timeline'a geçti
     },
     [
       editIndex,
@@ -305,12 +440,10 @@ export default function TripPlansScreen({ route, navigation }) {
       retimeDay,
       rebuildPolyline,
       setSelectedActId,
+      addResolvedAtIndex,
+      insertIndex,
       setSheetMarker,
       setEditIndex,
-      day?.activities?.length,
-      insertIndex,
-      logic.focusIdx,
-      addResolvedAtIndex,
       setPendingAdd,
       setInsertMode,
       setIsPanelOpen,
@@ -318,6 +451,9 @@ export default function TripPlansScreen({ route, navigation }) {
       setInsertIndex,
       setMapSearchQ,
       setSearchMarkers,
+      setRouteData,
+      setRouteSheetOpen,
+      mapRef,
     ]
   );
 
@@ -336,8 +472,10 @@ export default function TripPlansScreen({ route, navigation }) {
   // Helper: Aktivite Silme (SideTimeline için)
   const handleDeleteActivityAt = useCallback(
     (uiIdx) => {
-      if (guardAnchorAction(uiIdx)) return;
-      const realIdx = uiToReal(uiIdx);
+      const uiIndex =
+        typeof uiIdx === 'object' && uiIdx !== null ? uiIdx.index : uiIdx;
+      if (guardAnchorAction(uiIndex)) return;
+      const realIdx = uiToReal(uiIndex);
       if (realIdx == null) return;
 
       mutatePlanDays((next) => {
@@ -349,15 +487,30 @@ export default function TripPlansScreen({ route, navigation }) {
         retimeDay(d);
         rebuildPolyline(d);
       });
+
+      // rota preview temizle
+      setRouteData(null);
+      setRouteSheetOpen(false);
     },
-    [guardAnchorAction, uiToReal, mutatePlanDays, dayIndex, retimeDay, rebuildPolyline]
+    [
+      guardAnchorAction,
+      uiToReal,
+      mutatePlanDays,
+      dayIndex,
+      retimeDay,
+      rebuildPolyline,
+      setRouteData,
+      setRouteSheetOpen,
+    ]
   );
 
   // Helper: Edit Başlatma
   const handleStartEditAt = useCallback(
     (uiIdx) => {
-      if (guardAnchorAction(uiIdx)) return;
-      const realIdx = uiToReal(uiIdx);
+      const uiIndex =
+        typeof uiIdx === 'object' && uiIdx !== null ? uiIdx.index : uiIdx;
+      if (guardAnchorAction(uiIndex)) return;
+      const realIdx = uiToReal(uiIndex);
       setEditIndex(realIdx);
       setInsertIndex(realIdx);
       if (isPanelOpen) setIsPanelOpen(false);
@@ -587,8 +740,6 @@ export default function TripPlansScreen({ route, navigation }) {
             !panelVisible && { pointerEvents: 'none' },
           ]}
         >
-
-
           {(!day?.activities || day.activities.length === 0) && (
             <View
               style={{
@@ -600,7 +751,7 @@ export default function TripPlansScreen({ route, navigation }) {
               <TouchableOpacity
                 onPress={() => {
                   setInsertIndex(0);
-                  setInsertMode(false);
+                  setInsertMode(false); // Bu case: side timeline'dan "Durak ekle"
                   setIsPanelOpen(false);
                   setSearchBarVisible(true);
                 }}
@@ -631,8 +782,9 @@ export default function TripPlansScreen({ route, navigation }) {
             onSelect={onTimelineItemPress}
             selectedActivityId={selectedActId}
             onInsertAt={(idx) => {
-              const real = typeof idx === 'object' ? idx.index : idx;
-              const realIdx = uiToReal(real);
+              const realUi =
+                typeof idx === 'object' && idx !== null ? idx.index : idx;
+              const realIdx = uiToReal(realUi);
               if (realIdx != null) {
                 setInsertIndex(realIdx);
                 setInsertMode(false);
@@ -644,9 +796,18 @@ export default function TripPlansScreen({ route, navigation }) {
             onEditAt={handleStartEditAt}
             onDeleteAt={handleDeleteActivityAt}
             onReorder={(fromUi, toUi) => {
-              if (guardAnchorAction(fromUi) || guardAnchorAction(toUi)) return;
-              const from = uiToReal(fromUi);
-              const to = uiToReal(toUi);
+              const fromIndex =
+                typeof fromUi === 'object' && fromUi !== null
+                  ? fromUi.index
+                  : fromUi;
+              const toIndex =
+                typeof toUi === 'object' && toUi !== null ? toUi.index : toUi;
+
+              if (guardAnchorAction(fromIndex) || guardAnchorAction(toIndex))
+                return;
+
+              const from = uiToReal(fromIndex);
+              const to = uiToReal(toIndex);
               mutatePlanDays((n) => {
                 const acts = n.days[dayIndex].activities;
                 if (
@@ -661,10 +822,17 @@ export default function TripPlansScreen({ route, navigation }) {
                 retimeDay(n.days[dayIndex]);
                 rebuildPolyline(n.days[dayIndex]);
               });
+
+              setRouteData(null);
+              setRouteSheetOpen(false);
             }}
             insertMode={insertMode}
             onPickInsertIndex={(uiIdx) => {
-              const real = uiToReal(uiIdx);
+              const realUi =
+                typeof uiIdx === 'object' && uiIdx !== null
+                  ? uiIdx.index
+                  : uiIdx;
+              const real = uiToReal(realUi);
               if (real != null) onPickInsertIndex(real);
             }}
             onCancelInsertMode={onCancelInsertMode}
@@ -707,7 +875,6 @@ export default function TripPlansScreen({ route, navigation }) {
                 ];
                 setLegWaypoints(wps);
 
-                // Haritada hemen düz çizgi çiz
                 const fitCoords = wps.map((p) => ({
                   latitude: p.lat,
                   longitude: p.lng,
@@ -718,11 +885,9 @@ export default function TripPlansScreen({ route, navigation }) {
                   durationText: '',
                 });
 
-                // Side paneli kapat & rota sheet'i aç
                 setIsPanelOpen(false);
                 setRouteSheetOpen(true);
 
-                // Haritayı bacak etrafına zoom
                 if (mapRef.current) {
                   try {
                     mapRef.current.fitToCoordinates(fitCoords, {
@@ -753,7 +918,6 @@ export default function TripPlansScreen({ route, navigation }) {
                   { lat: fromLoc.lat, lng: fromLoc.lon },
                   { lat: toLoc.lat, lng: toLoc.lon },
                 ];
-                setLegWaypoints(wps);
 
                 const fitCoords = wps.map((p) => ({
                   latitude: p.lat,
@@ -838,7 +1002,7 @@ export default function TripPlansScreen({ route, navigation }) {
                 }
               }
             }}
-            // Hook'tan gelen fonksiyon
+            // Hook'tan gelen fonksiyon (şimdilik kalsın)
             onPickLegPair={logic.onPickLegPair}
           />
         </View>
@@ -916,7 +1080,6 @@ export default function TripPlansScreen({ route, navigation }) {
             style={styles.map}
             pointerEvents="auto"
             showsPointsOfInterest={true}
-            // onPoiClick={handlePoiClick}  // şimdilik devre dışı
             onLongPress={handleMapLongPress}
             onRegionChangeComplete={onMapRegionChanged}
             initialRegion={{
@@ -1018,7 +1181,6 @@ export default function TripPlansScreen({ route, navigation }) {
             : undefined
         }
         onRouteData={(rd) => {
-          // sadece seçilen rota çizilsin
           if (rd) {
             setRouteData(rd);
           } else {
@@ -1132,4 +1294,3 @@ export default function TripPlansScreen({ route, navigation }) {
     </View>
   );
 }
- 

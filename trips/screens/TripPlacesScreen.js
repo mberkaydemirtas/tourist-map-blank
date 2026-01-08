@@ -1,43 +1,22 @@
 // app/screens/TripPlacesScreen.js
-import React, { useEffect, useState, useMemo } from "react";
-import { Platform } from "react-native";
+import React, { useEffect, useState } from "react";
 import TripPlaceSelection from "../components/TripPlaceSelection";
-import { resolvePlacesBatch } from '../services/placeResolver';
+import { resolvePlacesBatch } from "../services/placeResolver";
+import { API_BASE } from "../../app/lib/api";
 
-// ---------- API BASE (otomatik seç) ----------
-/**
- * LOCAL GELİŞTİRME:
- * - iOS Simülatör: http://localhost:5000
- * - Android Emülatör (AVD): http://10.0.2.2:5000
- * - Gerçek cihaz: Makinenin LAN IP’si (örn. http://192.168.1.100:5000)
- *
- * PROD:
- * - Aşağıdaki PROD_BASE'e kendi domain'ini koy (örn. https://api.senin-domainin.com)
- */
-const PROD_BASE = "https://tourist-map-blank-12.onrender.com"; // prod domain hazır değilse şimdilik aynı kalsın
-
-const LOCAL_BASE = (() => {
-  if (Platform.OS === "android") return "http://10.0.2.2:5000";
-  return "http://localhost:5000";
-})();
-
-// Geliştirme mi prod mu?
-const API_BASE = __DEV__ ? LOCAL_BASE : PROD_BASE;
-
-// ---------- Ekran ----------
 export default function TripPlacesScreen() {
   const [initialData, setInitialData] = useState([]);
 
-  // OSM/DB verini burada yükleyip initialData’ya ver (opsiyonel)
   useEffect(() => {
     // Örn: setInitialData(osmArrayFromDB);
   }, []);
 
-  // Google arama: önce local verin bakılıyor (TripPlaceSelection içinde), yoksa server
+  // Google arama: server üzerinden
   const googleSearchFn = async (q, ctx) => {
     try {
       const qq = (q || "").trim();
       if (qq.length < 2) return [];
+
       const url =
         `${API_BASE}/api/poi/google/search` +
         `?q=${encodeURIComponent(qq)}` +
@@ -47,14 +26,13 @@ export default function TripPlacesScreen() {
 
       const res = await fetch(url);
       if (!res.ok) throw new Error(`poiSearch_failed_${res.status}`);
-      return await res.json(); // [{source:'google', name, lat, lon, place_id}, ...]
+      return await res.json();
     } catch (err) {
       console.warn("googleSearchFn error:", err?.message || err);
       return [];
     }
   };
 
-  // Seçimi onayla → OSM noktalarını lazy match ile place_id'ye bağla
   const onConfirm = async (selected) => {
     try {
       const resolved = await resolvePlacesBatch({
@@ -63,9 +41,7 @@ export default function TripPlacesScreen() {
         API_BASE,
       });
       console.log("Resolved places:", resolved);
-      // TODO: burada wizard/route state’ine yazın:
-      // setSelectedPlaces(resolved)
-      // veya navigation ile wizard'a geri dönün.
+      // TODO: wizard/route state’ine yaz
     } catch (err) {
       console.warn("onConfirm error:", err?.message || err);
     }
@@ -74,8 +50,8 @@ export default function TripPlacesScreen() {
   return (
     <TripPlaceSelection
       city="ankara"
-      initialData={initialData}       // OSM/DB verin (boşsa bileşen kendi CSV seed'i ile çalışır)
-      googleSearchFn={googleSearchFn} // navigation-server endpoint’ine bağlı
+      initialData={initialData}
+      googleSearchFn={googleSearchFn}
       onConfirm={onConfirm}
     />
   );
