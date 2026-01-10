@@ -11,10 +11,15 @@ import Constants from "expo-constants";
  */
 
 const PROD_BASE = "https://tourist-map-blank-12.onrender.com";
+<<<<<<< Updated upstream
 
 // Emulator defaults
 const EMULATOR_BASE =
   Platform.OS === "android" ? "http://10.0.2.2:5000" : "http://localhost:5000";
+=======
+const LOCAL_BASE =
+  Platform.OS === "android" ? "http://192.168.1.108:5000" : "http://localhost:5000";
+>>>>>>> Stashed changes
 
 // ADB reverse kullanıyorsan (USB ADB ile) cihazdan PC’ye 127.0.0.1:5000 çalışabilir.
 // Wi-Fi ADB’de reverse çoğu zaman yok → bu yüzden bunu otomatik “ilk tercih” yapmıyoruz.
@@ -41,6 +46,7 @@ const ENV_SERVER_ENABLED_RAW = (process.env?.EXPO_PUBLIC_SERVER_ENABLED || "")
 const ENV_TIMEOUT_RAW = (process.env?.EXPO_PUBLIC_API_TIMEOUT_MS || "").trim();
 const GOOGLE_WEB_KEY = (process.env?.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "").trim();
 
+<<<<<<< Updated upstream
 /**
  * API_BASE seçim sırası (en güvenlisi):
  * 1) ENV varsa -> onu kullan (en doğru ve sabit yöntem)
@@ -68,6 +74,10 @@ function resolveApiBase() {
 }
 
 export const API_BASE = resolveApiBase();
+=======
+// ⚠️ ÖNEMLİ: Geliştirmede gerçek cihazsa → 127.0.0.1'e zorla (adb reverse)
+export const API_BASE = "http://192.168.1.108:5000";
+>>>>>>> Stashed changes
 
 export const SERVER_ENABLED =
   ENV_SERVER_ENABLED_RAW === "false"
