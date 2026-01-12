@@ -125,12 +125,14 @@ export function buildInitialDailyPlan({ dateRange, transport, stays }) {
 
     if (i === 0) {
       const startTime = maxTime(readyAt, defaultStart);
+      const endTime = maxTime(defaultEnd, startTime);
       anchor = { type: 'lodging', place: lodging, ready_at: startTime };
-      dayWindow = { start: startTime, end: defaultEnd };
+      dayWindow = { start: startTime, end: endTime };
       blocks.push({ type: 'BUFFER', reason: 'arrival', minutes: inboundBufferByMode(inMode) });
       blocks.push({ type: 'CHECKIN', place: lodging, time: checkIn });
     } else if (i === dates.length - 1) {
-      dayWindow = { start: defaultStart, end: minTime(defaultEnd, targetArriveAtHub) };
+      const endTime = maxTime(defaultStart, minTime(defaultEnd, targetArriveAtHub));
+      dayWindow = { start: defaultStart, end: endTime };
       anchor = { type: 'lodging', place: lodging, ready_at: defaultStart };
       blocks.push({ type: 'CHECKOUT', place: lodging, time: checkOut });
       blocks.push({ type: 'BUFFER', reason: 'security', minutes: mustArriveMin });
