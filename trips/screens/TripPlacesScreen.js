@@ -1,34 +1,23 @@
 // app/screens/TripPlacesScreen.js
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import TripPlaceSelection from "../components/TripPlaceSelection";
 import { resolvePlacesBatch } from "../services/placeResolver";
 import { API_BASE } from "../../app/lib/api";
+import { Platform } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
-<<<<<<< Updated upstream
-=======
 // ---------- API BASE (otomatik seç) ----------
-/**
- * LOCAL GELİŞTİRME:
- * - iOS Simülatör: http://localhost:5000
- * - Android Emülatör (AVD): http://10.0.2.2:5000
- * - Gerçek cihaz: Makinenin LAN IP’si (örn. http://192.168.1.100:5000)
- *
- * PROD:
- * - Aşağıdaki PROD_BASE'e kendi domain'ini koy (örn. https://api.senin-domainin.com)
- */
-const PROD_BASE = "https://tourist-map-blank-12.onrender.com"; // prod domain hazır değilse şimdilik aynı kalsın
+const PROD_BASE = "https://tourist-map-blank-12.onrender.com";
 
 const LOCAL_BASE = (() => {
   if (Platform.OS === "android") return "http://192.168.1.108:5000";
   return "http://localhost:5000";
 })();
 
-// Geliştirme mi prod mu?
-const API_BASE = __DEV__ ? LOCAL_BASE : PROD_BASE;
-
 // ---------- Ekran ----------
->>>>>>> Stashed changes
 export default function TripPlacesScreen() {
+  const navigation = useNavigation();
+
   const [initialData, setInitialData] = useState([]);
 
   useEffect(() => {
@@ -36,7 +25,7 @@ export default function TripPlacesScreen() {
   }, []);
 
   // Google arama: server üzerinden
-  const googleSearchFn = async (q, ctx) => {
+  const googleSearchFn = useCallback(async (q, ctx) => {
     try {
       const qq = (q || "").trim();
       if (qq.length < 2) return [];
@@ -55,21 +44,56 @@ export default function TripPlacesScreen() {
       console.warn("googleSearchFn error:", err?.message || err);
       return [];
     }
-  };
+  }, []);
 
-  const onConfirm = async (selected) => {
-    try {
-      const resolved = await resolvePlacesBatch({
-        items: selected,
-        city: "Ankara",
-        API_BASE,
-      });
-      console.log("Resolved places:", resolved);
-      // TODO: wizard/route state’ine yaz
-    } catch (err) {
-      console.warn("onConfirm error:", err?.message || err);
-    }
-  };
+  const onConfirm = useCallback(
+    async (selected) => {
+      try {
+        const resolved = await resolvePlacesBatch({
+          items: selected,
+          city: "Ankara",
+          API_BASE,
+        });
+
+        console.log("Resolved places:", resolved);
+
+        // ✅ TripPlans’e gönderilecek payload (array)
+        const places = (Array.isArray(resolved) ? resolved : [])
+          .map((r, i) => {
+            const lat = r?.coords?.latitude;
+            const lng = r?.coords?.longitude;
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+            return {
+              key: r.key || r.place_id || r.id || `place_${Date.now()}_${i}`,
+              description: r.description || r.name || "Seçilen yer",
+              coords: { latitude: lat, longitude: lng },
+              address: r.address || "",
+              photoUrls: Array.isArray(r.photoUrls) ? r.photoUrls : [],
+              insertIndex: null, // istersen buraya belirli index yazabilirsin
+            };
+          })
+          .filter(Boolean);
+
+        if (!places.length) {
+          console.warn("[TripPlaces] resolved empty or coords missing");
+          return;
+        }
+
+        // ✅ TripPlansScreen’e param taşı (merge:true önemli)
+        navigation.navigate({
+          name: "TripPlansScreen", // sende farklıysa ekran adını aynen yaz
+          params: {
+            __TP_INCOMING_PLACES: places,
+          },
+          merge: true,
+        });
+      } catch (err) {
+        console.warn("onConfirm error:", err?.message || err);
+      }
+    },
+    [navigation]
+  );
 
   return (
     <TripPlaceSelection

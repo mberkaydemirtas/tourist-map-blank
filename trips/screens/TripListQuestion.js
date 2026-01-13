@@ -9,6 +9,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
+  Modal,
+  Linking,
 } from 'react-native';
 import { FlatList as GHFlatList } from 'react-native-gesture-handler';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -21,7 +23,8 @@ import {
 import {
   newPlacesSessionToken,
   poiMatch,
-  searchUnified, // ⬅️ tek giriş noktası (keystroke vs submit)
+  searchUnified,
+  updateTripSelectedPlaces,
 } from '../../app/lib/api.js';
 
 const CATEGORIES = [
@@ -40,7 +43,6 @@ const BORDER = '#23262F';
 const MIN_CHARS = 2;
 const DEBOUNCE_MS = 250;
 
-/* helpers */
 const round5 = (x) => Math.round(Number(x) * 1e5) / 1e5;
 
 function toPlace(item, fallbackCity, fallbackCategory) {
@@ -48,7 +50,7 @@ function toPlace(item, fallbackCity, fallbackCategory) {
   const lon = Number.isFinite(item.lon) ? item.lon : Number(item.coords?.lng ?? item.coords?.lon);
   return {
     id: item.place_id ? `pid-${item.place_id}`
-       : String(item.id ?? `${(item.name||'x')}-${fallbackCity||''}-${Math.random().toString(36).slice(2)}`),
+      : String(item.id ?? `${(item.name||'x')}-${fallbackCity||''}-${Math.random().toString(36).slice(2)}`),
     name: item.name,
     coords: Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lng: lon } : undefined,
     address: item.address || undefined,
@@ -69,44 +71,19 @@ function Badge({ children, tone = 'blue' }) {
   );
 }
 
-/** Oturum içinde aynı place_id’yi gereksiz yere tekrar yazmamak için */
+// aynı place_id’yi tekrar tekrar local’e basmayalım
 const seenPersistIds = new Set();
 
-/** Sessiz persist (Google/suggest öğeleri → poi_user overlay) */
-async function persistGoogleResultsSilently(list, { city, category }) {
-  try {
-    const jobs = [];
-    const cap = 10;
-    let pushed = 0;
-    for (const it of list) {
-      if (pushed >= cap) break;
-      if (!(it?.source === 'google')) continue;
-      const pid = it?.place_id;
-      if (!pid || seenPersistIds.has(pid)) continue;
-
-      const lat = Number.isFinite(it?.lat) ? it.lat : Number(it?.coords?.lat);
-      const lon = Number.isFinite(it?.lon) ? it.lon : Number(it?.coords?.lng ?? it?.coords?.lon);
-      if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
-
-      jobs.push(
-        addUserPoi({
-          city,
-          category: it?.category || category || 'sights',
-          name: it?.name || '—',
-          lat,
-          lon,
-          address: it?.address || '',
-          place_id: pid,
-        }).catch(() => {})
-      );
-      seenPersistIds.add(pid);
-      pushed++;
-    }
-    if (jobs.length) await Promise.allSettled(jobs);
-  } catch {}
+/**
+ * searchUnified cevabı bazen Array, bazen {results: []} gelebilir.
+ * Her durumda Array’e çevirir.
+ */
+function normalizeListPayload(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && Array.isArray(payload.results)) return payload.results;
+  return [];
 }
 
-/** Server match cache’inden batch eşleşme bilgisi çek ve öğelere işle */
 async function annotateMatches(items, cityName) {
   try {
     const payload = items.map((x) => {
@@ -119,7 +96,7 @@ async function annotateMatches(items, cityName) {
 
     if (!payload.length) return items;
 
-    const res = await poiMatch(payload, cityName).catch(() => null);
+    const res = await poiMatch({ items: payload }, cityName)
     const results = Array.isArray(res?.results) ? res.results : [];
 
     let idx = -1;
@@ -143,7 +120,6 @@ async function annotateMatches(items, cityName) {
       return { ...it, matched: !!it?.place_id };
     });
 
-    // matched → google → local sırala
     withFlags.sort((a, b) => {
       const ma = a.matched ? 1 : 0;
       const mb = b.matched ? 1 : 0;
@@ -159,7 +135,6 @@ async function annotateMatches(items, cityName) {
   }
 }
 
-/** Aynı place_id / aynı (lat,lng,name) tekrarlarını ayıkla */
 function dedupPlaces(arr) {
   const seenPid = new Set();
   const seenGeo = new Set();
@@ -184,12 +159,105 @@ function dedupPlaces(arr) {
   return out;
 }
 
+const ANKARA_FALLBACK = { lat: 39.92077, lng: 32.85411 };
+const nearlySame = (a, b, eps = 1e-4) => Math.abs(Number(a) - Number(b)) <= eps;
+
+const isAnkaraFallback = (c) => {
+  if (!c) return true;
+  const lat = Number(c.lat), lng = Number(c.lng);
+  return Number.isFinite(lat) && Number.isFinite(lng) &&
+    nearlySame(lat, ANKARA_FALLBACK.lat) &&
+    nearlySame(lng, ANKARA_FALLBACK.lng);
+};
+
+const isValidCenter = (c, cityName) => {
+  const lat = Number(c?.lat);
+  const lng = Number(c?.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  const city = String(cityName || '').toLowerCase();
+  const looksLikeAnkara = city.includes('ankara');
+  if (!looksLikeAnkara && isAnkaraFallback(c)) return false;
+  return true;
+};
+
+function haversineKm(a, b) {
+  const la1 = Number(a?.lat), lo1 = Number(a?.lng);
+  const la2 = Number(b?.lat), lo2 = Number(b?.lng);
+  if (![la1, lo1, la2, lo2].every(Number.isFinite)) return null;
+  const R = 6371;
+  const toRad = (x) => (x * Math.PI) / 180;
+  const dLat = toRad(la2 - la1);
+  const dLon = toRad(lo2 - lo1);
+  const s1 = Math.sin(dLat / 2);
+  const s2 = Math.sin(dLon / 2);
+  const aa = s1 * s1 + Math.cos(toRad(la1)) * Math.cos(toRad(la2)) * s2 * s2;
+  const c = 2 * Math.atan2(Math.sqrt(aa), Math.sqrt(1 - aa));
+  return R * c;
+}
+
+function openInGoogleMaps(item) {
+  const pid = item?.place_id;
+  const lat = Number.isFinite(item?.lat) ? item.lat : Number(item?.coords?.lat);
+  const lng = Number.isFinite(item?.lon) ? item.lon : Number(item?.coords?.lng ?? item?.coords?.lon);
+
+  if (pid) {
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item?.name || 'Place')}&query_place_id=${encodeURIComponent(pid)}`;
+    Linking.openURL(url).catch(() => {});
+    return;
+  }
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    Linking.openURL(url).catch(() => {});
+    return;
+  }
+  if (item?.name) {
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name)}`;
+    Linking.openURL(url).catch(() => {});
+  }
+}
+
+function resolveTripId(trip, tripIdProp) {
+  const direct = tripIdProp;
+  if (direct != null && String(direct).trim()) return String(direct);
+
+  const candidates = [
+    trip?.id,
+    trip?._id,
+    trip?.tripId,
+    trip?.trip_id,
+    trip?.uuid,
+    trip?.key,
+    trip?.meta?.id,
+    trip?.meta?._id,
+  ].filter(Boolean);
+
+  if (candidates.length) return String(candidates[0]);
+  return null;
+}
+
+function resolveCountryCode(trip, explicitCountryCode) {
+  const direct = explicitCountryCode;
+  if (direct && String(direct).trim()) return String(direct).toUpperCase();
+
+  const candidates = [
+    trip?.countryCode,
+    trip?.country_code,
+    trip?.country?.code,
+    trip?.where?.countryCode,
+    trip?.meta?.countryCode,
+  ].filter(Boolean);
+
+  if (candidates.length) return String(candidates[0]).toUpperCase();
+  return 'TR';
+}
+
 export default function TripListQuestion({
   trip,
   setTrip,
   onBack,
   onNext,
-  countryCode = trip?.countryCode || 'TR',
+  tripId: tripIdProp,
+  countryCode: countryCodeProp,
   cityName    = trip?.cityName    || '',
   cityCenter  = trip?.cityCenter  || { lat: 39.92077, lng: 32.85411 },
   placesMaxHeight = 360,
@@ -203,13 +271,125 @@ export default function TripListQuestion({
   const debRef = useRef(null);
   const initialLocalRef = useRef([]);
 
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewItem, setPreviewItem] = useState(null);
+
   const selected = useMemo(() => trip?.selectedPlaces || [], [trip?.selectedPlaces]);
   const selectedCityItems = useMemo(
     () => (selected || []).filter((x) => (x.city || '') === (cityName || '')),
     [selected, cityName]
   );
 
-  // Google session token (AC/Search oturumu)
+  const tripId = useMemo(() => resolveTripId(trip, tripIdProp), [trip, tripIdProp]);
+  const countryCode = useMemo(() => resolveCountryCode(trip, countryCodeProp), [trip, countryCodeProp]);
+
+  /**
+   * ✅ Google sonuçlarını local poiHybrid shard’a sessizce bas (opsiyonel).
+   * NOT: Asıl “otomatik kaydetme” server tarafında zaten yapılacak.
+   * Bu sadece cihazda local DB’yi güçlendirmek için.
+   */
+  async function persistGoogleResultsSilently(list, { city, category, country }) {
+    try {
+      const jobs = [];
+      const cap = 10;
+      let pushed = 0;
+
+      for (const it of (list || [])) {
+        if (pushed >= cap) break;
+        if (!(it?.source === 'google')) continue;
+
+        const pid = it?.place_id;
+        if (!pid || seenPersistIds.has(pid)) continue;
+
+        const lat = Number.isFinite(it?.lat) ? it.lat : Number(it?.coords?.lat);
+        const lon = Number.isFinite(it?.lon) ? it.lon : Number(it?.coords?.lng ?? it?.coords?.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+
+        jobs.push(
+          addUserPoi({
+            country: (country || 'TR'),
+            city,
+            category: it?.category || category || 'sights',
+            name: it?.name || '—',
+            lat,
+            lon,
+            address: it?.address || '',
+            place_id: pid,
+          }).catch(() => {})
+        );
+
+        seenPersistIds.add(pid);
+        pushed++;
+      }
+
+      if (jobs.length) await Promise.allSettled(jobs);
+    } catch {}
+  }
+
+  // ✅ selectedPlaces persist (debounced)
+  const persistTimerRef = useRef(null);
+  const persistLatestRef = useRef({ tripId: null, selectedPlaces: [] });
+  const persistInFlightRef = useRef(false);
+
+  const schedulePersistSelectedPlaces = (tripIdValue, nextSelectedPlaces) => {
+    if (!tripIdValue) {
+      if (__DEV__) console.warn('[TripListQuestion] persist SKIP: tripId missing', {
+        tripKeys: Object.keys(trip || {}),
+        trip: trip || null,
+      });
+      persistLatestRef.current = {
+        tripId: null,
+        selectedPlaces: Array.isArray(nextSelectedPlaces) ? nextSelectedPlaces : [],
+      };
+      return;
+    }
+
+    persistLatestRef.current = {
+      tripId: tripIdValue,
+      selectedPlaces: Array.isArray(nextSelectedPlaces) ? nextSelectedPlaces : [],
+    };
+
+    if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+    persistTimerRef.current = setTimeout(async () => {
+      const latest = persistLatestRef.current;
+      if (!latest?.tripId) return;
+      if (persistInFlightRef.current) return;
+
+      persistInFlightRef.current = true;
+      try {
+        if (__DEV__) console.log('[TripListQuestion] persist selectedPlaces →', latest.selectedPlaces?.length || 0, { tripId: latest.tripId });
+        await updateTripSelectedPlaces(latest.tripId, latest.selectedPlaces, { timeoutMs: 15000 });
+        if (__DEV__) console.log('[TripListQuestion] persist OK');
+      } catch (e) {
+        if (__DEV__) console.warn('[TripListQuestion] persist FAIL:', e?.message || e);
+      } finally {
+        persistInFlightRef.current = false;
+      }
+    }, 400);
+  };
+
+  useEffect(() => {
+    if (!tripId) return;
+    const pending = persistLatestRef.current?.selectedPlaces;
+    const candidate = (Array.isArray(pending) && pending.length) ? pending : (trip?.selectedPlaces || []);
+    if (Array.isArray(candidate) && candidate.length) {
+      schedulePersistSelectedPlaces(tripId, candidate);
+    }
+  }, [tripId]); // intentionally only tripId
+
+  useEffect(() => {
+    return () => {
+      try {
+        if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+      } catch {}
+      const latest = persistLatestRef.current;
+      if (latest?.tripId && Array.isArray(latest.selectedPlaces)) {
+        updateTripSelectedPlaces(latest.tripId, latest.selectedPlaces, { timeoutMs: 8000 }).catch(() => {});
+      }
+    };
+  }, []);
+
+  // session token
   const sessionRef = useRef(null);
   useEffect(() => {
     const qTrim = (query || '').trim();
@@ -222,6 +402,11 @@ export default function TripListQuestion({
     let mounted = true;
     (async () => {
       try {
+        if (__DEV__) {
+          if (!countryCodeProp && !trip?.countryCode) {
+            console.warn('[TripListQuestion] countryCode missing → fallback used', { resolved: countryCode, cityName });
+          }
+        }
         await prewarmPoiShard(countryCode);
         const counts = await getCategoryCounts({ country: countryCode, city: cityName });
         if (!mounted) return;
@@ -264,7 +449,7 @@ export default function TripListQuestion({
     return () => { mounted = false; };
   }, [activeCat, cityName, countryCode]);
 
-  // 🔍 KEYPRESS (debounced): sadece autocomplete/suggest-first (tek çağrı akışı)
+  // debounced autocomplete
   useEffect(() => {
     let mounted = true;
     if (debRef.current) clearTimeout(debRef.current);
@@ -280,47 +465,66 @@ export default function TripListQuestion({
       if (!mounted) return;
       const myReqId = ++reqIdRef.current;
       setLoading(true);
+
+      const centerOk = isValidCenter(cityCenter, cityName);
+      const lat = centerOk ? Number(cityCenter?.lat) : undefined;
+      const lng = centerOk ? Number(cityCenter?.lng) : undefined;
+
       try {
-        const acList = await searchUnified(qTrim, {
+        // ✅ normalize: array OR {results:[]}
+        const acPayload = await searchUnified(qTrim, {
           city: cityName,
           category: activeCat,
-          lat: Number(cityCenter?.lat),
-          lon: Number(cityCenter?.lng),
+          lat,
+          lng,
+          lon: lng,
           sessionToken: sessionRef.current,
-          isSubmit: false, // ⬅️ sadece AC / suggest-first
+          isSubmit: false,
           limit: 12,
           timeoutMs: 9000,
-        }).catch(() => []);
+        }).catch(() => ([]));
 
-        // normalize (searchUnified AC çıktısı: google/suggest ağırlıklı)
+        const acList = normalizeListPayload(acPayload);
+
         const norm = (acList || []).map(s => ({
           id: s.place_id ? `pid-${s.place_id}` : (s.id || `${s.name}-${s.lat},${s.lon}`),
           name: s.name || '—',
           address: s.address || '',
           source: s.source || 'google',
           place_id: s.place_id || null,
-          coords: (Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lon)))
-            ? { lat: Number(s.lat), lng: Number(s.lon) }
+          coords: (Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lon ?? s.lng)))
+            ? { lat: Number(s.lat), lng: Number(s.lon ?? s.lng) }
             : undefined,
           category: activeCat || 'sights',
           city: s.city || cityName || '',
           rating: s.rating ?? null,
           user_ratings_total: s.user_ratings_total ?? null,
-          price_level: s.price_level ?? null,
+          matched: s.matched ?? null,
+          lat: Number.isFinite(Number(s.lat)) ? Number(s.lat) : undefined,
+          lon: Number.isFinite(Number(s.lon ?? s.lng)) ? Number(s.lon ?? s.lng) : undefined,
         }));
 
         const ded = dedupPlaces(norm);
         const withFlags = await annotateMatches(ded, cityName);
         const finalList = dedupPlaces(withFlags);
+
         if (!mounted || myReqId !== reqIdRef.current) return;
         setItems(finalList);
-        if (__DEV__) console.log('[TripListQuestion] AC items =', withFlags?.length || 0);
 
-        if (withFlags.length) {
-          persistGoogleResultsSilently(withFlags, { city: cityName, category: activeCat }).catch(() => {});
+        if (__DEV__) {
+          console.log('[TripListQuestion] AC items =', finalList?.length || 0, {
+            activeCat, cityName, centerOk, lat, lng, q: qTrim, tripId,
+          });
         }
-      } catch {
-        if (mounted) setItems(initialLocalRef.current);
+
+        // ✅ opsiyonel local shard persist
+        if (finalList.length) {
+          persistGoogleResultsSilently(finalList, {
+            city: cityName,
+            category: activeCat,
+            country: countryCode,
+          }).catch(() => {});
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -330,25 +534,33 @@ export default function TripListQuestion({
       mounted = false;
       if (debRef.current) clearTimeout(debRef.current);
     };
-  }, [query, activeCat, cityName, cityCenter?.lat, cityCenter?.lng, countryCode]);
+  }, [query, activeCat, cityName, cityCenter?.lat, cityCenter?.lng, countryCode, tripId]);
 
-  // ENTER / "Ara" → submit araması (gerekirse TextSearch; yine tek çağrı)
   const handleSubmit = async () => {
     const qTrim = (query || '').trim();
     if (!qTrim || qTrim.length < MIN_CHARS) return;
+
     const myReqId = ++reqIdRef.current;
     setLoading(true);
+
+    const centerOk = isValidCenter(cityCenter, cityName);
+    const lat = centerOk ? Number(cityCenter?.lat) : undefined;
+    const lng = centerOk ? Number(cityCenter?.lng) : undefined;
+
     try {
-      const list = await searchUnified(qTrim, {
+      const payload = await searchUnified(qTrim, {
         city: cityName,
         category: activeCat,
-        lat: Number(cityCenter?.lat),
-        lon: Number(cityCenter?.lng),
+        lat,
+        lng,
+        lon: lng,
         sessionToken: sessionRef.current || newPlacesSessionToken(),
-        isSubmit: true, // ⬅️ submit → search
+        isSubmit: true,
         limit: 24,
         timeoutMs: 10000,
-      }).catch(() => []);
+      }).catch(() => ([]));
+
+      const list = normalizeListPayload(payload);
 
       const norm = (list || []).map(s => ({
         id: s.place_id ? `pid-${s.place_id}` : (s.id || `${s.name}-${s.lat},${s.lon}`),
@@ -356,34 +568,50 @@ export default function TripListQuestion({
         address: s.address || '',
         source: s.source || 'google',
         place_id: s.place_id || null,
-        coords: (Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lon)))
-          ? { lat: Number(s.lat), lng: Number(s.lon) }
+        coords: (Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lon ?? s.lng)))
+          ? { lat: Number(s.lat), lng: Number(s.lon ?? s.lng) }
           : undefined,
         category: activeCat || 'sights',
         city: s.city || cityName || '',
         rating: s.rating ?? null,
         user_ratings_total: s.user_ratings_total ?? null,
-        price_level: s.price_level ?? null,
+        matched: s.matched ?? null,
+        lat: Number.isFinite(Number(s.lat)) ? Number(s.lat) : undefined,
+        lon: Number.isFinite(Number(s.lon ?? s.lng)) ? Number(s.lon ?? s.lng) : undefined,
       }));
 
       const ded = dedupPlaces(norm);
       const withFlags = await annotateMatches(ded, cityName);
+      const finalList = dedupPlaces(withFlags);
 
       if (myReqId !== reqIdRef.current) return;
-      setItems(withFlags);
-      if (__DEV__) console.log('[TripListQuestion] SUBMIT items =', withFlags?.length || 0);
+      setItems(finalList);
 
+      if (__DEV__) console.log('[TripListQuestion] SUBMIT items =', finalList?.length || 0, { q: qTrim, tripId });
+
+      // ✅ opsiyonel local shard persist
       if (finalList.length) {
-        persistGoogleResultsSilently(finalList, { city: cityName, category: activeCat }).catch(() => {});
+        persistGoogleResultsSilently(finalList, {
+          city: cityName,
+          category: activeCat,
+          country: countryCode,
+        }).catch(() => {});
       }
     } finally {
       setLoading(false);
     }
   };
 
+  function isChecked(item) {
+    const cityKey = item.city || cityName;
+    return !!selected.find((x) =>
+      (item.place_id && x.place_id && x.place_id === item.place_id) ||
+      (x.id === item.id && (x.city || '') === cityKey)
+    );
+  }
+
   function toggleSelection(item) {
     const cityKey = item.city || cityName;
-    // place_id öncelikli eşitlik — aynı yer farklı kaynaktan gelse bile tek seçim
     const exists = selected.find((x) =>
       (item.place_id && x.place_id && x.place_id === item.place_id) ||
       (x.id === item.id && (x.city || '') === cityKey)
@@ -402,11 +630,11 @@ export default function TripListQuestion({
       const picked = toPlace(item, cityName, fallbackCat);
       next = [...selected, picked];
 
-      // Google/suggest kaynağı ise → overlay’e kalıcı yaz
       const _lat = Number.isFinite(item.lat) ? item.lat : Number(item.coords?.lat);
       const _lon = Number.isFinite(item.lon) ? item.lon : Number(item.coords?.lng ?? item.coords?.lon);
       if ((item.source === 'google' || item.matched) && Number.isFinite(_lat) && Number.isFinite(_lon)) {
         addUserPoi({
+          country: countryCode,
           city: cityName,
           category: fallbackCat,
           name: item.name,
@@ -418,31 +646,49 @@ export default function TripListQuestion({
         if (item.place_id) seenPersistIds.add(item.place_id);
       }
     }
-    setTrip?.({ ...(trip || {}), selectedPlaces: next });
+
+    const nextTrip = { ...(trip || {}), selectedPlaces: next };
+    setTrip?.(nextTrip);
+
+    schedulePersistSelectedPlaces(tripId, next);
   }
 
-  const selectedCityCount = selectedCityItems.length;
+  function openPreview(item) {
+    setPreviewItem(item);
+    setPreviewOpen(true);
+  }
 
-  /* ---------------- render ---------------- */
+  function closePreview() {
+    setPreviewOpen(false);
+    setPreviewItem(null);
+  }
+
+  const previewInfo = useMemo(() => {
+    const it = previewItem;
+    if (!it) return null;
+    const lat = Number.isFinite(it?.lat) ? it.lat : Number(it?.coords?.lat);
+    const lng = Number.isFinite(it?.lon) ? it.lon : Number(it?.coords?.lng ?? it?.coords?.lon);
+    const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+    const centerOk = isValidCenter(cityCenter, cityName);
+    const km = hasCoords && centerOk ? haversineKm({ lat, lng }, cityCenter) : null;
+
+    return {
+      hasCoords, lat, lng, centerOk, km,
+      checked: isChecked(it),
+      sourceLabel: (it?.matched || it?.place_id) ? 'Eşleşmiş' : (it?.source === 'google' ? 'Google' : 'Yerel'),
+      catLabel: labelForCat(it?.category || activeCat || 'sights'),
+    };
+  }, [previewItem, cityCenter, cityName, activeCat, selected]);
+
   return (
     <View style={styles.root}>
-      {/* Sekmeler — yatay scroll + hafif sola */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.tabs}
-        keyboardShouldPersistTaps="always"
-      >
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} keyboardShouldPersistTaps="always">
         <View style={{ flexDirection: 'row' }}>
           {CATEGORIES.map((c) => {
             const active = c.key === activeCat;
             const count = catCounts?.[c.key] || 0;
             return (
-              <Pressable
-                key={c.key}
-                onPress={() => setActiveCat(c.key)}
-                style={[styles.tab, active && styles.tabActive]}
-              >
+              <Pressable key={c.key} onPress={() => setActiveCat(c.key)} style={[styles.tab, active && styles.tabActive]}>
                 <Text style={[styles.tabText, active && styles.tabTextActive]}>
                   {c.label}{count ? ` (${count})` : ''}
                 </Text>
@@ -452,7 +698,6 @@ export default function TripListQuestion({
         </View>
       </ScrollView>
 
-      {/* Arama */}
       <View style={styles.searchRow}>
         <Ionicons name="search" size={18} color="#9AA0A6" />
         <TextInput
@@ -464,45 +709,41 @@ export default function TripListQuestion({
           autoCorrect={false}
           autoCapitalize="none"
           returnKeyType="search"
-          onSubmitEditing={handleSubmit} // ⬅️ Submit araması
+          onSubmitEditing={handleSubmit}
         />
         {loading ? <ActivityIndicator /> : null}
       </View>
 
-      {/* Mini sayaç */}
       <Text style={{color:'#9AA0A6', fontSize:12, marginTop:6, marginLeft:2}}>
-        {`Listelenen: ${items?.length || 0}`}
+        {`Listelenen: ${items?.length || 0}  ·  tripId: ${tripId || '(missing)'}  ·  country: ${countryCode}`}
       </Text>
 
-      {/* Places list */}
       <View style={[styles.sheetDark, { maxHeight: placesMaxHeight }]}>
         <GHFlatList
           data={items}
-          keyExtractor={keyExtractor}
+          keyExtractor={(it, idx) => {
+            const base = it?.place_id ? `pid-${it.place_id}` : (it?.id ? `id-${it.id}` : 'row');
+            return `${base}#${idx}`;
+          }}
           extraData={selected}
           nestedScrollEnabled
           scrollEnabled
           showsVerticalScrollIndicator
           keyboardShouldPersistTaps="handled"
-          scrollEventThrottle={16}
-          overScrollMode="always"
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => {
-            const cityKey = item.city || cityName;
-            const checked = !!selected.find((x) =>
-              (item.place_id && x.place_id && x.place_id === item.place_id) ||
-              (x.id === item.id && (x.city || '') === cityKey)
-            );
+            const checked = isChecked(item);
             const catForItem = item.category || activeCat || 'sights';
-
             const matched = !!item.matched || !!item.place_id;
-            const isOverlayGoogle = item.source === 'google';
+
+            const lat = Number.isFinite(item?.lat) ? item.lat : Number(item?.coords?.lat);
+            const lng = Number.isFinite(item?.lon) ? item.lon : Number(item?.coords?.lng ?? item?.coords?.lon);
+            const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+            const centerOk = isValidCenter(cityCenter, cityName);
+            const km = hasCoords && centerOk ? haversineKm({ lat, lng }, cityCenter) : null;
 
             return (
-              <Pressable
-                onPress={() => toggleSelection(item)}
-                style={[styles.card, checked && styles.cardChecked]}
-              >
+              <Pressable onPress={() => openPreview(item)} style={[styles.card, checked && styles.cardChecked]}>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
                   <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
                     {checked ? <Ionicons name="checkmark" size={16} color="#0D0F14" /> : null}
@@ -510,35 +751,87 @@ export default function TripListQuestion({
 
                   <View style={{ flex: 1 }}>
                     <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
-                    {!!item.address && (
-                      <Text style={styles.addr} numberOfLines={1}>{item.address}</Text>
-                    )}
+                    {!!item.address && <Text style={styles.addr} numberOfLines={1}>{item.address}</Text>}
+                    <Text style={styles.metaLine} numberOfLines={1}>
+                      {hasCoords ? `📍 ${round5(lat)}, ${round5(lng)}` : '📍 Koordinat yok'}
+                      {km != null ? `  ·  ≈ ${km.toFixed(1)} km` : ''}
+                      {item?.place_id ? '  ·  place_id' : ''}
+                    </Text>
                   </View>
 
                   <View style={{ alignItems: 'flex-end', gap: 6 }}>
-                    {matched ? <Badge tone="green">Eşleşmiş</Badge> : <Badge>{isOverlayGoogle ? 'Google' : 'Yerel'}</Badge>}
+                    {matched ? <Badge tone="green">Eşleşmiş</Badge> : <Badge>Yer</Badge>}
                     {checked ? <Text style={styles.selectedPill}>Seçili</Text> : null}
                   </View>
                 </View>
 
-                <View style={{ marginTop: 8, flexDirection:'row', gap:6 }}>
+                <View style={{ marginTop: 8, flexDirection:'row', gap:6, alignItems:'center', justifyContent:'space-between' }}>
                   <Text style={styles.catTagMini}>{labelForCat(catForItem)}</Text>
+                  <Text style={styles.tapHint}>Dokun → Doğrula</Text>
                 </View>
               </Pressable>
             );
           }}
-          ListEmptyComponent={
-            !loading ? (
-              <View style={styles.empty}>
-                <Ionicons name="location-outline" size={22} color="#9AA0A6" />
-                <Text style={styles.emptyText}>Sonuç yok.</Text>
-              </View>
-            ) : null
-          }
         />
       </View>
 
-      {/* Seçilenler */}
+      <Modal visible={previewOpen} transparent animationType="fade" onRequestClose={closePreview}>
+        <Pressable style={styles.modalOverlay} onPress={closePreview}>
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            <View style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', gap:12 }}>
+              <Text style={styles.modalTitle} numberOfLines={2}>{previewItem?.name || '—'}</Text>
+              <Pressable onPress={closePreview} style={styles.iconBtn}>
+                <Ionicons name="close" size={18} color="#E5E7EB" />
+              </Pressable>
+            </View>
+
+            {!!previewItem?.address && <Text style={styles.modalAddr} numberOfLines={3}>{previewItem.address}</Text>}
+
+            <View style={{ flexDirection:'row', gap:8, marginTop: 10, flexWrap:'wrap' }}>
+              <Badge tone={previewInfo?.sourceLabel === 'Eşleşmiş' ? 'green' : 'blue'}>
+                {previewInfo?.sourceLabel || '—'}
+              </Badge>
+              <Badge tone="indigo">{previewInfo?.catLabel || '—'}</Badge>
+            </View>
+
+            <View style={{ marginTop: 12 }}>
+              <Text style={styles.modalMeta}>
+                {previewInfo?.hasCoords
+                  ? `Koordinat: ${round5(previewInfo.lat)}, ${round5(previewInfo.lng)}`
+                  : 'Koordinat: Yok'}
+              </Text>
+              <Text style={styles.modalMeta}>
+                {previewInfo?.km != null ? `Merkeze uzaklık: ≈ ${previewInfo.km.toFixed(1)} km` : 'Uzaklık: (hesaplanamadı)'}
+              </Text>
+              {!!previewItem?.place_id && <Text style={styles.modalMeta}>place_id: {String(previewItem.place_id).slice(0, 18)}…</Text>}
+            </View>
+
+            <View style={styles.modalBtnRow}>
+              <Pressable onPress={() => openInGoogleMaps(previewItem)} style={[styles.modalBtn, styles.modalBtnGhost]}>
+                <Ionicons name="map-outline" size={16} color="#E5E7EB" />
+                <Text style={styles.modalBtnTextGhost}>Google Maps’te Aç</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => { toggleSelection(previewItem); closePreview(); }}
+                style={[styles.modalBtn, styles.modalBtnPrimary]}
+              >
+                <Ionicons
+                  name={previewInfo?.checked ? "remove-circle-outline" : "add-circle-outline"}
+                  size={16}
+                  color="#0D0F14"
+                />
+                <Text style={styles.modalBtnTextPrimary}>{previewInfo?.checked ? 'Kaldır' : 'Ekle'}</Text>
+              </Pressable>
+            </View>
+
+            <Text style={styles.modalHint}>
+              İpucu: Emin değilsen “Google Maps’te Aç” ile kontrol edip sonra “Ekle”.
+            </Text>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       <View style={{ height: 12 }} />
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Seçilenler {cityName ? `(${cityName})` : ''}</Text>
@@ -550,11 +843,12 @@ export default function TripListQuestion({
           data={selectedCityItems}
           keyExtractor={(it, idx) =>
             (it?.place_id ? `pid-${it.place_id}` : (it?.id ? `id-${it.id}` : 'sel')) + `#${idx}`
-          }          scrollEnabled={false}
+          }
+          scrollEnabled={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[styles.listContent, { paddingBottom: 6 }]}
           renderItem={({ item }) => (
-            <Pressable onPress={() => toggleSelection(item)} style={[styles.card, styles.cardSelectedList]}>
+            <Pressable onPress={() => openPreview(item)} style={[styles.card, styles.cardSelectedList]}>
               <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
                 <View style={[styles.checkbox, styles.checkboxChecked]}>
                   <Ionicons name="checkmark" size={16} color="#0D0F14" />
@@ -570,11 +864,9 @@ export default function TripListQuestion({
                       </Text>
                     )}
                   </View>
-                  {!!item.address && (
-                    <Text style={styles.addr} numberOfLines={1}>{item.address}</Text>
-                  )}
+                  {!!item.address && <Text style={styles.addr} numberOfLines={1}>{item.address}</Text>}
                 </View>
-                <Text style={styles.removeText}>Kaldır</Text>
+                <Text style={styles.removeText}>Dokun</Text>
               </View>
             </Pressable>
           )}
@@ -589,27 +881,8 @@ export default function TripListQuestion({
   );
 }
 
-/* list helpers */
-  function keyExtractor(it, idx) {
-    let base = null;
-    if (it?.place_id) base = `pid-${it.place_id}`;
-    else if (it?.id) base = `id-${it.id}`;
-    else {
-      const la = Number(it?.lat ?? it?.coords?.lat);
-      const lo = Number(it?.lon ?? it?.coords?.lng ?? it?.coords?.lon);
-      if (Number.isFinite(la) && Number.isFinite(lo)) {
-        base = `geo-${round5(la)},${round5(lo)}-${(it?.name || '').slice(0,24)}`;
-      } else {
-        base = 'row';
-      }
-    }
-    return `${base}#${idx}`;
-  }
-
-/* styles */
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#101014' },
-
   tabs: { paddingHorizontal: 8, gap: 8, marginLeft: -4, paddingRight: 6 },
   tab: {
     paddingHorizontal: 12,
@@ -673,8 +946,8 @@ const styles = StyleSheet.create({
 
   name: { color: '#fff', fontWeight: '700' },
   addr: { color: '#9AA0A6', fontSize: 12, marginTop: 2 },
+  metaLine: { color: '#6B7280', fontSize: 11, marginTop: 6 },
 
-  empty: { alignItems: 'center', paddingVertical: 20, gap: 6 },
   emptyMini: { alignItems: 'center', paddingVertical: 10 },
   emptyText: { color: '#9AA0A6' },
 
@@ -723,7 +996,52 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     overflow: 'hidden',
   },
-
+  tapHint: { color: '#6B7280', fontSize: 11, fontWeight: '700' },
   cardSelectedList: { backgroundColor: '#0F1420' },
   removeText: { color: '#FCA5A5', fontWeight: '700' },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    padding: 18,
+    justifyContent: 'center',
+  },
+  modalCard: {
+    backgroundColor: '#0B0D12',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#2a2d36',
+    padding: 14,
+  },
+  modalTitle: { color: '#fff', fontWeight: '900', fontSize: 16, flex: 1 },
+  modalAddr: { color: '#9AA0A6', marginTop: 8, lineHeight: 18 },
+  modalMeta: { color: '#C7D2FE', marginTop: 6, fontSize: 12 },
+  modalBtnRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  modalBtn: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  modalBtnGhost: {
+    backgroundColor: '#111827',
+    borderWidth: 1,
+    borderColor: '#374151',
+  },
+  modalBtnPrimary: { backgroundColor: '#60A5FA' },
+  modalBtnTextGhost: { color: '#E5E7EB', fontWeight: '900' },
+  modalBtnTextPrimary: { color: '#0D0F14', fontWeight: '900' },
+  modalHint: { color: '#6B7280', marginTop: 10, fontSize: 12 },
+  iconBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#111827',
+    borderWidth: 1,
+    borderColor: '#374151',
+  },
 });

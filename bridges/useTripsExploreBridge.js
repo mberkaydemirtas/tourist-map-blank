@@ -12,12 +12,13 @@ import { useCallback, useEffect, useRef } from 'react';
  *
  * Navigation sözleşmesi:
  * - Map tarafı seçim yaptığında, navigator'a
- *   { screen: 'CreateTripWizard', params: { pickFromMap: { which, cityKey, hub } } }
- *   set edilir. (PlaceDetailSheetContainer bunu zaten yapıyor.)
+ *   { screen: 'CreateTripWizard', params: { pickFromMap: { which, cityKey, hub/place } } }
+ *   set edilir.
  *
  * Ekstra:
  * - presetCategory: 'lodging' | 'restaurant' | 'cafe' | ...
  * - search: string
+ * - countryCode: 'TR' | 'PL' | ...
  */
 export function useTripsExploreBridge({ nav, route, onPick }) {
   const resolverRef = useRef(null);
@@ -29,10 +30,16 @@ export function useTripsExploreBridge({ nav, route, onPick }) {
     return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : undefined;
   }, []);
 
+  const normalizeCountry = useCallback((cc) => {
+    const v = String(cc || '').trim().toUpperCase();
+    return v.length ? v : undefined;
+  }, []);
+
   /**
    * @param {{
    *  which?: 'start'|'end'|'lodging',
    *  cityKey?: string,
+   *  countryCode?: string, // ✅ NEW
    *  center?: {lat:number,lng:number}|{latitude:number,longitude:number},
    *  cityName?: string,
    *  sheetInitial?: 'half'|'full',
@@ -46,6 +53,7 @@ export function useTripsExploreBridge({ nav, route, onPick }) {
     const {
       which,
       cityKey,
+      countryCode,      // ✅ NEW
       center,
       cityName,
       sheetInitial,
@@ -55,6 +63,7 @@ export function useTripsExploreBridge({ nav, route, onPick }) {
     } = opts;
 
     const centerNorm = normalizeCenter(center);
+    const ccNorm = normalizeCountry(countryCode);
     const version = Date.now();
 
     const go = () =>
@@ -65,6 +74,7 @@ export function useTripsExploreBridge({ nav, route, onPick }) {
             enabled: true,
             which,
             cityKey,
+            countryCode: ccNorm,   // ✅ NEW
             center: centerNorm,
             cityName,
             sheetInitial,
@@ -85,13 +95,14 @@ export function useTripsExploreBridge({ nav, route, onPick }) {
     resolverRef.current = null;
     go();
     return undefined;
-  }, [nav, normalizeCenter]);
+  }, [nav, normalizeCenter, normalizeCountry]);
 
   const openStartEndPicker = useCallback(
     ({ which, cityKey, cityObj, search } = {}) => {
       return openPicker({
         which,
         cityKey,
+        countryCode: cityObj?.country,   // ✅ NEW (CreateTripWizard activeCityObj içine country koyuyordu)
         center: cityObj?.center,
         cityName: cityObj?.name,
         awaitSelection: true,
@@ -106,10 +117,11 @@ export function useTripsExploreBridge({ nav, route, onPick }) {
       return openPicker({
         which: 'lodging',
         cityKey,
+        countryCode: cityObj?.country,   // ✅ NEW
         center: cityObj?.center,
         cityName: cityObj?.name,
         sheetInitial: 'half',
-        awaitSelection: false, // konaklama için akış asenkron kalabilir; Map tarafında selection sonrası dönüş yapılır
+        awaitSelection: false,
         presetCategory: 'lodging',
         search,
       });
@@ -142,7 +154,7 @@ export function useTripsExploreBridge({ nav, route, onPick }) {
       }
     }
 
-    // 3) Param temizliği: Wizard tarafında (handler finally > setTimeout) temizlenecek.
+    // 3) Param temizliği Wizard tarafında yapılıyor (senin finally setTimeout kısmın)
   }, [route?.params?.pickFromMap, onPick]);
 
   return {

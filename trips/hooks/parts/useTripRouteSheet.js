@@ -1,5 +1,5 @@
 // trips/hooks/parts/useTripRouteSheet.js
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import Constants from 'expo-constants';
 
 import { getRouteDirections } from '../../services/RouteDirectionService';
@@ -13,22 +13,23 @@ const DIRECTIONS_API_KEY =
   '';
 
 /**
- * Gün içi iki aktivite (veya UI index çifti) arasındaki rotayı hesaplar,
+ * Gün içi iki aktivite arasındaki rotayı hesaplar,
  * bottom sheet için state tutar ve haritayı o rotaya göre zoomlar.
- *
- * Parametreler:
- *  - day: current plan day (activities listesi vs.)
- *  - mapRef: MapView ref
- *  - uiToReal: UI index -> gerçek activity index converter
- *  - setIsPanelOpen: side timeline panelini aç/kapa (route sheet açılırken kapatıyoruz)
  */
 export function useTripRouteSheet({ day, mapRef, uiToReal, setIsPanelOpen }) {
   const [routeData, setRouteData] = useState(null);
   const [routeSheetOpen, setRouteSheetOpen] = useState(false);
+
   const [legSel, setLegSel] = useState(null);      // {from, to}
   const [legActs, setLegActs] = useState(null);    // {a, b}
-  const [legWaypoints, setLegWaypoints] = useState(null); // [w1, w2]
+
+  // ✅ KRİTİK: null değil [] olsun (reset ve render tarafı stabil)
+  const [legWaypoints, setLegWaypoints] = useState([]); // [w1, w2]
+
   const [routeLegLabel, setRouteLegLabel] = useState('');
+
+  // ✅ Çakışan async çağrılar birbirini ezmesin (gün değişince / hızlı tıklayınca)
+  const reqIdRef = useRef(0);
 
   /**
    * Basit: day.activities[realIdx] & [realIdx+1] arasını göster
@@ -44,6 +45,8 @@ export function useTripRouteSheet({ day, mapRef, uiToReal, setIsPanelOpen }) {
       const w2 = buildWaypointFromAct(b);
       if (!w1 || !w2) return;
 
+      const reqId = ++reqIdRef.current;
+
       setLegSel({ from: realIdx, to: realIdx + 1 });
       setLegActs({ a, b });
       setLegWaypoints([w1, w2]);
@@ -56,6 +59,10 @@ export function useTripRouteSheet({ day, mapRef, uiToReal, setIsPanelOpen }) {
           mode: 'driving',
           apiKey: DIRECTIONS_API_KEY,
         });
+
+        // ✅ eski request döndüyse ignore
+        if (reqId !== reqIdRef.current) return;
+
         setRouteData(data);
         setRouteSheetOpen(true);
 
@@ -65,12 +72,10 @@ export function useTripRouteSheet({ day, mapRef, uiToReal, setIsPanelOpen }) {
               edgePadding: { top: 80, right: 80, bottom: 160, left: 80 },
               animated: true,
             });
-          } catch {
-            // ignore animation errors
-          }
+          } catch {}
         }
       } catch (e) {
-        // hata olsa bile sheet’i açalım, fallback info gösterilebilir
+        if (reqId !== reqIdRef.current) return;
         setRouteSheetOpen(true);
       }
     },
@@ -78,8 +83,7 @@ export function useTripRouteSheet({ day, mapRef, uiToReal, setIsPanelOpen }) {
   );
 
   /**
-   * Daha esnek: UI index çifti al (anchor'ları hariç tutmak için uiToReal kullanır)
-   *  onPickLegPair({ from: uiIndex, to: uiIndex }) veya onPickLegPair(fromUi, toUi)
+   * UI index çifti ile rota (anchor hariç tutmak için uiToReal kullanır)
    */
   const onPickLegPair = useCallback(
     async (...args) => {
@@ -104,9 +108,7 @@ export function useTripRouteSheet({ day, mapRef, uiToReal, setIsPanelOpen }) {
             ? obj.toIndex
             : null;
 
-        if (obj?.label && typeof obj.label === 'string') {
-          label = obj.label;
-        }
+        if (obj?.label && typeof obj.label === 'string') label = obj.label;
       } else if (args.length >= 2) {
         fromUi = args[0];
         toUi = args[1];
@@ -117,17 +119,11 @@ export function useTripRouteSheet({ day, mapRef, uiToReal, setIsPanelOpen }) {
       const fromReal = uiToReal ? uiToReal(fromUi) : fromUi;
       const toReal = uiToReal ? uiToReal(toUi) : toUi;
 
-      if (
-        fromReal == null ||
-        toReal == null ||
-        fromReal === toReal ||
-        fromReal < 0 ||
-        toReal < 0
-      ) {
+      if (fromReal == null || toReal == null || fromReal === toReal || fromReal < 0 || toReal < 0) {
         return;
       }
 
-      const acts = day.activities;
+      const acts = day.activities || [];
       const a = acts[fromReal];
       const b = acts[toReal];
       if (!a || !b) return;
@@ -136,11 +132,12 @@ export function useTripRouteSheet({ day, mapRef, uiToReal, setIsPanelOpen }) {
       const w2 = buildWaypointFromAct(b);
       if (!w1 || !w2) return;
 
+      const reqId = ++reqIdRef.current;
+
       setLegSel({ from: fromReal, to: toReal });
       setLegActs({ a, b });
       setLegWaypoints([w1, w2]);
       setRouteLegLabel(label || '');
-
       setIsPanelOpen?.(false);
 
       try {
@@ -149,6 +146,9 @@ export function useTripRouteSheet({ day, mapRef, uiToReal, setIsPanelOpen }) {
           mode: 'driving',
           apiKey: DIRECTIONS_API_KEY,
         });
+
+        if (reqId !== reqIdRef.current) return;
+
         setRouteData(data);
         setRouteSheetOpen(true);
 
@@ -158,11 +158,10 @@ export function useTripRouteSheet({ day, mapRef, uiToReal, setIsPanelOpen }) {
               edgePadding: { top: 80, right: 80, bottom: 160, left: 80 },
               animated: true,
             });
-          } catch {
-            // ignore
-          }
+          } catch {}
         }
       } catch (e) {
+        if (reqId !== reqIdRef.current) return;
         setRouteSheetOpen(true);
       }
     },

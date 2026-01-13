@@ -1,4 +1,6 @@
 // server/routes/poi_google.js
+console.log('[POI_GOOGLE ROUTER LOADED]', __filename, 'ts=', Date.now());
+
 const express = require('express');
 const router = express.Router();
 
@@ -20,7 +22,9 @@ const ENRICH_TOP = 5;
 
 function isFiniteNum(v){ return Number.isFinite(Number(v)); }
 function toNum(v){ const n = Number(v); return Number.isFinite(n) ? n : undefined; }
-function withTimeout(p, ms, label='timeout'){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error(`${label}_${ms}`)), ms))]); }
+function withTimeout(p, ms, label='timeout'){
+  return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error(`${label}_${ms}`)), ms))]);
+}
 async function fetchJson(url, opts={}, t=GOOGLE_TIMEOUT_MS){
   const res = await withTimeout(fetch(url, opts), t, 'google');
   if (!res.ok){
@@ -66,6 +70,8 @@ async function handleAutocomplete(req, res){
 
     // Details (ilk N)
     const enriched = [];
+    let detailsFail = 0;
+
     for (const p of predictions.slice(0, ENRICH_TOP)) {
       try {
         const detUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json');
@@ -78,6 +84,7 @@ async function handleAutocomplete(req, res){
         const r = dj?.result;
         const loc = r?.geometry?.location;
         if (!loc) {
+          detailsFail++;
           console.warn('[AC details] no geometry for', p.place_id, 'status=', dj?.status);
           continue;
         }
@@ -88,7 +95,7 @@ async function handleAutocomplete(req, res){
           place_id: r.place_id,
           name: r.name,
           address: r.formatted_address || '',
-          city,
+          city: city || '',
           lat: Number(loc.lat),
           lon: Number(loc.lng),
           rating: isFiniteNum(r.rating) ? Number(r.rating) : null,
@@ -97,21 +104,12 @@ async function handleAutocomplete(req, res){
           types: Array.isArray(r.types) ? r.types : [],
         });
       } catch (e) {
+        detailsFail++;
         console.warn('[AC details warn]', e?.message || e);
       }
     }
 
-    if (enriched.length) {
-      try {
-        upsertSuggests(enriched, { city, provider: 'autocomplete', source: 'google' });
-        console.log('[AC persist] upserted', enriched.length);
-      } catch (e) {
-        console.warn('[persist warn] autocomplete upsert failed:', e?.message || e);
-      }
-    } else {
-      console.warn('[AC persist] nothing to upsert (no enriched rows)');
-    }
-
+    // ✅ mapped: enriched + kalan predictions (basic)
     const mapped = [
       ...enriched,
       ...predictions.slice(enriched.length).map(p => ({
@@ -120,13 +118,27 @@ async function handleAutocomplete(req, res){
         place_id: p.place_id,
         name: p.structured_formatting?.main_text || p.description || '',
         address: p.description || '',
-        city,
+        city: city || '',
         types: [],
         rating: null,
         user_ratings_total: null,
         price_level: null,
+        lat: null,
+        lon: null,
       })),
-    ];
+    ].filter(x => x?.place_id);
+
+    // ✅ KRİTİK: enriched boş olsa bile mapped’i upsert et
+    if (mapped.length) {
+      try {
+        upsertSuggests(mapped, { city, provider: 'autocomplete', source: 'google' });
+        console.log('[AC persist] upserted', mapped.length, `enriched=${enriched.length}`, `detailsFail=${detailsFail}`, 'status=', acJson?.status);
+      } catch (e) {
+        console.warn('[persist warn] autocomplete upsert failed:', e?.message || e);
+      }
+    } else {
+      console.warn('[AC persist] nothing to upsert (mapped empty)', 'status=', acJson?.status);
+    }
 
     return res.json({ results: mapped });
   } catch (e) {
@@ -172,24 +184,24 @@ async function handleSearch(req, res){
       place_id: r.place_id,
       name: r.name,
       address: r.formatted_address || r.vicinity || '',
-      city,
-      lat: r?.geometry?.location?.lat,
-      lon: r?.geometry?.location?.lng,
+      city: city || '',
+      lat: r?.geometry?.location?.lat ?? null,
+      lon: r?.geometry?.location?.lng ?? null,
       rating: isFiniteNum(r.rating) ? Number(r.rating) : null,
       user_ratings_total: isFiniteNum(r.user_ratings_total) ? Number(r.user_ratings_total) : null,
       price_level: isFiniteNum(r.price_level) ? Number(r.price_level) : null,
       types: Array.isArray(r.types) ? r.types : [],
-    })).filter(x => isFiniteNum(x.lat) && isFiniteNum(x.lon));
+    })).filter(x => x?.place_id);
 
     if (mapped.length) {
       try {
         upsertSuggests(mapped, { city, provider: 'search', source: 'google' });
-        console.log('[SEARCH persist] upserted', mapped.length);
+        console.log('[SEARCH persist] upserted', mapped.length, 'status=', js?.status);
       } catch (e) {
         console.warn('[persist warn] search upsert failed:', e?.message || e);
       }
     } else {
-      console.warn('[SEARCH persist] nothing to upsert');
+      console.warn('[SEARCH persist] nothing to upsert', 'status=', js?.status);
     }
 
     return res.json({ results: mapped });

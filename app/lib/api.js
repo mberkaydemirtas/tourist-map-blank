@@ -4,28 +4,23 @@ import Constants from "expo-constants";
 
 /**
  * ENV:
- * - EXPO_PUBLIC_API_BASE            : http://192.168.1.102:5000 (tam URL)
+ * - EXPO_PUBLIC_API_BASE            : http://192.168.1.111:5000 (tam URL)
  * - EXPO_PUBLIC_SERVER_ENABLED      : "true" | "false"
  * - EXPO_PUBLIC_API_TIMEOUT_MS      : sayı (ms)
  * - EXPO_PUBLIC_GOOGLE_MAPS_API_KEY : (opsiyonel) client-side fallback için
+ * - EXPO_PUBLIC_USE_ADB_REVERSE     : "true" | "false" (opsiyonel) → 127.0.0.1:5000
  */
 
 const PROD_BASE = "https://tourist-map-blank-12.onrender.com";
-<<<<<<< Updated upstream
 
-// Emulator defaults
-const EMULATOR_BASE =
-  Platform.OS === "android" ? "http://10.0.2.2:5000" : "http://localhost:5000";
-=======
-const LOCAL_BASE =
-  Platform.OS === "android" ? "http://192.168.1.108:5000" : "http://localhost:5000";
->>>>>>> Stashed changes
+// Android emulator için
+const ANDROID_EMULATOR_BASE = "http://10.0.2.2:5000";
+// iOS simulator için
+const IOS_SIMULATOR_BASE = "http://localhost:5000";
+// ADB reverse (adb reverse tcp:5000 tcp:5000) kullanıyorsan
+const REVERSE_BASE = "http://127.0.0.1:5000";
 
-// ADB reverse kullanıyorsan (USB ADB ile) cihazdan PC’ye 127.0.0.1:5000 çalışabilir.
-// Wi-Fi ADB’de reverse çoğu zaman yok → bu yüzden bunu otomatik “ilk tercih” yapmıyoruz.
-const REAL_DEVICE_REVERSE_BASE = "http://127.0.0.1:5000";
-
-// Metro host’u scriptURL’den çek (örn. 192.168.1.102)
+// Metro host’u scriptURL’den çek (örn. 192.168.1.111)
 function getMetroHostFromScriptURL() {
   try {
     const url = NativeModules?.SourceCode?.scriptURL || "";
@@ -37,6 +32,9 @@ function getMetroHostFromScriptURL() {
 }
 
 const METRO_HOST = getMetroHostFromScriptURL();
+
+// Not: Constants.isDevice bazen custom dev client / bazı ortamlarda yanlış gelebiliyor.
+// Biz base seçimini IS_DEVICE'a bağlamıyoruz; METRO_HOST + ENV ile deterministik yapıyoruz.
 const IS_DEVICE = !!Constants?.isDevice;
 
 const ENV_API_BASE = (process.env?.EXPO_PUBLIC_API_BASE || "").trim();
@@ -45,40 +43,59 @@ const ENV_SERVER_ENABLED_RAW = (process.env?.EXPO_PUBLIC_SERVER_ENABLED || "")
   .toLowerCase();
 const ENV_TIMEOUT_RAW = (process.env?.EXPO_PUBLIC_API_TIMEOUT_MS || "").trim();
 const GOOGLE_WEB_KEY = (process.env?.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "").trim();
+const ENV_USE_REVERSE_RAW = (process.env?.EXPO_PUBLIC_USE_ADB_REVERSE || "")
+  .trim()
+  .toLowerCase();
 
-<<<<<<< Updated upstream
-/**
- * API_BASE seçim sırası (en güvenlisi):
- * 1) ENV varsa -> onu kullan (en doğru ve sabit yöntem)
- * 2) PROD değilsek:
- *    - Cihazda: Metro host varsa -> http://<METRO_HOST>:5000
- *    - Emulator: 10.0.2.2 / localhost
- * 3) Prod: PROD_BASE
- */
-function resolveApiBase() {
-  if (ENV_API_BASE) return ENV_API_BASE;
+const USE_ADB_REVERSE = ENV_USE_REVERSE_RAW === "true";
 
-  if (!__DEV__) return PROD_BASE;
-
-  // Dev mod
-  if (IS_DEVICE) {
-    // Gerçek cihazda en sağlamı: Metro host IP (LAN)
-    if (METRO_HOST) return `http://${METRO_HOST}:5000`;
-
-    // Metro host yoksa son çare: adb reverse varsayımı
-    return REAL_DEVICE_REVERSE_BASE;
-  }
-
-  // Emulator / simulator
-  return EMULATOR_BASE;
+// METRO_HOST varsa (ve localhost değilse) genelde PC’nin LAN IP’sidir.
+function isProbablyLanHost(host) {
+  if (!host) return false;
+  const h = String(host).toLowerCase();
+  if (h === "localhost" || h === "127.0.0.1") return false;
+  // 192.168.x.x / 10.x.x.x / 172.16-31.x.x LAN olabilir
+  return true;
 }
 
-export const API_BASE = resolveApiBase();
-=======
-// ⚠️ ÖNEMLİ: Geliştirmede gerçek cihazsa → 127.0.0.1'e zorla (adb reverse)
-export const API_BASE = "http://192.168.1.108:5000";
->>>>>>> Stashed changes
+function computeDevBase() {
+  // 1) ENV her zaman kazansın
+  if (ENV_API_BASE) return { base: ENV_API_BASE, why: "ENV_API_BASE" };
 
+  // 2) ADB reverse istenmişse (USB ADB ya da destekli wireless)
+  if (USE_ADB_REVERSE) return { base: REVERSE_BASE, why: "ADB_REVERSE" };
+
+  // 3) Metro host üzerinden PC IP’yi yakala
+  if (isProbablyLanHost(METRO_HOST)) {
+    return { base: `http://${METRO_HOST}:5000`, why: "METRO_HOST" };
+  }
+
+  // 4) Son fallback: emulator/simulator
+  if (Platform.OS === "android")
+    return { base: ANDROID_EMULATOR_BASE, why: "ANDROID_EMULATOR_FALLBACK" };
+  return { base: IOS_SIMULATOR_BASE, why: "IOS_SIMULATOR_FALLBACK" };
+}
+
+function computeBase() {
+  if (__DEV__) return computeDevBase();
+  // prod
+  return { base: PROD_BASE, why: "PROD_BASE" };
+}
+
+// ✅ Tek doğru kaynak: burada hesaplanır
+const RESOLVED = computeBase();
+
+/**
+ * API_BASE:
+ * - ENV varsa → onu kullanır
+ * - Dev’de ENV yoksa → METRO_HOST'tan üretir (senin durumda 192.168.1.111)
+ * - Hiçbiri yoksa → emulator/simulator fallback
+ */
+export const API_BASE = RESOLVED.base;
+
+// Server enabled mantığı:
+// - ENV "false" ise kapat
+// - Aksi halde base varsa açık say
 export const SERVER_ENABLED =
   ENV_SERVER_ENABLED_RAW === "false"
     ? false
@@ -90,9 +107,10 @@ export const API_TIMEOUT_MS =
 
 if (__DEV__) {
   console.log(
-    `[API] BASE=${API_BASE} TIMEOUT=${API_TIMEOUT_MS}ms SERVER_ENABLED=${SERVER_ENABLED}`
+    `[API] BASE=${API_BASE} (why=${RESOLVED.why}) TIMEOUT=${API_TIMEOUT_MS}ms SERVER_ENABLED=${SERVER_ENABLED}`
   );
   console.log("[API] ENV_API_BASE =", ENV_API_BASE || "(none)");
+  console.log("[API] USE_ADB_REVERSE =", USE_ADB_REVERSE);
   console.log("[API] IS_DEVICE =", IS_DEVICE, "METRO_HOST =", METRO_HOST || "(none)");
 }
 
@@ -162,7 +180,7 @@ async function fetchJson(
   const isPoiMatch = url.includes("/api/poi/match");
   const isSuggest = url.includes("/api/poi/suggest");
 
-  // ✅ suggest endpoint'i için asla forceNoSignal yapma (yazarken çok çağrılıyor → birikme yapar)
+  // ✅ suggest endpoint'i için asla forceNoSignal yapma
   const forceNoSignal = isAndroid && !isSuggest && (isPoiGoogle || isPoiMatch);
 
   const T = Number.isFinite(Number(timeoutMs)) ? Number(timeoutMs) : API_TIMEOUT_MS;
@@ -182,7 +200,6 @@ async function fetchJson(
   };
 
   try {
-    // Force no-signal (manual timeout) — sadece problemli endpointlerde
     if (forceNoSignal) {
       const p = fetch(url, baseOpts);
       const t = new Promise((_, rej) =>
@@ -198,11 +215,9 @@ async function fetchJson(
       msg.includes("Property 'signal' doesn't exist") ||
       msg.includes("invalid value for signal");
 
-    // RN bazen AbortController vs. yüzünden “Network request failed” fırlatabiliyor.
     const looksLikeAbortOrRnBug =
       e?.name === "AbortError" || msg.includes("Network request failed");
 
-    // retry only if we actually attempted with signal
     const canRetryWithoutSignal = !forceNoSignal && !!finalSignal;
 
     if ((looksLikeSignalUnsupported || looksLikeAbortOrRnBug) && canRetryWithoutSignal) {
@@ -336,7 +351,6 @@ function filterSuggestByCategory(items, category) {
   return (items || []).filter((it) => {
     const types = Array.isArray(it?.types) ? it.types : [];
     const cats = new Set(types.map((t) => TYPE_TO_CAT[t]).filter(Boolean));
-    // types boşsa eleme — göster (aksi halde liste çok daralıyor)
     if (!cats.size) return true;
     return cats.has(want);
   });
@@ -453,7 +467,6 @@ export async function poiAutocomplete(
 
   if (gate1.satisfied) return mapSuggest(gate1.results, { city });
 
-  // 2 harfte Google’a gitme; sadece suggest göster
   if (qTrim.length < MIN_PREFIX_FOR_GOOGLE) return mapSuggest(gate1.results, { city });
 
   const T = Number.isFinite(Number(timeoutMs))
@@ -509,7 +522,7 @@ export async function poiSearch(
     if (lon != null) u.searchParams.set("lon", String(lon));
     if (city) u.searchParams.set("city", String(city));
     if (category) u.searchParams.set("category", String(category));
-    if (isSubmit) u.searchParams.set("submit", "1"); // ← server gate
+    if (isSubmit) u.searchParams.set("submit", "1");
     return String(u);
   };
 
@@ -657,4 +670,119 @@ export async function searchUnified(
     signal,
     isSubmit: true,
   });
+}
+
+/* ====================================================================== */
+/* ✅ TRIPS API                                                           */
+/* - 404 gelirse otomatik create (UPSERT)                                 */
+/* ====================================================================== */
+
+function safeJsonParse(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Trip create
+ * Varsayılan: POST /api/trips
+ * Backend farklıysa sadece burayı değiştir.
+ */
+export async function createTrip(trip, { timeoutMs } = {}) {
+  if (!serverAvailable()) throw new Error("server_disabled");
+
+  const res = await apiFetch(`/api/trips`, {
+    method: "POST",
+    body: trip,
+    timeoutMs: timeoutMs ?? API_TIMEOUT_MS,
+  });
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`createTrip_POST_failed_${res.status}_${txt || ""}`);
+  }
+  return res.json().catch(() => ({}));
+}
+
+/**
+ * Trip update (PATCH -> fallback PUT)
+ * Path varsayımı: /api/trips/:tripId
+ */
+export async function updateTrip(tripId, patch, { timeoutMs } = {}) {
+  if (!serverAvailable()) throw new Error("server_disabled");
+  if (!tripId) throw new Error("missing_tripId");
+
+  const id = encodeURIComponent(String(tripId));
+  const path = `/api/trips/${id}`;
+
+  // 1) PATCH dene
+  try {
+    const res = await apiFetch(path, {
+      method: "PATCH",
+      body: patch,
+      timeoutMs: timeoutMs ?? API_TIMEOUT_MS,
+    });
+    if (res.ok) return res.json().catch(() => ({}));
+
+    const txt = await res.text().catch(() => "");
+    const j = safeJsonParse(txt);
+    const code = res.status;
+    throw Object.assign(
+      new Error(`updateTrip_PATCH_failed_${code}_${j?.error || txt || ""}`),
+      { status: code, raw: txt, json: j }
+    );
+  } catch (e) {
+    // 2) PUT fallback
+    const res2 = await apiFetch(path, {
+      method: "PUT",
+      body: patch,
+      timeoutMs: timeoutMs ?? API_TIMEOUT_MS,
+    });
+
+    if (!res2.ok) {
+      const txt2 = await res2.text().catch(() => "");
+      throw Object.assign(
+        new Error(`updateTrip_PUT_failed_${res2.status}_${txt2 || ""}`),
+        { status: res2.status, raw: txt2 }
+      );
+    }
+    return res2.json().catch(() => ({}));
+  }
+}
+
+/**
+ * ✅ UPSERT: önce update dene, 404 ise create et
+ * - updateTrip PATCH/PUT 404 verirse createTrip çalışır.
+ */
+export async function upsertTrip(tripId, payload, { timeoutMs } = {}) {
+  if (!tripId) throw new Error("missing_tripId");
+
+  try {
+    return await updateTrip(tripId, payload, { timeoutMs });
+  } catch (e) {
+    const status = e?.status;
+    const msg = String(e?.message || "");
+
+    // 404 yakala (hem status property’den hem message’dan)
+    const is404 =
+      status === 404 ||
+      msg.includes("_404_") ||
+      msg.includes("failed_404") ||
+      msg.includes("not_found");
+
+    if (is404) {
+      // create sırasında id'yi body’ye koyuyoruz ki server tarafı aynı id ile yazabilsin
+      return await createTrip({ id: String(tripId), ...payload }, { timeoutMs });
+    }
+
+    throw e;
+  }
+}
+
+/** Sadece selectedPlaces güncellemek için helper (artık upsert yapıyor) */
+export async function updateTripSelectedPlaces(tripId, selectedPlaces, opts = {}) {
+  const patch = { selectedPlaces: Array.isArray(selectedPlaces) ? selectedPlaces : [] };
+  return upsertTrip(tripId, patch, opts);
 }

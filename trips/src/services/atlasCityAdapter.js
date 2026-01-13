@@ -3,16 +3,19 @@
 
 let ALL = null;
 try {
-  // Bu JSON yoksa (şimdilik sadece TR ile çalışıyorsan) try/catch sayesinde sorun olmaz.
   ALL = require('../data/atlas/all.json');
 } catch (_) {
   ALL = null;
 }
 
-// Intl/normalize yok: JSC-stabil
+// JSC-dostu normalize
 const asciiFold = (s) => String(s ?? '').replace(
-  /[İIıŞşĞğÜüÖöÇç]/g,
-  (ch) => ({'İ':'i','I':'i','ı':'i','Ş':'s','ş':'s','Ğ':'g','ğ':'g','Ü':'u','ü':'u','Ö':'o','ö':'o','Ç':'c','ç':'c'}[ch] || ch)
+  /[İIıŞşĞğÜüÖöÇçŁłĄąĆćĘęŃńÓóŚśŹźŻż]/g,
+  (ch) => ({
+    'İ':'i','I':'i','ı':'i','Ş':'s','ş':'s','Ğ':'g','ğ':'g','Ü':'u','ü':'u','Ö':'o','ö':'o','Ç':'c','ç':'c',
+    'Ł':'l','ł':'l','Ą':'a','ą':'a','Ć':'c','ć':'c','Ę':'e','ę':'e','Ń':'n','ń':'n','Ó':'o','ó':'o',
+    'Ś':'s','ś':'s','Ź':'z','ź':'z','Ż':'z','ż':'z',
+  }[ch] || ch)
 );
 const norm = (s) => asciiFold(s).toLowerCase().replace(/\s+/g, ' ').trim();
 const safeCmp = (a,b)=> {
@@ -21,16 +24,6 @@ const safeCmp = (a,b)=> {
 };
 
 export function isAvailable(){ return !!ALL; }
-
-export function listCountriesCityLevel(){
-  if (!ALL?.countries) return [];
-  const arr = Object.keys(ALL.countries).map(cc => {
-    const c = ALL.countries[cc];
-    return { code: c.code, name: c.name, level: 'city' };
-  });
-  arr.sort((a,b)=> safeCmp(a.name,b.name));
-  return arr;
-}
 
 export function getCountryDoc(cc){
   return ALL?.countries?.[String(cc).toUpperCase()] || null;
@@ -44,6 +37,20 @@ export function listStates(cc){
   return states;
 }
 
+export function listCitiesByState(cc, stateName){
+  const doc = getCountryDoc(cc);
+  const key = String(stateName ?? '').trim();
+  if (!doc || !key) return [];
+
+  if (doc.stateCitiesMap && typeof doc.stateCitiesMap === 'object') {
+    const arr = Array.isArray(doc.stateCitiesMap[key]) ? doc.stateCitiesMap[key].slice() : [];
+    arr.sort(safeCmp);
+    return arr.map(name => ({ name }));
+  }
+
+  return listCities(cc);
+}
+
 export function listCities(cc){
   const doc = getCountryDoc(cc);
   if (!doc?.cities) return [];
@@ -52,10 +59,42 @@ export function listCities(cc){
   return arr;
 }
 
+// ✅ YENİ: şehir adını “yakın eşleşme” ile doğru key’e çevir
+function resolveCityKey(doc, cityName) {
+  if (!doc?.cities || !cityName) return null;
+
+  // 1) direkt
+  if (doc.cities[cityName]) return cityName;
+
+  const q = norm(cityName);
+  if (!q) return null;
+
+  // 2) normalize edilmiş eşleşme
+  const keys = Object.keys(doc.cities);
+  for (const k of keys) {
+    if (norm(k) === q) return k;
+  }
+
+  // 3) startsWith / includes (son çare)
+  let best = null;
+  for (const k of keys) {
+    const nk = norm(k);
+    if (nk === q) return k;
+    if (!best && nk.startsWith(q)) best = k;
+    if (!best && nk.includes(q)) best = k;
+  }
+  return best;
+}
+
 export function getHubsForCity(cc, cityName){
   const doc = getCountryDoc(cc);
-  const node = doc?.cities?.[cityName];
+  if (!doc?.cities) return { plane:[], train:[], bus:[] };
+
+  const resolved = resolveCityKey(doc, cityName);
+  const node = resolved ? doc.cities[resolved] : null;
+
   if (!node) return { plane:[], train:[], bus:[] };
+
   const dedupe = (arr=[])=>{
     const seen = new Set();
     return (arr||[]).filter(x=>{
@@ -63,6 +102,7 @@ export function getHubsForCity(cc, cityName){
       if (seen.has(k)) return false; seen.add(k); return true;
     }).sort((u,v)=> safeCmp(u.name,v.name));
   };
+
   return {
     plane: dedupe(node.plane),
     train: dedupe(node.train),

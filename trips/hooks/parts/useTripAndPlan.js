@@ -34,10 +34,6 @@ function makeEmptyPlan(tripId) {
 
 /**
  * Trip + Plan yükleme ve back navigation davranışı
- * - Trip tarihlerini sanitize eder
- * - ensureResolvedForPlan ile place’leri çözer
- * - Var olan planı yükler, yoksa generatePlan + savePlan
- * - Back tuşu → her zaman TripsHome’a döner
  */
 export function useTripAndPlan({ tripId, navigation, route, prefs }) {
   const [loading, setLoading] = useState(true);
@@ -45,7 +41,7 @@ export function useTripAndPlan({ tripId, navigation, route, prefs }) {
   const [plan, setPlan] = useState(null);
   const [dayIndex, setDayIndex] = useState(0);
 
-  // Android LayoutAnimation enable (burada da dursa sorun yok; idempotent)
+  // Android LayoutAnimation enable
   if (
     Platform.OS === 'android' &&
     UIManager.setLayoutAnimationEnabledExperimental
@@ -91,6 +87,11 @@ export function useTripAndPlan({ tripId, navigation, route, prefs }) {
           setLoading(false);
           return;
         }
+
+        // ✅ ID alanlarını normalize et: downstream ekranlar trip.id bekleyebiliyor
+        // (TripListQuestion resolveTripId ile zaten yakalıyor ama bu genel olarak daha güvenli)
+        if (!t.id && t._id) t.id = t._id;
+        if (!t._id && t.id) t._id = t.id;
 
         // Tarih alanlarını düzelt
         const fixDate = (s) => sanitizeIsoDate(s) || s;
@@ -149,11 +150,16 @@ export function useTripAndPlan({ tripId, navigation, route, prefs }) {
           } catch {}
           try {
             t = (await getTripLocal(t._id ?? t.id)) || t;
+            if (!t.id && t._id) t.id = t._id;
+            if (!t._id && t.id) t._id = t.id;
           } catch {}
         }
 
         // Yerler çözülmemişse resolve et
         t = await ensureResolvedForPlan(t);
+        if (!t.id && t._id) t.id = t._id;
+        if (!t._id && t.id) t._id = t.id;
+
         setTrip(t);
 
         // Plan

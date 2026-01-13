@@ -8,15 +8,15 @@ const compression = require('compression');
 /* ==================================================
    1) .env mutlaka EN BAŞTA yüklenmeli
    ================================================== */
-
 const envPath = path.join(__dirname, '.env');
 const loaded = dotenv.config({ path: envPath });
+
 const PLACES_KEY =
   process.env.GOOGLE_PLACES_KEY ||
   process.env.PLACES_API_KEY ||
   process.env.GOOGLE_MAPS_API_KEY ||
   '';
-const masked = PLACES_KEY.slice(0, 6) + '...' + PLACES_KEY.slice(-4);
+const masked = PLACES_KEY ? PLACES_KEY.slice(0, 6) + '...' + PLACES_KEY.slice(-4) : '(none)';
 
 if (loaded.error) {
   console.warn('[ENV] .env yüklenemedi:', loaded.error.message);
@@ -37,6 +37,9 @@ const poiGoogleRoutes = require('./routes/poi_google');
 const poiRouter = require('./routes/poi');
 const poiMatchRouter = require('./routes/poiMatch');
 const directionsRouter = require('./routes/directions');
+
+// ✅ NEW: local cache router
+const poiCacheRouter = require('./routes/poi_cache');
 
 /* ==================================================
    3) Express app
@@ -68,14 +71,18 @@ app.get('/health', (_req, res) => res.status(200).json({ ok: true, ts: Date.now(
 app.use((req, _res, next) => {
   if (
     req.path.startsWith('/api/poi/google/') ||
+    req.path.startsWith('/api/places/') ||
     req.path.startsWith('/api/directions') ||
-    req.path.startsWith('/api/route')
+    req.path.startsWith('/api/route') ||
+    req.path.startsWith('/api/places/details') ||
+    req.path.startsWith('/api/poi/cache/')
   ) {
     const q = (req.query?.q || '').toString();
     const city = (req.query?.city || '').toString();
-    if (q || req.path !== '/api/directions') {
+    const pid = (req.query?.place_id || '').toString();
+    if (q || pid || req.path !== '/api/directions') {
       console.log(
-        `[HIT] ${req.method} ${req.path} q="${q}" city="${city}" t=${new Date().toISOString()}`
+        `[HIT] ${req.method} ${req.path} q="${q}" pid="${pid}" city="${city}" t=${new Date().toISOString()}`
       );
     }
   }
@@ -100,13 +107,17 @@ app.use((req, res, next) => {
 app.use('/api/directions', directionsRouter);
 app.use('/api/route', directionsRouter);
 
-// POI ana
+// ✅✅ KRİTİK: Google proxy router’ı EN ÖNE AL
+// Böylece /api/poi/google/* ve /api/places/* endpointleri başka router’lar tarafından "kapılmıyor".
+app.use(poiGoogleRoutes);
+
+// ✅ NEW: cache endpoints (/api/poi/cache/...)
+app.use(poiCacheRouter);
+
+// POI ana (bunlar /api/poi altında)
 app.use('/api/poi', poiRouter);
 app.use('/api/poi', poiMatchRouter);
 app.use('/api/poi', suggestRouter);
-
-// Google proxy
-app.use(poiGoogleRoutes);
 
 // 404
 app.use((req, res) => {
@@ -138,7 +149,8 @@ app.use((err, _req, res) => {
    ================================================== */
 
 const PORT = process.env.PORT || 5000;
-const HOST = process.env.HOST || '192.168.1.102';
+// Default'u 0.0.0.0 yap: LAN’dan erişim daha stabil
+const HOST = process.env.HOST || '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
   console.log(`🚀 Sunucu ${HOST}:${PORT} üzerinde çalışıyor`);

@@ -1,11 +1,6 @@
 // trips/hooks/useTripPlansLogic.js
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import {
-  Alert,
-  LayoutAnimation,
-  Platform,
-  UIManager,
-} from 'react-native';
+import { Alert, LayoutAnimation, Platform, UIManager } from 'react-native';
 import Constants from 'expo-constants';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -30,21 +25,10 @@ import {
   toISODateSafe,
   addDaysISO,
   getActName,
-  extractPhotoUrlsFromActivity,
-  coercePhotoInputsToUrls,
   extractPossiblePlaceIdFromActivity,
-  // isStrictPlaceId,  // artık kullanmıyoruz
-  round5k,
-  boundsToRegion,
-  getDetailsWithCache,
-  ensureResolvedForPlan,
-  limitPhotos,
 } from '../components/TripPlanHelpers';
 
-if (
-  Platform.OS === 'android' &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
@@ -67,6 +51,76 @@ const makeEmptyPlan = (tripId) => {
     source: 'scratch',
   };
 };
+
+/**
+ * ✅ coords normalize:
+ * - { coords: { latitude, longitude } }
+ * - { coords: { lat, lng } }
+ * - { coords: { lat, lon } }
+ */
+function normalizeResolvedCoords(resolved) {
+  const c = resolved?.coords;
+  if (!c) return null;
+
+  const lat =
+    c.latitude ?? c.lat ?? c.lattitude ?? resolved?.latitude ?? resolved?.lat;
+
+  const lng =
+    c.longitude ??
+    c.lng ??
+    c.lon ??
+    resolved?.longitude ??
+    resolved?.lng ??
+    resolved?.lon;
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { latitude: lat, longitude: lng };
+}
+
+/**
+ * ✅ Trip.selectedPlaces / Trip.places → resolvedLike dönüşümü
+ * Beklenen selectedPlace şekli (TripListQuestion):
+ * {
+ *   id, name, address,
+ *   coords: { lat, lng }  (veya { latitude, longitude }),
+ *   category, place_id, city
+ * }
+ */
+function selectedPlaceToResolvedLike(sp) {
+  // sp şu şekillerde gelebiliyor:
+  // 1) sp.coords: { lat,lng } / { lat,lon } / { latitude,longitude }
+  // 2) sp: { lat, lon } (coords yok)
+  // 3) sp.location: { lat,lng } gibi
+  const c = sp?.coords || sp?.location || sp?.place?.location || null;
+
+  const lat =
+    c?.latitude ?? c?.lat ?? sp?.lat ?? sp?.latitude ?? null;
+
+  const lng =
+    c?.longitude ??
+    c?.lng ??
+    c?.lon ??
+    sp?.lon ??
+    sp?.lng ??
+    sp?.longitude ??
+    null;
+
+  return {
+    key: sp?.place_id || sp?.id || `sel:${Date.now()}`,
+    description: sp?.name || sp?.address || 'Seçilen yer',
+    coords:
+      Number.isFinite(lat) && Number.isFinite(lng)
+        ? { latitude: lat, longitude: lng }
+        : null,
+    address: sp?.address || '',
+    photoUrls: Array.isArray(sp?.photoUrls) ? sp.photoUrls : [],
+    photos: Array.isArray(sp?.photos) ? sp.photos : [],
+    category: sp?.category || 'sights',
+    city: sp?.city || '',
+    place_id: sp?.place_id || null,
+  };
+}
+
 
 export function useTripPlansLogic({ tripId, navigation, route }) {
   /* ------------ STATE ------------ */
@@ -110,21 +164,18 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
 
   /* ------------ Trip & Plan core hook ------------ */
 
-  const {
-    loading,
-    trip,
-    setTrip,
-    plan,
-    setPlan,
-    dayIndex,
-    setDayIndex,
-    day,
-  } = useTripAndPlan({ tripId, navigation, route, prefs });
+  const { loading, trip, setTrip, plan, setPlan, dayIndex, setDayIndex, day } =
+    useTripAndPlan({ tripId, navigation, route, prefs });
 
   /* ------------ Anchors + UI Activities (Hook) ------------ */
 
   const { anchorInfo, uiActivities, uiToReal, guardAnchorAction } =
-    useTripAnchors({ trip, day, plan, dayIndex });
+    useTripAnchors({
+      trip,
+      day,
+      plan,
+      dayIndex,
+    });
 
   /* ------------ Segment & fit hook ------------ */
 
@@ -133,6 +184,16 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
     uiActivities,
     mapRef,
   });
+
+  /**
+   * ✅ KRİTİK FIX:
+   * fitMapToDay fonksiyonu her render’da değişebiliyorsa effect sürekli tetiklenir ve render loop yapar.
+   * Bu yüzden fitMapToDay’i ref’te tutup effect’i sadece dayIndex’e bağladık.
+   */
+  const fitMapToDayRef = useRef(fitMapToDay);
+  useEffect(() => {
+    fitMapToDayRef.current = fitMapToDay;
+  }, [fitMapToDay]);
 
   /* ------------ Route Sheet hook ------------ */
 
@@ -160,11 +221,8 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
 
   /* ------------ Konum İzni / GPS Guard hook ------------ */
 
-  const {
-    permissionPrompt,
-    setPermissionPrompt,
-    ensureLocationBeforeStart,
-  } = useTripLocationGuard();
+  const { permissionPrompt, setPermissionPrompt, ensureLocationBeforeStart } =
+    useTripLocationGuard();
 
   /* ------------ Plan / gün mutate helperları ------------ */
 
@@ -172,10 +230,7 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
     (baseIndex) => {
       setPlan((prev) => {
         if (!prev?.days?.length) return prev;
-        const next = {
-          ...prev,
-          days: prev.days.map((d) => ({ ...d })),
-        };
+        const next = { ...prev, days: prev.days.map((d) => ({ ...d })) };
 
         if (!next.days.some((d) => d?.date)) {
           const startISO = toISODateSafe(new Date());
@@ -194,12 +249,10 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
         }
 
         const anchorISO = toISODateSafe(next.days[anchor].date);
-        for (let i = anchor - 1; i >= 0; i--) {
+        for (let i = anchor - 1; i >= 0; i--)
           next.days[i].date = addDaysISO(anchorISO, i - anchor);
-        }
-        for (let i = anchor + 1; i < next.days.length; i++) {
+        for (let i = anchor + 1; i < next.days.length; i++)
           next.days[i].date = addDaysISO(anchorISO, i - anchor);
-        }
 
         return { ...next, updatedAt: new Date().toISOString() };
       });
@@ -215,10 +268,7 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
           ...prev,
           days: (prev.days || [])
             .filter(Boolean)
-            .map((d) => ({
-              ...d,
-              activities: [...(d.activities || [])],
-            })),
+            .map((d) => ({ ...d, activities: [...(d.activities || [])] })),
         };
         updater(next);
         return { ...next, updatedAt: new Date().toISOString() };
@@ -246,27 +296,34 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
       const loc = a?.place?.location;
       if (loc) pts.push({ lat: loc.lat, lon: loc.lon });
     });
-    d.route = {
-      ...(d.route || {}),
-      polyline: pts,
-      optimizerUsed: false,
-    };
+    d.route = { ...(d.route || {}), polyline: pts, optimizerUsed: false };
   }, []);
 
   const reoptimizeCurrentDay = useCallback(() => {
     mutatePlanDays((next) => {
       const d = next.days?.[dayIndex];
       if (!d) return;
-
       retimeDay(d);
       rebuildPolyline(d);
     });
   }, [mutatePlanDays, dayIndex, retimeDay, rebuildPolyline]);
 
+  /**
+   * ✅ addResolvedAtIndex artık hem {latitude,longitude} hem {lat,lng} kabul eder.
+   */
   const addResolvedAtIndex = useCallback(
     (idx, resolved) => {
       if (!resolved) return;
+
+      const coords = normalizeResolvedCoords(resolved);
+      if (!coords) {
+        console.warn('[TripPlans] incoming place has no valid coords:', resolved);
+        return;
+      }
+
       const id = resolved.key || `tmp:${Date.now()}`;
+      const category = resolved?.category || 'sights';
+
       const act = {
         id,
         type: 'visit',
@@ -274,28 +331,25 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
         place: {
           id,
           name: resolved.description || 'Seçilen yer',
-          location: resolved.coords
-            ? {
-                lat: resolved.coords.latitude,
-                lon: resolved.coords.longitude,
-              }
-            : null,
-          category: 'sights',
+          location: { lat: coords.latitude, lon: coords.longitude },
+          category,
           address: resolved.address || '',
           photos: Array.isArray(resolved.photoUrls)
             ? resolved.photoUrls.map((u) => ({ url: u }))
             : undefined,
         },
-        meta: { category: 'sights' },
+        meta: {
+          category,
+          googlePlaceId: resolved?.place_id || null,
+          place_id: resolved?.place_id || null,
+          source: 'selectedPlaces',
+        },
       };
 
       mutatePlanDays((next) => {
         const d = next.days?.[dayIndex];
         if (!d) return;
-        const pos = Math.min(
-          Math.max(idx ?? 0, 0),
-          d.activities.length
-        );
+        const pos = Math.min(Math.max(idx ?? 0, 0), d.activities.length);
         d.activities.splice(pos, 0, act);
         retimeDay(d);
         rebuildPolyline(d);
@@ -308,11 +362,8 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
     mutatePlanDays((next) => {
       const d = next.days?.[dayIndex];
       if (!d) return;
-      const ordered = optimizeDayWithAnchors(
-        d,
-        trip,
-        getAnchorsForDayDetailed
-      );
+
+      const ordered = optimizeDayWithAnchors(d, trip, getAnchorsForDayDetailed);
       d.activities = ordered;
       retimeDay(d);
 
@@ -345,9 +396,7 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
         next.days.splice(idx, 1);
         setDayIndex((cur) => Math.min(cur, next.days.length - 1));
       });
-      requestAnimationFrame(() =>
-        resequenceAllDays(Math.max(0, idx - 1))
-      );
+      requestAnimationFrame(() => resequenceAllDays(Math.max(0, idx - 1)));
     },
     [mutatePlanDays, resequenceAllDays, setDayIndex]
   );
@@ -358,11 +407,7 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
         ? toISODateSafe(next.days[next.days.length - 1].date)
         : toISODateSafe(new Date());
       const newISO = addDaysISO(lastISO, 1);
-      next.days.push({
-        id: uid(),
-        date: newISO,
-        activities: [],
-      });
+      next.days.push({ id: uid(), date: newISO, activities: [] });
     });
     requestAnimationFrame(() => resequenceAllDays(null));
   }, [mutatePlanDays, resequenceAllDays]);
@@ -374,40 +419,178 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
           ? dateObjOrISO
           : toISODateSafe(dateObjOrISO);
       if (!iso) return;
+
       setPlan((prev) => {
         if (!prev) return prev;
         const arr = [...(prev.days || [])];
         if (!arr[idx]) return prev;
         arr[idx] = { ...arr[idx], date: iso };
-        return {
-          ...prev,
-          days: arr,
-          updatedAt: new Date().toISOString(),
-        };
+        return { ...prev, days: arr, updatedAt: new Date().toISOString() };
       });
+
       requestAnimationFrame(() => resequenceAllDays(idx));
     },
     [setPlan, resequenceAllDays]
   );
 
-  /* ------------ Route sheet reset (gün değişince) ------------ */
+  /* ---------------------------------------------------------
+   * ✅ TripPlacesScreen -> TripPlansScreen place transfer FIX
+   * --------------------------------------------------------- */
+  const lastIncomingKeyRef = useRef(null);
 
+  useFocusEffect(
+    useCallback(() => {
+      const incoming = route?.params?.__TP_INCOMING_PLACE;
+      if (!incoming) return;
+
+      const k = incoming?.key || null;
+      if (k && lastIncomingKeyRef.current === k) return;
+      if (k) lastIncomingKeyRef.current = k;
+
+      const ins =
+        typeof incoming?.insertIndex === 'number' ? incoming.insertIndex : null;
+      addResolvedAtIndex(ins ?? (day?.activities?.length || 0), incoming);
+
+      try {
+        navigation?.setParams?.({ __TP_INCOMING_PLACE: undefined });
+      } catch {}
+    }, [
+      route?.params?.__TP_INCOMING_PLACE,
+      addResolvedAtIndex,
+      navigation,
+      day?.activities?.length,
+    ])
+  );
+
+  /**
+   * ✅ EN KRİTİK PARÇA (FIXLİ):
+   * Wizard "places" olarak kaydediyor, bazı eski akışlar "selectedPlaces" kullanıyor.
+   * Bu yüzden ikisini de destekliyoruz.
+   */
+  const hydratedSelectedPlacesRef = useRef(false);
+  useEffect(() => {
+    if (hydratedSelectedPlacesRef.current) return;
+    if (!trip || !plan || !Array.isArray(plan?.days) || !plan.days.length) return;
+
+    const rawSelected =
+      (Array.isArray(trip?.selectedPlaces) && trip.selectedPlaces) ||
+      (Array.isArray(trip?.places) && trip.places) ||
+      (Array.isArray(trip?.selected) && trip.selected) ||
+      [];
+
+    if (!rawSelected.length) {
+      // debug için:
+      console.log('[TripPlans] hydrate: no places found on trip', {
+        tripId: trip?.id ?? trip?._id,
+        hasSelectedPlaces: Array.isArray(trip?.selectedPlaces),
+        hasPlaces: Array.isArray(trip?.places),
+        selectedPlacesLen: trip?.selectedPlaces?.length,
+        placesLen: trip?.places?.length,
+      });
+      return;
+    }
+
+    // Gün zaten doluysa dokunma
+    const d0 = plan.days[0];
+    if ((d0?.activities || []).length > 0) return;
+
+    // Şehir filtresi (varsa)
+    const tripCity =
+      trip?.cityName ||
+      (Array.isArray(trip?.cities) && trip.cities.length ? trip.cities[0] : '') ||
+      '';
+
+    const picked = rawSelected
+      .filter(Boolean)
+      .filter((sp) => {
+        if (!tripCity) return true;
+        if (!sp?.city) return true;
+        return String(sp.city).toLowerCase() === String(tripCity).toLowerCase();
+      })
+      .map(selectedPlaceToResolvedLike)
+      .filter((r) => !!normalizeResolvedCoords(r));
+
+    if (!picked.length) return;
+
+    console.log('[TripPlans] hydrate places → activities', {
+      tripCity,
+      rawSelected: rawSelected.length,
+      used: picked.length,
+      source: Array.isArray(trip?.selectedPlaces) ? 'selectedPlaces' : 'places',
+    });
+
+    hydratedSelectedPlacesRef.current = true;
+
+    mutatePlanDays((next) => {
+      const d = next.days?.[0];
+      if (!d) return;
+      if (!Array.isArray(d.activities)) d.activities = [];
+      if (d.activities.length > 0) return;
+
+      const acts = picked.map((resolved) => {
+        const coords = normalizeResolvedCoords(resolved);
+        const id = resolved.key || `tmp:${Date.now()}`;
+        const category = resolved?.category || 'sights';
+        return {
+          id,
+          type: 'visit',
+          durationMin: 45,
+          place: {
+            id,
+            name: resolved.description || 'Seçilen yer',
+            location: { lat: coords.latitude, lon: coords.longitude },
+            category,
+            address: resolved.address || '',
+            photos: Array.isArray(resolved.photoUrls)
+              ? resolved.photoUrls.map((u) => ({ url: u }))
+              : undefined,
+          },
+          meta: {
+            category,
+            googlePlaceId: resolved?.place_id || null,
+            place_id: resolved?.place_id || null,
+            source: 'selectedPlaces',
+          },
+        };
+      });
+
+      d.activities.push(...acts);
+      retimeDay(d);
+      rebuildPolyline(d);
+    });
+
+    // İstersen otomatik olarak gün 0’a geç:
+    // setDayIndex(0);
+  }, [trip, plan, mutatePlanDays, retimeDay, rebuildPolyline]);
+
+  /* ------------ Route sheet reset (gün değişince) ------------ */
   useEffect(() => {
     setFocusIdx(0);
     setSelectedActId(null);
+
     setLegSel(null);
-    setRouteData(null);
-    setLegWaypoints(null);
     setLegActs(null);
-    const t = setTimeout(fitMapToDay, 160);
+    setLegWaypoints([]);
+
+    setRouteData(null);
+    setRouteLegLabel('');
+    setRouteSheetOpen(false);
+
+    const t = setTimeout(() => {
+      try {
+        fitMapToDayRef.current?.();
+      } catch {}
+    }, 160);
+
     return () => clearTimeout(t);
   }, [
     dayIndex,
-    fitMapToDay,
     setLegSel,
-    setRouteData,
     setLegActs,
     setLegWaypoints,
+    setRouteData,
+    setRouteLegLabel,
+    setRouteSheetOpen,
   ]);
 
   /* ------------ Harita odak ------------ */
@@ -417,8 +600,8 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
       if (!mapRef.current || !day?.activities?.length) return;
       const arr = day.activities;
       const prev = arr[Math.max(0, realIdx - 1)]?.place?.location || null;
-      const next =
-        arr[Math.min(arr.length - 1, realIdx)]?.place?.location || null;
+      const next = arr[Math.min(arr.length - 1, realIdx)]?.place?.location || null;
+
       let target = null;
       if (prev && next)
         target = {
@@ -427,62 +610,14 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
         };
       else if (prev) target = { latitude: prev.lat, longitude: prev.lon };
       else if (next) target = { latitude: next.lat, longitude: next.lon };
-      if (target)
+
+      if (target) {
         try {
-          mapRef.current.animateCamera(
-            { center: target, zoom: 14 },
-            { duration: 450 }
-          );
+          mapRef.current.animateCamera({ center: target, zoom: 14 }, { duration: 450 });
         } catch {}
+      }
     },
     [day?.activities]
-  );
-
-  const focusActivity = useCallback(
-    (realIndexOrId) => {
-      if (!day?.activities?.length || !mapRef.current) return;
-      let index = -1;
-      if (typeof realIndexOrId === 'number') index = realIndexOrId;
-      else
-        index = day.activities.findIndex(
-          (a) => (a.id || a._id) === realIndexOrId
-        );
-      if (index < 0) return;
-      const activity = day.activities[index];
-      const loc = activity?.place?.location;
-      if (!loc) return;
-      const coordinate = {
-        latitude: loc.lat,
-        longitude: loc.lon ?? loc.lng,
-      };
-      try {
-        mapRef.current.animateCamera(
-          { center: coordinate, zoom: 16 },
-          { duration: 350 }
-        );
-      } catch {}
-      setTimeout(() => {
-        try {
-          mapRef.current.animateCamera(
-            { center: coordinate, zoom: 16 },
-            { duration: 350 }
-          );
-        } catch {}
-        setTimeout(() => {
-          try {
-            mapRef.current.animateToRegion(
-              {
-                ...coordinate,
-                latitudeDelta: 0.02,
-                longitudeDelta: 0.02,
-              },
-              350
-            );
-          } catch {}
-        }, 150);
-      }, 280);
-    },
-    [day]
   );
 
   /* ------------ useTripSearch hook (arama + insert/edit) ------------ */
@@ -535,7 +670,11 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
     return uiActivities
       .map((a, idx) => {
         const loc = a?.place?.location;
-        if (!loc) return null;
+        const lat = loc?.lat;
+        const lon = loc?.lon ?? loc?.lng;
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+
         const isAnchor = !!a?.meta?.isAnchor;
         const kind = a?.meta?.category;
 
@@ -564,7 +703,7 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
           activity: a,
           activityId: a.id,
           key: `${a.id}-${idx}`,
-          coordinate: { latitude: loc.lat, longitude: loc.lon },
+          coordinate: { latitude: lat, longitude: lon },
           title: getActName(a, idx),
           placeId: extractPossiblePlaceIdFromActivity(a),
           baseColor,
@@ -578,209 +717,182 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
 
   /* ------------ UI HANDLERS: Timeline & Marker selection ------------ */
 
-const onTimelineItemPress = useCallback(
-  (payload) => {
-    if (!payload) return;
+  const onTimelineItemPress = useCallback(
+    (payload) => {
+      if (!payload) return;
+      if (typeof payload !== 'object') return;
 
-    const {
-      index,
-      coord,
-      item,
-      kind,
-      isAnchor,
-      photos: payloadPhotos,
-      photoUrls: payloadPhotoUrls,
-    } = payload;
+      const {
+        index,
+        coord,
+        item,
+        kind,
+        isAnchor,
+        photos: payloadPhotos,
+        photoUrls: payloadPhotoUrls,
+      } = payload;
 
-    const dayData = plan?.days?.[dayIndex];
-    const acts = dayData?.activities || [];
+      const dayData = plan?.days?.[dayIndex];
+      const acts = dayData?.activities || [];
 
-    // Ortak foto birleştirme helper'ı
-    const buildPhotosForPlace = (placeLike) => {
-      const rawPhotos = Array.isArray(payloadPhotos)
-        ? payloadPhotos
-        : Array.isArray(placeLike?.photos)
-        ? placeLike.photos
-        : [];
-
-      const fromPhotoUrlsBase =
-        Array.isArray(payloadPhotoUrls) && payloadPhotoUrls.length
-          ? payloadPhotoUrls
-          : Array.isArray(placeLike?.photoUrls)
-          ? placeLike.photoUrls
+      const buildPhotosForPlace = (placeLike) => {
+        const rawPhotos = Array.isArray(payloadPhotos)
+          ? payloadPhotos
+          : Array.isArray(placeLike?.photos)
+          ? placeLike.photos
           : [];
 
-      // Hem rawPhotos hem url listelerini tek bir diziye topla
-      const photos = [
-        ...rawPhotos,
-        ...fromPhotoUrlsBase.map((u) => ({ url: u })),
-      ];
+        const fromPhotoUrlsBase =
+          Array.isArray(payloadPhotoUrls) && payloadPhotoUrls.length
+            ? payloadPhotoUrls
+            : Array.isArray(placeLike?.photoUrls)
+            ? placeLike.photoUrls
+            : [];
 
-      const photoUrls = photos
-        .map((p) => p.url || p.uri || p.src || p.photoUrl)
-        .filter(Boolean);
+        const photos = [...rawPhotos, ...fromPhotoUrlsBase.map((u) => ({ url: u }))];
+        const photoUrls = photos.map((p) => p.url || p.uri || p.src || p.photoUrl).filter(Boolean);
 
-      return { photos, photoUrls };
-    };
+        return { photos, photoUrls };
+      };
 
-    // 🔹 1) ANCHOR (Başlangıç / Bitiş / Konaklama) item'ına tıklama
-    if (isAnchor) {
-      let loc = null;
-      let label = '';
-      let placeLike = item?.place || item;
-
-      if (kind === 'start') {
-        loc = anchorInfo.start;
-        label = anchorInfo.startLabel || 'Başlangıç';
-      } else if (kind === 'end') {
-        loc = anchorInfo.end;
-        label = anchorInfo.endLabel || 'Bitiş';
-      } else if (kind === 'lodging') {
-        loc = anchorInfo.lodge;
-        label = 'Konaklama';
-      }
-
-      if (!loc) return;
-
-      const latitude = loc.lat;
-      const longitude = loc.lon ?? loc.lng;
-
-      // Önce direkt place/item içinden foto dene
-      let { photos, photoUrls } = buildPhotosForPlace(placeLike);
-
-      // Hâlâ boşsa → günün aktivitelerinden fallback foto al
-      if ((!photos?.length && !photoUrls?.length) && acts.length) {
-        let fallbackAct = null;
+      if (isAnchor) {
+        let loc = null;
+        let label = '';
+        let placeLike = item?.place || item;
 
         if (kind === 'start') {
-          fallbackAct = acts[0];
+          loc = anchorInfo.start;
+          label = anchorInfo.startLabel || 'Başlangıç';
         } else if (kind === 'end') {
-          fallbackAct = acts[acts.length - 1];
+          loc = anchorInfo.end;
+          label = anchorInfo.endLabel || 'Bitiş';
         } else if (kind === 'lodging') {
-          // Konaklama için önce meta.category = 'lodging' ara
-          fallbackAct =
-            acts.find((a) => a.meta?.category === 'lodging') ||
-            acts.find((a) =>
-              (a.place?.name || '').toLowerCase().includes('otel')
-            );
+          loc = anchorInfo.lodge;
+          label = 'Konaklama';
         }
 
-        if (fallbackAct?.place) {
-          const fb = buildPhotosForPlace(fallbackAct.place);
-          photos = fb.photos;
-          photoUrls = fb.photoUrls;
+        if (!loc) return;
+
+        const latitude = loc.lat;
+        const longitude = loc.lon ?? loc.lng;
+
+        let { photos, photoUrls } = buildPhotosForPlace(placeLike);
+
+        if ((!photos?.length && !photoUrls?.length) && acts.length) {
+          let fallbackAct = null;
+
+          if (kind === 'start') fallbackAct = acts[0];
+          else if (kind === 'end') fallbackAct = acts[acts.length - 1];
+          else if (kind === 'lodging') {
+            fallbackAct =
+              acts.find((a) => a.meta?.category === 'lodging') ||
+              acts.find((a) => (a.place?.name || '').toLowerCase().includes('otel'));
+          }
+
+          if (fallbackAct?.place) {
+            const fb = buildPhotosForPlace(fallbackAct.place);
+            photos = fb.photos;
+            photoUrls = fb.photoUrls;
+          }
         }
+
+        setSelectedActId(null);
+        setSheetVariant('poi');
+        setSheetMeta(label);
+
+        setSheetMarker({
+          name: label,
+          coords: { latitude, longitude },
+          address: placeLike?.address || '',
+          photos: photos || [],
+          photoUrls: photoUrls || [],
+          place_id: placeLike?.id || item?.place_id || null,
+        });
+
+        if (mapRef.current && latitude && longitude) {
+          try {
+            mapRef.current.animateToRegion(
+              { latitude, longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+              350
+            );
+          } catch {}
+        }
+
+        return;
       }
 
-      setSelectedActId(null);
+      const realIndex = uiToReal(index);
+      const d = plan?.days?.[dayIndex];
+      const acts2 = d?.activities || [];
+      const act = realIndex != null ? acts2[realIndex] : item || null;
+      if (!act) return;
+
+      const place = act.place || item?.place;
+      const baseName = place?.name || getActName(act, realIndex) || 'Seçilen durak';
+
+      const loc = place?.location;
+      const latitude = loc?.lat ?? coord?.latitude;
+      const longitude = loc?.lon ?? loc?.lng ?? coord?.longitude;
+
+      const { photos, photoUrls } = buildPhotosForPlace(place || item);
+
+      setSelectedActId(act.id);
       setSheetVariant('poi');
-      setSheetMeta(label);
+      setSheetMeta('timeline');
 
       setSheetMarker({
-        name: label,
-        coords: { latitude, longitude },
-        address: placeLike?.address || '',
+        name: baseName,
+        coords: latitude && longitude ? { latitude, longitude } : coord,
+        address: place?.address || '',
         photos: photos || [],
         photoUrls: photoUrls || [],
-        place_id: placeLike?.id || item?.place_id || null,
+        place_id: place?.id || act.meta?.googlePlaceId || act.meta?.place_id || null,
       });
 
       if (mapRef.current && latitude && longitude) {
         try {
           mapRef.current.animateToRegion(
-            {
-              latitude,
-              longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            },
+            { latitude, longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 },
             350
           );
-        } catch (e) {}
+        } catch {}
       }
-
-      return;
-    }
-
-    // 🔹 2) Normal aktivite satırına tıklama
-    const realIndex = uiToReal(index);
-    const d = plan?.days?.[dayIndex];
-    const acts2 = d?.activities || [];
-    const act = realIndex != null ? acts2[realIndex] : item || null;
-
-    if (!act) return;
-
-    const place = act.place || item?.place;
-    const baseName =
-      place?.name || getActName(act, realIndex) || 'Seçilen durak';
-
-    const loc = place?.location;
-    const latitude = loc?.lat ?? coord?.latitude;
-    const longitude = loc?.lon ?? loc?.lng ?? coord?.longitude;
-
-    const { photos, photoUrls } = buildPhotosForPlace(place || item);
-
-    setSelectedActId(act.id);
-    setSheetVariant('poi');
-    setSheetMeta('timeline');
-
-    setSheetMarker({
-      name: baseName,
-      coords:
-        latitude && longitude
-          ? { latitude, longitude }
-          : coord,
-      address: place?.address || '',
-      photos: photos || [],
-      photoUrls: photoUrls || [],
-      place_id:
-        place?.id ||
-        act.meta?.googlePlaceId ||
-        act.meta?.place_id ||
-        null,
-    });
-
-    if (mapRef.current && latitude && longitude) {
-      try {
-        mapRef.current.animateToRegion(
-          {
-            latitude,
-            longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          },
-          350
-        );
-      } catch (e) {}
-    }
-  },
-  [
-    anchorInfo,
-    uiToReal,
-    plan,
-    dayIndex,
-    setSelectedActId,
-    setSheetMarker,
-    setSheetVariant,
-    setSheetMeta,
-    mapRef,
-  ]
-);
-
+    },
+    [
+      anchorInfo,
+      uiToReal,
+      plan,
+      dayIndex,
+      setSelectedActId,
+      setSheetMarker,
+      setSheetVariant,
+      setSheetMeta,
+      mapRef,
+    ]
+  );
 
   const onMapMarkerPress = useCallback(
     (actId) => {
       if (!actId) return;
+
       const now = Date.now();
-      if (now - lastMarkerPressRef.current < 300) {
-        return;
-      }
+      if (now - lastMarkerPressRef.current < 300) return;
       lastMarkerPressRef.current = now;
-      onTimelineItemPress(
-        typeof actId === 'string' ? actId : String(actId)
-      );
+
+      const m = mapMarkers.find((x) => x.activityId === actId);
+      if (!m) return;
+
+      onTimelineItemPress({
+        index: m.uiIndex,
+        coord: m.coordinate,
+        item: m.activity,
+        kind: m.kind,
+        isAnchor: m.isAnchor,
+        photos: m.activity?.place?.photos,
+        photoUrls: m.activity?.place?.photoUrls,
+      });
     },
-    [onTimelineItemPress]
+    [mapMarkers, onTimelineItemPress]
   );
 
   const handleDeleteActivityAt = useCallback(
@@ -788,6 +900,7 @@ const onTimelineItemPress = useCallback(
       if (guardAnchorAction(uiIdx)) return;
       const realIdx = uiToReal(uiIdx);
       if (realIdx == null) return;
+
       mutatePlanDays((next) => {
         const d = next.days?.[dayIndex];
         if (!d) return;
@@ -798,14 +911,7 @@ const onTimelineItemPress = useCallback(
         rebuildPolyline(d);
       });
     },
-    [
-      guardAnchorAction,
-      uiToReal,
-      mutatePlanDays,
-      dayIndex,
-      retimeDay,
-      rebuildPolyline,
-    ]
+    [guardAnchorAction, uiToReal, mutatePlanDays, dayIndex, retimeDay, rebuildPolyline]
   );
 
   const handleReorder = useCallback(
@@ -813,35 +919,22 @@ const onTimelineItemPress = useCallback(
       if (guardAnchorAction(fromUi) || guardAnchorAction(toUi)) return;
       const from = uiToReal(fromUi);
       const to = uiToReal(toUi);
+
       mutatePlanDays((n) => {
         const acts = n.days[dayIndex].activities;
-        if (
-          from < 0 ||
-          to < 0 ||
-          from >= acts.length ||
-          to >= acts.length
-        )
-          return;
+        if (from < 0 || to < 0 || from >= acts.length || to >= acts.length) return;
         const [removed] = acts.splice(from, 1);
         acts.splice(to, 0, removed);
         retimeDay(n.days[dayIndex]);
         rebuildPolyline(n.days[dayIndex]);
       });
     },
-    [
-      guardAnchorAction,
-      uiToReal,
-      mutatePlanDays,
-      dayIndex,
-      retimeDay,
-      rebuildPolyline,
-    ]
+    [guardAnchorAction, uiToReal, mutatePlanDays, dayIndex, retimeDay, rebuildPolyline]
   );
 
   /* ------------ RETURN ------------ */
 
   return {
-    // durum
     loading,
     trip,
     setTrip,
@@ -850,6 +943,7 @@ const onTimelineItemPress = useCallback(
     dayIndex,
     setDayIndex,
     day,
+
     isPanelOpen,
     setIsPanelOpen,
     onTogglePanel: () => setIsPanelOpen((s) => !s),
@@ -892,6 +986,7 @@ const onTimelineItemPress = useCallback(
 
     permissionPrompt,
     setPermissionPrompt,
+
     datePickOpen,
     setDatePickOpen,
     datePickIndex,
@@ -913,7 +1008,6 @@ const onTimelineItemPress = useCallback(
     pendingAdd,
     setPendingAdd,
 
-    // core
     addResolvedAtIndex,
     mutatePlanDays,
     retimeDay,
@@ -926,17 +1020,13 @@ const onTimelineItemPress = useCallback(
     ensureLocationBeforeStart,
     setDayDateAt,
 
-    // UI handlers
     onTimelineItemPress,
     onMapMarkerPress,
     onSelectSearchResult,
     onCancelInsertMode,
     onMapRegionChanged: (region) => {
       if (region)
-        currentMapCenter.current = {
-          lat: region.latitude,
-          lng: region.longitude,
-        };
+        currentMapCenter.current = { lat: region.latitude, lng: region.longitude };
     },
 
     handleInsertAt,
@@ -945,20 +1035,16 @@ const onTimelineItemPress = useCallback(
     handleReorder,
     onPickInsertIndex,
 
-    // helperlar
     uiToReal,
     guardAnchorAction,
     focusCorridorAround,
 
     goPrevDay: () => setDayIndex((i) => Math.max(0, i - 1)),
     goNextDay: () =>
-      setDayIndex((i) =>
-        Math.min((plan?.days?.length || 1) - 1, i + 1)
-      ),
+      setDayIndex((i) => Math.min((plan?.days?.length || 1) - 1, i + 1)),
 
     DIRECTIONS_API_KEY,
 
-    // Eski davranışın hook versiyonu
     onPickLegPair,
   };
 }

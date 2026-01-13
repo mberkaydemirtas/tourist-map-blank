@@ -40,6 +40,25 @@ const TIME_SLOTS = (() => {
   return arr;
 })();
 
+// ✅ Default objeleri component DIŞINDA (render loop engeli)
+const DEFAULT_START = Object.freeze({ type: null, hub: null, date: null, time: '09:00' });
+const DEFAULT_END   = Object.freeze({ type: null, hub: null, date: null, time: '17:00' });
+const clonePoint = (p) => ({
+  type: p?.type ?? null,
+  hub:  p?.hub ?? null,
+  date: p?.date ?? null,
+  time: p?.time ?? (p?.type === 'end' ? '17:00' : '09:00'),
+});
+
+const pointKey = (p) => {
+  const t = p?.type ?? '';
+  const pid = p?.hub?.place_id ?? '';
+  const d = p?.date ?? '';
+  const tm = p?.time ?? '';
+  // name vs location değişse bile place_id varsa stable
+  return `${t}|${pid}|${d}|${tm}`;
+};
+
 /* ------------------------------ Date utils & validator ------------------------------ */
 const toISO = (d) => {
   if (!d) return null;
@@ -51,13 +70,6 @@ const toISO = (d) => {
   return `${y}-${m}-${day}`;
 };
 
-/** 
- * Validation:
- * - Single segment: start <= end
- * - Multi-city continuity (no overlap):
- *    - If prevSegmentEnd is provided, start >= prevSegmentEnd
- *    - If nextSegmentStart is provided, end <= nextSegmentStart
- */
 function validateDates({ startDate, endDate, prevSegmentEnd, nextSegmentStart }) {
   const issues = [];
   const s = toISO(startDate);
@@ -65,7 +77,6 @@ function validateDates({ startDate, endDate, prevSegmentEnd, nextSegmentStart })
   const prevE = toISO(prevSegmentEnd);
   const nextS = toISO(nextSegmentStart);
 
-  // Required ordering for this segment
   if (s && e && s > e) {
     issues.push({
       code: 'START_AFTER_END',
@@ -74,7 +85,6 @@ function validateDates({ startDate, endDate, prevSegmentEnd, nextSegmentStart })
     });
   }
 
-  // No overlap with previous segment (allow equal)
   if (prevE && s && s < prevE) {
     issues.push({
       code: 'START_BEFORE_PREV_END',
@@ -83,7 +93,6 @@ function validateDates({ startDate, endDate, prevSegmentEnd, nextSegmentStart })
     });
   }
 
-  // No overlap with next segment (allow equal)
   if (nextS && e && e > nextS) {
     issues.push({
       code: 'END_AFTER_NEXT_START',
@@ -101,33 +110,39 @@ export default function StartEndQuestion({
   cityCenter,   // { lat, lng }
   value,
   onChange,
-  onMapPick,    // (which, { center, cityName }) => Promise<pickedHub|null|undefined>
+  onMapPick,
 
-  /* 🔗 Optional props for multi-city continuity (from parent/wizard):
-     - prevSegmentEnd: ISO date (YYYY-MM-DD) → this segment's start must be >= prevSegmentEnd
-     - nextSegmentStart: ISO date (YYYY-MM-DD) → this segment's end must be <= nextSegmentStart
-     - onValidityChange: (isValid:boolean, issues:Array) => void
-  */
   prevSegmentEnd,
   nextSegmentStart,
   onValidityChange,
 }) {
-  const defaultStart = { type: null, hub: null, date: null, time: '09:00' };
-  const defaultEnd   = { type: null, hub: null, date: null, time: '17:00' };
+  // ✅ İlk state init (value varsa onu, yoksa default clone)
+  const [start, setStart] = useState(() => (value?.start ? clonePoint(value.start) : clonePoint(DEFAULT_START)));
+  const [end,   setEnd]   = useState(() => (value?.end   ? clonePoint(value.end)   : clonePoint(DEFAULT_END)));
 
-  const [start, setStart] = useState(value?.start || defaultStart);
-  const [end,   setEnd]   = useState(value?.end   || defaultEnd);
+  // ✅ Prop->state sync (yalnızca gerçekten değiştiyse)
+  const valueStartKey = useMemo(() => pointKey(value?.start), [value?.start?.type, value?.start?.hub?.place_id, value?.start?.date, value?.start?.time]);
+  const valueEndKey   = useMemo(() => pointKey(value?.end),   [value?.end?.type, value?.end?.hub?.place_id, value?.end?.date, value?.end?.time]);
 
-  // dışarıdan value güncellenirse senkronize et
+  const localStartKey = useMemo(() => pointKey(start), [start?.type, start?.hub?.place_id, start?.date, start?.time]);
+  const localEndKey   = useMemo(() => pointKey(end),   [end?.type, end?.hub?.place_id, end?.date, end?.time]);
+
   useEffect(() => {
-    setStart(value?.start || defaultStart);
-  }, [value?.start?.type, value?.start?.hub?.place_id, value?.start?.date, value?.start?.time]);
+    // value.start yoksa default'a dön ama aynıysa dokunma
+    const next = value?.start ? clonePoint(value.start) : clonePoint(DEFAULT_START);
+    const nextKey = pointKey(next);
+    if (nextKey !== localStartKey) setStart(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valueStartKey]);
 
   useEffect(() => {
-    setEnd(value?.end || defaultEnd);
-  }, [value?.end?.type, value?.end?.hub?.place_id, value?.end?.date, value?.end?.time]);
+    const next = value?.end ? clonePoint(value.end) : clonePoint(DEFAULT_END);
+    const nextKey = pointKey(next);
+    if (nextKey !== localEndKey) setEnd(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valueEndKey]);
 
-  // ✅ Derive validation issues
+  // ✅ Validation issues
   const issues = useMemo(() => {
     return validateDates({
       startDate: start?.date,
@@ -139,19 +154,18 @@ export default function StartEndQuestion({
 
   const hasErrors = issues.length > 0;
 
-  // üst bileşene bildir (value + validity)
+  // ✅ state->parent onChange (yalnızca prop ile aynı değilse)
   useEffect(() => {
-    onChange?.({ start, end });
+    const composed = { start, end };
+    const shouldEmit = (valueStartKey !== localStartKey) || (valueEndKey !== localEndKey);
+    if (shouldEmit) onChange?.(composed);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [start, end]);
+  }, [localStartKey, localEndKey]);
 
   useEffect(() => {
     onValidityChange?.(!hasErrors, issues);
   }, [hasErrors, issues, onValidityChange]);
 
-  // Calendar hints:
-  // - Start date: cannot be before prevSegmentEnd (if given), and not after chosen end
-  // - End date: cannot be before chosen start, and not after nextSegmentStart (if given)
   const startMinDate = prevSegmentEnd || undefined;
   const startMaxDate = end?.date || undefined;
 
@@ -160,7 +174,6 @@ export default function StartEndQuestion({
 
   return (
     <View style={{ gap: 14 }}>
-      {/* 🔔 Error banner (shows all current issues) */}
       {hasErrors && (
         <View style={styles.errorBanner}>
           {issues.map((it, i) => (
@@ -189,11 +202,9 @@ export default function StartEndQuestion({
                   : undefined;
 
                 const picked = await onMapPick?.('start', { center, cityName });
-                if (picked === undefined) return; // kullanıcı iptal etti
+                if (picked === undefined) return;
                 setStart((s) => ({ ...s, type: 'map', hub: picked || null }));
-              } catch {
-                // sessiz geç
-              }
+              } catch {}
             } else {
               if (start.type === t) return;
               setStart((s) => ({ ...s, type: t, hub: null }));
@@ -307,7 +318,6 @@ function PointPicker({
     };
   }, []);
 
-  // tüm dropdownları kapat
   useEffect(() => {
     const sub = DeviceEventEmitter.addListener(EVT_CLOSE_DROPDOWNS, () => {
       if (mountedRef.current) setOpenHubModal(false);
@@ -315,12 +325,10 @@ function PointPicker({
     return () => sub.remove();
   }, []);
 
-  // tip 'map' olursa veya temizlenirse modalı kapat
   useEffect(() => {
     if (selectedType === 'map' || !selectedType) setOpenHubModal(false);
   }, [selectedType]);
 
-  // basit cache
   const cacheRef = useRef(new Map());
   const keyBase = useMemo(() => {
     const cc = String(countryCode || '').toUpperCase();
@@ -347,14 +355,14 @@ function PointPicker({
     setLoading(true);
     try {
       const cc = String(countryCode || '').toUpperCase();
+
+      // TR: admin = cityName (il), PL: city = cityName (şehir)
       const admin = cc === 'TR' ? normStr(cityName) || null : null;
       const city = cc === 'TR' ? null : normStr(cityName) || null;
 
       let rawAll = null;
       try {
-        if (typeof getHubs === 'function') {
-          rawAll = getHubs({ country: cc, admin, city });
-        }
+        rawAll = typeof getHubs === 'function' ? getHubs({ country: cc, admin, city }) : null;
       } catch (e) {
         console.error('[getHubs] threw:', e?.message || e);
       }
@@ -370,8 +378,7 @@ function PointPicker({
           const lng = Number(h?.lng ?? h?.longitude);
           if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
           const name = normStr(h?.name) || `#${idx}`;
-          const pid =
-            normStr(h?.place_id) || `${cc}|${normStr(cityName)}|${modeKey}|${idx}`;
+          const pid = normStr(h?.place_id) || `${cc}|${normStr(cityName)}|${modeKey}|${idx}`;
           return { name, place_id: pid, location: { lat, lng } };
         })
         .filter(Boolean);
@@ -387,8 +394,7 @@ function PointPicker({
       cacheRef.current.set(cacheKey, filtered);
       if (mountedRef.current) {
         setHubs(filtered);
-        if (filtered.length === 1 && AUTO_SELECT_SINGLE)
-          onSelectHub?.(toHubShape(filtered[0]));
+        if (filtered.length === 1 && AUTO_SELECT_SINGLE) onSelectHub?.(toHubShape(filtered[0]));
       }
     } catch (e) {
       console.error('[PointPicker.ensureHubs] error:', e);
@@ -398,7 +404,6 @@ function PointPicker({
     }
   }
 
-  // TIP değiştiğinde: filtre sıfırla + veri getir
   useEffect(() => {
     setFilter('');
     setHubs([]);
@@ -410,7 +415,6 @@ function PointPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedType, keyBase]);
 
-  // Modal içi arama
   const filteredHubs = useMemo(() => {
     if (!filter.trim()) return hubs;
     const q = norm(filter);
@@ -432,7 +436,6 @@ function PointPicker({
     <View style={{ gap: 8 }}>
       <Text style={styles.label}>{label}</Text>
 
-      {/* Tip butonları */}
       <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
         {Object.entries(TYPE_MAP).map(([k, v]) => (
           <TouchableOpacity
@@ -445,7 +448,6 @@ function PointPicker({
         ))}
       </View>
 
-      {/* “Haritadan Seç” */}
       {selectedType === 'map' && (
         <TouchableOpacity onPress={() => onSelectType('map')} style={styles.selectShell}>
           <Text style={styles.selectShellText}>
@@ -455,12 +457,8 @@ function PointPicker({
         </TouchableOpacity>
       )}
 
-      {/* Hub seçimi (airport/train/bus) */}
       {selectedType && selectedType !== 'map' && (
-        <TouchableOpacity
-          onPress={() => setOpenHubModal(true)}
-          style={styles.selectShell}
-        >
+        <TouchableOpacity onPress={() => setOpenHubModal(true)} style={styles.selectShell}>
           <Text style={styles.selectShellText}>
             {selectedHub?.name || `${TYPE_MAP[selectedType].label} seçin`}
           </Text>
@@ -468,16 +466,13 @@ function PointPicker({
         </TouchableOpacity>
       )}
 
-      {/* Seçimi temizle */}
       {!!selectedHub && (
         <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
           <TouchableOpacity
             onPress={onClear}
             style={[styles.smallBtn, { borderColor: '#EF4444' }]}
           >
-            <Text style={{ color: '#EF4444', fontWeight: '700' }}>
-              Seçimi Temizle
-            </Text>
+            <Text style={{ color: '#EF4444', fontWeight: '700' }}>Seçimi Temizle</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -499,9 +494,8 @@ function PointPicker({
               {TYPE_MAP[selectedType || 'airport']?.label} Seçin
             </Text>
 
-            {/* Arama kutusu */}
             <TextInput
-              placeholder="İsimle ara (örn. Esenboğa)"
+              placeholder="İsimle ara (örn. Chopin)"
               placeholderTextColor="#6B7280"
               value={filter}
               onChangeText={setFilter}
@@ -531,9 +525,7 @@ function PointPicker({
                   >
                     <Text style={styles.optionText}>{item.name}</Text>
                     {item.meta && (
-                      <Text style={{ color: '#9AA0A6', fontSize: 12 }}>
-                        {item.meta}
-                      </Text>
+                      <Text style={{ color: '#9AA0A6', fontSize: 12 }}>{item.meta}</Text>
                     )}
                   </TouchableOpacity>
                 )}
@@ -572,7 +564,6 @@ function DatePicker({ label, value, onChange, minDate, maxDate, fieldInvalid }) 
     return base;
   }, [value]);
 
-  // global kapatma
   useEffect(() => {
     const sub = DeviceEventEmitter.addListener(EVT_CLOSE_DROPDOWNS, () => {
       if (mountedRef.current) setOpen(false);
@@ -585,7 +576,6 @@ function DatePicker({ label, value, onChange, minDate, maxDate, fieldInvalid }) 
   };
 
   const disabledRange = (day) => {
-    // Visual guard only; hard checks come from validator
     const ds = day?.dateString;
     if (minDate && ds < minDate) return true;
     if (maxDate && ds > maxDate) return true;
@@ -640,7 +630,7 @@ function DatePicker({ label, value, onChange, minDate, maxDate, fieldInvalid }) 
             )}
           </View>
         </Modal>
-      )}
+           )}
     </View>
   );
 }
@@ -710,11 +700,7 @@ function TimeDropdown({ label, value, onChange }) {
               )}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
               initialScrollIndex={initialIndex}
-              getItemLayout={(_, idx) => ({
-                length: 44,
-                offset: 44 * idx,
-                index: idx,
-              })}
+              getItemLayout={(_, idx) => ({ length: 44, offset: 44 * idx, index: idx })}
               initialNumToRender={20}
               maxToRenderPerBatch={20}
               windowSize={8}
@@ -744,8 +730,6 @@ function norm(s) {
 
 function normalizeHubsForType(typeKey, hubs, cityName, cityCenter) {
   const nameLC = (s) => (s || '').toString().toLowerCase();
-  const strip = (s) => trFold(String(s ?? ''));
-  const cityToken = nameLC(strip((cityName ?? '') + ''));
 
   const withDistance = hubs.map((h) => ({
     ...h,
@@ -758,41 +742,36 @@ function normalizeHubsForType(typeKey, hubs, cityName, cityCenter) {
     _name: nameLC(h.name || ''),
   }));
 
-  let inc = [],
-    exc = [],
-    maxKm = 30;
+  let maxKm = 30;
+  let inc = [], exc = [];
   if (typeKey === 'airport') {
     inc = ['havaliman', 'havaalan', 'airport', 'intl', 'international'];
-    exc = ['helipad', 'heliport', 'uçuş akademi', 'private'];
+    exc = ['helipad', 'heliport', 'private'];
     maxKm = 70;
   } else if (typeKey === 'bus') {
-    inc = ['otogar', 'terminal', 'otob', 'bus terminal'];
-    exc = ['durak', 'durağı', 'stop', 'metro', 'tram', 'metrobüs'];
-    maxKm = 20;
+    inc = ['otogar', 'terminal', 'otob', 'bus terminal', 'coach'];
+    exc = ['durak', 'stop', 'metro', 'tram', 'subway'];
+    maxKm = 25;
   } else if (typeKey === 'train') {
-    inc = ['gar', 'tren', 'train station', 'yht', 'tcdd', 'istasyon'];
-    exc = ['metro', 'marmaray', 'tram', 'subway', 'light rail', 'funiküler'];
-    maxKm = 20;
+    inc = ['gar', 'tren', 'train', 'station', 'istasyon'];
+    exc = ['metro', 'tram', 'subway', 'light rail'];
+    maxKm = 25;
   }
 
   const isBad = (n) => exc.some((k) => n.includes(k));
   const matchesInc = (n) => inc.some((k) => n.includes(k));
 
-  // 1) sıkı filtre
   let filtered = withDistance.filter((h) => matchesInc(h._name) && !isBad(h._name));
   filtered = filtered.filter((h) => (h._d != null ? h._d <= maxKm : true));
 
-  // 2) gerekirse gevşet
   if (filtered.length === 0) {
     filtered = withDistance
       .filter((h) => !isBad(h._name))
       .filter((h) => h._d == null || h._d <= maxKm);
   }
 
-  // 3) skorla
   filtered.forEach((h) => {
     let score = 0;
-    if (cityToken && h._name.includes(cityToken)) score += 5;
     if (h._d != null) score += Math.max(0, (maxKm - h._d) / maxKm) * 4;
     if (matchesInc(h._name)) score += 1.5;
     h._score = score;
@@ -813,7 +792,7 @@ function toHubShape(item) {
 }
 
 function haversine(a, b) {
-  const R = 6371; // km
+  const R = 6371;
   const dLat = toRad(b.lat - a.lat);
   const dLon = toRad(b.lng - a.lng);
   const lat1 = toRad(a.lat);
@@ -907,7 +886,6 @@ const styles = StyleSheet.create({
   optionText: { fontSize: 15, color: '#fff' },
   separator: { height: 1, backgroundColor: BORDER },
 
-  /* 🔔 Validation UI */
   errorBanner: {
     borderWidth: 1,
     borderColor: '#F87171',
@@ -918,6 +896,5 @@ const styles = StyleSheet.create({
   errorText: { color: '#FCA5A5', fontSize: 13, lineHeight: 18 },
   invalidBorder: { borderColor: '#F87171' },
 
-  /* Hint for min/max */
   hintText: { color: '#9AA0A6', fontSize: 12, marginTop: 8, textAlign: 'center' },
 });

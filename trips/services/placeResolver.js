@@ -1,3 +1,4 @@
+// trips/services/placeResolver.js
 import { poiMatch, poiSearch, poiMatchUpsert } from '../../app/lib/api';
 import { addUserPoi } from '../../app/lib/poiHybrid';
 
@@ -55,6 +56,7 @@ const trFold = (s = '') => {
 const normName = (s = '') => trFold(removeSuffixes(stripBrackets(s)));
 const keyForClient = (name, coords) => `${trFold(String(name || ''))}@${round5(coords.lat)},${round5(coords.lng)}`;
 
+/* -------------------------- trigram similarity ------------------------- */
 const ngrams = (s, n = 3) => {
   const t = ` ${s} `;
   const out = [];
@@ -103,7 +105,7 @@ export function normalizeRaw(item) {
     name: item.name || '—',
     place_id: item.place_id || null,
     coords,
-    _seed_coords: coords || null, // seed = original coords
+    _seed_coords: coords || null,
     resolved: !!item.place_id,
     opening_hours: item.opening_hours || null,
     rating: item.rating ?? null,
@@ -137,10 +139,9 @@ const limit = createLimiter(CONCURRENCY);
 const qCache = new Map();
 const cacheKey = (q, o) => `${q}|${o.lat}|${o.lon}|${o.city}|${o.category || ''}`;
 async function cachedPoiSearch(q, opts) {
-  // IMPORTANT: when resolver runs, we always treat this as "final" lookup → isSubmit:true
   const key = cacheKey(q, opts);
   if (qCache.has(key)) return qCache.get(key);
-  const arr = await poiSearch(q, { ...opts, isSubmit: true }); // ← no block
+  const arr = await poiSearch(q, { ...opts, isSubmit: true });
   qCache.set(key, arr || []);
   return arr || [];
 }
@@ -169,28 +170,29 @@ async function textSearchCascade({ name, city, lat, lon, category, timeoutMs = F
 }
 
 /* --------------------------------- single -------------------------------- */
-export async function resolveSingle({ item, city = '' }) {
-  const [x] = await resolvePlacesBatch({ items: [item], city });
+export async function resolveSingle({ item, city = '', country = 'TR' }) {
+  const [x] = await resolvePlacesBatch({ items: [item], city, country });
   return x;
 }
 
 /* --------------------------------- batch --------------------------------- */
-export async function resolvePlacesBatch({ items, city = '' }) {
+export async function resolvePlacesBatch({ items, city = '', country = 'TR' }) {
   const normalized = (items || []).map(normalizeRaw);
 
-  // 1) Check DB first (this is what “submitted” means)
+  // 1) Check DB first
   const need = normalized.filter((x) => !x.place_id && x.coords && x.name);
   if (need.length) {
     try {
-      // api.js → poiMatch expects: { items: [{ osm_id, name, lat, lon, city }] }
-      const payload = need.map((x) => ({
+      const payloadItems = need.map((x) => ({
         osm_id: x.osm_id,
         name: x.name,
         lat: round5(x._seed_coords?.lat ?? x.coords.lat),
         lon: round5(x._seed_coords?.lng ?? x.coords.lng),
         city: city || x.city || 'Ankara',
       }));
-      const json = await poiMatch(payload, city);
+
+      const json = await poiMatch({ items: payloadItems }, city);
+
       const byKey = new Map(
         (json?.results || []).map((m) => {
           const lat5 = round5(m.lat ?? m?.coords?.lat);
@@ -215,7 +217,6 @@ export async function resolvePlacesBatch({ items, city = '' }) {
           x.user_ratings_total = m.user_ratings_total ?? x.user_ratings_total ?? null;
           x.price_level = m.price_level ?? x.price_level ?? null;
 
-          // Prefer Google coords from DB if present
           const gLat = Number(m.g_lat ?? m?.coords?.lat ?? m.lat);
           const gLon = Number(m.g_lon ?? m?.coords?.lon ?? m?.coords?.lng ?? m.lon);
           if (Number.isFinite(gLat) && Number.isFinite(gLon)) {
@@ -251,7 +252,6 @@ export async function resolvePlacesBatch({ items, city = '' }) {
           });
           if (!hits.length) { x._resolve = { status: 'no_match' }; return; }
 
-          // uniquify by place_id and map into a consistent shape
           const seen = new Set();
           const cands = [];
           for (const c of hits) {
@@ -272,7 +272,6 @@ export async function resolvePlacesBatch({ items, city = '' }) {
             });
           }
 
-          // pick best by name-sim + proximity
           let best = null, bestScore = -1;
           for (const cand of cands) {
             const sc = scoreCandidate(x.name, x.coords, cand);
@@ -308,12 +307,11 @@ export async function resolvePlacesBatch({ items, city = '' }) {
     await Promise.all(jobs);
   }
 
-  // 3) Upsert back into POIMatch so future runs are free
+  // 3) Upsert back into POIMatch
   try {
     const toUpsert = normalized
       .filter(x => x.resolved && x.place_id && x._seed_coords)
       .map(x => ({
-        // match seed (submission identity) = canonical name + seed coords (server-side uses lat/lon)
         name: x.name,
         lat: x._seed_coords.lat,
         lon: x._seed_coords.lng,
@@ -321,20 +319,20 @@ export async function resolvePlacesBatch({ items, city = '' }) {
         place_id: x.place_id,
         rating: x.rating ?? null,
         hours: x.opening_hours ?? null,
-        ...(x._google_coords ? { g_lat: x._google_coords.g_lat, g_lon: x._google_coords.g_lon } : null),
+        ...(x._google_coords ? { g_lat: x._google_coords.g_lat, g_lon: x._google_coords.g_lon } : {}),
       }));
     if (toUpsert.length) await poiMatchUpsert(toUpsert);
   } catch (e) {
     if (__DEV__) console.warn('[placeResolver] upsert error', e?.message || e);
   }
 
-  // 4) Optional: write to user overlay for nicer UX
+  // 4) ✅ write to user overlay (poiHybrid shard) — NOW WITH CORRECT COUNTRY
   try {
     const overlayJobs = normalized
       .filter(x => x.resolved && x.place_id && x.coords)
       .map(async (x) => {
         await addUserPoi({
-          country: 'TR',
+          country: String(country || 'TR').toUpperCase(),
           city: x.city || city || '',
           category: x.category || 'sights',
           name: x.name || '',

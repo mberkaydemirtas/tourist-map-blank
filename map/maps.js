@@ -92,8 +92,11 @@ export async function autocomplete(input, opts = {}) {
     lng,
     radius,
     types,
-    country = 'tr',
+
+    // ❗ TR default kilidi kaldırıldı
+    country = undefined,
     language = 'tr',
+
     sessiontoken,
     strict = false,
   } = opts;
@@ -124,23 +127,28 @@ export async function autocomplete(input, opts = {}) {
     key: KEY,
     language,
   });
+
   if (types) params.append('types', types);
+
+  // ✅ yalnızca country geldiyse components ekle
   if (country) params.append('components', `country:${country}`);
+
   if (loc) {
     params.append('location', `${loc.lat},${loc.lng}`);
     if (rad) params.append('radius', String(Math.round(rad)));
     if (strict) params.append('strictbounds', 'true');
   }
+
   const token = sessiontoken || getAutocompleteSessionToken();
   if (token) params.append('sessiontoken', token);
 
   const url = `${BASE}/place/autocomplete/json?${params.toString()}`;
+
   try {
     const res = await fetch(url);
     const json = await res.json();
 
     if (json.status === 'ZERO_RESULTS' && strict && loc) {
-      // strictbounds olmadan bir kez daha dene
       params.delete('strictbounds');
       const res2 = await fetch(`${BASE}/place/autocomplete/json?${params.toString()}`);
       const json2 = await res2.json();
@@ -157,6 +165,7 @@ export async function autocomplete(input, opts = {}) {
     return [];
   }
 }
+
 
 /**
  * ŞEHİR autocomplete (ülkeye kısıtlı, dünya geneli)

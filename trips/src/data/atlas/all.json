@@ -1,3 +1,153 @@
 {
-  "countries": {}
+  "countries": {
+    "PL": {
+      "code": "PL",
+      "name": "Poland",
+      "states": [
+        "Dolnośląskie", "Kujawsko-Pomorskie", "Lubelskie", "Lubuskie", "Łódzkie", 
+        "Małopolskie", "Mazowieckie", "Opolskie", "Podkarpackie", "Podlaskie", 
+        "Pomorskie", "Śląskie", "Świętokrzyskie", "Warmińsko-Mazurskie", "Wielkopolskie", "Zachodniopomorskie"
+      ],
+      "stateCitiesMap": {
+        "Dolnośląskie": ["Wrocław", "Legnica", "Wałbrzych", "Jelenia Góra"],
+        "Kujawsko-Pomorskie": ["Bydgoszcz", "Toruń", "Włocławek", "Grudziądz"],
+        "Lubelskie": ["Lublin", "Chełm", "Zamość", "Biała Podlaska"],
+        "Lubuskie": ["Gorzów Wielkopolski", "Zielona Góra"],
+        "Łódzkie": ["Łódź", "Piotrków Trybunalski", "Pabianice"],
+        "Małopolskie": ["Kraków", "Tarnów", "Nowy Sącz", "Oświęcim"],
+        "Mazowieckie": ["Warszawa", "Radom", "Płock", "Siedlce"],
+        "Opolskie": ["Opole", "Kędzierzyn-Koźle"],
+        "Podkarpackie": ["Rzeszów", "Przemyśl", "Stalowa Wola", "Mielec"],
+        "Podlaskie": ["Białystok", "Łomża", "Suwałki"],
+        "Pomorskie": ["Gdańsk", "Gdynia", "Sopot", "Słupsk"],
+        "Śląskie": ["Katowice", "Częstochowa", "Gliwice", "Sosnowiec", "Bielsko-Biała"],
+        "Świętokrzyskie": ["Kielce", "Ostrowiec Świętokrzyski"],
+        "Warmińsko-Mazurskie": ["Olsztyn", "Elbląg", "Ełk"],
+        "Wielkopolskie": ["Poznań", "Kalisz", "Konin", "Piła"],
+        "Zachodniopomorskie": ["Szczecin", "Koszalin", "Świnoujście"]
+      },
+      "cities": {
+        "Warszawa": {
+          "plane": [
+            { "name": "Warsaw Chopin (WAW)", "lat": 52.1657, "lng": 20.9671 }, 
+            { "name": "Warsaw Modlin (WMI)", "lat": 52.4511, "lng": 20.6518 }
+          ],
+          "train": [
+            { "name": "Warszawa Centralna", "lat": 52.2289, "lng": 21.0032 },
+            { "name": "Warszawa Wschodnia", "lat": 52.2514, "lng": 21.0522 },
+            { "name": "Warszawa Zachodnia", "lat": 52.2190, "lng": 20.9609 }
+          ],
+          "bus": [{ "name": "Dworzec Autobusowy Warszawa Zachodnia", "lat": 52.2189, "lng": 20.9647 }]
+        },
+        "Kraków": {
+          "plane": [{ "name": "Kraków-Balice (KRK)", "lat": 50.0777, "lng": 19.7848 }],
+          "train": [{ "name": "Kraków Główny", "lat": 50.0685, "lng": 19.9475 }],
+          "bus": [{ "name": "MDA Kraków", "lat": 50.0689, "lng": 19.9494 }]
+        },
+        "Łódź": {
+          "plane": [{ "name": "Łódź Władysław Reymont (LCJ)", "lat": 51.7219, "lng": 19.3981 }],
+          "train": [
+            { "name": "Łódź Fabryczna", "lat": 51.7696, "lng": 19.4806 },
+            { "name": "Łódź Kaliska", "lat": 51.7570, "lng": 19.4320 }
+          ],
+          "bus": [{ "name": "Dworzec Łódź Fabryczna", "lat": 51.7700, "lng": 19.4810 }]
+        },
+        "Wrocław": {
+          "plane": [{ "name": "Wrocław Copernicus (WRO)", "lat": 51.1027, "lng": 16.8858 }],
+          "train": [{ "name": "Wrocław Główny", "lat": 51.0985, "lng": 17.0365 }],
+          "bus": [{ "name": "Dworzec Wrocław", "lat": 51.0970, "lng": 17.0340 }]
+        },
+        "Poznań": {
+          "plane": [{ "name": "Poznań-Ławica (POZ)", "lat": 52.4211, "lng": 16.8264 }],
+          "train": [{ "name": "Poznań Główny", "lat": 52.4014, "lng": 16.9125 }],
+          "bus": [{ "name": "Dworzec Autobusowy Poznań", "lat": 52.4005, "lng": 16.9140 }]
+        },
+        "Gdańsk": {
+          "plane": [{ "name": "Gdańsk Lech Wałęsa (GDN)", "lat": 54.3775, "lng": 18.4661 }],
+          "train": [{ "name": "Gdańsk Główny", "lat": 54.3563, "lng": 18.6444 }],
+          "bus": [{ "name": "Dworzec PKS Gdańsk", "lat": 54.3550, "lng": 18.6420 }]
+        },
+        "Gdynia": {
+          "plane": [], 
+          "train": [{ "name": "Gdynia Główna", "lat": 54.5202, "lng": 18.5305 }],
+          "bus": [{ "name": "Dworzec PKS Gdynia", "lat": 54.5210, "lng": 18.5290 }]
+        },
+        "Szczecin": {
+          "plane": [{ "name": "Szczecin-Goleniów (SZZ)", "lat": 53.5847, "lng": 14.9019 }],
+          "train": [{ "name": "Szczecin Główny", "lat": 53.4186, "lng": 14.5511 }],
+          "bus": [{ "name": "PKS Szczecin", "lat": 53.4190, "lng": 14.5525 }]
+        },
+        "Bydgoszcz": {
+          "plane": [{ "name": "Bydgoszcz Ignacy Jan Paderewski (BZG)", "lat": 53.0967, "lng": 17.9778 }],
+          "train": [{ "name": "Bydgoszcz Główna", "lat": 53.1360, "lng": 17.9914 }],
+          "bus": [{ "name": "PKS Bydgoszcz", "lat": 53.1245, "lng": 18.0105 }]
+        },
+        "Toruń": {
+          "plane": [],
+          "train": [{ "name": "Toruń Główny", "lat": 52.9996, "lng": 18.6142 }],
+          "bus": [{ "name": "Dworzec Autobusowy Toruń", "lat": 53.0163, "lng": 18.6046 }]
+        },
+        "Lublin": {
+          "plane": [{ "name": "Lublin Airport (LUZ)", "lat": 51.2403, "lng": 22.7136 }],
+          "train": [{ "name": "Lublin Główny", "lat": 51.2330, "lng": 22.5684 }],
+          "bus": [{ "name": "Dworzec Lublin", "lat": 51.2325, "lng": 22.5670 }]
+        },
+        "Katowice": {
+          "plane": [{ "name": "Katowice-Pyrzowice (KTW)", "lat": 50.4742, "lng": 19.0800 }],
+          "train": [{ "name": "Katowice", "lat": 50.2575, "lng": 19.0167 }],
+          "bus": [{ "name": "Międzynarodowy Dworzec Autobusowy Sądowa", "lat": 50.2597, "lng": 19.0108 }]
+        },
+        "Rzeszów": {
+          "plane": [{ "name": "Rzeszów-Jasionka (RZE)", "lat": 50.1100, "lng": 22.0190 }],
+          "train": [{ "name": "Rzeszów Główny", "lat": 50.0415, "lng": 22.0055 }],
+          "bus": [{ "name": "Dworzec Lokalny", "lat": 50.0425, "lng": 22.0030 }]
+        },
+        "Białystok": {
+          "plane": [], 
+          "train": [{ "name": "Białystok", "lat": 53.1345, "lng": 23.1388 }],
+          "bus": [{ "name": "PKS Białystok Nova", "lat": 53.1350, "lng": 23.1400 }]
+        },
+        "Olsztyn": {
+          "plane": [{ "name": "Olsztyn-Mazury (SZY)", "lat": 53.4819, "lng": 20.9377 }],
+          "train": [{ "name": "Olsztyn Główny", "lat": 53.7827, "lng": 20.4876 }],
+          "bus": [{ "name": "Dworzec PKS Olsztyn", "lat": 53.7820, "lng": 20.4880 }]
+        },
+        "Kielce": {
+          "plane": [],
+          "train": [{ "name": "Kielce Główne", "lat": 50.8744, "lng": 20.6225 }],
+          "bus": [{ "name": "Dworzec Autobusowy Kielce", "lat": 50.8753, "lng": 20.6208 }]
+        },
+        "Opole": {
+          "plane": [],
+          "train": [{ "name": "Opole Główne", "lat": 50.6624, "lng": 17.9264 }],
+          "bus": [{ "name": "Dworzec Autobusowy Opole", "lat": 50.6630, "lng": 17.9280 }]
+        },
+        "Zielona Góra": {
+          "plane": [{ "name": "Zielona Góra-Babimost (IEG)", "lat": 52.1385, "lng": 15.7986 }],
+          "train": [{ "name": "Zielona Góra Główna", "lat": 51.9472, "lng": 15.5135 }],
+          "bus": [{ "name": "PKS Zielona Góra", "lat": 51.9475, "lng": 15.5150 }]
+        },
+        "Gorzów Wielkopolski": {
+          "plane": [],
+          "train": [{ "name": "Gorzów Wielkopolski", "lat": 52.7289, "lng": 15.2417 }],
+          "bus": [{ "name": "Dworzec PKS Gorzów", "lat": 52.7290, "lng": 15.2430 }]
+        },
+        "Radom": {
+          "plane": [{ "name": "Warszawa-Radom (RDO)", "lat": 51.3888, "lng": 21.2133 }],
+          "train": [{ "name": "Radom Główny", "lat": 51.3934, "lng": 21.1578 }],
+          "bus": [{ "name": "Dworzec PKS Radom", "lat": 51.3940, "lng": 21.1550 }]
+        },
+        "Częstochowa": {
+          "plane": [],
+          "train": [{ "name": "Częstochowa (Dworzec Główny)", "lat": 50.8105, "lng": 19.1226 }],
+          "bus": [{ "name": "Dworzec PKS Częstochowa", "lat": 50.8090, "lng": 19.1240 }]
+        },
+        "Bielsko-Biała": {
+          "plane": [],
+          "train": [{ "name": "Bielsko-Biała Główna", "lat": 49.8294, "lng": 19.0461 }],
+          "bus": [{ "name": "PKS Bielsko-Biała", "lat": 49.8300, "lng": 19.0480 }]
+        }
+      }
+    }
+  }
 }

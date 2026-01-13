@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 
 const SHARDS = {
   TR: () => require('../../assets/poi_TR.db'),
+  PL: () => require('../../assets/poi_PL.db'), // boş db (poi tablosu var) — yoksa da şemayı kuracağız
 };
 
 // ---- internal caches / locks ----
@@ -16,39 +17,46 @@ async function ensureDir(p) {
   try { await FileSystem.makeDirectoryAsync(p, { intermediates: true }); } catch {}
 }
 
+async function fileInfo(uri) {
+  try { return await FileSystem.getInfoAsync(uri); } catch { return { exists: false, size: 0 }; }
+}
+
 async function fileSize(uri) {
+  const info = await fileInfo(uri);
+  return info.exists ? (info.size ?? 0) : 0;
+}
+
+function isFileUri(u = '') { return typeof u === 'string' && u.startsWith('file:'); }
+function isAssetUri(u = '') { return typeof u === 'string' && (u.startsWith('asset:') || u.startsWith('http')); }
+
+async function safeCopyToDest(srcUri, destUri) {
+  // Önce hedefi temizle
+  try { await FileSystem.deleteAsync(destUri, { idempotent: true }); } catch {}
+
+  // Bazı Android durumlarında Asset URI copyAsync ile bozuk/boş kopyalanabiliyor.
+  // Bu yüzden:
+  // - file:// ise copyAsync
+  // - asset:// / http(s):// ise downloadAsync fallback
   try {
-    const info = await FileSystem.getInfoAsync(uri);
-    return info.exists ? (info.size ?? 0) : 0;
-  } catch { return 0; }
-}
-
-async function copyAssetTo(uriFrom, uriTo) {
-  try { await FileSystem.deleteAsync(uriTo, { idempotent: true }); } catch {}
-  await FileSystem.copyAsync({ from: uriFrom, to: uriTo });
-}
-
-async function ensureShard(country = 'TR') {
-  const mod = SHARDS[country]?.();
-  if (!mod) return null;
-
-  const asset = Asset.fromModule(mod);
-  await asset.downloadAsync(); // paketten cihaza indir
-
-  const sqliteDir = FileSystem.documentDirectory + 'SQLite/';
-  await ensureDir(sqliteDir);
-
-  const dest = sqliteDir + `poi_${country}.db`;
-
-  // yoksa ya da çok küçükse -> kopyala
-  let sz = await fileSize(dest);
-  if (sz < 1024) {
-    await copyAssetTo(asset.localUri || asset.uri, dest);
-    sz = await fileSize(dest);
+    if (isFileUri(srcUri)) {
+      await FileSystem.copyAsync({ from: srcUri, to: destUri });
+    } else {
+      // asset:// veya http gibi şeylerde downloadAsync daha güvenilir
+      await FileSystem.downloadAsync(srcUri, destUri);
+    }
+  } catch (e) {
+    // ilk deneme başarısızsa tersini dene
+    try {
+      if (!isFileUri(srcUri)) {
+        await FileSystem.copyAsync({ from: srcUri, to: destUri });
+      } else {
+        await FileSystem.downloadAsync(srcUri, destUri);
+      }
+    } catch (e2) {
+      if (__DEV__) console.warn('[poiLocal] copy failed:', e2?.message || e2);
+      throw e2;
+    }
   }
-
-  if (__DEV__) console.log(`[poiLocal] shard → ${dest} (${Math.round(sz/1024)} KB)`);
-  return dest;
 }
 
 async function loadSQLite() {
@@ -59,49 +67,6 @@ async function loadSQLite() {
 }
 
 function hasAsyncAPI(SQLite) { return !!SQLite?.openDatabaseAsync; }
-
-async function validatePoiTable(db) {
-  const sql = `SELECT name FROM sqlite_master WHERE type='table' AND name='poi'`;
-  try {
-    if (typeof db.getAllAsync === 'function') {
-      const rows = await db.getAllAsync(sql);
-      return Array.isArray(rows) && rows.length > 0;
-    }
-    // legacy
-    return await new Promise((resolve) => {
-      db.readTransaction((tx) => {
-        tx.executeSql(sql, [], (_, rs) => resolve((rs?.rows?._array || []).length > 0),
-          () => { resolve(false); return false; });
-      });
-    });
-  } catch { return false; }
-}
-
-async function reallyOpen(SQLite, country) {
-  // her zaman shard hazırla (kopya)
-  await ensureShard(country);
-  const name = `poi_${country}.db`;
-  const db = hasAsyncAPI(SQLite)
-    ? await SQLite.openDatabaseAsync(name)
-    : SQLite.openDatabase(name);
-  return db;
-}
-
-/* --------------------- small SQL helpers (exec/select/insert) --------------------- */
-async function tableCount(db, table) {
-  try {
-    const rows = await runSelect(db, `SELECT COUNT(*) AS n FROM ${table}`, []);
-    return Number(rows?.[0]?.n || 0);
-  } catch { return 0; }
-}
-
-async function hasTable(db, name) {
-  try {
-    const rows = await runSelect(db,
-      `SELECT name FROM sqlite_master WHERE type='table' AND name=?`, [name]);
-    return (rows?.length || 0) > 0;
-  } catch { return false; }
-}
 
 async function execSQL(db, sql) {
   const parts = String(sql).split(';').map(s => s.trim()).filter(Boolean);
@@ -124,7 +89,7 @@ async function runSelect(db, sql, args) {
       return await db.getAllAsync(sql, args);
     } catch (e) {
       if (__DEV__) console.warn('[poiLocal] getAllAsync failed, retrying once:', e?.message || e);
-      await new Promise(r => setTimeout(r, 50));
+      await new Promise(r => setTimeout(r, 60));
       try {
         return await db.getAllAsync(sql, args);
       } catch (e2) {
@@ -156,22 +121,34 @@ async function runInsert(db, sql, args) {
   });
 }
 
-/* ------------------------------- normalize helpers ------------------------------- */
-function normalizeText(s = '') {
+async function validatePoiTable(db) {
   try {
-    return s.normalize('NFKD')
-      .replace(/[\u0300-\u036f]/g,'')
-      .replace(/[İIı]/g,'i')
-      .replace(/[Şş]/g,'s')
-      .replace(/[Ğğ]/g,'g')
-      .replace(/[Üü]/g,'u')
-      .replace(/[Öö]/g,'o')
-      .replace(/[Çç]/g,'c')
-      .toLowerCase().trim();
-  } catch { return String(s || '').toLowerCase().trim(); }
+    const rows = await runSelect(db, `SELECT name FROM sqlite_master WHERE type='table' AND name='poi'`, []);
+    return Array.isArray(rows) && rows.length > 0;
+  } catch { return false; }
 }
 
-/* ------------------------- ensure user table (overlay) ------------------------- */
+async function ensurePoiSchema(db) {
+  // “seed” tablo (poi) — TR seed dolu, PL boş olabilir ama tablo olmalı
+  const sql = `
+    CREATE TABLE IF NOT EXISTS poi (
+      id        TEXT PRIMARY KEY,
+      country   TEXT NOT NULL,
+      city      TEXT,
+      category  TEXT,
+      name      TEXT,
+      nameNorm  TEXT,
+      lat       REAL,
+      lon       REAL,
+      address   TEXT,
+      source    TEXT DEFAULT 'local'
+    );
+    CREATE INDEX IF NOT EXISTS idx_poi_city_cat ON poi(city, category);
+    CREATE INDEX IF NOT EXISTS idx_poi_nameNorm ON poi(nameNorm);
+  `;
+  await execSQL(db, sql);
+}
+
 async function ensureUserTable(db) {
   const sql = `
     CREATE TABLE IF NOT EXISTS poi_user (
@@ -191,6 +168,78 @@ async function ensureUserTable(db) {
     CREATE INDEX IF NOT EXISTS idx_poi_user_nameNorm ON poi_user(nameNorm);
   `;
   await execSQL(db, sql);
+}
+
+async function ensureShardFile(country = 'TR') {
+  const sqliteDir = FileSystem.documentDirectory + 'SQLite/';
+  await ensureDir(sqliteDir);
+
+  const dest = sqliteDir + `poi_${country}.db`;
+
+  // ✅ FIX: Dosya varsa (boyutu küçük olsa bile) yeniden kopyalama!
+  // PL shard boş olduğundan <1024 olabiliyor ve eski mantık her açılışta resetliyordu.
+  const info = await fileInfo(dest);
+  if (info.exists) {
+    if (__DEV__) console.log(`[poiLocal] shard exists → ${dest} (${Math.round((info.size || 0) / 1024)} KB)`);
+    return dest;
+  }
+
+  const mod = SHARDS[country]?.();
+  if (!mod) {
+    // shard yok → boş db dosyası oluşturulacak (sqlite open + schema)
+    if (__DEV__) console.log(`[poiLocal] no asset shard for ${country} → will create empty on open`);
+    return dest;
+  }
+
+  const asset = Asset.fromModule(mod);
+  await asset.downloadAsync();
+
+  const srcUri = asset.localUri || asset.uri; // localUri bazen null olabiliyor
+  await safeCopyToDest(srcUri, dest);
+
+  const newSz = await fileSize(dest);
+  if (__DEV__) console.log(`[poiLocal] shard → ${dest} (${Math.round(newSz / 1024)} KB)`);
+  return dest;
+}
+
+async function reallyOpen(SQLite, country) {
+  // 1) dosya yolunu garanti et
+  await ensureShardFile(country);
+
+  // 2) expo-sqlite isimle açıyor (documentDirectory/SQLite altında arar)
+  const name = `poi_${country}.db`;
+  const db = hasAsyncAPI(SQLite)
+    ? await SQLite.openDatabaseAsync(name)
+    : SQLite.openDatabase(name);
+  return db;
+}
+
+/* ------------------------------- normalize helpers ------------------------------- */
+function normalizeText(s = '') {
+  try {
+    return s.normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g,'')
+      .replace(/[İIı]/g,'i')
+      .replace(/[Şş]/g,'s')
+      .replace(/[Ğğ]/g,'g')
+      .replace(/[Üü]/g,'u')
+      .replace(/[Öö]/g,'o')
+      .replace(/[Çç]/g,'c')
+      .toLowerCase().trim();
+  } catch { return String(s || '').toLowerCase().trim(); }
+}
+
+async function tableCount(db, table) {
+  try {
+    const rows = await runSelect(db, `SELECT COUNT(*) AS n FROM ${table}`, []);
+    return Number(rows?.[0]?.n || 0);
+  } catch { return 0; }
+}
+
+async function nukeShard(country) {
+  const sqliteDir = FileSystem.documentDirectory + 'SQLite/';
+  const dest = sqliteDir + `poi_${country}.db`;
+  try { await FileSystem.deleteAsync(dest, { idempotent: true }); } catch {}
 }
 
 /**
@@ -215,26 +264,40 @@ export async function openPoiDb(country = 'TR') {
       return db;
     }
 
-    // Tablonun varlığını kontrol et
+    // 1) poi tablosu var mı?
     let ok = await validatePoiTable(db);
+
+    // 2) yoksa: shard’ı tamamen sil → assets’ten tekrar kopyala → yeniden aç → yine yoksa schema kur
     if (!ok) {
-      const sqliteDir = FileSystem.documentDirectory + 'SQLite/';
-      const dest = sqliteDir + `poi_${country}.db`;
-      try { await FileSystem.deleteAsync(dest, { idempotent: true }); } catch {}
-      await ensureShard(country);
+      if (__DEV__) console.warn('[poiLocal] poi table missing → re-copy/rebuild', { country });
+
+      await nukeShard(country);
+      await ensureShardFile(country);
       db = await reallyOpen(SQLite, country);
       ok = await validatePoiTable(db);
+
+      if (!ok) {
+        // Son çare: boş db’ye schema kur
+        if (__DEV__) console.warn('[poiLocal] poi table still missing → creating schema', { country });
+        await ensurePoiSchema(db);
+        ok = await validatePoiTable(db);
+      }
+
       if (__DEV__) console.log('[poiLocal] re-copy & reopen. poi table ok:', ok);
+    } else {
+      // TR’de seed dolu, PL’de boş olabilir; tablo varsa schema yine garanti edelim (indexler)
+      await ensurePoiSchema(db);
     }
+
+    // 3) seed gerçekten boş mu? (TR için boşsa muhtemelen yanlış kopya)
     try {
       const cnt = await tableCount(db, 'poi');
-      if (!Number.isFinite(cnt) || cnt === 0) {
-        if (__DEV__) console.warn('[poiLocal] seed looks empty → re-copying shard');
-        const sqliteDir = FileSystem.documentDirectory + 'SQLite/';
-        const dest = sqliteDir + `poi_${country}.db`;
-        try { await FileSystem.deleteAsync(dest, { idempotent: true }); } catch {}
-        await ensureShard(country);
+      if (country === 'TR' && (!Number.isFinite(cnt) || cnt === 0)) {
+        if (__DEV__) console.warn('[poiLocal] TR seed looks empty → re-copying shard');
+        await nukeShard(country);
+        await ensureShardFile(country);
         db = await reallyOpen(SQLite, country);
+        await ensurePoiSchema(db);
       }
     } catch {}
 
@@ -282,7 +345,6 @@ export async function queryPoiWithUser({ country = 'TR', city, category, q, limi
 
   const lim = Number(limit) || 50;
 
-  // ortak where’ler (seed)
   const seedWhere = [], seedArgs = [];
   const cityTrim = String(city || '').trim();
 
@@ -293,10 +355,11 @@ export async function queryPoiWithUser({ country = 'TR', city, category, q, limi
     seedArgs.push(`%${normalizeText(q)}%`);
   }
 
-  // kullanıcı tablosu varsa ayrı where/args
   const hasUser = await (async () => {
-    try { return await runSelect(db, `SELECT name FROM sqlite_master WHERE type='table' AND name='poi_user'`, []).then(r => (r?.length ?? 0) > 0); }
-    catch { return false; }
+    try {
+      const r = await runSelect(db, `SELECT name FROM sqlite_master WHERE type='table' AND name='poi_user'`, []);
+      return (r?.length || 0) > 0;
+    } catch { return false; }
   })();
 
   const userWhere = [], userArgs = [];
@@ -309,7 +372,6 @@ export async function queryPoiWithUser({ country = 'TR', city, category, q, limi
     }
   }
 
-  // 1) seed çek
   const seedSQL = `
     SELECT id,country,city,category,name,lat,lon,address,NULL AS place_id,'local' AS source
     FROM poi
@@ -318,7 +380,6 @@ export async function queryPoiWithUser({ country = 'TR', city, category, q, limi
   `;
   const seedRows = await runSelect(db, seedSQL, seedArgs);
 
-  // 2) user çek (varsa)
   let userRows = [];
   if (hasUser) {
     const userSQL = `
@@ -330,8 +391,7 @@ export async function queryPoiWithUser({ country = 'TR', city, category, q, limi
     userRows = await runSelect(db, userSQL, userArgs);
   }
 
-  const rows = [...seedRows, ...userRows].slice(0, lim);
-  return { rows: rows || [] };
+  return { rows: [...seedRows, ...userRows].slice(0, lim) };
 }
 
 /* ----------------------- PUBLIC: add user POI (Google) ----------------------- */
@@ -350,20 +410,18 @@ export async function addUserPoi({
 
   if (!name || !Number.isFinite(Number(lat)) || !Number.isFinite(Number(lon))) return false;
 
-const rec = {
-  id: place_id ? `pid:${place_id}` : `u:${Date.now()}:${Math.random().toString(36).slice(2)}`,
-  country,
-  city: city || null,
-  category,
-  name,
-  nameNorm: normalizeText(`${name} ${address}`),
-  lat: Number(lat),
-  lon: Number(lon),
-  address: address || '',
-  place_id: place_id || null,
-  item_id: place_id ? `pid:${place_id}` : `u:${Date.now()}:${Math.random().toString(36).slice(2)}`, // Buraya item_id ekliyoruz
-};
-
+  const rec = {
+    id: place_id ? `pid:${place_id}` : `u:${Date.now()}:${Math.random().toString(36).slice(2)}`,
+    country,
+    city: city || null,
+    category,
+    name,
+    nameNorm: normalizeText(`${name} ${address}`),
+    lat: Number(lat),
+    lon: Number(lon),
+    address: address || '',
+    place_id: place_id || null,
+  };
 
   const sql = `
     INSERT OR REPLACE INTO poi_user
@@ -376,26 +434,8 @@ const rec = {
   ];
 
   const ok = await runInsert(db, sql, args);
-  if (__DEV__ && ok) console.log('[poiLocal] addUserPoi OK:', rec.name, rec.city || '');
+  if (__DEV__ && ok) console.log('[poiLocal] addUserPoi OK:', rec.name, rec.city || '', rec.country);
   return ok;
 }
 
 export { runSelect };
-
-/* ----------------------- DEBUG helpers ----------------------- */
-export async function __debugDump() {
-  const db = await openPoiDb('TR');
-  const a = await runSelect(db, 'SELECT COUNT(*) AS n FROM poi', []);
-  let b = [{ n: 0 }];
-  try { b = await runSelect(db, 'SELECT COUNT(*) AS n FROM poi_user', []); } catch {}
-  console.log('[DEBUG] seed count=', a?.[0]?.n, ' user count=', b?.[0]?.n);
-}
-
-/** KATEGORİ ve örnek satırları görmek için derin dump */
-export async function __debugDumpDeep(limit = 5) {
-  const db = await openPoiDb('TR');
-  const cats = await runSelect(db, 'SELECT category, COUNT(*) AS n FROM poi GROUP BY category ORDER BY n DESC', []);
-  const samples = await runSelect(db, `SELECT id,city,category,name,lat,lon,address FROM poi LIMIT ${Number(limit)||5}`, []);
-  console.log('[DEBUG:cats]', cats);
-  console.log('[DEBUG:samples]', samples);
-}

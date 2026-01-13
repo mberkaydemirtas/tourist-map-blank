@@ -5,14 +5,20 @@ import CategoryBar from './CategoryBar';
 import ScanButton from './ScanButton';
 
 function MapHeaderControls({
-  query,                 // sadece başlangıç değeri olarak alınacak
-  onQueryChange,         // ebeveyne bildirim (debounce'lu)
+  query,
+  onQueryChange,
   onPlaceSelect,
   onCategorySelect,
-  mapMovedAfterDelay,    // 2 saniye sonra hareketi kontrol eden prop
+  mapMovedAfterDelay,
   loadingCategory,
   onSearchArea,
   activeCategory,
+
+  // ✅ ekle
+  searchCountryCode,
+  searchLanguage,
+  searchBiasCenter,
+  searchRadius,
 }) {
   // 👉 Yerel state: input'un tek doğrusu burası
   const [localQuery, setLocalQuery] = useState(query ?? '');
@@ -47,7 +53,6 @@ function MapHeaderControls({
       '';
     if (text) {
       setLocalQuery(text);
-      // seçimi de ebeveyne iletelim (mevcut davranış)
       onQueryChange?.(text);
     }
     onPlaceSelect?.(item);
@@ -60,23 +65,23 @@ function MapHeaderControls({
 
   return (
     <>
-      <SearchBar
-        value={localQuery}         // ❗ tamamen yerel kontrol
-        onChange={handleLocalChange}
-        onSelect={handleSelect}
-      />
+    <SearchBar
+      value={localQuery}
+      onChange={handleLocalChange}
+      onSelect={handleSelect}
+
+      // ✅ ekle
+      searchCountryCode={searchCountryCode}
+      searchLanguage={searchLanguage}
+      searchBiasCenter={searchBiasCenter}
+      searchRadius={searchRadius}
+    />
 
       <CategoryBar
         activeCategory={activeCategory}
         onSelect={onCategorySelect}
       />
 
-      {/*
-        'Bu bölgeyi tara' butonu:
-        - Kategori seçildiyse (activeCategory)
-        - Harita 2 saniyelik delay sonrası hareket ettiyse (mapMovedAfterDelay)
-        - Yükleme yapılmıyorsa (!loadingCategory)
-      */}
       {activeCategory && mapMovedAfterDelay && !loadingCategory && (
         <ScanButton onPress={onSearchArea} />
       )}
@@ -85,4 +90,3 @@ function MapHeaderControls({
 }
 
 export default React.memo(MapHeaderControls);
-

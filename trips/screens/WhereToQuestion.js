@@ -8,9 +8,12 @@ import {
   listCountries,
   getCitiesForCountry,
   listAdminsForCountry,
-  getAdminCenter,   // ✅
-  getCityCenter,    // ✅ EKLENDİ
+  getAdminCenter,
+  getCityCenter,
 } from '../services/geoService';
+
+// ✅ Google Place Details ile city center çekmek için:
+import { getPlaceLatLng } from '../../map/maps';
 
 const BORDER = '#23262F';
 const BTN = '#2563EB';
@@ -35,6 +38,22 @@ function toAdminOptions(arr) {
     const key = norm(label) || String(idx);
     return { key, label };
   });
+}
+
+/** ✅ Place Details -> city center resolve */
+async function resolveCityCenterWithGoogle({ countryCode, cityName, place_id }) {
+  try {
+    if (!place_id) return getCityCenter(countryCode, cityName) || null;
+
+    const r = await getPlaceLatLng(place_id, 'en'); // geometry için dil fark etmez
+    const loc = r?.location; // {lat,lng}
+    if (loc && Number.isFinite(loc.lat) && Number.isFinite(loc.lng)) {
+      return { lat: loc.lat, lng: loc.lng };
+    }
+    return getCityCenter(countryCode, cityName) || null;
+  } catch {
+    return getCityCenter(countryCode, cityName) || null;
+  }
 }
 
 export default function WhereToQuestion({ initialMode = 'single', onChange }) {
@@ -115,7 +134,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
       place_id: `${singleCountryCode}-st-${singleAdmin}`,
       description: `${singleAdmin}, ${findLabel(singleCountryCode)}`,
       name: singleAdmin,
-      center: getAdminCenter(singleCountryCode, singleAdmin) || null, // ✅ değişken geçti
+      center: getAdminCenter(singleCountryCode, singleAdmin) || null,
     };
     setSingleCity(fakeCity);
     setSingleCityOptions([]);
@@ -185,14 +204,24 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                 value={singleCity?.name || null}
                 options={singleCityOptions}
                 placeholder="Şehir seçin"
-                onPick={(opt) => {
+                onPick={async (opt) => {
                   const name = opt.main_text || opt.description;
+                  const place_id = opt.place_id;
+
+                  // ✅ asıl fix: center’ı Place Details ile doldur
+                  const center = await resolveCityCenterWithGoogle({
+                    countryCode: singleCountryCode,
+                    cityName: name,
+                    place_id,
+                  });
+
                   const city = {
-                    place_id: opt.place_id,
+                    place_id,
                     description: opt.description,
                     name,
-                    center: getCityCenter(singleCountryCode, name) || null, // ✅ şehir merkezi
+                    center, // ✅ doğru şehir merkezi
                   };
+                  if (!mountedRef.current) return;
                   setSingleCity(city);
                 }}
               />
@@ -259,7 +288,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                               place_id: `${r.countryCode}-st-${label}`,
                               description: `${label}, ${findLabel(r.countryCode)}`,
                               name: label,
-                              center: getAdminCenter(r.countryCode, label) || null, // ✅ TR için admin merkezi
+                              center: getAdminCenter(r.countryCode, label) || null,
                             };
                             return { ...r, admin: label, city: fakeCity, cityOptions: [] };
                           })
@@ -276,14 +305,24 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                       value={row.city?.name || null}
                       options={row.cityOptions}
                       placeholder="Şehir seçin"
-                      onPick={(opt) => {
+                      onPick={async (opt) => {
                         const name = opt.main_text || opt.description;
+                        const place_id = opt.place_id;
+
+                        const center = await resolveCityCenterWithGoogle({
+                          countryCode: row.countryCode,
+                          cityName: name,
+                          place_id,
+                        });
+
                         const city = {
-                          place_id: opt.place_id,
+                          place_id,
                           description: opt.description,
                           name,
-                          center: getCityCenter(row.countryCode, name) || null, // ✅ şehir merkezi
+                          center, // ✅ doğru şehir merkezi
                         };
+
+                        if (!mountedRef.current) return;
                         setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, city } : r)));
                       }}
                     />
@@ -327,7 +366,6 @@ function SegChip({ active, label, onPress }) {
 
 function CountrySelect({ value, label, options, onPick }) {
   const [open, setOpen] = useState(false);
-  // global kapat
   useEffect(() => {
     const sub = DeviceEventEmitter.addListener(EVT_CLOSE_DROPDOWNS, () => setOpen(false));
     return () => sub.remove();

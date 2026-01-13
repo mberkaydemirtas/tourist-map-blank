@@ -777,11 +777,16 @@ const { coords, available, refreshLocation } = useLocation(
               onSearchArea={map.handleSearchThisArea || (() => {})}
               activeCategory={map.activeCategory}
 
+
               /* 👇 picker dostu ipuçları */
               isPickerMode={!!picker?.enabled}
               autoFocusSearch={!!picker?.enabled}
               allowCategory={true}
               allowSearch={true}
+              searchCountryCode={picker?.countryCode}
+              searchLanguage={picker?.language ?? 'tr'}
+              searchBiasCenter={picker?.center}
+              searchRadius={30000}              
             />
 
             {map.activeCategory && map.categoryMarkers.length > 0 && (

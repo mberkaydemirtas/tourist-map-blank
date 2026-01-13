@@ -14,6 +14,34 @@ const DIRECTIONS_API_KEY =
   '';
 
 /**
+ * lon/lng farkını tek yerden normalize edelim.
+ */
+function getLonLike(loc) {
+  if (!loc) return undefined;
+  const v = loc.lon ?? loc.lng ?? loc.longitude;
+  return typeof v === 'number' ? v : Number(v);
+}
+function getLatLike(loc) {
+  if (!loc) return undefined;
+  const v = loc.lat ?? loc.latitude;
+  return typeof v === 'number' ? v : Number(v);
+}
+
+/**
+ * round5k bazen undefined/NaN gelince patlatabiliyor.
+ * Bunu güvenli hale getiriyoruz.
+ */
+function safeRound5k(n) {
+  const x = typeof n === 'number' ? n : Number(n);
+  if (!Number.isFinite(x)) return 'x';
+  try {
+    return String(round5k(x));
+  } catch {
+    return 'x';
+  }
+}
+
+/**
  * Bir activity’den Google Directions waypoint objesi üretir.
  *  - Eğer place_id varsa place-mode
  *  - Yoksa lat/lng ile koor kullanır
@@ -21,10 +49,15 @@ const DIRECTIONS_API_KEY =
 export function buildWaypointFromAct(act) {
   const pid = act?.place?.place_id || act?.meta?.place_id || act?.gPlaceId;
   const loc = act?.place?.location;
+
   if (pid && typeof pid === 'string') return { place_id: pid };
-  if (loc?.lat != null && (loc?.lon != null || loc?.lng != null)) {
-    return { lat: Number(loc.lat), lng: Number(loc.lon ?? loc.lng) };
+
+  const lat = getLatLike(loc);
+  const lng = getLonLike(loc);
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    return { lat: Number(lat), lng: Number(lng) };
   }
+
   return null;
 }
 
@@ -38,22 +71,31 @@ export function useTripSegments({ day, uiActivities, mapRef }) {
   const segRunIdRef = useRef(0);
 
   // UI aktivitelerdeki konumların imzası (değişince segmentleri yeniden hesaplıyoruz)
-  const locSig = useMemo(
-    () =>
-      (uiActivities || [])
-        .map((a) => {
-          const l = a?.place?.location;
-          return l ? `${round5k(l.lat)}:${round5k(l.lon)}` : 'x';
-        })
-        .join('|'),
-    [uiActivities]
-  );
+  const locSig = useMemo(() => {
+    return (uiActivities || [])
+      .map((a) => {
+        const l = a?.place?.location;
+        const lat = getLatLike(l);
+        const lon = getLonLike(l);
+        return Number.isFinite(lat) && Number.isFinite(lon)
+          ? `${safeRound5k(lat)}:${safeRound5k(lon)}`
+          : 'x';
+      })
+      .join('|');
+  }, [uiActivities]);
 
   // Gün polylinesi → fitToCoordinates için hazırlanmış koordinatlar
   const polylineCoords = useMemo(() => {
     const poly = day?.route?.polyline;
     if (!poly || !poly.length) return null;
-    return poly.map((p) => ({ latitude: p.lat, longitude: p.lon }));
+    return poly
+      .map((p) => {
+        const lat = getLatLike(p);
+        const lon = getLonLike(p);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+        return { latitude: lat, longitude: lon };
+      })
+      .filter(Boolean);
   }, [day?.route?.polyline]);
 
   const fitToCoords = useCallback(
@@ -84,7 +126,11 @@ export function useTripSegments({ day, uiActivities, mapRef }) {
         : acts
             .map((a) => {
               const l = a?.place?.location;
-              return l ? { latitude: l.lat, longitude: l.lon } : null;
+              const lat = getLatLike(l);
+              const lon = getLonLike(l);
+              return Number.isFinite(lat) && Number.isFinite(lon)
+                ? { latitude: lat, longitude: lon }
+                : null;
             })
             .filter(Boolean);
 
@@ -95,7 +141,6 @@ export function useTripSegments({ day, uiActivities, mapRef }) {
 
   /**
    * Gün içi ardışık aktiviteler arasındaki segmentleri (polyline) hesaplar.
-   * Google Directions üzerinden gidip her iki nokta arasını ayrı ayrı çekiyoruz.
    */
   const computeDaySegments = useCallback(async () => {
     const acts = uiActivities || [];
@@ -114,9 +159,23 @@ export function useTripSegments({ day, uiActivities, mapRef }) {
     for (let i = 0; i < acts.length - 1; i++) {
       const a = acts[i];
       const b = acts[i + 1];
+
       const la = a?.place?.location;
       const lb = b?.place?.location;
-      if (!la || !lb) continue;
+
+      const latA = getLatLike(la);
+      const lonA = getLonLike(la);
+      const latB = getLatLike(lb);
+      const lonB = getLonLike(lb);
+
+      if (
+        !Number.isFinite(latA) ||
+        !Number.isFinite(lonA) ||
+        !Number.isFinite(latB) ||
+        !Number.isFinite(lonB)
+      ) {
+        continue;
+      }
 
       const w1 = buildWaypointFromAct(a);
       const w2 = buildWaypointFromAct(b);
@@ -145,8 +204,8 @@ export function useTripSegments({ day, uiActivities, mapRef }) {
           return {
             ok: false,
             coords: [
-              { latitude: la.lat, longitude: la.lon },
-              { latitude: lb.lat, longitude: lb.lon },
+              { latitude: latA, longitude: lonA },
+              { latitude: latB, longitude: lonB },
             ],
           };
         } catch (e) {
@@ -154,8 +213,8 @@ export function useTripSegments({ day, uiActivities, mapRef }) {
           return {
             ok: false,
             coords: [
-              { latitude: la.lat, longitude: la.lon },
-              { latitude: lb.lat, longitude: lb.lon },
+              { latitude: latA, longitude: lonA },
+              { latitude: latB, longitude: lonB },
             ],
           };
         }
@@ -194,14 +253,29 @@ export function useTripSegments({ day, uiActivities, mapRef }) {
       for (let i = 0; i < acts.length - 1; i++) {
         const a = acts[i];
         const b = acts[i + 1];
+
         const la = a?.place?.location;
         const lb = b?.place?.location;
-        if (!la || !lb) continue;
+
+        const latA = getLatLike(la);
+        const lonA = getLonLike(la);
+        const latB = getLatLike(lb);
+        const lonB = getLonLike(lb);
+
+        if (
+          !Number.isFinite(latA) ||
+          !Number.isFinite(lonA) ||
+          !Number.isFinite(latB) ||
+          !Number.isFinite(lonB)
+        ) {
+          continue;
+        }
+
         nextSegs.push({
           ok: false,
           coords: [
-            { latitude: la.lat, longitude: la.lon },
-            { latitude: lb.lat, longitude: lb.lon },
+            { latitude: latA, longitude: lonA },
+            { latitude: latB, longitude: lonB },
           ],
         });
       }

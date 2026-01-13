@@ -1,5 +1,5 @@
 // /trips/screens/TripPlansScreen.js
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
+  InteractionManager,
 } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -45,6 +46,36 @@ import {
   navigateToTurnByTurn,
 } from '../components/TripPlanHelpers';
 
+/* =========================================================
+   🔥 DEBUG / CRASH-TRACE FLAGS (sadece tespit için)
+   Test ederken true/false değiştir.
+   ========================================================= */
+const DEBUG_CRASH_MARKS = true;
+
+// 1) Gün değişiminde overlay kapatma + reset işlemlerini devre dışı bırakır
+// (Sadece setDayIndex çalışsın istiyorsan true yap.)
+const DEBUG_DISABLE_DAY_SWITCH_EFFECTS = false;
+
+// 2) Map tamamen render edilmesin (Polyline/Marker dahil) → Map kaynaklı crash mi anlarız
+const DEBUG_DISABLE_MAP_RENDER = false;
+
+// 3) Segment polyline’larını render etme (çok önemli izolasyon)
+const DEBUG_DISABLE_SEGMENT_POLYLINES = false;
+
+// 4) Route sheet render etme (TripRouteSheet)
+const DEBUG_DISABLE_ROUTE_SHEET = false;
+
+// 5) QuickCard render etme
+const DEBUG_DISABLE_QUICKCARD = false;
+
+/* ---- Crash marker helper ---- */
+const mark = (label, extra) => {
+  if (!DEBUG_CRASH_MARKS) return;
+  const t = Date.now();
+  console.log(`[CRASH-MARK] ${t} ${label}`, extra ?? '');
+  global.__LAST_CRASH_MARK__ = { t, label, extra };
+};
+
 /* ---- Marker Child Component (Memoized) ---- */
 const NumMarker = React.memo(function NumMarker({ bg, order }) {
   return (
@@ -56,6 +87,57 @@ const NumMarker = React.memo(function NumMarker({ bg, order }) {
     </View>
   );
 });
+
+/**
+ * ✅ MEM LOGGER (CUSTOM HOOK)
+ * Hook’lar component içinde / custom hook içinde çağrılmalı.
+ */
+function useMemLogger({
+  enabled,
+  dayIndex,
+  markersLen,
+  segmentsLen,
+  searchMarkersLen,
+  uiActsLen,
+  polylineLen,
+}) {
+  const __memTick = useRef(0);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const id = setInterval(() => {
+      __memTick.current += 1;
+      try {
+        // Hermes’te performance.memory her zaman gelmeyebilir
+        const mem = global?.performance?.memory;
+        console.log('[MEM]', __memTick.current, {
+          dayIndex,
+          jsHeapSizeLimit: mem?.jsHeapSizeLimit,
+          usedJSHeapSize: mem?.usedJSHeapSize,
+          totalJSHeapSize: mem?.totalJSHeapSize,
+          markers: markersLen,
+          segments: segmentsLen,
+          searchMarkers: searchMarkersLen,
+          uiActs: uiActsLen,
+          polyline: polylineLen,
+        });
+      } catch (e) {
+        console.log('[MEM]', __memTick.current, { dayIndex });
+      }
+    }, 1500);
+
+    return () => clearInterval(id);
+  }, [
+    enabled,
+    dayIndex,
+    markersLen,
+    segmentsLen,
+    searchMarkersLen,
+    uiActsLen,
+    polylineLen,
+  ]);
+}
 
 /**
  * Tek yerde tüm koordinatları normalize eden yardımcı fonksiyon.
@@ -115,7 +197,10 @@ function resolveCoords(markerLike) {
   }
 
   // 5) Düz lat / lng alanları
-  if (markerLike.lat != null && (markerLike.lng != null || markerLike.lon != null)) {
+  if (
+    markerLike.lat != null &&
+    (markerLike.lng != null || markerLike.lon != null)
+  ) {
     const lat = markerLike.lat;
     const lon = markerLike.lng ?? markerLike.lon;
     if (Number.isFinite(lat) && Number.isFinite(lon)) {
@@ -145,7 +230,6 @@ export default function TripPlansScreen({ route, navigation }) {
   // 1️⃣ TÜM MANTIK HOOK İÇİNDEN ÇAĞRILIYOR
   const logic = useTripPlansLogic({ tripId, navigation, route });
 
-  // Hook'tan dönen verileri parçalayalım
   const {
     loading,
     trip,
@@ -240,11 +324,93 @@ export default function TripPlansScreen({ route, navigation }) {
     DIRECTIONS_API_KEY,
   } = logic;
 
+  // ✅ MEM LOGGER artık doğru yerde (component içinde)
+  useMemLogger({
+    enabled: true,
+    dayIndex,
+    markersLen: mapMarkers?.length ?? 0,
+    segmentsLen: segments?.length ?? 0,
+    searchMarkersLen: searchMarkers?.length ?? 0,
+    uiActsLen: uiActivities?.length ?? 0,
+    polylineLen: routeData?.polylineCoords?.length ?? 0,
+  });
+
   // ✅ QuickCard açıksa sol paneli tamamen gizleyelim
   const panelVisible = isPanelOpen && !sheetMarker;
   const toggleLeft = panelVisible
     ? LEFT_OPEN_W - TOGGLE_SIZE / 2 + 8
     : -TOGGLE_SIZE / 2 + TOGGLE_PEEK;
+
+  /**
+   * ✅ DONMA ÖNLEME 1:
+   * Gün değiştirirken aynı anda çok fazla state tetiklenmesin diye küçük throttle.
+   */
+  const daySwitchGuardRef = useRef(0);
+  const changeDayTo = useCallback(
+    (i) => {
+      mark('DAY_CLICK_START', { targetDayIndex: i, current: dayIndex });
+
+      const now = Date.now();
+      if (now - daySwitchGuardRef.current < 350) {
+        mark('DAY_CLICK_THROTTLED');
+        return;
+      }
+      daySwitchGuardRef.current = now;
+
+      if (!plan?.days?.length) return;
+      if (i < 0 || i >= plan.days.length) return;
+      if (i === dayIndex) return;
+
+      // ✅ İzolasyon: Sadece setDayIndex çalışsın istiyorsan
+      if (!DEBUG_DISABLE_DAY_SWITCH_EFFECTS) {
+        mark('DAY_CLICK_BEFORE_RESET_OVERLAYS');
+
+        // Gün değiştirirken overlay’leri kapat
+        setSheetMarker(null);
+        setRouteSheetOpen(false);
+        setRouteData(null);
+        setRouteLegLabel('');
+        setLegWaypoints([]);
+        setSearchBarVisible(false);
+
+        mark('DAY_CLICK_AFTER_RESET_OVERLAYS');
+      } else {
+        mark('DAY_CLICK_RESET_SKIPPED');
+      }
+
+      // UI etkileşimi bitince setDayIndex
+      InteractionManager.runAfterInteractions(() => {
+        mark('DAY_CLICK_BEFORE_SET_DAYINDEX', { i });
+        setDayIndex(i);
+        mark('DAY_CLICK_AFTER_SET_DAYINDEX', { i });
+      });
+    },
+    [
+      plan?.days?.length,
+      dayIndex,
+      setDayIndex,
+      setSheetMarker,
+      setRouteSheetOpen,
+      setRouteData,
+      setRouteLegLabel,
+      setLegWaypoints,
+      setSearchBarVisible,
+    ]
+  );
+
+  /**
+   * ✅ DONMA ÖNLEME 2:
+   * SideTimeline’a verilen plan objesi memoized.
+   */
+  const timelinePlan = useMemo(() => {
+    if (!plan?.days?.length) return plan;
+
+    const days = plan.days.map((d, i) =>
+      i === dayIndex ? { ...d, activities: uiActivities } : d
+    );
+
+    return { ...plan, days };
+  }, [plan, dayIndex, uiActivities]);
 
   // Harita Uzun Basma → yeni durak eklemek için
   const handleMapLongPress = useCallback(
@@ -279,7 +445,6 @@ export default function TripPlansScreen({ route, navigation }) {
     (markerLike) => {
       if (!markerLike) return;
 
-      // 🔹 TÜM KOORDİNATLARI TEK YERDEN ÇEK
       const coords = resolveCoords(markerLike);
       if (!coords) {
         Alert.alert(
@@ -289,7 +454,6 @@ export default function TripPlansScreen({ route, navigation }) {
         return;
       }
 
-      // Hem photoUrls hem photos'tan normalize et
       const fromPhotoUrls =
         markerLike?.photoUrls && Array.isArray(markerLike.photoUrls)
           ? markerLike.photoUrls
@@ -306,7 +470,6 @@ export default function TripPlansScreen({ route, navigation }) {
           .filter(Boolean),
       ];
 
-      // 🔹 İSİM / BAŞLIK — mümkün olduğunca gerçek isim, en son çare "Seçilen konum"
       const mainName =
         markerLike?.name ||
         markerLike?.title ||
@@ -326,22 +489,18 @@ export default function TripPlansScreen({ route, navigation }) {
         photoUrls: mergedPhotoUrls,
       };
 
-      // QuickCard'ı kapat
       setSheetMarker(null);
 
-      // Polyline & rota preview eskiye göre kalmasın
       setRouteData(null);
       setRouteSheetOpen(false);
 
       if (editIndex != null) {
-        // 🟢 1) DÜZENLEME MODU: Var olan durağı değiştir
         mutatePlanDays((next) => {
           const d = next.days?.[dayIndex];
           if (!d) return;
           const arr = d.activities || [];
           if (editIndex < 0 || editIndex >= arr.length) return;
 
-          // Mevcut id'yi koru ki marker eşlemesi şaşmasın
           const existingId = arr[editIndex]?.id;
           const id = existingId || sel.key || `tmp:${Date.now()}`;
 
@@ -380,7 +539,6 @@ export default function TripPlansScreen({ route, navigation }) {
         setSearchMarkers([]);
         setIsPanelOpen(true);
 
-        // Haritayı yeni durağa doğru ortala
         if (mapRef.current) {
           try {
             mapRef.current.animateToRegion(
@@ -398,7 +556,6 @@ export default function TripPlansScreen({ route, navigation }) {
         return;
       }
 
-      // 🟢 2) SIDE TIMELINE'DAN "DURAK EKLE" SENARYOSU
       if (typeof insertIndex === 'number') {
         addResolvedAtIndex(insertIndex, sel);
         setPendingAdd(null);
@@ -426,12 +583,10 @@ export default function TripPlansScreen({ route, navigation }) {
         return;
       }
 
-      // 🟢 3) POI / HARİTA ÜZERİNDEN "DURAK EKLE" SENARYOSU
       setPendingAdd(sel);
       setInsertMode(true);
-      setIsPanelOpen(true); // SideTimeline açılsın
+      setIsPanelOpen(true);
       setSearchBarVisible(false);
-      // Bu modda search sonuçlarını temizlemiyoruz, sadece mod timeline'a geçti
     },
     [
       editIndex,
@@ -457,7 +612,6 @@ export default function TripPlansScreen({ route, navigation }) {
     ]
   );
 
-  // Arama Sonucuna Git
   const fitToSearchResults = useCallback(() => {
     if (!mapRef.current || !searchMarkers.length) return;
     const coords = searchMarkers.map((s) => s.coord);
@@ -467,9 +621,8 @@ export default function TripPlansScreen({ route, navigation }) {
         animated: true,
       });
     } catch {}
-  }, [searchMarkers]);
+  }, [searchMarkers, mapRef]);
 
-  // Helper: Aktivite Silme (SideTimeline için)
   const handleDeleteActivityAt = useCallback(
     (uiIdx) => {
       const uiIndex =
@@ -488,7 +641,6 @@ export default function TripPlansScreen({ route, navigation }) {
         rebuildPolyline(d);
       });
 
-      // rota preview temizle
       setRouteData(null);
       setRouteSheetOpen(false);
     },
@@ -504,7 +656,6 @@ export default function TripPlansScreen({ route, navigation }) {
     ]
   );
 
-  // Helper: Edit Başlatma
   const handleStartEditAt = useCallback(
     (uiIdx) => {
       const uiIndex =
@@ -527,7 +678,6 @@ export default function TripPlansScreen({ route, navigation }) {
     ]
   );
 
-  // QuickCard’a giden marker'ı normalize et (foto alanları için)
   const normalizedSheetMarker =
     sheetMarker && typeof sheetMarker === 'object'
       ? (() => {
@@ -636,7 +786,13 @@ export default function TripPlansScreen({ route, navigation }) {
       {/* Gün şeridi */}
       <View style={styles.daysBar} pointerEvents="auto">
         <View style={styles.dayArrows}>
-          <Pressable onPress={goPrevDay} style={styles.dayArrowBtn}>
+          <Pressable
+            onPress={() => {
+              mark('PREV_DAY_PRESS');
+              goPrevDay();
+            }}
+            style={styles.dayArrowBtn}
+          >
             <Ionicons name="caret-back" size={18} color={COLORS.fg} />
           </Pressable>
         </View>
@@ -644,10 +800,7 @@ export default function TripPlansScreen({ route, navigation }) {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingRight: 10,
-            alignItems: 'center',
-          }}
+          contentContainerStyle={{ paddingRight: 10, alignItems: 'center' }}
         >
           {(plan?.days || [])
             .filter(Boolean)
@@ -663,7 +816,7 @@ export default function TripPlansScreen({ route, navigation }) {
                   }}
                 >
                   <Pressable
-                    onPress={() => setDayIndex(i)}
+                    onPress={() => changeDayTo(i)}
                     style={[styles.dayChip, active && styles.dayChipActive]}
                   >
                     <Text
@@ -720,7 +873,13 @@ export default function TripPlansScreen({ route, navigation }) {
         </ScrollView>
 
         <View style={styles.dayArrows}>
-          <Pressable onPress={goNextDay} style={styles.dayArrowBtn}>
+          <Pressable
+            onPress={() => {
+              mark('NEXT_DAY_PRESS');
+              goNextDay();
+            }}
+            style={styles.dayArrowBtn}
+          >
             <Ionicons name="caret-forward" size={18} color={COLORS.fg} />
           </Pressable>
         </View>
@@ -751,7 +910,7 @@ export default function TripPlansScreen({ route, navigation }) {
               <TouchableOpacity
                 onPress={() => {
                   setInsertIndex(0);
-                  setInsertMode(false); // Bu case: side timeline'dan "Durak ekle"
+                  setInsertMode(false);
                   setIsPanelOpen(false);
                   setSearchBarVisible(true);
                 }}
@@ -771,12 +930,7 @@ export default function TripPlansScreen({ route, navigation }) {
 
           <SideTimeline
             isOpen={panelVisible}
-            plan={{
-              ...plan,
-              days: plan.days.map((d, i) =>
-                i === dayIndex ? { ...d, activities: uiActivities } : d
-              ),
-            }}
+            plan={timelinePlan}
             dayIndex={dayIndex}
             setDayIndex={setDayIndex}
             onSelect={onTimelineItemPress}
@@ -837,7 +991,6 @@ export default function TripPlansScreen({ route, navigation }) {
             }}
             onCancelInsertMode={onCancelInsertMode}
             onPickLeg={pickLeg}
-            // Anchor Leg İşlemleri
             startAnchor={
               anchorInfo.start
                 ? { label: anchorInfo.startLabel, location: anchorInfo.start }
@@ -891,12 +1044,7 @@ export default function TripPlansScreen({ route, navigation }) {
                 if (mapRef.current) {
                   try {
                     mapRef.current.fitToCoordinates(fitCoords, {
-                      edgePadding: {
-                        top: 80,
-                        right: 80,
-                        bottom: 280,
-                        left: 80,
-                      },
+                      edgePadding: { top: 80, right: 80, bottom: 280, left: 80 },
                       animated: true,
                     });
                   } catch {}
@@ -935,12 +1083,7 @@ export default function TripPlansScreen({ route, navigation }) {
                 if (mapRef.current) {
                   try {
                     mapRef.current.fitToCoordinates(fitCoords, {
-                      edgePadding: {
-                        top: 80,
-                        right: 80,
-                        bottom: 280,
-                        left: 80,
-                      },
+                      edgePadding: { top: 80, right: 80, bottom: 280, left: 80 },
                       animated: true,
                     });
                   } catch {}
@@ -953,8 +1096,7 @@ export default function TripPlansScreen({ route, navigation }) {
               const actLoc = act?.place?.location;
               if (lodge && actLoc) {
                 const lodgeName = 'Konaklama';
-                const actName =
-                  getActName(act, index) || `Durak ${index + 1}`;
+                const actName = getActName(act, index) || `Durak ${index + 1}`;
 
                 setRouteLegLabel(
                   side === 'before'
@@ -990,19 +1132,13 @@ export default function TripPlansScreen({ route, navigation }) {
                 if (mapRef.current) {
                   try {
                     mapRef.current.fitToCoordinates(fitCoords, {
-                      edgePadding: {
-                        top: 80,
-                        right: 80,
-                        bottom: 280,
-                        left: 80,
-                      },
+                      edgePadding: { top: 80, right: 80, bottom: 280, left: 80 },
                       animated: true,
                     });
                   } catch {}
                 }
               }
             }}
-            // Hook'tan gelen fonksiyon (şimdilik kalsın)
             onPickLegPair={logic.onPickLegPair}
           />
         </View>
@@ -1075,173 +1211,179 @@ export default function TripPlansScreen({ route, navigation }) {
             },
           ]}
         >
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            pointerEvents="auto"
-            showsPointsOfInterest={true}
-            onLongPress={handleMapLongPress}
-            onRegionChangeComplete={onMapRegionChanged}
-            initialRegion={{
-              latitude: 39.93,
-              longitude: 32.86,
-              latitudeDelta: 0.15,
-              longitudeDelta: 0.15,
-            }}
-          >
-            {/* Arama Sonuçları */}
-            {searchMarkers.map((sm) => (
-              <Marker
-                key={`srch-${sm.id}`}
-                coordinate={sm.coord}
-                title={sm.title}
-                pinColor="#111827"
-                onPress={() => onSelectSearchResult(sm)}
-              />
-            ))}
+          {DEBUG_DISABLE_MAP_RENDER ? (
+            <View
+              style={[
+                styles.map,
+                { alignItems: 'center', justifyContent: 'center' },
+              ]}
+            >
+              <Text style={{ color: COLORS.fg, opacity: 0.8 }}>
+                [DBG] Map render kapalı (DEBUG_DISABLE_MAP_RENDER)
+              </Text>
+            </View>
+          ) : (
+            <MapView
+              ref={mapRef}
+              style={styles.map}
+              pointerEvents="auto"
+              showsPointsOfInterest={true}
+              onLongPress={handleMapLongPress}
+              onRegionChangeComplete={onMapRegionChanged}
+              initialRegion={{
+                latitude: 39.93,
+                longitude: 32.86,
+                latitudeDelta: 0.15,
+                longitudeDelta: 0.15,
+              }}
+            >
+              {searchMarkers.map((sm) => (
+                <Marker
+                  key={`srch-${sm.id}`}
+                  coordinate={sm.coord}
+                  title={sm.title}
+                  pinColor="#111827"
+                  onPress={() => onSelectSearchResult(sm)}
+                />
+              ))}
 
-            {/* Rota Çizgileri */}
-            {routeData?.polylineCoords?.length ? (
-              <Polyline
-                coordinates={routeData.polylineCoords}
-                strokeWidth={6}
-                strokeColor="#60A5FA"
-                zIndex={2}
-              />
-            ) : routeSheetOpen ? null : segments.length ? (
-              segments.map((s, idx) => (
+              {routeData?.polylineCoords?.length ? (
                 <Polyline
-                  key={`seg-${idx}`}
-                  coordinates={s.coords}
-                  strokeWidth={5}
-                  strokeColor={s.ok ? undefined : '#888'}
-                  zIndex={0}
-                  onPress={() => {
-                    setRouteData({ polylineCoords: s.coords });
-                    setRouteSheetOpen(true);
-                  }}
-                  tappable
+                  coordinates={routeData.polylineCoords}
+                  strokeWidth={6}
+                  strokeColor="#60A5FA"
+                  zIndex={2}
                 />
-              ))
-            ) : null}
+              ) : routeSheetOpen ? null : !DEBUG_DISABLE_SEGMENT_POLYLINES &&
+                segments.length ? (
+                segments.map((s, idx) => (
+                  <Polyline
+                    key={`seg-${idx}`}
+                    coordinates={s.coords}
+                    strokeWidth={5}
+                    strokeColor={s.ok ? undefined : '#888'}
+                    zIndex={0}
+                    onPress={() => {
+                      setRouteData({ polylineCoords: s.coords });
+                      setRouteSheetOpen(true);
+                    }}
+                    tappable
+                  />
+                ))
+              ) : null}
 
-            {/* Aktivite Markerları */}
-            {mapMarkers.map((m) => (
-              <Marker
-                key={m.key}
-                ref={(ref) =>
-                  (logic.markerRefs.current[m.activityId] = ref)
-                }
-                coordinate={m.coordinate}
-                title={m.title}
-                anchor={{ x: 0.5, y: 1 }}
-                zIndex={10}
-                onPress={() => onMapMarkerPress(m.activityId)}
-              >
-                <NumMarker
-                  bg={
-                    m.activityId === selectedActId
-                      ? '#FF7A00'
-                      : m.baseColor
-                  }
-                  order={m.order}
-                />
-              </Marker>
-            ))}
-          </MapView>
+              {mapMarkers.map((m) => (
+                <Marker
+                  key={m.key}
+                  ref={(ref) => (logic.markerRefs.current[m.activityId] = ref)}
+                  coordinate={m.coordinate}
+                  title={m.title}
+                  anchor={{ x: 0.5, y: 1 }}
+                  zIndex={10}
+                  onPress={() => onMapMarkerPress(m.activityId)}
+                >
+                  <NumMarker
+                    bg={m.activityId === selectedActId ? '#FF7A00' : m.baseColor}
+                    order={m.order}
+                  />
+                </Marker>
+              ))}
+            </MapView>
+          )}
         </View>
       </View>
 
       {/* Quick Card */}
-      <View style={styles.quickLayer} pointerEvents="box-none">
-        <PlaceQuickCard
-          visible={!!normalizedSheetMarker}
-          marker={normalizedSheetMarker}
-          variant={sheetVariant}
-          metaLabel={sheetMeta}
-          onDismiss={() => setSheetMarker(null)}
-          onCtaPress={handleQuickCardCta}
-        />
-      </View>
+      {DEBUG_DISABLE_QUICKCARD ? null : (
+        <View style={styles.quickLayer} pointerEvents="box-none">
+          <PlaceQuickCard
+            visible={!!normalizedSheetMarker}
+            marker={normalizedSheetMarker}
+            variant={sheetVariant}
+            metaLabel={sheetMeta}
+            onDismiss={() => setSheetMarker(null)}
+            onCtaPress={handleQuickCardCta}
+          />
+        </View>
+      )}
 
       {/* Route Sheet */}
-      <TripRouteSheet
-        visible={routeSheetOpen}
-        waypoints={legWaypoints}
-        apiKey={DIRECTIONS_API_KEY}
-        preferredMode="driving"
-        previewData={routeData}
-        legLabel={routeLegLabel}
-        previewTitle={
-          legActs?.a && legActs?.b
-            ? `${getActName(legActs.a, legSel?.from ?? 0)} → ${getActName(
-                legActs.b,
-                legSel?.to ?? 0
-              )}`
-            : undefined
-        }
-        onRouteData={(rd) => {
-          if (rd) {
-            setRouteData(rd);
-          } else {
+      {DEBUG_DISABLE_ROUTE_SHEET ? null : (
+        <TripRouteSheet
+          visible={routeSheetOpen}
+          waypoints={legWaypoints}
+          apiKey={DIRECTIONS_API_KEY}
+          preferredMode="driving"
+          previewData={routeData}
+          legLabel={routeLegLabel}
+          previewTitle={
+            legActs?.a && legActs?.b
+              ? `${getActName(legActs.a, legSel?.from ?? 0)} → ${getActName(
+                  legActs.b,
+                  legSel?.to ?? 0
+                )}`
+              : undefined
+          }
+          onRouteData={(rd) => {
+            if (rd) setRouteData(rd);
+            else setRouteData(null);
+          }}
+          onClose={() => {
+            setRouteSheetOpen(false);
             setRouteData(null);
-          }
-        }}
-        onClose={() => {
-          setRouteSheetOpen(false);
-          setRouteData(null);
-          setRouteLegLabel('');
-          setIsPanelOpen(true);
-        }}
-        onStart={async ({ mode }) => {
-          const ok = await ensureLocationBeforeStart();
-          if (!ok) return;
-          setRouteSheetOpen(false);
+            setRouteLegLabel('');
+            setIsPanelOpen(true);
+          }}
+          onStart={async ({ mode }) => {
+            const ok = await ensureLocationBeforeStart();
+            if (!ok) return;
+            setRouteSheetOpen(false);
 
-          try {
-            const b = legActs?.b;
-            if (!b?.place?.location) return;
-
-            let curLoc = null;
             try {
-              curLoc = await Location.getCurrentPositionAsync({
-                accuracy: Location.Accuracy.Balanced,
+              const b = legActs?.b;
+              if (!b?.place?.location) return;
+
+              let curLoc = null;
+              try {
+                curLoc = await Location.getCurrentPositionAsync({
+                  accuracy: Location.Accuracy.Balanced,
+                });
+              } catch {}
+              if (!curLoc) {
+                Alert.alert('Hata', 'Konum alınamadı');
+                return;
+              }
+
+              const la = {
+                lat: curLoc.coords.latitude,
+                lng: curLoc.coords.longitude,
+              };
+              const lb = b.place.location;
+
+              const nameB = getActName(b, legSel?.to ?? 0);
+              const pidB = extractPossiblePlaceIdFromActivity(b);
+
+              navigateToTurnByTurn(navigation, {
+                entryPoint: 'turn-by-turn',
+                from: {
+                  latitude: la.lat,
+                  longitude: la.lng,
+                  name: 'Mevcut Konum',
+                },
+                to: {
+                  latitude: lb.lat,
+                  longitude: lb.lon || lb.lng,
+                  name: nameB,
+                  place_id: pidB,
+                },
+                mode: mode || 'driving',
               });
-            } catch {}
-            if (!curLoc) {
-              Alert.alert('Hata', 'Konum alınamadı');
-              return;
+            } catch (e) {
+              console.warn('Nav start err', e);
             }
-
-            const la = {
-              lat: curLoc.coords.latitude,
-              lng: curLoc.coords.longitude,
-            };
-            const lb = b.place.location;
-
-            const nameB = getActName(b, legSel?.to ?? 0);
-            const pidB = extractPossiblePlaceIdFromActivity(b);
-
-            navigateToTurnByTurn(navigation, {
-              entryPoint: 'turn-by-turn',
-              from: {
-                latitude: la.lat,
-                longitude: la.lng,
-                name: 'Mevcut Konum',
-              },
-              to: {
-                latitude: lb.lat,
-                longitude: lb.lon || lb.lng,
-                name: nameB,
-                place_id: pidB,
-              },
-              mode: mode || 'driving',
-            });
-          } catch (e) {
-            console.warn('Nav start err', e);
-          }
-        }}
-      />
+          }}
+        />
+      )}
 
       {/* İzin Modalı */}
       <PermissionPromptModal

@@ -34,6 +34,11 @@ import plansKVDriver from '../trips/localDrivers/plansKVDriver';
 
 enableScreens(false);
 
+console.log(
+  "[ENGINE]",
+  typeof global.HermesInternal === "object" ? "HERMES" : "JSC"
+);
+
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
 const TripsStack = createNativeStackNavigator();
@@ -63,6 +68,7 @@ function TripsNavigator() {
   }
 
 // Koyu tema
+
 const navTheme = {
   ...DefaultTheme,
   colors: {
