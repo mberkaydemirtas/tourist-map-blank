@@ -31,20 +31,15 @@ const ENV_OPT = (process.env?.EXPO_PUBLIC_OPTIMIZER_BASE || '').trim() || null;
 const FIRST_GUESS = ENV_OPT
   ? ENV_OPT
   : (IS_DEVICE
-      // Cihazdaysak önce reverse varmış gibi deneyelim
       ? 'http://127.0.0.1:8001'
-      // Emülatördeysek 10.0.2.2
       : `http://${EMU_LOCALHOST}:8001`
     );
 
-// Diğer adaylar (başarısız olursa sırayla denenecek)
+// Diğer adaylar
 const CANDIDATE_BASES = [
   FIRST_GUESS,
-  // Emülatör loopback
   `http://${EMU_LOCALHOST}:8001`,
-  // Cihaz loopback (reverse varsa çalışır)
   'http://127.0.0.1:8001',
-  // Metro host IP (kablosuz ADB’de çoğunlukla bu işe yarar)
   ...(METRO_HOST ? [`http://${METRO_HOST}:8001`] : []),
 ];
 
@@ -59,13 +54,6 @@ const DIRECTIONS_API_KEY =
   global?.GOOGLE_MAPS_API_KEY ||
   '';
 
-/* Küçük debug istersen açık bırakabilirsin
-console.log(
-  '[planService] DIRECTIONS_API_KEY present =',
-  DIRECTIONS_API_KEY ? 'yes' : 'no'
-);
-*/
-
 async function tryFetch(url, opts = {}, timeoutMs = 6000) {
   let timeoutId;
   const timer = new Promise((_, rej) => {
@@ -79,23 +67,19 @@ async function tryFetch(url, opts = {}, timeoutMs = 6000) {
   }
 }
 
-// Base’i “ulaşılabilir” saymak için herhangi bir HTTP yanıtı (200/404/405 vs.) yeterli;
-// ağ hatası, DNS, CORS/timeout gibi durumlarda başarısız kabul ediyoruz.
 async function isReachableBase(base) {
   const url = `${base.replace(/\/+$/,'')}/health`;
   try {
     const res = await tryFetch(url, { method: 'GET' }, 2000);
-    return !!res; // 200/404 farketmez; TCP kurulduysa ulaşılabilir
+    return !!res;
   } catch {
     return false;
   }
 }
 
-// İlk başarılı base’i bul ve cache’e yaz
 async function resolveOptimizerBase() {
   if (ACTIVE_OPTIMIZER_BASE) return ACTIVE_OPTIMIZER_BASE;
 
-  // uniq candidates
   const seen = new Set();
   const uniqCandidates = [];
   for (const b of CANDIDATE_BASES) {
@@ -115,7 +99,7 @@ async function resolveOptimizerBase() {
   }
 
   console.warn('[OPTIMIZER] ⚠️ no reachable base found (health failed for all).');
-  return null; // <= ÖNEMLİ: artık FIRST_GUESS’ı zorla seçmiyoruz
+  return null;
 }
 
 // Debug çıktısı
@@ -125,8 +109,8 @@ async function resolveOptimizerBase() {
   console.log('[OPTIMIZER] candidates =', CANDIDATE_BASES);
 })();
 
-// Toggle real directions (Google proxy on your Node server)
-const USE_REAL_DIRECTIONS_DEFAULT = true;
+// Toggle real directions
+const USE_REAL_DIRECTIONS_DEFAULT = false;
 
 // Global request timeout (ms)
 const REQ_TIMEOUT_MS = Math.max(
@@ -134,9 +118,6 @@ const REQ_TIMEOUT_MS = Math.max(
   Number(process.env?.EXPO_PUBLIC_API_TIMEOUT_MS || 15000)
 );
 
-/* ============================== fetch helpers ============================== */
-// RN/Android'de AbortController bazı ağ sürümlerinde "Network request failed" tetikleyebiliyor.
-// Optimizer çağrıları için "signal" KULLANMADAN manuel timeout uygula.
 async function fetchJsonNoSignal(url, opts = {}, timeoutMs = REQ_TIMEOUT_MS) {
   let timeoutId;
   try {
@@ -188,23 +169,17 @@ function fromMinutes(min) {
 }
 
 function ensureActivityIds(day) {
-  if (!day?.activities) return day;
+  if (!day || !Array.isArray(day.activities)) return day;
   day.activities = day.activities.map((a, i) => {
-    if (a.id) return a;
-    const base = a.place?.id || `${a.place?.location?.lat},${a.place?.location?.lon}` || 'x';
-    return { ...a, id: `${a.type || 'act'}:${day.date || 'd'}:${base}:${i}` };
+    if (a?.id) return a;
+    const base = a?.place?.id || `${a?.place?.location?.lat},${a?.place?.location?.lon}` || 'x';
+    return { ...a, id: `${a?.type || 'act'}:${day?.date || 'd'}:${base}:${i}` };
   });
   return day;
 }
 
 /**
- * 🔁 ESKİ HALİ:
- *  - API_BASE üzerinden Node server `/api/directions` çağırıyordu
- *  - Oradan polyline çekmeye çalışıyordu → hatalar & "fallback Aborted"
- *
- * ✅ YENİ HAL:
- *  - Doğrudan client-side RouteDirectionService üzerinden
- *    Google Directions API çağırıyoruz.
+ * Client-side directions (RouteDirectionService) ile polyline
  */
 async function fetchLegPolyline(from, to, mode = 'driving') {
   try {
@@ -220,15 +195,6 @@ async function fetchLegPolyline(from, to, mode = 'driving') {
       return [from, to];
     }
 
-    console.log(
-      '[planService] fetchLegPolyline via getRouteDirections mode=',
-      mode,
-      'from=',
-      waypoints[0],
-      'to=',
-      waypoints[1]
-    );
-
     const data = await getRouteDirections({
       waypoints,
       mode: mode || 'driving',
@@ -236,23 +202,19 @@ async function fetchLegPolyline(from, to, mode = 'driving') {
     });
 
     if (Array.isArray(data?.polylineCoords) && data.polylineCoords.length) {
-      // RouteDirectionService polylineCoords: [{latitude, longitude}, ...]
       return data.polylineCoords.map((c) => ({
         lat: c.latitude,
         lon: c.longitude,
       }));
     }
-
-    console.warn('[planService] fetchLegPolyline: no polylineCoords in response, using straight line fallback');
   } catch (e) {
     console.warn('[planService] directions fetch failed → fallback', e?.message || e);
   }
 
-  // Fallback: straight line
   return [from, to];
 }
 
-/* ---------- Bölgeleme yardımcıları (K-means + süre dengesi) ---------- */
+/* ---------- Bölgeleme yardımcıları ---------- */
 
 function toMetersProj(lat, lon, lat0) {
   const mPerDegLat = 111320;
@@ -262,7 +224,7 @@ function toMetersProj(lat, lon, lat0) {
 
 function kmeans(points, k, maxIter = 30) {
   if (k <= 1 || points.length <= k) {
-    return points.map((p, i) => ({ ...p, _k: Math.min(i, k - 1) })); 
+    return points.map((p, i) => ({ ...p, _k: Math.min(i, k - 1) }));
   }
   const centers = [];
   centers.push(points[Math.floor(Math.random() * points.length)]);
@@ -324,6 +286,7 @@ function assignPlacesToDays(selectedPlaces, days, lodgingsByDate, prefs) {
 
   const groups = new Map();
   for (const d of days) {
+    if (!d) continue;
     const center = lodgingsByDate[d.date]?.location || null;
     const key = centerKey(center);
     if (!groups.has(key)) groups.set(key, { center, days: [] });
@@ -343,15 +306,15 @@ function assignPlacesToDays(selectedPlaces, days, lodgingsByDate, prefs) {
   }
 
   for (const [key, grp] of entries) {
-    const groupDays = grp.days;
+    const groupDays = grp.days || [];
     if (!groupDays.length) continue;
 
     const POIS = attach.get(key) || [];
     if (!POIS.length) continue;
 
     const K = Math.max(1, groupDays.length);
-
     const lat0 = grp.center?.lat ?? POIS[0].location.lat;
+
     const pts = POIS.map(p => {
       const { x, y } = toMetersProj(p.location.lat, p.location.lon, lat0);
       return { x, y, ref: p, dur: minutesFor(p, prefs) };
@@ -361,7 +324,7 @@ function assignPlacesToDays(selectedPlaces, days, lodgingsByDate, prefs) {
 
     const buckets = Array.from({ length: K }, () => ({ items: [], sum: 0 }));
     for (const t of pts) {
-      const b = buckets[t._k];
+      const b = buckets[t._k] || buckets[0];
       b.items.push({ place: t.ref, dur: t.dur });
       b.sum += t.dur;
     }
@@ -371,9 +334,12 @@ function assignPlacesToDays(selectedPlaces, days, lodgingsByDate, prefs) {
     rebalanceByDuration(buckets, target);
 
     for (let i = 0; i < groupDays.length; i++) {
-      const b = buckets[i % buckets.length];
-      for (const it of b.items) {
-        groupDays[i].activities.push({
+      const day = groupDays[i];
+      if (!day) continue;
+      if (!Array.isArray(day.activities)) day.activities = [];
+      const b = buckets[i % buckets.length] || buckets[0];
+      for (const it of (b.items || [])) {
+        day.activities.push({
           id: it.place.id,
           type: 'visit',
           place: it.place,
@@ -401,15 +367,15 @@ function openingToWindow(place, dayStartMin, dayEndMin) {
 }
 
 async function callOptimizer(payload) {
-  const firstBase = await resolveOptimizerBase();
+  await resolveOptimizerBase();
   const bases = (ACTIVE_OPTIMIZER_BASE ? [ACTIVE_OPTIMIZER_BASE] : [])
     .concat(CANDIDATE_BASES.filter(b => b && b !== ACTIVE_OPTIMIZER_BASE));
 
   let lastErr;
   for (const base of bases) {
+    if (!base) continue;
     const url = `${base.replace(/\/+$/,'')}/optimize-day`;
     try {
-      console.log('[OPT] POST', url);
       const json = await fetchJsonNoSignal(url, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -425,7 +391,6 @@ async function callOptimizer(payload) {
   throw lastErr || new Error('optimizer_unreachable');
 }
 
-/** 🔸 Start/End günlerine özel saat override + hub/konaklama seçimleri */
 function dayBoundsFor(day, prefs, startEndSingle) {
   const isStartDay = !!(startEndSingle?.start?.date && startEndSingle.start.date === day.date);
   const isEndDay   = !!(startEndSingle?.end?.date   && startEndSingle.end.date   === day.date);
@@ -436,11 +401,6 @@ function dayBoundsFor(day, prefs, startEndSingle) {
   return { dayStartMin, dayEndMin };
 }
 
-/**
- * Başlangıç/Bitiş koordinatlarını **her durumda** doldurur.
- * Öncelik: (o güne özel hub) → (o günün konaklaması) → (ilk ziyaret / Ankara fallback)
- * Dönen isimler optimizer şemasıyla bire bir: { start, end }
- */
 function pickStartEndCoordsForDay(day, visits, lodgingsByDate, startEndSingle) {
   const lodge = lodgingsByDate[day.date];
   const isStartDay = !!(startEndSingle?.start?.date && startEndSingle.start.date === day.date);
@@ -456,7 +416,6 @@ function pickStartEndCoordsForDay(day, visits, lodgingsByDate, startEndSingle) {
 
   const firstVisitLoc = visits?.[0]?.place?.location || null;
   const fallback = firstVisitLoc || { lat: 39.9208, lon: 32.8541 }; // Ankara fallback
-
   const lodgeLoc = lodge?.location;
 
   const start = hubStart || lodgeLoc || fallback;
@@ -471,8 +430,8 @@ function buildOptimizerReqForDay(day, visits, prefs, lodgingsByDate, anchorData)
   const round5 = (v) => Math.round(Number(v) * 1e5) / 1e5;
   const { dayStartMin, dayEndMin } = dayBoundsFor(day, prefs, anchorData);
 
-  const filtered = visits.filter(v => {
-    const loc = v.place?.location;
+  const filtered = (visits || []).filter(v => {
+    const loc = v?.place?.location;
     if (!loc || !Number.isFinite(loc.lat) || !Number.isFinite(loc.lon)) return false;
     const lat = round5(loc.lat), lon = round5(loc.lon);
     const sameAsStart = start && round5(start.lat) === lat && round5(start.lon) === lon;
@@ -483,8 +442,8 @@ function buildOptimizerReqForDay(day, visits, prefs, lodgingsByDate, anchorData)
   return {
     day_start_time_min: dayStartMin,
     day_end_time_min:   dayEndMin,
-    start, // ← artık guaranteed
-    end,   // ← artık guaranteed
+    start,
+    end,
     mode: prefs.travelMode,
     stops: filtered.map((v, idx) => {
       const { open_min, close_min } = openingToWindow(v.place, dayStartMin, dayEndMin);
@@ -504,7 +463,7 @@ function reorderActivitiesByOptimizer(day, visits, optimizerRes) {
   const idOrder = optimizerRes?.order || [];
   if (!idOrder.length) return visits;
 
-  const byId = new Map(visits.map(v => {
+  const byId = new Map((visits || []).map(v => {
     const id = v.id || v.place?.id || `${v.place?.location?.lat},${v.place?.location?.lon}`;
     return [id, v];
   }));
@@ -528,23 +487,22 @@ export function timeStrToMinutes(str) {
   return (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
 }
 
-/* ============================== Public API ============================== */
-
-// Güvenli ISO: YYYY-MM-DD pattern yakala (bozuk tarihleri eler)
 function safeISO(d) {
   if (!d) return null;
   const m = String(d).match(/\d{4}-\d{2}-\d{2}/);
   return m ? m[0] : null;
 }
 
-// Plan objesinin tripId'yi içerdiğinden emin oluyoruz
+/* ============================== Public API ============================== */
+
 export async function generatePlan(trip, prefs, opts = {}) {
   const { useRealDirections = USE_REAL_DIRECTIONS_DEFAULT } = opts;
 
   const startISO = safeISO(trip?.dateRange?.start || trip?._startEndSingle?.start?.date);
   const endISO   = safeISO(trip?.dateRange?.end   || trip?._startEndSingle?.end?.date) || startISO;
+
   let daysISO = enumerateDates(startISO, endISO);
-  if (!daysISO.length && startISO) daysISO = [startISO]; // min 1 gün
+  if (!daysISO.length && startISO) daysISO = [startISO];
 
   const selectedPlaces = (trip?.selectedPlaces || trip?.places || []).map(p => ({
     id: p.id || p.placeId || `${p.lat},${p.lon}`,
@@ -581,21 +539,25 @@ export async function generatePlan(trip, prefs, opts = {}) {
     route: null,
   }));
 
+  // ✅ KRİTİK: days içinde undefined oluşmasını tamamen engelle
+  days = (Array.isArray(days) ? days : []).filter(Boolean).map(d => ({
+    ...d,
+    activities: Array.isArray(d.activities) ? d.activities : [],
+  }));
+
   assignPlacesToDays(selectedPlaces, days, lodgingsByDate, prefs);
 
   for (let d of days) {
-    if (!d.activities.length) continue;
+    if (!d || !Array.isArray(d.activities) || !d.activities.length) continue;
 
     const visits = d.activities.filter(a => a.type === 'visit');
-
     let orderedVisits = visits;
     let optimizerUsed = false;
 
     try {
       const payload = buildOptimizerReqForDay(d, visits, prefs, lodgingsByDate, trip?._startEndSingle);
-      // ⛳ stops boşsa optimizer’a göndermeyelim (aksi halde 422 alıyoruz)
+
       if (!payload?.stops?.length) {
-        // sadece start → end çizgisi (veya hiç polyline gerekmez)
         const { start, end } = payload;
         let poly = [];
         if (start && end) {
@@ -605,13 +567,13 @@ export async function generatePlan(trip, prefs, opts = {}) {
         ensureActivityIds(d);
         continue;
       }
-      const res = await callOptimizer(payload); // {order, total_minutes, ...}
+
+      const res = await callOptimizer(payload);
       orderedVisits = reorderActivitiesByOptimizer(d, visits, res);
       optimizerUsed = true;
-      console.log('[OPT] ✅ optimizer used for', d.date);
     } catch (e) {
       console.warn('[planService] optimizer unreachable, using NN fallback →', e?.message || e);
-      // NN fallback
+
       const isStartDay = (trip?._startEndSingle?.start?.date === d.date);
       const hubStart = isStartDay && trip?._startEndSingle?.start?.hub?.location
         ? { lat: trip._startEndSingle.start.hub.location.lat, lon: (trip._startEndSingle.start.hub.location.lon ?? trip._startEndSingle.start.hub.location.lng) }
@@ -620,18 +582,19 @@ export async function generatePlan(trip, prefs, opts = {}) {
       const startCenter =
         hubStart
           ? hubStart
-          : (lodgingsByDate[d.date]?.location || visits[0].place.location);
+          : (lodgingsByDate[d.date]?.location || visits?.[0]?.place?.location);
 
-      const pool = [...visits];
+      const pool = [...(visits || [])];
       orderedVisits = [];
       let cur = startCenter;
       while (pool.length) {
         let bi = 0, bd = Infinity;
         pool.forEach((a, i) => {
-          const dist = haversine(cur, a.place.location);
+          const dist = (cur && a?.place?.location) ? haversine(cur, a.place.location) : Infinity;
           if (dist < bd) { bd = dist; bi = i; }
         });
         const pick = pool.splice(bi, 1)[0];
+        if (!pick) break;
         orderedVisits.push(pick);
         cur = pick.place.location;
       }
@@ -639,7 +602,6 @@ export async function generatePlan(trip, prefs, opts = {}) {
 
     d.activities = orderedVisits.map(v => ({ ...v }));
 
-    // Günün zaman penceresi: start/end hub saat override'larını uygula
     const { dayStartMin, dayEndMin } = dayBoundsFor(d, prefs, trip?._startEndSingle);
     let curMin = dayStartMin;
     for (const a of d.activities) {
@@ -649,7 +611,6 @@ export async function generatePlan(trip, prefs, opts = {}) {
       a.end = fromMinutes(curMin);
     }
 
-    // Polyline: start/end hub veya lodging
     const { start, end } =
       pickStartEndCoordsForDay(d, d.activities, lodgingsByDate, trip?._startEndSingle);
 
@@ -675,6 +636,7 @@ export async function generatePlan(trip, prefs, opts = {}) {
       const leg = useRealDirections
         ? await fetchLegPolyline(prev, end, prefs.travelMode || 'driving')
         : [prev, end];
+
       if (poly.length && leg.length) {
         const last = poly[poly.length - 1];
         const head = leg[0];
@@ -688,29 +650,41 @@ export async function generatePlan(trip, prefs, opts = {}) {
     ensureActivityIds(d);
   }
 
-  // UI uyumluluğu: activities → items alias ekle
-  days = days.map(d => ({ ...d, items: d.activities }));
+  // ✅ UYUMLULUK: her day için items garanti
+  days = (Array.isArray(days) ? days : [])
+    .filter(Boolean)
+    .map(d => ({
+      ...d,
+      activities: Array.isArray(d.activities) ? d.activities : [],
+      items: Array.isArray(d.items) ? d.items : (Array.isArray(d.activities) ? d.activities : []),
+    }));
 
+  // ✅ KRİTİK: anchor hesaplaması asla planı çökertmesin
   for (let i = 0; i < days.length; i++) {
-    const anchor = getAnchorsForDayDetailed(trip, days[i]);
-    days[i].anchor = {
-      start: anchor.start,
-      end: anchor.end,
-      lodge: anchor.lodge,
-      startLabel: anchor.startLabel,
-      endLabel: anchor.endLabel,
-    };
+    const day = days[i];
+    if (!day) continue;
+    try {
+      const anchor = getAnchorsForDayDetailed(trip, day);
+      day.anchor = {
+        start: anchor?.start,
+        end: anchor?.end,
+        lodge: anchor?.lodge,
+        startLabel: anchor?.startLabel,
+        endLabel: anchor?.endLabel,
+      };
+    } catch (e) {
+      console.warn('[planService] anchor failed for day', day?.date, e?.message || e);
+      day.anchor = day.anchor || {};
+    }
   }
 
   const tripKey = trip?._id || trip?.id || String(Date.now());
   trip.id = tripKey;
-  if (!trip?.id) {
-    trip.id = String(Date.now()); // Eğer trip.id eksikse, tarih bazlı bir ID oluştur
-  }
+  if (!trip?.id) trip.id = String(Date.now());
 
   return {
     id: `plan:${trip.id}`,
-    tripId: trip.id,  // Burada trip.id'yi kullanıyoruz
+    tripId: trip.id,
     days,
     version: 2,
     updatedAt: Date.now(),
@@ -718,7 +692,7 @@ export async function generatePlan(trip, prefs, opts = {}) {
 }
 
 export async function reoptimizeDay(day, { mode = 'light' } = {}) {
-  const next = { ...day, activities: day.activities.map(a => ({ ...a })) };
+  const next = { ...day, activities: (day?.activities || []).map(a => ({ ...a })) };
   let curMin = toMinutes('09:30');
   for (const a of next.activities) {
     a.start = fromMinutes(curMin);

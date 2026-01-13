@@ -3,7 +3,7 @@ import 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import '../app/polyfills/normalize';
 import { enableScreens } from 'react-native-screens';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Platform, StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -39,6 +39,18 @@ console.log(
   typeof global.HermesInternal === "object" ? "HERMES" : "JSC"
 );
 
+/**
+ * ✅ FIX: Driver’ları useEffect içinde değil, modül yüklenirken kur.
+ * Böylece TripReview/TripPlans gibi ekranlar daha mount olur olmaz repo çağırsa bile driver hazır olur.
+ */
+try {
+  setTripsDriver(createAsyncStorageDriver());
+  setPlansDriver(plansKVDriver());
+  console.log('[REPO] drivers ready (sync init)');
+} catch (e) {
+  console.warn('[REPO] driver init failed', e);
+}
+
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
 const TripsStack = createNativeStackNavigator();
@@ -55,20 +67,18 @@ function HomeNavigator() {
 
 function TripsNavigator() {
   return (
-      <TripsStack.Navigator screenOptions={{ headerTitleAlign: 'center' }}>
-        <TripsStack.Screen name="TripsHome" component={TripsListScreen} options={{ title: 'Gezilerim' }} />
-        <TripsStack.Screen name="CreateTripWizard" component={CreateTripWizardScreen} options={{ title: 'Yeni Gezi' }} />
-        <TripsStack.Screen name="TripEditor" component={TripEditorScreen} options={{ title: 'Gezi Detayı' }} />
-        <TripsStack.Screen name="TripPlacesScreen" component={TripPlacesScreen} />
-        <TripsStack.Screen name="TripReview" component={TripReviewScreen} options={{ title: 'Review' }} />
-        {/* ⬇️ Burada sadece 'Planlar' başlığını değil, tüm header barını kapatıyoruz */}
-        <TripsStack.Screen name="TripPlans" component={TripPlansScreen} options={{ headerShown: false }} />
-      </TripsStack.Navigator>
-    );
-  }
+    <TripsStack.Navigator screenOptions={{ headerTitleAlign: 'center' }}>
+      <TripsStack.Screen name="TripsHome" component={TripsListScreen} options={{ title: 'Gezilerim' }} />
+      <TripsStack.Screen name="CreateTripWizard" component={CreateTripWizardScreen} options={{ title: 'Yeni Gezi' }} />
+      <TripsStack.Screen name="TripEditor" component={TripEditorScreen} options={{ title: 'Gezi Detayı' }} />
+      <TripsStack.Screen name="TripPlacesScreen" component={TripPlacesScreen} />
+      <TripsStack.Screen name="TripReview" component={TripReviewScreen} options={{ title: 'Review' }} />
+      <TripsStack.Screen name="TripPlans" component={TripPlansScreen} options={{ headerShown: false }} />
+    </TripsStack.Navigator>
+  );
+}
 
 // Koyu tema
-
 const navTheme = {
   ...DefaultTheme,
   colors: {
@@ -81,12 +91,6 @@ const navTheme = {
 };
 
 export default function App() {
-  useEffect(() => {
-    // Trip ve Plan sürücüleri (kalıcı)
-    setTripsDriver(createAsyncStorageDriver());
-    setPlansDriver(plansKVDriver());
-  }, []);
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>

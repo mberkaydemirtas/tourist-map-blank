@@ -31,15 +31,19 @@ if (loaded.error) {
    2) .env yüklendikten SONRA tüm router/modüller require edilecek
    ================================================== */
 
+// ✅ DB connect (dotenv sonrasında!)
+const connectDB = require('./config/db');
+
 // Routers (dotenv sonrasında!)
 const suggestRouter = require('./routes/suggest');
 const poiGoogleRoutes = require('./routes/poi_google');
 const poiRouter = require('./routes/poi');
 const poiMatchRouter = require('./routes/poiMatch');
 const directionsRouter = require('./routes/directions');
-
-// ✅ NEW: local cache router
 const poiCacheRouter = require('./routes/poi_cache');
+
+// ✅ NEW: trips router
+const tripsRouter = require('./routes/trips');
 
 /* ==================================================
    3) Express app
@@ -75,7 +79,8 @@ app.use((req, _res, next) => {
     req.path.startsWith('/api/directions') ||
     req.path.startsWith('/api/route') ||
     req.path.startsWith('/api/places/details') ||
-    req.path.startsWith('/api/poi/cache/')
+    req.path.startsWith('/api/poi/cache/') ||
+    req.path.startsWith('/api/trips') // ✅
   ) {
     const q = (req.query?.q || '').toString();
     const city = (req.query?.city || '').toString();
@@ -108,13 +113,15 @@ app.use('/api/directions', directionsRouter);
 app.use('/api/route', directionsRouter);
 
 // ✅✅ KRİTİK: Google proxy router’ı EN ÖNE AL
-// Böylece /api/poi/google/* ve /api/places/* endpointleri başka router’lar tarafından "kapılmıyor".
 app.use(poiGoogleRoutes);
 
-// ✅ NEW: cache endpoints (/api/poi/cache/...)
+// ✅ NEW: cache endpoints
 app.use(poiCacheRouter);
 
-// POI ana (bunlar /api/poi altında)
+// ✅ NEW: trips endpoints
+app.use('/api/trips', tripsRouter);
+
+// POI ana
 app.use('/api/poi', poiRouter);
 app.use('/api/poi', poiMatchRouter);
 app.use('/api/poi', suggestRouter);
@@ -149,9 +156,14 @@ app.use((err, _req, res) => {
    ================================================== */
 
 const PORT = process.env.PORT || 5000;
-// Default'u 0.0.0.0 yap: LAN’dan erişim daha stabil
 const HOST = process.env.HOST || '0.0.0.0';
 
-app.listen(PORT, HOST, () => {
-  console.log(`🚀 Sunucu ${HOST}:${PORT} üzerinde çalışıyor`);
-});
+(async () => {
+  // ✅ DB bağlan (URI yoksa zaten uyarı basıp devam edecek)
+  await connectDB();
+
+  app.listen(PORT, HOST, () => {
+    console.log(`🚀 Sunucu ${HOST}:${PORT} üzerinde çalışıyor`);
+    console.log(`✅ Trips endpoint: http://${HOST}:${PORT}/api/trips`);
+  });
+})();

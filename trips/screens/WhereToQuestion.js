@@ -40,16 +40,45 @@ function toAdminOptions(arr) {
   });
 }
 
-/** ✅ Place Details -> city center resolve */
-async function resolveCityCenterWithGoogle({ countryCode, cityName, place_id }) {
-  try {
-    if (!place_id) return getCityCenter(countryCode, cityName) || null;
+/**
+ * ✅ "Bu place_id gerçekten Google mı?" kontrolü
+ * Google place_id'ler çoğunlukla "ChI" ile başlar (ChIJ...)
+ * Bizde bazen "pid-" prefix'li geliyor → onu da kabul ediyoruz.
+ */
+function looksLikeGooglePlaceId(placeId) {
+  const raw = String(placeId || '').trim();
+  if (!raw) return false;
+  const cleaned = raw.startsWith('pid-') ? raw.slice(4) : raw;
+  return cleaned.startsWith('ChI');
+}
 
+/**
+ * ✅ City center resolve:
+ * - Eğer option zaten center veriyorsa onu kullan
+ * - Google place_id ise Place Details ile center çek
+ * - Değilse geoService fallback (db/atlas)
+ */
+async function resolveCityCenter({ countryCode, cityName, place_id, option }) {
+  try {
+    // 1) internal/atlas option center veriyorsa direkt onu kullan
+    const optCenter = option?.center;
+    if (optCenter && Number.isFinite(optCenter.lat) && Number.isFinite(optCenter.lng)) {
+      return { lat: optCenter.lat, lng: optCenter.lng };
+    }
+
+    // 2) Google place_id değilse Google’a gitme
+    if (!looksLikeGooglePlaceId(place_id)) {
+      return getCityCenter(countryCode, cityName) || null;
+    }
+
+    // 3) Google’dan geometry al
     const r = await getPlaceLatLng(place_id, 'en'); // geometry için dil fark etmez
     const loc = r?.location; // {lat,lng}
     if (loc && Number.isFinite(loc.lat) && Number.isFinite(loc.lng)) {
       return { lat: loc.lat, lng: loc.lng };
     }
+
+    // 4) fallback
     return getCityCenter(countryCode, cityName) || null;
   } catch {
     return getCityCenter(countryCode, cityName) || null;
@@ -116,6 +145,7 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
       setSingleCity(null);
     } else {
       setSingleAdminOptions([]);
+      // ⚠️ Bu liste atlas/internal olabilir (PL-0 gibi ids)
       const opts = getCitiesForCountry(singleCountryCode, '') || [];
       setSingleCityOptions(opts);
       setSingleCity(null);
@@ -130,12 +160,17 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
       setSingleCity(null);
       return;
     }
+
+    const center = getAdminCenter(singleCountryCode, singleAdmin) || null;
+
+    // ✅ TR admin seçimi Google place_id değildir → place_id=null
     const fakeCity = {
-      place_id: `${singleCountryCode}-st-${singleAdmin}`,
+      place_id: null,
       description: `${singleAdmin}, ${findLabel(singleCountryCode)}`,
       name: singleAdmin,
-      center: getAdminCenter(singleCountryCode, singleAdmin) || null,
+      center, // geoService’den geliyor
     };
+
     setSingleCity(fakeCity);
     setSingleCityOptions([]);
   }, [singleAdmin, isTR, singleCountryCode, findLabel]);
@@ -205,22 +240,28 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                 options={singleCityOptions}
                 placeholder="Şehir seçin"
                 onPick={async (opt) => {
-                  const name = opt.main_text || opt.description;
-                  const place_id = opt.place_id;
+                  const name =
+                    opt?.name ||
+                    opt?.main_text ||
+                    opt?.description ||
+                    String(opt || '');
 
-                  // ✅ asıl fix: center’ı Place Details ile doldur
-                  const center = await resolveCityCenterWithGoogle({
+                  const place_id = opt?.place_id || null;
+
+                  const center = await resolveCityCenter({
                     countryCode: singleCountryCode,
                     cityName: name,
                     place_id,
+                    option: opt,
                   });
 
                   const city = {
                     place_id,
-                    description: opt.description,
+                    description: opt?.description || name,
                     name,
-                    center, // ✅ doğru şehir merkezi
+                    center,
                   };
+
                   if (!mountedRef.current) return;
                   setSingleCity(city);
                 }}
@@ -284,12 +325,16 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                         setRows((prev) =>
                           prev.map((r) => {
                             if (r.id !== row.id) return r;
+
+                            const center = getAdminCenter(r.countryCode, label) || null;
+
                             const fakeCity = {
-                              place_id: `${r.countryCode}-st-${label}`,
+                              place_id: null,
                               description: `${label}, ${findLabel(r.countryCode)}`,
                               name: label,
-                              center: getAdminCenter(r.countryCode, label) || null,
+                              center,
                             };
+
                             return { ...r, admin: label, city: fakeCity, cityOptions: [] };
                           })
                         );
@@ -306,20 +351,26 @@ export default function WhereToQuestion({ initialMode = 'single', onChange }) {
                       options={row.cityOptions}
                       placeholder="Şehir seçin"
                       onPick={async (opt) => {
-                        const name = opt.main_text || opt.description;
-                        const place_id = opt.place_id;
+                        const name =
+                          opt?.name ||
+                          opt?.main_text ||
+                          opt?.description ||
+                          String(opt || '');
 
-                        const center = await resolveCityCenterWithGoogle({
+                        const place_id = opt?.place_id || null;
+
+                        const center = await resolveCityCenter({
                           countryCode: row.countryCode,
                           cityName: name,
                           place_id,
+                          option: opt,
                         });
 
                         const city = {
                           place_id,
-                          description: opt.description,
+                          description: opt?.description || name,
                           name,
-                          center, // ✅ doğru şehir merkezi
+                          center,
                         };
 
                         if (!mountedRef.current) return;
@@ -520,7 +571,7 @@ function CitySelect({ value, options, onPick, placeholder = 'Şehir seçin' }) {
             <View style={{ flex: 1 }}>
               <FlatList
                 data={options}
-                keyExtractor={(it, idx) => `city-${String(it?.place_id ?? idx)}`}
+                keyExtractor={(it, idx) => `city-${String(it?.place_id ?? it?.id ?? idx)}`}
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     style={styles.optionRow}
@@ -529,7 +580,9 @@ function CitySelect({ value, options, onPick, placeholder = 'Şehir seçin' }) {
                       requestAnimationFrame(() => setOpen(false));
                     }}
                   >
-                    <Text style={styles.optionText}>{item.description || item.main_text}</Text>
+                    <Text style={styles.optionText}>
+                      {item?.description || item?.name || item?.main_text || String(item)}
+                    </Text>
                   </TouchableOpacity>
                 )}
                 ItemSeparatorComponent={() => <View style={styles.separator} />}

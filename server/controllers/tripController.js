@@ -1,23 +1,41 @@
 // server/controllers/tripController.js
-const Trip = require('../models/Trip');
+const Trip = require('../models/Trip'); // ✅ doğru path (controllers -> models)
 
-// ================== Yardımcılar ==================
-function nowISO() { return new Date(); }
+// ================== Helpers ==================
+function nowDate() {
+  return new Date(); // ✅ Date olarak sakla
+}
+
+// client hem id hem _id gönderebilir → normalize
+function normalizeId(body = {}) {
+  const b = { ...(body || {}) };
+  if (!b._id && b.id) b._id = String(b.id);
+  delete b.id;
+  return b;
+}
+
+function parseSince(sinceRaw) {
+  if (!sinceRaw) return null;
+  const d = new Date(sinceRaw);
+  return Number.isFinite(d.getTime()) ? d : null;
+}
 
 // ================== CRUD ==================
 exports.createTrip = async (req, res) => {
   try {
-    const body = req.body || {};
+    const body0 = req.body || {};
     const userId = req.userId || null;
 
-    // _id client'tan gelmemişse Mongo kendi ObjectId oluşturur (uygun)
+    const body = normalizeId(body0);
+
     const doc = await Trip.create({
       ...body,
       userId,
       version: 1,
-      updatedAt: nowISO(),
+      updatedAt: nowDate(),
       deleted: !!body.deleted,
     });
+
     res.status(201).json(doc);
   } catch (e) {
     if (e.code === 11000) return res.status(409).json({ error: 'id_conflict' });
@@ -29,7 +47,7 @@ exports.createTrip = async (req, res) => {
 exports.getAllTrips = async (req, res) => {
   try {
     const userId = req.userId || null;
-    const since = req.query.since ? new Date(req.query.since) : null;
+    const since = parseSince(req.query.since);
 
     const q = userId ? { userId } : {};
     if (since) q.updatedAt = { $gt: since };
@@ -46,10 +64,13 @@ exports.getTripById = async (req, res) => {
   try {
     const userId = req.userId || null;
     const id = req.params.id;
+
     const q = { _id: id };
     if (userId) q.userId = userId;
+
     const row = await Trip.findOne(q).lean();
     if (!row) return res.status(404).json({ error: 'not_found' });
+
     res.json(row);
   } catch (e) {
     console.error('getTripById error:', e);
@@ -67,15 +88,24 @@ exports.updateTrip = async (req, res) => {
       return res.status(400).json({ error: 'missing_version' });
     }
 
-    const update = { ...req.body };
-    delete update.version; delete update.updatedAt; delete update.userId; delete update._id;
+    const body0 = req.body || {};
+    const body = normalizeId(body0);
+
+    const update = { ...body };
+    delete update.version;
+    delete update.updatedAt;
+    delete update.userId;
+    delete update._id; // path zaten id’den geliyor
 
     const q = { _id: id };
     if (userId) q.userId = userId;
 
     const result = await Trip.findOneAndUpdate(
       { ...q, version: expectedVersion },
-      { $set: { ...update, userId }, $inc: { version: 1 }, updatedAt: nowISO() },
+      {
+        $set: { ...update, userId, updatedAt: nowDate() },
+        $inc: { version: 1 },
+      },
       { new: true }
     );
 
@@ -91,14 +121,19 @@ exports.softDeleteTrip = async (req, res) => {
   try {
     const userId = req.userId || null;
     const id = req.params.id;
+
     const q = { _id: id };
     if (userId) q.userId = userId;
 
     const result = await Trip.findOneAndUpdate(
       { ...q, deleted: { $ne: true } },
-      { $set: { deleted: true, updatedAt: nowISO() }, $inc: { version: 1 } },
+      {
+        $set: { deleted: true, updatedAt: nowDate() },
+        $inc: { version: 1 },
+      },
       { new: true }
     );
+
     if (!result) return res.status(404).json({ error: 'not_found' });
     res.json(result);
   } catch (e) {
@@ -112,52 +147,78 @@ exports.syncTrips = async (req, res) => {
   try {
     const userId = req.userId || null;
     const { since, changes } = req.body || {};
+
     const applied = [];
     const conflicts = [];
 
-    // 1) İstemciden gelen değişiklikleri uygula
     for (const ch of (changes || [])) {
       try {
         if (ch.type === 'upsert') {
-          const expected = Number(ch.expectedVersion ?? 0);
-          const data = { ...ch.data, userId };
+          const expected = ch.expectedVersion == null ? null : Number(ch.expectedVersion);
+          const data0 = normalizeId(ch.data || {});
+          const data = { ...data0, userId };
+
+          if (!data._id) {
+            conflicts.push({ id: ch?.data?._id || ch?.data?.id, reason: 'missing_id' });
+            continue;
+          }
 
           const found = await Trip.findOne({ _id: data._id, ...(userId ? { userId } : {}) });
 
           if (!found) {
-            await Trip.create({ ...data, version: 1, updatedAt: nowISO() });
+            await Trip.create({ ...data, version: 1, updatedAt: nowDate() });
             applied.push({ id: data._id, op: 'insert' });
-          } else if (found.version === expected) {
-            const next = { ...data };
-            delete next.version; delete next.updatedAt; delete next.userId; delete next._id;
-
-            const upd = await Trip.findOneAndUpdate(
-              { _id: found._id, ...(userId ? { userId } : {}), version: expected },
-              { $set: next, $inc: { version: 1 }, updatedAt: nowISO() },
-              { new: true }
-            );
-            if (!upd) conflicts.push({ id: data._id, reason: 'version_conflict' });
-            else applied.push({ id: data._id, op: 'update' });
           } else {
-            conflicts.push({ id: data._id, reason: 'version_conflict' });
+            if (expected == null) {
+              conflicts.push({ id: data._id, reason: 'missing_expectedVersion' });
+              continue;
+            }
+
+            if (found.version === expected) {
+              const next = { ...data };
+              delete next.version;
+              delete next.updatedAt;
+              delete next.userId;
+              delete next._id;
+
+              const upd = await Trip.findOneAndUpdate(
+                { _id: found._id, ...(userId ? { userId } : {}), version: expected },
+                {
+                  $set: { ...next, updatedAt: nowDate() },
+                  $inc: { version: 1 },
+                },
+                { new: true }
+              );
+
+              if (!upd) conflicts.push({ id: data._id, reason: 'version_conflict' });
+              else applied.push({ id: data._id, op: 'update' });
+            } else {
+              conflicts.push({ id: data._id, reason: 'version_conflict' });
+            }
           }
         } else if (ch.type === 'delete') {
-          const id = ch.id;
+          const id = String(ch.id || '');
+
           const f = await Trip.findOneAndUpdate(
             { _id: id, ...(userId ? { userId } : {}), deleted: { $ne: true } },
-            { $set: { deleted: true, updatedAt: nowISO() }, $inc: { version: 1 } },
+            {
+              $set: { deleted: true, updatedAt: nowDate() },
+              $inc: { version: 1 },
+            },
             { new: true }
           );
+
           applied.push({ id, op: 'delete', existed: !!f });
         }
       } catch (e) {
-        conflicts.push({ id: ch?.data?._id || ch?.id, reason: 'server_error' });
+        conflicts.push({ id: ch?.data?._id || ch?.data?.id || ch?.id, reason: 'server_error' });
       }
     }
 
-    // 2) Sunucudan delta dön
+    const sinceDate = parseSince(since);
     const deltaQuery = { ...(userId ? { userId } : {}) };
-    if (since) deltaQuery.updatedAt = { $gt: new Date(since) };
+    if (sinceDate) deltaQuery.updatedAt = { $gt: sinceDate };
+
     const delta = await Trip.find(deltaQuery).lean();
 
     res.json({

@@ -45,6 +45,13 @@ const DEBOUNCE_MS = 250;
 
 const round5 = (x) => Math.round(Number(x) * 1e5) / 1e5;
 
+// ✅ RN-safe basit id üretici
+function generateTripId(prefix = 'trip') {
+  const a = Date.now().toString(10);
+  const b = Math.random().toString(36).slice(2, 10);
+  return `${prefix}_${a}_${b}`;
+}
+
 function toPlace(item, fallbackCity, fallbackCategory) {
   const lat = Number.isFinite(item.lat) ? item.lat : Number(item.coords?.lat);
   const lon = Number.isFinite(item.lon) ? item.lon : Number(item.coords?.lng ?? item.coords?.lon);
@@ -74,10 +81,6 @@ function Badge({ children, tone = 'blue' }) {
 // aynı place_id’yi tekrar tekrar local’e basmayalım
 const seenPersistIds = new Set();
 
-/**
- * searchUnified cevabı bazen Array, bazen {results: []} gelebilir.
- * Her durumda Array’e çevirir.
- */
 function normalizeListPayload(payload) {
   if (Array.isArray(payload)) return payload;
   if (payload && Array.isArray(payload.results)) return payload.results;
@@ -96,7 +99,7 @@ async function annotateMatches(items, cityName) {
 
     if (!payload.length) return items;
 
-    const res = await poiMatch({ items: payload }, cityName)
+    const res = await poiMatch({ items: payload }, cityName);
     const results = Array.isArray(res?.results) ? res.results : [];
 
     let idx = -1;
@@ -283,48 +286,50 @@ export default function TripListQuestion({
   const tripId = useMemo(() => resolveTripId(trip, tripIdProp), [trip, tripIdProp]);
   const countryCode = useMemo(() => resolveCountryCode(trip, countryCodeProp), [trip, countryCodeProp]);
 
-  /**
-   * ✅ Google sonuçlarını local poiHybrid shard’a sessizce bas (opsiyonel).
-   * NOT: Asıl “otomatik kaydetme” server tarafında zaten yapılacak.
-   * Bu sadece cihazda local DB’yi güçlendirmek için.
-   */
-  async function persistGoogleResultsSilently(list, { city, category, country }) {
-    try {
-      const jobs = [];
-      const cap = 10;
-      let pushed = 0;
+  // ✅ NEW: parent state gelmeden de “id” kaybolmasın diye lokal bir id tut
+  const localTripIdRef = useRef(null);
 
-      for (const it of (list || [])) {
-        if (pushed >= cap) break;
-        if (!(it?.source === 'google')) continue;
+  const getEffectiveTripId = () => {
+    // 1) prop/memo’dan gelen
+    if (tripId) return String(tripId);
+    // 2) lokal ref
+    if (localTripIdRef.current) return String(localTripIdRef.current);
+    // 3) son çare üret
+    const gen = generateTripId('trip');
+    localTripIdRef.current = gen;
+    return gen;
+  };
 
-        const pid = it?.place_id;
-        if (!pid || seenPersistIds.has(pid)) continue;
+  // ✅ TripId yoksa, ilk render’da üret (tek sefer) + localTripIdRef’e yaz
+  const ensuredTripIdRef = useRef(false);
+  useEffect(() => {
+    if (tripId) {
+      // parent güncellediyse, lokal ref’i de senkron tut
+      localTripIdRef.current = String(tripId);
+      return;
+    }
+    if (ensuredTripIdRef.current) return;
+    ensuredTripIdRef.current = true;
 
-        const lat = Number.isFinite(it?.lat) ? it.lat : Number(it?.coords?.lat);
-        const lon = Number.isFinite(it?.lon) ? it.lon : Number(it?.coords?.lng ?? it?.coords?.lon);
-        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+    const newId = getEffectiveTripId();
 
-        jobs.push(
-          addUserPoi({
-            country: (country || 'TR'),
-            city,
-            category: it?.category || category || 'sights',
-            name: it?.name || '—',
-            lat,
-            lon,
-            address: it?.address || '',
-            place_id: pid,
-          }).catch(() => {})
-        );
+    const nextTrip = {
+      ...(trip || {}),
+      id: newId,
+      tripId: newId,
+    };
 
-        seenPersistIds.add(pid);
-        pushed++;
-      }
+    if (__DEV__) {
+      console.log('[TripListQuestion] ensureTripId → created local id', {
+        newId,
+        beforeKeys: Object.keys(trip || {}),
+        after: { id: nextTrip.id, tripId: nextTrip.tripId },
+      });
+    }
 
-      if (jobs.length) await Promise.allSettled(jobs);
-    } catch {}
-  }
+    setTrip?.(nextTrip);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tripId, setTrip]);
 
   // ✅ selectedPlaces persist (debounced)
   const persistTimerRef = useRef(null);
@@ -332,20 +337,10 @@ export default function TripListQuestion({
   const persistInFlightRef = useRef(false);
 
   const schedulePersistSelectedPlaces = (tripIdValue, nextSelectedPlaces) => {
-    if (!tripIdValue) {
-      if (__DEV__) console.warn('[TripListQuestion] persist SKIP: tripId missing', {
-        tripKeys: Object.keys(trip || {}),
-        trip: trip || null,
-      });
-      persistLatestRef.current = {
-        tripId: null,
-        selectedPlaces: Array.isArray(nextSelectedPlaces) ? nextSelectedPlaces : [],
-      };
-      return;
-    }
+    const safeTripId = tripIdValue || getEffectiveTripId();
 
     persistLatestRef.current = {
-      tripId: tripIdValue,
+      tripId: safeTripId,
       selectedPlaces: Array.isArray(nextSelectedPlaces) ? nextSelectedPlaces : [],
     };
 
@@ -368,13 +363,15 @@ export default function TripListQuestion({
     }, 400);
   };
 
+  // ✅ tripId geldiğinde (ya da lokal id hazırken) pending varsa bas
   useEffect(() => {
-    if (!tripId) return;
+    const effectiveId = getEffectiveTripId();
     const pending = persistLatestRef.current?.selectedPlaces;
     const candidate = (Array.isArray(pending) && pending.length) ? pending : (trip?.selectedPlaces || []);
     if (Array.isArray(candidate) && candidate.length) {
-      schedulePersistSelectedPlaces(tripId, candidate);
+      schedulePersistSelectedPlaces(effectiveId, candidate);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripId]); // intentionally only tripId
 
   useEffect(() => {
@@ -402,11 +399,6 @@ export default function TripListQuestion({
     let mounted = true;
     (async () => {
       try {
-        if (__DEV__) {
-          if (!countryCodeProp && !trip?.countryCode) {
-            console.warn('[TripListQuestion] countryCode missing → fallback used', { resolved: countryCode, cityName });
-          }
-        }
         await prewarmPoiShard(countryCode);
         const counts = await getCategoryCounts({ country: countryCode, city: cityName });
         if (!mounted) return;
@@ -471,7 +463,6 @@ export default function TripListQuestion({
       const lng = centerOk ? Number(cityCenter?.lng) : undefined;
 
       try {
-        // ✅ normalize: array OR {results:[]}
         const acPayload = await searchUnified(qTrim, {
           city: cityName,
           category: activeCat,
@@ -510,21 +501,6 @@ export default function TripListQuestion({
 
         if (!mounted || myReqId !== reqIdRef.current) return;
         setItems(finalList);
-
-        if (__DEV__) {
-          console.log('[TripListQuestion] AC items =', finalList?.length || 0, {
-            activeCat, cityName, centerOk, lat, lng, q: qTrim, tripId,
-          });
-        }
-
-        // ✅ opsiyonel local shard persist
-        if (finalList.length) {
-          persistGoogleResultsSilently(finalList, {
-            city: cityName,
-            category: activeCat,
-            country: countryCode,
-          }).catch(() => {});
-        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -534,7 +510,7 @@ export default function TripListQuestion({
       mounted = false;
       if (debRef.current) clearTimeout(debRef.current);
     };
-  }, [query, activeCat, cityName, cityCenter?.lat, cityCenter?.lng, countryCode, tripId]);
+  }, [query, activeCat, cityName, cityCenter?.lat, cityCenter?.lng]);
 
   const handleSubmit = async () => {
     const qTrim = (query || '').trim();
@@ -586,17 +562,6 @@ export default function TripListQuestion({
 
       if (myReqId !== reqIdRef.current) return;
       setItems(finalList);
-
-      if (__DEV__) console.log('[TripListQuestion] SUBMIT items =', finalList?.length || 0, { q: qTrim, tripId });
-
-      // ✅ opsiyonel local shard persist
-      if (finalList.length) {
-        persistGoogleResultsSilently(finalList, {
-          city: cityName,
-          category: activeCat,
-          country: countryCode,
-        }).catch(() => {});
-      }
     } finally {
       setLoading(false);
     }
@@ -610,6 +575,7 @@ export default function TripListQuestion({
     );
   }
 
+  // ✅ KRİTİK: toggleSelection içinde “effectiveTripId” kullan
   function toggleSelection(item) {
     const cityKey = item.city || cityName;
     const exists = selected.find((x) =>
@@ -647,10 +613,20 @@ export default function TripListQuestion({
       }
     }
 
-    const nextTrip = { ...(trip || {}), selectedPlaces: next };
+    const ensuredId = getEffectiveTripId();
+    localTripIdRef.current = ensuredId;
+
+    const nextTrip = {
+      ...(trip || {}),
+      id: (trip?.id || trip?.tripId || ensuredId),
+      tripId: (trip?.tripId || trip?.id || ensuredId),
+      selectedPlaces: next,
+    };
+
     setTrip?.(nextTrip);
 
-    schedulePersistSelectedPlaces(tripId, next);
+    // ✅ artık “SKIP” yok: her zaman effective id ile persist
+    schedulePersistSelectedPlaces(ensuredId, next);
   }
 
   function openPreview(item) {
@@ -679,6 +655,8 @@ export default function TripListQuestion({
       catLabel: labelForCat(it?.category || activeCat || 'sights'),
     };
   }, [previewItem, cityCenter, cityName, activeCat, selected]);
+
+  const effectiveTripId = tripId || localTripIdRef.current || null;
 
   return (
     <View style={styles.root}>
@@ -715,7 +693,7 @@ export default function TripListQuestion({
       </View>
 
       <Text style={{color:'#9AA0A6', fontSize:12, marginTop:6, marginLeft:2}}>
-        {`Listelenen: ${items?.length || 0}  ·  tripId: ${tripId || '(missing)'}  ·  country: ${countryCode}`}
+        {`Listelenen: ${items?.length || 0}  ·  tripId: ${effectiveTripId || '(missing)'}  ·  country: ${countryCode}`}
       </Text>
 
       <View style={[styles.sheetDark, { maxHeight: placesMaxHeight }]}>
@@ -834,7 +812,10 @@ export default function TripListQuestion({
 
       <View style={{ height: 12 }} />
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Seçilenler {cityName ? `(${cityName})` : ''}</Text>
+        <Text style={styles.sectionTitle}>
+  Seçilenler {cityName ? `(${cityName})` : ''}
+</Text>
+
         <Text style={styles.sectionCount}>{selectedCityItems.length}</Text>
       </View>
 

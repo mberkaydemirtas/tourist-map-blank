@@ -1,37 +1,42 @@
 // server/routes/trips.js
 const express = require('express');
 const router = express.Router();
-const {
-  createTrip,
-  getAllTrips,
-  getTripById,
-  updateTrip,
-  softDeleteTrip,
-  syncTrips,
-} = require('../controllers/tripController');
+const mongoose = require('mongoose');
 
-// Geçici kimlik (auth gelene kadar). İstersen zorunlu yapmayabilirsin.
-function requireDevice(req, res, next) {
-  const dev = req.header('x-device-id');
-  if (!dev) {
-    // İzinli: device yoksa anonim kullanıcı gibi davran
-    req.userId = null;
-    return next();
-  }
-  req.userId = `device:${dev}`;
+const tripController = require('../controllers/tripController');
+
+// x-device-id → req.userId = device:<id>
+function deviceUser(req, _res, next) {
+  const d = (req.header('x-device-id') || '').trim();
+  if (d) req.userId = `device:${d}`;
   next();
 }
 
-router.use(requireDevice);
+// DB yoksa 503
+function requireDb(req, res, next) {
+  const ok = mongoose.connection?.readyState === 1; // 1 = connected
+  if (!ok) return res.status(503).json({ error: 'db_unavailable' });
+  next();
+}
 
-// CRUD
-router.post('/', createTrip);               // POST /api/trips
-router.get('/', getAllTrips);               // GET  /api/trips?since=ISO
-router.get('/:id', getTripById);            // GET  /api/trips/:id
-router.put('/:id', updateTrip);             // PUT  /api/trips/:id + If-Match-Version
-router.delete('/:id', softDeleteTrip);      // DELETE /api/trips/:id (soft)
+router.use(deviceUser);
 
-// Delta Sync
-router.post('/sync', syncTrips);            // POST /api/trips/sync
+// ✅ sync (MUST be before "/:id")
+router.post('/sync', requireDb, tripController.syncTrips);
+
+// list
+router.get('/', requireDb, tripController.getAllTrips);
+
+// create
+router.post('/', requireDb, tripController.createTrip);
+
+// get by id
+router.get('/:id', requireDb, tripController.getTripById);
+
+// update (patch)
+router.patch('/:id', requireDb, tripController.updateTrip);
+
+// soft delete
+router.delete('/:id', requireDb, tripController.softDeleteTrip);
 
 module.exports = router;

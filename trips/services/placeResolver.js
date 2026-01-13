@@ -54,7 +54,24 @@ const trFold = (s = '') => {
 };
 
 const normName = (s = '') => trFold(removeSuffixes(stripBrackets(s)));
-const keyForClient = (name, coords) => `${trFold(String(name || ''))}@${round5(coords.lat)},${round5(coords.lng)}`;
+
+/**
+ * ✅ Tek “key” standardı:
+ * - Name’i trFold ile normalize et
+ * - coords’ı round5 ile sabitle
+ *
+ * Bunu payload’a da koyuyoruz ki server farklı normalize etse bile
+ * bize geri dönen result’ları doğru item’a bağlayabilelim.
+ */
+const keyForClient = (name, coords) =>
+  `${trFold(String(name || ''))}@${round5(coords.lat)},${round5(coords.lng)}`;
+
+/**
+ * Bazı durumlarda isim normalize edilince daha iyi eşleşiyor.
+ * (DB tarafında name normalize edilerek tutuluyorsa)
+ */
+const keyForClientNormName = (name, coords) =>
+  `${normName(String(name || ''))}@${round5(coords.lat)},${round5(coords.lng)}`;
 
 /* -------------------------- trigram similarity ------------------------- */
 const ngrams = (s, n = 3) => {
@@ -179,36 +196,79 @@ export async function resolveSingle({ item, city = '', country = 'TR' }) {
 export async function resolvePlacesBatch({ items, city = '', country = 'TR' }) {
   const normalized = (items || []).map(normalizeRaw);
 
-  // 1) Check DB first
+  // 1) ✅ Check DB first (poi_match)
   const need = normalized.filter((x) => !x.place_id && x.coords && x.name);
   if (need.length) {
     try {
-      const payloadItems = need.map((x) => ({
-        osm_id: x.osm_id,
-        name: x.name,
-        lat: round5(x._seed_coords?.lat ?? x.coords.lat),
-        lon: round5(x._seed_coords?.lng ?? x.coords.lng),
-        city: city || x.city || 'Ankara',
-      }));
+      /**
+       * ✅ payload’a “key” ekliyoruz:
+       * server response’unda aynı key gelirse direkt mapleyebiliriz.
+       * gelmezse bile biz client’ta türettiğimiz key’lerle fallback map kuracağız.
+       */
+      const payloadItems = need.map((x) => {
+        const lat = round5(x._seed_coords?.lat ?? x.coords.lat);
+        const lon = round5(x._seed_coords?.lng ?? x.coords.lng);
+
+        const effectiveCity = String(city || x.city || 'Ankara');
+
+        const clientKey = keyForClient(x.name, { lat, lng: lon });
+        const clientKeyNorm = keyForClientNormName(x.name, { lat, lng: lon });
+
+        return {
+          key: clientKey,            // ✅ primary key
+          key_norm: clientKeyNorm,   // ✅ secondary key
+          osm_id: x.osm_id,
+          name: x.name,
+          lat,
+          lon,
+          city: effectiveCity,
+        };
+      });
 
       const json = await poiMatch({ items: payloadItems }, city);
 
-      const byKey = new Map(
-        (json?.results || []).map((m) => {
-          const lat5 = round5(m.lat ?? m?.coords?.lat);
-          const lon5 = round5(m.lon ?? m?.coords?.lon ?? m?.coords?.lng);
-          const key = m.key || keyForClient(m.name || '', { lat: lat5, lng: lon5 });
-          return [key, m];
-        })
-      );
+      /**
+       * ✅ response map:
+       * - m.key varsa onu kullan
+       * - yoksa client gibi key üret
+       * - ayrıca osm_id üzerinden de map tut
+       */
+      const byKey = new Map();
+      const byOsm = new Map();
+
+      const results = Array.isArray(json?.results) ? json.results : [];
+      for (const m of results) {
+        const lat5 = round5(m.lat ?? m?.coords?.lat);
+        const lon5 = round5(m.lon ?? m?.coords?.lon ?? m?.coords?.lng);
+
+        const nameForKey = m.name || '';
+        const k1 = m.key || keyForClient(nameForKey, { lat: lat5, lng: lon5 });
+        const k2 = keyForClientNormName(nameForKey, { lat: lat5, lng: lon5 });
+
+        if (k1) byKey.set(k1, m);
+        if (k2) byKey.set(k2, m);
+
+        const osmId = m.osm_id ?? m.id ?? null;
+        if (osmId) byOsm.set(String(osmId), m);
+      }
 
       for (const x of normalized) {
         if (x.place_id || !x.coords) continue;
-        const key = keyForClient(
-          x.name,
-          { lat: x._seed_coords?.lat ?? x.coords.lat, lng: x._seed_coords?.lng ?? x.coords.lng }
-        );
-        const m = byKey.get(key);
+
+        const lat = round5(x._seed_coords?.lat ?? x.coords.lat);
+        const lon = round5(x._seed_coords?.lng ?? x.coords.lng);
+
+        const k1 = keyForClient(x.name, { lat, lng: lon });
+        const k2 = keyForClientNormName(x.name, { lat, lng: lon });
+
+        // ✅ önce key ile dene
+        let m = byKey.get(k1) || byKey.get(k2);
+
+        // ✅ key yoksa osm_id ile dene
+        if (!m && x.osm_id != null) {
+          m = byOsm.get(String(x.osm_id));
+        }
+
         if (m?.matched && m.place_id) {
           x.place_id = m.place_id;
           x.resolved = true;

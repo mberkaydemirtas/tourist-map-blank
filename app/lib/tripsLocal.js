@@ -10,11 +10,11 @@ import {
 } from '../../trips/shared/tripsRepo';
 
 // === Sync metaverileri (yalnızca senkron için kullanılır) ===
-// TRIPS_V1: asıl veri (src/shared/localDrivers/asyncStorageDriver.js içinde)
-// Aşağıdakiler lokal sync metaverileri:
 const LAST = 'trip:lastSyncAt';
 const SYNC_VMAP_KEY = 'TRIPS_SYNC_VERSION_MAP_V1'; // { [id]: lastSyncedVersion }
 const DELETES_KEY   = 'TRIPS_SYNC_DELETES_V1';     // string[] (silinmiş id'ler, henüz servera gönderilmedi)
+
+const STORAGE_KEY = 'TRIPS_V1'; // asyncStorageDriver ile aynı
 
 async function readJson(key, def) {
   try { const raw = await AsyncStorage.getItem(key); return raw ? JSON.parse(raw) : def; }
@@ -22,9 +22,23 @@ async function readJson(key, def) {
 }
 async function writeJson(key, val) { await AsyncStorage.setItem(key, JSON.stringify(val)); }
 
+// ✅ number timestamp (driver ile uyumlu)
+function nowTS() {
+  return Date.now();
+}
+
+// server’dan gelen updatedAt (Date/ISO/number) → number
+function toTs(x) {
+  if (x == null) return null;
+  if (typeof x === 'number' && Number.isFinite(x)) return x;
+  const s = String(x);
+  const t = Date.parse(s);
+  return Number.isFinite(t) ? t : null;
+}
+
 // === Eski API: Listele / Oku / Oluştur / Kaydet / Patch / Sil / Kopyala ===
 export async function listTripsLocal() {
-  return listTrips(); // { id, title, version, updatedAt, ... }
+  return listTrips();
 }
 
 export async function getTripLocal(id) {
@@ -33,19 +47,15 @@ export async function getTripLocal(id) {
 
 export async function createTripLocal(seed = {}) {
   const t = await createTrip(seed);
-  // oluşturulan her kaydı "dirty" kabul edelim → versiyon haritası henüz yok
-  // bir şey yapmasak da getDirtyChanges bunu fark eder (undefined !== version).
   return t;
 }
 
 export async function saveTripLocal(trip) {
   if (!trip?.id) throw new Error('[tripsLocal] saveTripLocal: trip.id missing');
-  // Tam obje yolluyorsan patch olarak geçer; sürücü version'ı arttırır.
   const updated = await updateTrip(trip.id, { ...trip });
   return updated;
 }
 
-// Küçük, güvenli patch helper: ID + patch → birleştir
 export async function patchTripLocal(id, patch = {}) {
   const cur = await getTrip(id);
   if (!cur) throw new Error('[tripsLocal] patchTripLocal: trip not found');
@@ -54,10 +64,13 @@ export async function patchTripLocal(id, patch = {}) {
 }
 
 export async function markDeleteLocal(id) {
-  // Silmeyi kuyruğa da yaz (senkron için)
   await deleteTrip(id);
+
   const dels = await readJson(DELETES_KEY, []);
-  if (!dels.includes(id)) { dels.push(id); await writeJson(DELETES_KEY, dels); }
+  if (!dels.includes(id)) {
+    dels.push(id);
+    await writeJson(DELETES_KEY, dels);
+  }
 }
 
 export async function duplicateTripLocal(id) {
@@ -65,22 +78,19 @@ export async function duplicateTripLocal(id) {
 }
 
 // === Sync yardımcıları ===
-// Değişiklik listesi: version haritasına göre farkları çıkar.
 export async function getDirtyChanges() {
   const trips = await listTrips();
-  const vmap = await readJson(SYNC_VMAP_KEY, {}); // { [id]: number }
+  const vmap = await readJson(SYNC_VMAP_KEY, {});
   const dels = await readJson(DELETES_KEY, []);
 
   const out = [];
 
-  // Silinenler → delete
   for (const id of dels) out.push({ type: 'delete', id });
 
-  // Var olan kayıtlar → upsert (version değişmişse)
   for (const t of trips) {
-    // soft-delete edilmişler listTrips tarafından zaten filtreleniyor
     const lastV = vmap[t.id];
-    if (lastV === t.version) continue; // değişmemiş
+    if (lastV === t.version) continue;
+
     out.push({
       type: 'upsert',
       expectedVersion: lastV ?? null,
@@ -92,14 +102,16 @@ export async function getDirtyChanges() {
 }
 
 function stripLocal(obj) {
-  // Şimdilik doğrudan nesneyi döndürüyoruz; özel yerel alan yok.
-  const copy = { ...obj };
-  return copy;
+  return { ...obj };
 }
 
-// Sunucu sıraları uygula: TRIPS_V1 içine yazar + versiyon haritasını günceller + silme kuyruğunu temizler.
+/**
+ * ✅ Sunucudan gelen rows’u TRIPS_V1’e uygula
+ * - asyncStorageDriver ile uyumlu olacak şekilde updatedAt/createdAt NUMBER tutar
+ * - _id → id map eder
+ * - deleted → deletedAt map eder
+ */
 export async function applyServerRows(rows) {
-  const STORAGE_KEY = 'TRIPS_V1';
   const itemsRaw = await AsyncStorage.getItem(STORAGE_KEY);
   const items = itemsRaw ? (JSON.parse(itemsRaw) || []) : [];
   const byId = new Map(items.map(x => [x.id, x]));
@@ -107,18 +119,28 @@ export async function applyServerRows(rows) {
   const vmap = await readJson(SYNC_VMAP_KEY, {});
   const dels = new Set(await readJson(DELETES_KEY, []));
 
-  for (const r of (rows || [])) {
-    const id = r.id || r._id;
+  for (const r0 of (rows || [])) {
+    const id = String(r0?.id || r0?._id || '');
     if (!id) continue;
-    // Server tarafı bir silme göndermişse, soft-delete olarak işaretleyelim
+
+    // server objesi bazen mongoose lean ile _id/id ikisini de dönebilir
+    const r = { ...r0, id };
+
+    const prev = byId.get(id) || {};
+    const serverUpdated = toTs(r.updatedAt) ?? nowTS();
+    const serverCreated = toTs(r.createdAt) ?? (prev.createdAt ?? serverUpdated);
+
+    // --- deleted handling ---
     if (r.deleted || r.deletedAt) {
-      const prev = byId.get(id) || {};
+      const delAt = toTs(r.deletedAt) ?? serverUpdated ?? nowTS();
       const delRow = {
         ...prev,
+        ...r,
         id,
-        deletedAt: r.deletedAt || nowISO(),
-        updatedAt: r.updatedAt || nowISO(),
-        version: r.version ?? ((prev.version || 1) + 1),
+        deletedAt: delAt,
+        updatedAt: serverUpdated,
+        createdAt: serverCreated,
+        version: typeof r.version === 'number' ? r.version : ((prev.version || 1) + 1),
       };
       byId.set(id, delRow);
       vmap[id] = delRow.version;
@@ -126,8 +148,21 @@ export async function applyServerRows(rows) {
       continue;
     }
 
-    // Upsert
-    const next = { ...byId.get(id), ...r, id, updatedAt: r.updatedAt || nowISO() };
+    // --- upsert ---
+    const next = {
+      ...prev,
+      ...r,
+      id,
+      updatedAt: serverUpdated,
+      createdAt: serverCreated,
+    };
+
+    // server deleted=false geldiyse ama lokalde deletedAt varsa temizleyelim (geri açma senaryosu)
+    if (next.deletedAt && !r.deleted) {
+      // istemiyorsan bunu kaldırabiliriz; şu an “server truth” varsayımıyla temizliyorum
+      next.deletedAt = undefined;
+    }
+
     byId.set(id, next);
     if (typeof r.version === 'number') vmap[id] = r.version;
   }
@@ -135,16 +170,12 @@ export async function applyServerRows(rows) {
   const merged = Array.from(byId.values());
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
   await writeJson(SYNC_VMAP_KEY, vmap);
-  await writeJson(DELETES_KEY, Array.from(dels)); // uygulanan silmeler kuyruğundan düşer
+  await writeJson(DELETES_KEY, Array.from(dels));
 }
 
 export async function getLastSync() {
   return (await AsyncStorage.getItem(LAST)) || null;
 }
 export async function setLastSync(ts) {
-  await AsyncStorage.setItem(LAST, ts);
-}
-
-function nowISO() {
-  return new Date().toISOString();
+  await AsyncStorage.setItem(LAST, String(ts || ''));
 }

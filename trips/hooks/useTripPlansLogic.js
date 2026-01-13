@@ -79,22 +79,11 @@ function normalizeResolvedCoords(resolved) {
 
 /**
  * ✅ Trip.selectedPlaces / Trip.places → resolvedLike dönüşümü
- * Beklenen selectedPlace şekli (TripListQuestion):
- * {
- *   id, name, address,
- *   coords: { lat, lng }  (veya { latitude, longitude }),
- *   category, place_id, city
- * }
  */
 function selectedPlaceToResolvedLike(sp) {
-  // sp şu şekillerde gelebiliyor:
-  // 1) sp.coords: { lat,lng } / { lat,lon } / { latitude,longitude }
-  // 2) sp: { lat, lon } (coords yok)
-  // 3) sp.location: { lat,lng } gibi
   const c = sp?.coords || sp?.location || sp?.place?.location || null;
 
-  const lat =
-    c?.latitude ?? c?.lat ?? sp?.lat ?? sp?.latitude ?? null;
+  const lat = c?.latitude ?? c?.lat ?? sp?.lat ?? sp?.latitude ?? null;
 
   const lng =
     c?.longitude ??
@@ -121,10 +110,8 @@ function selectedPlaceToResolvedLike(sp) {
   };
 }
 
-
 export function useTripPlansLogic({ tripId, navigation, route }) {
   /* ------------ STATE ------------ */
-
   const [isPanelOpen, setIsPanelOpen] = useState(true);
 
   const mapRef = useRef(null);
@@ -139,7 +126,6 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
   const [datePickValue, setDatePickValue] = useState(new Date());
 
   /* ------------ Sabit tercih profili ------------ */
-
   const prefs = useMemo(
     () => ({
       dayStart: '09:30',
@@ -163,12 +149,10 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
   );
 
   /* ------------ Trip & Plan core hook ------------ */
-
   const { loading, trip, setTrip, plan, setPlan, dayIndex, setDayIndex, day } =
     useTripAndPlan({ tripId, navigation, route, prefs });
 
   /* ------------ Anchors + UI Activities (Hook) ------------ */
-
   const { anchorInfo, uiActivities, uiToReal, guardAnchorAction } =
     useTripAnchors({
       trip,
@@ -178,7 +162,6 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
     });
 
   /* ------------ Segment & fit hook ------------ */
-
   const { segments, fitMapToDay } = useTripSegments({
     day,
     uiActivities,
@@ -196,7 +179,6 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
   }, [fitMapToDay]);
 
   /* ------------ Route Sheet hook ------------ */
-
   const {
     routeData,
     setRouteData,
@@ -220,12 +202,10 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
   });
 
   /* ------------ Konum İzni / GPS Guard hook ------------ */
-
   const { permissionPrompt, setPermissionPrompt, ensureLocationBeforeStart } =
     useTripLocationGuard();
 
   /* ------------ Plan / gün mutate helperları ------------ */
-
   const resequenceAllDays = useCallback(
     (baseIndex) => {
       setPlan((prev) => {
@@ -463,9 +443,7 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
   );
 
   /**
-   * ✅ EN KRİTİK PARÇA (FIXLİ):
-   * Wizard "places" olarak kaydediyor, bazı eski akışlar "selectedPlaces" kullanıyor.
-   * Bu yüzden ikisini de destekliyoruz.
+   * ✅ Wizard "places" / "selectedPlaces" hydration
    */
   const hydratedSelectedPlacesRef = useRef(false);
   useEffect(() => {
@@ -479,7 +457,6 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
       [];
 
     if (!rawSelected.length) {
-      // debug için:
       console.log('[TripPlans] hydrate: no places found on trip', {
         tripId: trip?.id ?? trip?._id,
         hasSelectedPlaces: Array.isArray(trip?.selectedPlaces),
@@ -490,11 +467,9 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
       return;
     }
 
-    // Gün zaten doluysa dokunma
     const d0 = plan.days[0];
     if ((d0?.activities || []).length > 0) return;
 
-    // Şehir filtresi (varsa)
     const tripCity =
       trip?.cityName ||
       (Array.isArray(trip?.cities) && trip.cities.length ? trip.cities[0] : '') ||
@@ -558,9 +533,6 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
       retimeDay(d);
       rebuildPolyline(d);
     });
-
-    // İstersen otomatik olarak gün 0’a geç:
-    // setDayIndex(0);
   }, [trip, plan, mutatePlanDays, retimeDay, rebuildPolyline]);
 
   /* ------------ Route sheet reset (gün değişince) ------------ */
@@ -594,7 +566,6 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
   ]);
 
   /* ------------ Harita odak ------------ */
-
   const focusCorridorAround = useCallback(
     (realIdx) => {
       if (!mapRef.current || !day?.activities?.length) return;
@@ -621,7 +592,6 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
   );
 
   /* ------------ useTripSearch hook (arama + insert/edit) ------------ */
-
   const {
     searchBarVisible,
     setSearchBarVisible,
@@ -664,9 +634,9 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
   });
 
   /* ------------ Marker listesi ------------ */
-
   const mapMarkers = useMemo(() => {
     let visitNo = 0;
+
     return uiActivities
       .map((a, idx) => {
         const loc = a?.place?.location;
@@ -700,6 +670,7 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
         }
 
         return {
+          uiIndex: idx, // ✅ KRİTİK FIX: marker press -> timeline selection için
           activity: a,
           activityId: a.id,
           key: `${a.id}-${idx}`,
@@ -716,7 +687,6 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
   }, [uiActivities]);
 
   /* ------------ UI HANDLERS: Timeline & Marker selection ------------ */
-
   const onTimelineItemPress = useCallback(
     (payload) => {
       if (!payload) return;
@@ -750,7 +720,9 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
             : [];
 
         const photos = [...rawPhotos, ...fromPhotoUrlsBase.map((u) => ({ url: u }))];
-        const photoUrls = photos.map((p) => p.url || p.uri || p.src || p.photoUrl).filter(Boolean);
+        const photoUrls = photos
+          .map((p) => p.url || p.uri || p.src || p.photoUrl)
+          .filter(Boolean);
 
         return { photos, photoUrls };
       };
@@ -933,7 +905,6 @@ export function useTripPlansLogic({ tripId, navigation, route }) {
   );
 
   /* ------------ RETURN ------------ */
-
   return {
     loading,
     trip,

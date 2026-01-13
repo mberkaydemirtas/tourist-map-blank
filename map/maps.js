@@ -32,6 +32,21 @@ function bearingDeg(a, b) {
   return ((θ * 180) / Math.PI + 360) % 360;
 }
 
+// ✅ place_id guard / cleanup
+function sanitizeGooglePlaceId(input) {
+  const raw = String(input || '').trim();
+  if (!raw) return null;
+
+  // TripListQuestion gibi yerlerde pid- prefix'i olabiliyor
+  const cleaned = raw.startsWith('pid-') ? raw.slice(4) : raw;
+
+  // Google place_id'ler çoğunlukla "ChI" ile başlar.
+  // TR-st-xxx gibi internal id'ler burada elenir.
+  if (!cleaned.startsWith('ChI')) return null;
+
+  return cleaned;
+}
+
 export function decodePolyline(encoded) {
   try {
     if (!encoded) return [];
@@ -77,13 +92,6 @@ export const resetAutocompleteSession = () => { _acSessionToken = null; };
 
 /**
  * Rota-bias'lı autocomplete (genel amaçlı)
- * @param {string} input
- * @param {object} opts
- *  - bounds: { sw:{lat,lng}, ne:{lat,lng} } // rota dikdörtgeni (tercih)
- *  - lat,lng, radius                        // tek nokta bias
- *  - types                                  // örn. 'establishment'
- *  - country, language                      // default 'tr'
- *  - sessiontoken, strict                   // strictbounds denetimi
  */
 export async function autocomplete(input, opts = {}) {
   const {
@@ -169,7 +177,6 @@ export async function autocomplete(input, opts = {}) {
 
 /**
  * ŞEHİR autocomplete (ülkeye kısıtlı, dünya geneli)
- * @param {{input:string, country?:string, language?:string, sessiontoken?:string}} args
  */
 export async function autocompleteCities({ input, country, language = 'tr', sessiontoken } = {}) {
   const q = String(input || '').trim();
@@ -205,8 +212,14 @@ export async function autocompleteCities({ input, country, language = 'tr', sess
 
 /* ------------------------------ Place Details ----------------------------- */
 export async function getPlaceDetails(placeId) {
+  const pid = sanitizeGooglePlaceId(placeId) || placeId; // details bazen non-ChI olabilir ama çoğunluk ChI
+  if (!pid) {
+    console.warn('🟥 getPlaceDetails: missing/invalid placeId');
+    return null;
+  }
+
   const params = new URLSearchParams({
-    place_id: placeId,
+    place_id: pid,
     fields: [
       'name','formatted_address','geometry','photos','website','formatted_phone_number',
       'rating','price_level','opening_hours','reviews','types','url'
@@ -258,14 +271,24 @@ export async function getPlaceDetails(placeId) {
 
 /**
  * Sade şehir/yer koordinatı: ad + address + geometry/location
+ * ✅ INVALID_REQUEST fix: Google place_id değilse çağırma
  */
 export async function getPlaceLatLng(place_id, language = 'tr') {
+  const pid = sanitizeGooglePlaceId(place_id);
+
+  // ✅ Google place_id değilse, artık Google'a istek atmayacağız
+  if (!pid) {
+    console.warn('❌ getPlaceLatLng: invalid place_id (skipped)', { place_id });
+    return null;
+  }
+
   const params = new URLSearchParams({
-    place_id,
+    place_id: pid,
     key: KEY,
     language,
     fields: 'name,formatted_address,geometry/location',
   });
+
   try {
     const res = await fetch(`${BASE}/place/details/json?${params.toString()}`);
     const json = await res.json();
@@ -307,12 +330,6 @@ export async function getAddressFromCoords(lat, lng) {
 }
 
 /* ------------------------ Nearby (route-corridor aware) ------------------- */
-/**
- * Yeni imza:
- *   getNearbyPlaces({ location:{lat,lng}, radius=650, type, query/keyword, openNow=false })
- * Geri uyum:
- *   getNearbyPlaces(center, keyword)
- */
 export async function getNearbyPlaces(arg1, maybeKeyword) {
   // ---- Yeni imza
   if (arg1 && typeof arg1 === 'object' && 'location' in arg1) {
@@ -385,7 +402,7 @@ export async function getNearbyPlaces(arg1, maybeKeyword) {
 }
 
 /**
- * Hub arayıcı (dünya geneli): type = airport | train_station | bus_station | car_rental | parking
+ * Hub arayıcı (dünya geneli)
  */
 export async function nearbyHubs({ lat, lng, type, radius }) {
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || !type) return [];
@@ -451,12 +468,11 @@ function buildDirectionsUrl(originIn, destinationIn, mode = 'driving', extra = {
     language: 'tr',
   });
 
-  // küçük tercih ayarları
   const avoidSet = new Set();
   if (mode === 'walking') {
     avoidSet.add('highways');
   } else if (mode === 'driving') {
-    params.append('departure_time', 'now'); // canlı trafik
+    params.append('departure_time', 'now');
     avoidSet.add('ferries');
     if (extra.avoidTolls) avoidSet.add('tolls');
     if (extra.trafficModel) params.append('traffic_model', String(extra.trafficModel));
@@ -465,7 +481,6 @@ function buildDirectionsUrl(originIn, destinationIn, mode = 'driving', extra = {
   }
   if (avoidSet.size) params.append('avoid', Array.from(avoidSet).join('|'));
 
-  // --- WAYPOINT SERİALİZASYON ---
   const serializeWaypoints = (raw, { optimize = false } = {}) => {
     const list = Array.isArray(raw) ? raw : [];
     const tokens = [];
@@ -473,7 +488,6 @@ function buildDirectionsUrl(originIn, destinationIn, mode = 'driving', extra = {
     for (const w of list) {
       if (!w) continue;
 
-      // 1) String türü → aynen al, optimize:false ise via: ile başlat
       if (typeof w === 'string') {
         let tok = w.trim();
         if (!tok) continue;
@@ -482,7 +496,6 @@ function buildDirectionsUrl(originIn, destinationIn, mode = 'driving', extra = {
         continue;
       }
 
-      // 2) Array [lat,lng]
       if (Array.isArray(w) && w.length >= 2 && Number.isFinite(w[0]) && Number.isFinite(w[1])) {
         let tok = `${w[0]},${w[1]}`;
         if (!optimize) tok = `via:${tok}`;
@@ -490,7 +503,6 @@ function buildDirectionsUrl(originIn, destinationIn, mode = 'driving', extra = {
         continue;
       }
 
-      // 3) Object
       const placeId = w.place_id || w.placeId || w.id || null;
       const loc     = w.location || w.coords || w.coordinate || w;
       const lt      = loc?.lat ?? loc?.latitude;
@@ -512,21 +524,18 @@ function buildDirectionsUrl(originIn, destinationIn, mode = 'driving', extra = {
 
     if (!tokens.length) return null;
 
-    // optimize:true → via: kullanmayız, "optimize:true|" prefix’i ekleriz
     if (optimize) {
       return `optimize:true|${tokens.map(t => t.replace(/^via:/i, '')).join('|')}`;
     }
     return tokens.join('|');
   };
 
-  // waypoints kaynakları: waypoints, viaWaypoints, waypointsLL (ilk dolu olan kullanılır)
   let wpParam = null;
 
   if (Array.isArray(extra.waypoints) && extra.waypoints.length) {
     wpParam = serializeWaypoints(extra.waypoints, { optimize: !!extra.optimize });
   }
   if (!wpParam && Array.isArray(extra.viaWaypoints) && extra.viaWaypoints.length) {
-    // viaWaypoints her hâlükârda "via:" olarak gider (optimize=no)
     wpParam = serializeWaypoints(extra.viaWaypoints, { optimize: false });
   }
   if (!wpParam && Array.isArray(extra.waypointsLL) && extra.waypointsLL.length) {
@@ -538,9 +547,6 @@ function buildDirectionsUrl(originIn, destinationIn, mode = 'driving', extra = {
   return `${BASE}/directions/json?${params.toString()}`;
 }
 
-/**
- * Google Directions – her zaman LİSTE döndürür.
- */
 export async function getRoute(origin, destination, mode = 'driving', opts = {}) {
   try {
     const hasWps =
@@ -548,10 +554,7 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
       (Array.isArray(opts.viaWaypoints) && opts.viaWaypoints.length > 0) ||
       (Array.isArray(opts.waypointsLL)  && opts.waypointsLL.length  > 0);
 
-    // Transit modunda waypoints desteklenmez → otomatik driving'e düş
     const effectiveMode = (mode === 'transit' && hasWps) ? 'driving' : mode;
-
-    // alternatives: waypoint varsa default false, yoksa true
     const alternatives = (opts.alternatives != null) ? opts.alternatives : !hasWps;
 
     const url = buildDirectionsUrl(origin, destination, effectiveMode, {
@@ -651,7 +654,6 @@ export async function getRoute(origin, destination, mode = 'driving', opts = {})
 }
 
 /* ---------------------------- Mapbox turn-by-turn ------------------------- */
-/** Step’leri Mapbox’tan çekmek için (geometri gerekli olduğunda) */
 export const getTurnByTurnSteps = async (from, to) => {
   const f = pickLL(from);
   const t = pickLL(to);

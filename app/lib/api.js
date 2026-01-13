@@ -1,6 +1,7 @@
 // app/lib/api.js
 import { Platform, NativeModules } from "react-native";
 import Constants from "expo-constants";
+import 'react-native-get-random-values';
 
 /**
  * ENV:
@@ -19,6 +20,69 @@ const ANDROID_EMULATOR_BASE = "http://10.0.2.2:5000";
 const IOS_SIMULATOR_BASE = "http://localhost:5000";
 // ADB reverse (adb reverse tcp:5000 tcp:5000) kullanıyorsan
 const REVERSE_BASE = "http://127.0.0.1:5000";
+
+// =========================
+// ✅ Device ID (persisted)
+// =========================
+const DEVICE_ID_STORAGE_KEY = "@touristmap_device_id_v1";
+
+// AsyncStorage dinamik import (paket yoksa app patlamasın)
+async function getAsyncStorage() {
+  try {
+    const mod = await import("@react-native-async-storage/async-storage");
+    return mod?.default || mod;
+  } catch {
+    return null;
+  }
+}
+
+function genDeviceId() {
+  // crypto varsa UUID
+  try {
+    if (typeof globalThis.crypto?.randomUUID === "function") {
+      return `dev_${globalThis.crypto.randomUUID()}`;
+    }
+  } catch {}
+
+  const rnd = Math.random().toString(36).slice(2, 10);
+  const ts = Date.now().toString(36);
+  return `dev_${ts}_${rnd}`;
+}
+
+let _cachedDeviceId = null;
+let _deviceIdPromise = null;
+
+export async function getDeviceId() {
+  if (_cachedDeviceId) return _cachedDeviceId;
+  if (_deviceIdPromise) return _deviceIdPromise;
+
+  _deviceIdPromise = (async () => {
+    const AS = await getAsyncStorage();
+    if (!AS) {
+      // AsyncStorage yoksa, en azından runtime id üret (persist yok)
+      const tmp = genDeviceId();
+      _cachedDeviceId = tmp;
+      return tmp;
+    }
+
+    try {
+      const existing = await AS.getItem(DEVICE_ID_STORAGE_KEY);
+      if (existing && String(existing).trim().length > 4) {
+        _cachedDeviceId = String(existing);
+        return _cachedDeviceId;
+      }
+    } catch {}
+
+    const created = genDeviceId();
+    try {
+      await AS.setItem(DEVICE_ID_STORAGE_KEY, created);
+    } catch {}
+    _cachedDeviceId = created;
+    return created;
+  })();
+
+  return _deviceIdPromise;
+}
 
 // Metro host’u scriptURL’den çek (örn. 192.168.1.111)
 function getMetroHostFromScriptURL() {
@@ -567,9 +631,15 @@ export async function apiFetch(
 ) {
   if (!serverAvailable()) throw new Error("server_disabled");
 
+  // ✅ deviceId verilmediyse otomatik üret + persist et
+  let did = deviceId;
+  try {
+    if (!did) did = await getDeviceId();
+  } catch {}
+
   const h = {
     "Content-Type": "application/json",
-    ...(deviceId ? { "x-device-id": deviceId } : null),
+    ...(did ? { "x-device-id": did } : null),
     ...headers,
   };
 
@@ -591,25 +661,32 @@ export async function apiFetch(
 }
 
 /* ---------------- POI yardımcıları (server) ---------------- */
-export async function poiMatch(items, city) {
+export async function poiMatch(payloadOrItems, city) {
   if (!serverAvailable()) return { results: [] };
 
+  const itemsArr = Array.isArray(payloadOrItems)
+    ? payloadOrItems
+    : (Array.isArray(payloadOrItems?.items) ? payloadOrItems.items : []);
+
   const url = `${API_BASE}/api/poi/match`;
+
   try {
     const res = await fetchJson(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       timeoutMs: API_TIMEOUT_MS,
       body: JSON.stringify({
-        items: (items || []).map((x) => ({
-          osm_id: x.osm_id,
+        items: (itemsArr || []).map((x) => ({
+          item_id: x.item_id ?? x.osm_id ?? null,
+          osm_id: x.osm_id ?? x.item_id ?? null,
           name: x.name,
           lat: x.lat,
           lon: x.lon,
-          city: city || "Ankara",
+          city: city || x.city || "Ankara",
         })),
       }),
     });
+
     if (!res.ok) throw new Error(`poiMatch_failed_${res.status}`);
     return res.json();
   } catch (e) {
@@ -674,7 +751,6 @@ export async function searchUnified(
 
 /* ====================================================================== */
 /* ✅ TRIPS API                                                           */
-/* - 404 gelirse otomatik create (UPSERT)                                 */
 /* ====================================================================== */
 
 function safeJsonParse(text) {
@@ -685,11 +761,6 @@ function safeJsonParse(text) {
   }
 }
 
-/**
- * Trip create
- * Varsayılan: POST /api/trips
- * Backend farklıysa sadece burayı değiştir.
- */
 export async function createTrip(trip, { timeoutMs } = {}) {
   if (!serverAvailable()) throw new Error("server_disabled");
 
@@ -706,10 +777,6 @@ export async function createTrip(trip, { timeoutMs } = {}) {
   return res.json().catch(() => ({}));
 }
 
-/**
- * Trip update (PATCH -> fallback PUT)
- * Path varsayımı: /api/trips/:tripId
- */
 export async function updateTrip(tripId, patch, { timeoutMs } = {}) {
   if (!serverAvailable()) throw new Error("server_disabled");
   if (!tripId) throw new Error("missing_tripId");
@@ -717,7 +784,6 @@ export async function updateTrip(tripId, patch, { timeoutMs } = {}) {
   const id = encodeURIComponent(String(tripId));
   const path = `/api/trips/${id}`;
 
-  // 1) PATCH dene
   try {
     const res = await apiFetch(path, {
       method: "PATCH",
@@ -734,7 +800,6 @@ export async function updateTrip(tripId, patch, { timeoutMs } = {}) {
       { status: code, raw: txt, json: j }
     );
   } catch (e) {
-    // 2) PUT fallback
     const res2 = await apiFetch(path, {
       method: "PUT",
       body: patch,
@@ -752,10 +817,6 @@ export async function updateTrip(tripId, patch, { timeoutMs } = {}) {
   }
 }
 
-/**
- * ✅ UPSERT: önce update dene, 404 ise create et
- * - updateTrip PATCH/PUT 404 verirse createTrip çalışır.
- */
 export async function upsertTrip(tripId, payload, { timeoutMs } = {}) {
   if (!tripId) throw new Error("missing_tripId");
 
@@ -765,7 +826,6 @@ export async function upsertTrip(tripId, payload, { timeoutMs } = {}) {
     const status = e?.status;
     const msg = String(e?.message || "");
 
-    // 404 yakala (hem status property’den hem message’dan)
     const is404 =
       status === 404 ||
       msg.includes("_404_") ||
@@ -773,7 +833,6 @@ export async function upsertTrip(tripId, payload, { timeoutMs } = {}) {
       msg.includes("not_found");
 
     if (is404) {
-      // create sırasında id'yi body’ye koyuyoruz ki server tarafı aynı id ile yazabilsin
       return await createTrip({ id: String(tripId), ...payload }, { timeoutMs });
     }
 
@@ -781,7 +840,6 @@ export async function upsertTrip(tripId, payload, { timeoutMs } = {}) {
   }
 }
 
-/** Sadece selectedPlaces güncellemek için helper (artık upsert yapıyor) */
 export async function updateTripSelectedPlaces(tripId, selectedPlaces, opts = {}) {
   const patch = { selectedPlaces: Array.isArray(selectedPlaces) ? selectedPlaces : [] };
   return upsertTrip(tripId, patch, opts);

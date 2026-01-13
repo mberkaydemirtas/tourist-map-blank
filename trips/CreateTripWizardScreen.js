@@ -27,7 +27,7 @@ const BTN = '#2563EB';
 /* ---------------------- Yardımcılar: Gün listesi & DP ---------------------- */
 function ensureIdsDoc(t) {
   if (!t) return t;
-  const id  = t.id  ?? t._id;
+  const id = t.id ?? t._id;
   const _id = t._id ?? id;
   return { ...t, id, _id };
 }
@@ -118,6 +118,15 @@ function normalizeCityCenter(city) {
   return null;
 }
 
+/* ---------------------- Promise timeout helper (NEW) ---------------------- */
+function withTimeout(promise, ms, label = 'timeout') {
+  let t;
+  const timeout = new Promise((_, rej) => {
+    t = setTimeout(() => rej(new Error(label)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(t));
+}
+
 /* ---------------------- Mini yardımcı görünümler ---------------------- */
 function Stepper({ items, index, onPrev, onNext }) {
   const safeLabel = (items[index] ?? '').toString();
@@ -172,7 +181,7 @@ export default function CreateTripWizardScreen() {
 
   // Review'den geri dönüş
   const jumpToStep = route?.params?.jumpToStep;
-  const returnTo   = route?.params?.returnTo ?? null;
+  const returnTo = route?.params?.returnTo ?? null;
   const editIntent = route?.params?.editIntent ?? null;
   const openedForEdit = returnTo === 'TripReview' || !!editIntent;
 
@@ -213,7 +222,7 @@ export default function CreateTripWizardScreen() {
     if (!appliedJumpOnce.current && Number.isInteger(jumpToStep)) {
       setStep(Math.max(0, Math.min(4, jumpToStep)));
       appliedJumpOnce.current = true;
-      try { nav.setParams({ jumpToStep: undefined }); } catch {}
+      try { nav.setParams({ jumpToStep: undefined }); } catch { }
     }
   }, [jumpToStep, nav]);
 
@@ -253,7 +262,7 @@ export default function CreateTripWizardScreen() {
           } else if (!appliedJumpOnce.current && Number.isInteger(jumpToStep)) {
             setStep(Math.max(0, Math.min(4, jumpToStep)));
             appliedJumpOnce.current = true;
-            try { nav.setParams({ jumpToStep: undefined }); } catch {}
+            try { nav.setParams({ jumpToStep: undefined }); } catch { }
           }
           if (t.title) setTripTitle(t.title);
           if (t._whereAnswer) setWhereAnswer(t._whereAnswer);
@@ -263,6 +272,7 @@ export default function CreateTripWizardScreen() {
           if (t._lodgingByCity) setLodgingByCity(t._lodgingByCity);
           if (Array.isArray(t.dailyPlan)) setDailyPlan(t.dailyPlan);
           if (Array.isArray(t.places)) setSelectedPlaces(t.places);
+          if (t.travelMode) setTravelMode(t.travelMode);
           return;
         }
       }
@@ -282,7 +292,7 @@ export default function CreateTripWizardScreen() {
     if (t.length < 2) return;
 
     const h = setTimeout(() => {
-      patchTripLocal(key, { title: t }).catch(() => {});
+      patchTripLocal(key, { title: t }).catch(() => { });
       DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: key, patch: { title: t } });
     }, 250);
 
@@ -301,7 +311,7 @@ export default function CreateTripWizardScreen() {
 
     if (!cities.length) return;
 
-    patchTripLocal(key, { cities }).catch(() => {});
+    patchTripLocal(key, { cities }).catch(() => { });
     DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: key, patch: { cities } });
   }, [draft?.id, draft?._id, route?.params?.resumeId, whereAnswer?.mode, whereAnswer?.single?.city?.name, whereAnswer?.items]);
 
@@ -322,7 +332,7 @@ export default function CreateTripWizardScreen() {
     const range = computeGlobalRange(whereAnswer, startEndSingle, startEndByCity);
     if (!range.start && !range.end) return;
 
-    patchTripLocal(key, { dateRange: range }).catch(() => {});
+    patchTripLocal(key, { dateRange: range }).catch(() => { });
     DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: key, patch: { dateRange: range } });
   }, [draft?.id, draft?._id, route?.params?.resumeId, whereAnswer, startEndSingle?.start?.date, startEndSingle?.end?.date, startEndByCity]);
 
@@ -420,7 +430,7 @@ export default function CreateTripWizardScreen() {
   function seComplete(se) {
     return !!(
       se?.start?.type && se?.start?.hub && se?.start?.date && se?.start?.time &&
-      se?.end?.type   && se?.end?.hub   && se?.end?.date   && se?.end?.time
+      se?.end?.type && se?.end?.hub && se?.end?.date && se?.end?.time
     );
   }
   function seOrderOk(se) {
@@ -496,18 +506,13 @@ export default function CreateTripWizardScreen() {
     });
   };
 
-  // aktif trip anahtarını tek yerden resolve et
-  const tripKeyId = useCallback(() => {
-    return draft?.id ?? draft?._id ?? route?.params?.resumeId ?? null;
-  }, [draft?.id, draft?._id, route?.params?.resumeId]);
-
   // Çok-şehir dahil tüm segmentlerden gece-bazlı lodgings üret
   function segmentsToLodgingsAllCities(whereAnswerArg, lodgingSingleArg, lodgingByCityArg) {
-    const addDaysISO = (s, n) => { const d = new Date(s+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
-    const nightsBetween = (s, e) => { const out=[]; if(!s||!e||s>=e) return out; let cur=s; while(cur<e){ out.push(cur); cur=addDaysISO(cur,1);} return out; };
-    const collect = (segments=[]) => {
-      const out=[];
-      segments.forEach((seg, idx)=>{
+    const addDaysISO = (s, n) => { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+    const nightsBetween = (s, e) => { const out = []; if (!s || !e || s >= e) return out; let cur = s; while (cur < e) { out.push(cur); cur = addDaysISO(cur, 1); } return out; };
+    const collect = (segments = []) => {
+      const out = [];
+      segments.forEach((seg, idx) => {
         if (!seg?.place?.location || !seg?.start || !seg?.end) return;
         const { lat } = seg.place.location;
         const lon = seg.place.location.lng ?? seg.place.location.lon;
@@ -526,17 +531,17 @@ export default function CreateTripWizardScreen() {
     };
     if (!whereAnswerArg) return [];
     if (whereAnswerArg.mode === 'single') return collect(lodgingSingleArg || []);
-    let all=[]; (whereAnswerArg.items||[]).forEach(it=>{
+    let all = []; (whereAnswerArg.items || []).forEach(it => {
       const key = it?.city?.place_id; if (!key) return;
       all = all.concat(collect(lodgingByCityArg?.[key] || []));
     });
     return all;
   }
 
-  function addDaysISO(s, n) { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+  function addDaysISO(s, n) { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
   function nightsBetween(start, end) {
-    const out=[]; if(!start||!end||start>=end) return out;
-    let cur=start; while(cur<end){ out.push(cur); cur=addDaysISO(cur,1); } return out;
+    const out = []; if (!start || !end || start >= end) return out;
+    let cur = start; while (cur < end) { out.push(cur); cur = addDaysISO(cur, 1); } return out;
   }
   function segmentsToLodgings(segments = []) {
     const out = [];
@@ -556,26 +561,7 @@ export default function CreateTripWizardScreen() {
     return out;
   }
 
-  // TITLE'I KESİN KAYDET + CANLI PATCH
-  const flushTitleNow = useCallback(async () => {
-    const key = tripKeyId();
-    const t = (tripTitle || '').trim();
-    if (!key || !t) return;
-
-    setDraft(prev => (prev ? { ...prev, title: t } : prev));
-    try {
-      await patchTripLocal(key, { title: t, status: 'draft' });
-    } catch {
-      try {
-        await saveTripLocal({ ...(draft || {}), id: draft?.id || key, _id: draft?._id || key, title: t, status: 'draft' });
-      } catch {}
-    }
-    try {
-      DeviceEventEmitter.emit('TRIP_META_UPDATED', { tripId: key, patch: { title: t } });
-    } catch {}
-  }, [tripKeyId, tripTitle, draft]);
-
-  // Review'a gitmeden hemen önce KESİN yaz
+  // Review'a gitmeden hemen önce KESİN yaz (FIX: timeout + fallback)
   const persistFullDraftBeforeReview = useCallback(async (id) => {
     if (autosaveRef.current) {
       clearTimeout(autosaveRef.current);
@@ -601,12 +587,40 @@ export default function CreateTripWizardScreen() {
       dailyPlan,
       places: selectedPlaces,
       travelMode,
+      // ✅ FIX: lodgings her zaman tüm şehirlerden üret
+      lodgings: segmentsToLodgingsAllCities(whereAnswer, lodgingSingle, lodgingByCity),
     };
 
-    await patchTripLocal(id, payload).catch(() => {});
-    setDraft(prev => (prev ? { ...prev, ...payload } : prev));
-    DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: id, patch: payload });
-  }, [whereAnswer, startEndSingle, startEndByCity, lodgingSingle, lodgingByCity, dailyPlan, selectedPlaces, tripTitle, travelMode]);
+    // 1) hızlı patch dene (timeout ile)
+    try {
+      await withTimeout(patchTripLocal(id, payload), 2500, 'patchTripLocal_timeout');
+      setDraft(prev => (prev ? { ...prev, ...payload } : prev));
+      try { DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: id, patch: payload }); } catch { }
+      return true;
+    } catch (e) {
+      console.warn('[persistFullDraftBeforeReview] patchTripLocal failed/timeout:', e?.message || e);
+    }
+
+    // 2) fallback saveTripLocal dene (timeout ile)
+    try {
+      const base = draft || {};
+      const doc = {
+        ...base,
+        id: base?.id || id,
+        _id: base?._id || id,
+        ...payload,
+        status: 'draft',
+      };
+      await withTimeout(saveTripLocal(doc), 2500, 'saveTripLocal_timeout');
+      setDraft(prev => (prev ? { ...prev, ...payload } : prev));
+      try { DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: id, patch: payload }); } catch { }
+      return true;
+    } catch (e2) {
+      console.warn('[persistFullDraftBeforeReview] saveTripLocal failed/timeout:', e2?.message || e2);
+      // buradan false döneceğiz ama review'a yine gideceğiz
+      return false;
+    }
+  }, [whereAnswer, startEndSingle, startEndByCity, lodgingSingle, lodgingByCity, dailyPlan, selectedPlaces, tripTitle, travelMode, draft]);
 
   // NEXT
   async function next() {
@@ -619,7 +633,7 @@ export default function CreateTripWizardScreen() {
 
     // Step 1'de şehir seti değiştiyse resetle
     if (step === 1) {
-      const newKeys  = cityKeysOf(whereAnswer);
+      const newKeys = cityKeysOf(whereAnswer);
       const prevKeys = committedCityKeysRef.current;
       if (!shallowEqualArr(newKeys, prevKeys)) {
         setStartEndSingle(null);
@@ -640,34 +654,11 @@ export default function CreateTripWizardScreen() {
               places: [],
               dailyPlan: [],
               dateRange: { start: null, end: null },
+              lodgings: [],
             });
-          } catch {}
+          } catch { }
         }
         committedCityKeysRef.current = newKeys;
-      }
-    }
-
-    // STEP 0 → başlık kesin kaydedilsin
-    if (step === 0 && tripKey) {
-      const t = (tripTitle || '').trim();
-      if (t) {
-        setDraft(prev => (prev ? { ...prev, title: t } : prev));
-        try {
-          await patchTripLocal(tripKey, { title: t });
-        } catch {
-          try {
-            await saveTripLocal({
-              ...(draft || {}),
-              id: draft?.id || tripKey,
-              _id: draft?._id || tripKey,
-              title: t,
-              status: 'draft',
-            });
-          } catch {}
-        }
-        try {
-          DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: tripKey, patch: { title: t } });
-        } catch {}
       }
     }
 
@@ -694,14 +685,16 @@ export default function CreateTripWizardScreen() {
       if (step === 3) {
         patchNow._lodgingSingle = lodgingSingle;
         patchNow._lodgingByCity = lodgingByCity;
-        const segs = (whereAnswer?.mode === 'single')
-          ? lodgingSingle
-          : (lodgingByCity[activeCityKey] || []);
-        patchNow.lodgings = segmentsToLodgings(segs);
+
+        // ✅ FIX: lodgings alanını aktif şehirle overwrite ETME.
+        // Her zaman tüm şehirlerden üret.
+        patchNow.lodgings = segmentsToLodgingsAllCities(whereAnswer, lodgingSingle, lodgingByCity);
+        patchNow.travelMode = travelMode;
       }
 
       try {
-        await patchTripLocal(tripKey, patchNow);
+        // burada da takılmasın diye kısa timeout
+        await withTimeout(patchTripLocal(tripKey, patchNow), 1200, 'patchNow_timeout');
         setDraft(prev => (prev ? { ...prev, ...patchNow } : prev));
         const livePatch = {};
         if (patchNow.cities) livePatch.cities = patchNow.cities;
@@ -709,27 +702,25 @@ export default function CreateTripWizardScreen() {
         if (Object.keys(livePatch).length) {
           DeviceEventEmitter.emit(EVT_TRIP_META_UPDATED, { tripId: tripKey, patch: livePatch });
         }
-      } catch {}
+      } catch (e) {
+        console.warn('[next] patchNow failed/timeout:', e?.message || e);
+      }
     }
 
-    // Step 4 → Review
+    // Step 4 → Review  (FIX: persist takılsa bile review'a git)
     if (step === 4) {
       if (tripKey) {
-        await persistFullDraftBeforeReview(tripKey);
+        try {
+          await persistFullDraftBeforeReview(tripKey);
+        } catch (e) {
+          console.warn('[next] persistFullDraftBeforeReview threw:', e?.message || e);
+        }
         nav.navigate('TripReview', { tripId: tripKey, ts: Date.now() });
+
       } else {
         nav.navigate('TripReview');
       }
       return;
-    }
-
-    // Review’den gelen edit akışı
-    if (returnTo === 'TripReview' && editIntent && Number.isInteger(editIntent.returnAfterStep)) {
-      if (step === editIntent.returnAfterStep) {
-        if (tripKey) nav.navigate('TripReview', { tripId: tripKey, ts: Date.now() });
-        else nav.navigate('TripReview');
-        return;
-      }
     }
 
     safeStepChange(() => setStep(s => Math.min(4, s + 1)));
@@ -756,7 +747,7 @@ export default function CreateTripWizardScreen() {
         else nav.navigate('TripReview');
       } else {
         const key = draft?.id ?? draft?._id ?? null;
-        if (key) patchTripLocal(key, { wizardStep: step }).catch(() => {});
+        if (key) patchTripLocal(key, { wizardStep: step }).catch(() => { });
       }
     });
     return unsub;
@@ -797,7 +788,7 @@ export default function CreateTripWizardScreen() {
       };
       patchTripLocal(key, payload)
         .then((res) => setDraft(prev => ensureIdsDoc(res || prev)))
-        .catch(() => {});
+        .catch(() => { });
       autosaveRef.current = null;
     }, 350);
 
@@ -860,7 +851,7 @@ export default function CreateTripWizardScreen() {
 
       return { place, start: startDate, end: endDate };
     } finally {
-      try { await bridge.dismiss?.(); } catch {}
+      try { await bridge.dismiss?.(); } catch { }
       DeviceEventEmitter.emit(EVT_CLOSE_DROPDOWNS);
 
       setTimeout(() => {
@@ -906,7 +897,7 @@ export default function CreateTripWizardScreen() {
   const cityNames = filteredCities.map(it => it.city.name);
   const cityCount = cityNames.length;
   const isFirstCity = cityIndex === 0;
-  const isLastCity  = cityIndex === Math.max(0, cityCount - 1);
+  const isLastCity = cityIndex === Math.max(0, cityCount - 1);
 
   const goPrevCityOrBack = () => {
     if (whereAnswer?.mode === 'multi' && !isFirstCity) setCityIndex(i => Math.max(0, i - 1));
@@ -969,7 +960,7 @@ export default function CreateTripWizardScreen() {
                     {(() => {
                       const filtered = (whereAnswer.items || []).filter(it => it.city?.name);
                       const names = filtered.map(it => it.city.name);
-                      const keys  = filtered.map(it => it.city.place_id);
+                      const keys = filtered.map(it => it.city.place_id);
                       const idx = cityIndex;
                       const prevKey = idx > 0 ? keys[idx - 1] : null;
                       const nextKey = idx < keys.length - 1 ? keys[idx + 1] : null;
@@ -1082,11 +1073,11 @@ export default function CreateTripWizardScreen() {
                       setTrip={setTripFromList}
                       onBack={goPrevCityOrBack}
                       onNext={goNextCityOrStep}
-                      tripId={tripIdForPersist}                 // ✅ FIX
-                      countryCode={countryCodeForList}          // ✅ FIX
+                      tripId={tripIdForPersist}
+                      countryCode={countryCodeForList}
                       cityName={activeCityObj?.name || ''}
-                      cityCenter={cityCenterForList}            // ✅ FIX (normalize edilmiş)
-                      placesMaxHeight={420}                     // ✅ TripListQuestion prop adı
+                      cityCenter={cityCenterForList}
+                      placesMaxHeight={420}
                     />
                   </View>
                 ) : (
@@ -1095,11 +1086,11 @@ export default function CreateTripWizardScreen() {
                     setTrip={setTripFromList}
                     onBack={back}
                     onNext={next}
-                    tripId={tripIdForPersist}                   // ✅ FIX
-                    countryCode={countryCodeForList}            // ✅ FIX
+                    tripId={tripIdForPersist}
+                    countryCode={countryCodeForList}
                     cityName={activeCityObj?.name || ''}
-                    cityCenter={cityCenterForList}              // ✅ FIX
-                    placesMaxHeight={420}                       // ✅ TripListQuestion prop adı
+                    cityCenter={cityCenterForList}
+                    placesMaxHeight={420}
                   />
                 )}
               </Card>
@@ -1113,7 +1104,7 @@ export default function CreateTripWizardScreen() {
       <View style={styles.footer}>
         <TouchableOpacity onPress={() => {
           const key = draft?.id ?? draft?._id ?? null;
-          if (key) patchTripLocal(key, { wizardStep: step }).catch(()=>{});
+          if (key) patchTripLocal(key, { wizardStep: step }).catch(() => { });
           nav.goBack();
         }} style={styles.ghostBtn}>
           <Text style={styles.ghostText}>Vazgeç</Text>
@@ -1150,7 +1141,7 @@ function computeGlobalRange(where, singleSE, multiSE) {
   (where.items || []).forEach(it => {
     const se = multiSE[it.city.place_id];
     if (se?.start?.date) dates.push(se.start.date);
-    if (se?.end?.date)   dates.push(se.end.date);
+    if (se?.end?.date) dates.push(se.end.date);
   });
   if (!dates.length) return { start: null, end: null };
   const asc = dates.slice().sort();
