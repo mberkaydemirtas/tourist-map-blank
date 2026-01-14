@@ -291,6 +291,54 @@ function getPlacesArray(trip) {
     : (Array.isArray(trip?.selectedPlaces) ? trip.selectedPlaces : []);
 }
 
+/* ---------------- NEW: plan timeout estimator ---------------- */
+function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+
+function countDaysInclusive(startISO, endISO) {
+  const s = sanitizeIsoDate(startISO);
+  const e = sanitizeIsoDate(endISO);
+  if (!s || !e) return 1;
+  const sd = new Date(s + 'T00:00:00');
+  const ed = new Date(e + 'T00:00:00');
+  const diff = Math.round((ed - sd) / 86400000);
+  return clamp(diff + 1, 1, 60);
+}
+
+function estimateGeneratePlanTimeoutMs(trip) {
+  // Gün sayısı: dateRange varsa onu kullan, yoksa start/end single’dan dene
+  const dr = trip?.dateRange || {};
+  const startISO =
+    dr?.start ||
+    trip?._startEndSingle?.start?.date ||
+    null;
+  const endISO =
+    dr?.end ||
+    trip?._startEndSingle?.end?.date ||
+    startISO ||
+    null;
+
+  const dayCount = countDaysInclusive(startISO, endISO);
+
+  // Yer sayısı: sadece kaba bir çarpan (çok yüksek stop sayısında buffer artsın)
+  const placeCount = Math.max(0, getPlacesArray(trip)?.length || 0);
+
+  // Optimizer her gün ~9s (loguna göre). Biz güvenli tarafta olalım:
+  const perDayMs = 18000;          // 18s/gün (optimizer + JS overhead)
+  const baseMs = 20000;            // sabit overhead
+  const extraMs = Math.min(60000, placeCount * 500); // çok stop varsa biraz buffer
+
+  const est = baseMs + dayCount * perDayMs + extraMs;
+
+  // min 60s, max 4dk
+  const finalMs = clamp(est, 60000, 240000);
+
+  if (__DEV__) {
+    console.log('[TripReview] generatePlan timeout(ms)=', finalMs, { dayCount, placeCount });
+  }
+
+  return finalMs;
+}
+
 /* ---------------- Pretty components ---------------- */
 function TravelModePretty({ trip }) {
   const mode = trip?.travelMode || 'walk_transport';
@@ -890,9 +938,13 @@ export default function TripReviewScreen() {
 
       let plan = null;
       try {
+        const planTimeoutMs = estimateGeneratePlanTimeoutMs(completedTrip);
+
+        // ✅ KRİTİK: burada "useRealDirections: true" planı çok uzatıyor.
+        // Plan ekranında istersen daha sonra "real directions" ile re-route yaptırırız.
         plan = await withTimeout(
-          generatePlan(completedTrip, prefs, { useRealDirections: true, respectAnchors: true }),
-          25000,
+          generatePlan(completedTrip, prefs, { useRealDirections: false, respectAnchors: true }),
+          planTimeoutMs,
           'generatePlan_timeout'
         );
       } catch (err) {

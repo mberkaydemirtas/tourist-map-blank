@@ -21,27 +21,32 @@ function getMetroHostFromScriptURL() {
 
 const METRO_HOST = getMetroHostFromScriptURL();
 const IS_DEVICE = !!(Constants && Constants.isDevice);
+
 // Emülatör için Android loopback
 const EMU_LOCALHOST = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
 
 // Kullanıcı ENV öncelikli
 const ENV_OPT = (process.env?.EXPO_PUBLIC_OPTIMIZER_BASE || '').trim() || null;
 
-// Varsayılan (ENV yoksa) ilk denenecek base
+/**
+ * ✅ KRİTİK:
+ * - Fiziksel telefonda 127.0.0.1 = telefonun kendisi (PC değil) → yanlış.
+ * - Fiziksel telefonda doğru olan: PC'nin LAN IP'si (genelde METRO_HOST ile yakalanır).
+ */
 const FIRST_GUESS = ENV_OPT
   ? ENV_OPT
   : (IS_DEVICE
-      ? 'http://127.0.0.1:8001'
+      ? (METRO_HOST ? `http://${METRO_HOST}:8001` : null)
       : `http://${EMU_LOCALHOST}:8001`
     );
 
-// Diğer adaylar
+// Diğer adaylar (önem sırası: ENV > METRO_HOST > emulator/local)
 const CANDIDATE_BASES = [
   FIRST_GUESS,
+  ...(METRO_HOST ? [`http://${METRO_HOST}:8001`] : []),
   `http://${EMU_LOCALHOST}:8001`,
   'http://127.0.0.1:8001',
-  ...(METRO_HOST ? [`http://${METRO_HOST}:8001`] : []),
-];
+].filter(Boolean);
 
 // Çalışan base'i cache'le
 let ACTIVE_OPTIMIZER_BASE = null;
@@ -70,8 +75,8 @@ async function tryFetch(url, opts = {}, timeoutMs = 6000) {
 async function isReachableBase(base) {
   const url = `${base.replace(/\/+$/,'')}/health`;
   try {
-    const res = await tryFetch(url, { method: 'GET' }, 2000);
-    return !!res;
+    const res = await tryFetch(url, { method: 'GET' }, 2500);
+    return !!res && res.ok;
   } catch {
     return false;
   }
@@ -90,10 +95,13 @@ async function resolveOptimizerBase() {
 
   for (const b of uniqCandidates) {
     try {
-      if (await isReachableBase(b)) {
+      const ok = await isReachableBase(b);
+      if (ok) {
         ACTIVE_OPTIMIZER_BASE = b;
         console.log('[OPTIMIZER] ✅ base selected =', b);
         return b;
+      } else {
+        console.log('[OPTIMIZER] base not reachable:', b);
       }
     } catch {}
   }
@@ -103,8 +111,9 @@ async function resolveOptimizerBase() {
 }
 
 // Debug çıktısı
-(async () => {
+(() => {
   console.log('[OPTIMIZER] ENV =', ENV_OPT || '(none)');
+  console.log('[OPTIMIZER] IS_DEVICE =', IS_DEVICE);
   console.log('[OPTIMIZER] METRO_HOST =', METRO_HOST || '(unknown)');
   console.log('[OPTIMIZER] candidates =', CANDIDATE_BASES);
 })();
@@ -112,9 +121,13 @@ async function resolveOptimizerBase() {
 // Toggle real directions
 const USE_REAL_DIRECTIONS_DEFAULT = false;
 
-// Global request timeout (ms)
+/**
+ * ✅ Global request timeout (ms)
+ * 35 stop gibi büyük payload’larda 15–20sn çok az.
+ * Minimum 60sn yapıyoruz; ENV ile istenirse override edilebilir.
+ */
 const REQ_TIMEOUT_MS = Math.max(
-  8000,
+  60000,
   Number(process.env?.EXPO_PUBLIC_API_TIMEOUT_MS || 15000)
 );
 
@@ -366,21 +379,43 @@ function openingToWindow(place, dayStartMin, dayEndMin) {
   return { open_min: dayStartMin, close_min: dayEndMin };
 }
 
+/**
+ * ✅ stop sayısına göre timeout belirle
+ *  - az stop: 30–45sn
+ *  - 35 stop: 70–90sn bandı
+ */
+function computeOptimizerTimeoutMs(stopsLen) {
+  const n = Number(stopsLen || 0);
+  const base = 30000;             // 30sn taban
+  const perStop = 1500;           // stop başına 1.5sn
+  const dyn = base + n * perStop; // 35 => 82.5sn
+  const capped = Math.min(90000, dyn);
+  return Math.max(45000, capped); // en az 45sn
+}
+
 async function callOptimizer(payload) {
   await resolveOptimizerBase();
+
   const bases = (ACTIVE_OPTIMIZER_BASE ? [ACTIVE_OPTIMIZER_BASE] : [])
     .concat(CANDIDATE_BASES.filter(b => b && b !== ACTIVE_OPTIMIZER_BASE));
+
+  const timeoutMs = Math.max(
+    REQ_TIMEOUT_MS,
+    computeOptimizerTimeoutMs(payload?.stops?.length || 0)
+  );
 
   let lastErr;
   for (const base of bases) {
     if (!base) continue;
     const url = `${base.replace(/\/+$/,'')}/optimize-day`;
     try {
+      console.log('[OPT] request →', { base, stops: payload?.stops?.length || 0, timeoutMs });
       const json = await fetchJsonNoSignal(url, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),
-      }, REQ_TIMEOUT_MS);
+      }, timeoutMs);
+
       ACTIVE_OPTIMIZER_BASE = base;
       return json;
     } catch (e) {
@@ -572,7 +607,7 @@ export async function generatePlan(trip, prefs, opts = {}) {
       orderedVisits = reorderActivitiesByOptimizer(d, visits, res);
       optimizerUsed = true;
     } catch (e) {
-      console.warn('[planService] optimizer unreachable, using NN fallback →', e?.message || e);
+      console.warn('[planService] optimizer unreachable/timeout, using NN fallback →', e?.message || e);
 
       const isStartDay = (trip?._startEndSingle?.start?.date === d.date);
       const hubStart = isStartDay && trip?._startEndSingle?.start?.hub?.location

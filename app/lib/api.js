@@ -5,7 +5,7 @@ import 'react-native-get-random-values';
 
 /**
  * ENV:
- * - EXPO_PUBLIC_API_BASE            : http://192.168.1.111:5000 (tam URL)
+ * - EXPO_PUBLIC_API_BASE            : http://192.168.1.101:5000 (tam URL)
  * - EXPO_PUBLIC_SERVER_ENABLED      : "true" | "false"
  * - EXPO_PUBLIC_API_TIMEOUT_MS      : sayı (ms)
  * - EXPO_PUBLIC_GOOGLE_MAPS_API_KEY : (opsiyonel) client-side fallback için
@@ -84,7 +84,7 @@ export async function getDeviceId() {
   return _deviceIdPromise;
 }
 
-// Metro host’u scriptURL’den çek (örn. 192.168.1.111)
+// Metro host’u scriptURL’den çek (örn. 192.168.1.101)
 function getMetroHostFromScriptURL() {
   try {
     const url = NativeModules?.SourceCode?.scriptURL || "";
@@ -152,7 +152,7 @@ const RESOLVED = computeBase();
 /**
  * API_BASE:
  * - ENV varsa → onu kullanır
- * - Dev’de ENV yoksa → METRO_HOST'tan üretir (senin durumda 192.168.1.111)
+ * - Dev’de ENV yoksa → METRO_HOST'tan üretir (senin durumda 192.168.1.101)
  * - Hiçbiri yoksa → emulator/simulator fallback
  */
 export const API_BASE = RESOLVED.base;
