@@ -90,7 +90,8 @@ const NumMarker = React.memo(function NumMarker({ bg, order }) {
 
 /**
  * ✅ MEM LOGGER (CUSTOM HOOK)
- * Hook’lar component içinde / custom hook içinde çağrılmalı.
+ * Interval sadece 1 kere kurulmalı.
+ * Değişen değerler ref ile okunmalı.
  */
 function useMemLogger({
   enabled,
@@ -101,42 +102,75 @@ function useMemLogger({
   uiActsLen,
   polylineLen,
 }) {
-  const __memTick = useRef(0);
+  const tickRef = useRef(0);
+  const intervalRef = useRef(null);
+
+  // ✅ Sürekli değişen değerleri burada ref’e yaz
+  const liveRef = useRef({
+    dayIndex: 0,
+    markersLen: 0,
+    segmentsLen: 0,
+    searchMarkersLen: 0,
+    uiActsLen: 0,
+    polylineLen: 0,
+  });
 
   useEffect(() => {
-    if (!enabled) return;
+    liveRef.current = {
+      dayIndex,
+      markersLen,
+      segmentsLen,
+      searchMarkersLen,
+      uiActsLen,
+      polylineLen,
+    };
+  }, [dayIndex, markersLen, segmentsLen, searchMarkersLen, uiActsLen, polylineLen]);
 
-    const id = setInterval(() => {
-      __memTick.current += 1;
+  // ✅ Interval sadece enabled değişince kurulsun/kalksın
+  useEffect(() => {
+    if (!enabled) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
+
+    // enabled true olduğunda sıfırdan başlatmak istersen:
+    tickRef.current = 0;
+
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    intervalRef.current = setInterval(() => {
+      tickRef.current += 1;
       try {
-        // Hermes’te performance.memory her zaman gelmeyebilir
-        const mem = global?.performance?.memory;
-        console.log('[MEM]', __memTick.current, {
-          dayIndex,
+        const mem = global?.performance?.memory; // Hermes’te çoğu zaman undefined
+        const s = liveRef.current;
+
+        console.log('[MEM]', tickRef.current, {
+          dayIndex: s.dayIndex,
           jsHeapSizeLimit: mem?.jsHeapSizeLimit,
           usedJSHeapSize: mem?.usedJSHeapSize,
           totalJSHeapSize: mem?.totalJSHeapSize,
-          markers: markersLen,
-          segments: segmentsLen,
-          searchMarkers: searchMarkersLen,
-          uiActs: uiActsLen,
-          polyline: polylineLen,
+          markers: s.markersLen,
+          segments: s.segmentsLen,
+          searchMarkers: s.searchMarkersLen,
+          uiActs: s.uiActsLen,
+          polyline: s.polylineLen,
         });
       } catch (e) {
-        console.log('[MEM]', __memTick.current, { dayIndex });
+        const s = liveRef.current;
+        console.log('[MEM]', tickRef.current, { dayIndex: s.dayIndex });
       }
     }, 1500);
 
-    return () => clearInterval(id);
-  }, [
-    enabled,
-    dayIndex,
-    markersLen,
-    segmentsLen,
-    searchMarkersLen,
-    uiActsLen,
-    polylineLen,
-  ]);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [enabled]);
 }
 
 /**
@@ -324,7 +358,7 @@ export default function TripPlansScreen({ route, navigation }) {
     DIRECTIONS_API_KEY,
   } = logic;
 
-  // ✅ MEM LOGGER artık doğru yerde (component içinde)
+  // ✅ MEM LOGGER — artık interval spam yapmaz
   useMemLogger({
     enabled: true,
     dayIndex,
